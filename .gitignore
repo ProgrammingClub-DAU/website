@@ -1,0 +1,22 @@
+# Node
+node_modules/
+dist/
+.next/
+out/
+.env
+.env.local
+
+# Java / Spring Boot
+target/
+*.jar
+*.war
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cpclub_postgres
+    environment:
+      POSTGRES_USER: cpclub_user
+      POSTGRES_PASSWORD: cpclub_password
+      POSTGRES_DB: cpclub_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
