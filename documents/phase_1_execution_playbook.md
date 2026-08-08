@@ -4,12 +4,12 @@
 To develop and deploy a functional, production-ready Minimum Viable Product (MVP) for the Competitive Programming (CP) Club. This includes secure user authentication, public user profiles, club member directory, static informational pages, and a dynamic leaderboard synchronized with Codeforces ratings.
 
 ## 2. Current Repository/Project State
-**ANALYSIS RESULT:** Upon inspecting the workspace directory, the repository is currently in a **Greenfield (Day 0)** state. 
-*   **Existing Code:** None. No frontend or backend frameworks have been initialized.
-*   **Existing DB:** None.
-*   **Existing Infra:** None.
-*   **Existing Documentation:** Only the planning artifacts exist.
-*   **Discrepancy Note:** Because no code exists, this execution plan acts as the absolute blueprint from `git init` to initial deployment.
+**ANALYSIS RESULT:** Stage 0 (Initialization) is **Complete**.
+*   **Frontend:** Next.js 16.3 + Tailwind CSS 4.x initialized in `frontend/`.
+*   **Backend:** Java 17 + Spring Boot 4.1.0 boilerplate initialized in `backend/`.
+*   **Database:** `docker-compose.yml` for PostgreSQL created at root.
+*   **CI/CD:** GitHub Actions pipelines for Frontend (lint + build) and Backend (compile + test) are active.
+*   **Git:** Repository initialized, `.gitignore`, `README.md`, and all boilerplate committed to `main` branch.
 
 ## 3. Team & Member Responsibilities
 *   **Member 1 — Frontend UI/UX:** Primary owner of Next.js architecture, Tailwind styling, and static pages (Home, About).
@@ -21,7 +21,7 @@ To develop and deploy a functional, production-ready Minimum Viable Product (MVP
 
 ## 4. Phase 1 Architecture & Dependencies
 *   **Frontend:** Next.js (App Router), React, Tailwind CSS, Zustand (State), Axios.
-*   **Backend:** Java 17+, Spring Boot 3.x, Spring Security, Spring Data JPA, JWT, Springdoc OpenAPI (Swagger).
+*   **Backend:** Java 17+, Spring Boot 4.1.0, Spring Security, Spring Data JPA, JWT, Springdoc OpenAPI (Swagger).
 *   **Database:** PostgreSQL 15+ (Local via Docker Compose, Production via Managed DB).
 *   **External Dependency:** Codeforces API (`https://codeforces.com/api/user.info`).
 
@@ -138,7 +138,7 @@ Stage 1 merged to `main`.
 *   **Task P1-S2-01 (Member 2):** Build `/login` and `/register` Next.js pages using `react-hook-form` and `zod`. Print to `console.log` on submit.
 *   **Task P1-S2-02 (Member 3):** Build `/profile` and `/members` pages using mock JSON data.
 *   **Task P1-S2-03 (Member 4):** Implement `JwtUtils`, `JwtAuthenticationFilter`, and `AuthController` (`/register`, `/login`). Ensure the JWT payload securely embeds the user's role (Admin vs Normal).
-*   **Task P1-S2-04 (Member 5):** Create `UserController` and `UserService` for `GET /api/users` and `PUT /api/users/{id}/handles`. Create `UserResponseDto`.
+*   **Task P1-S2-04 (Member 5):** Create `UserController` and `UserService` for `GET /api/users` and `PUT /api/users/{id}/handle`. Create `UserResponseDto`.
 
 ### Validation
 Frontend forms validate locally. Backend APIs return 200 OK or 400 Bad Request via Postman.

@@ -2,18 +2,13 @@
 
 This document outlines a phased approach to building a comprehensive, CP-focused club website. The plan is broken down into manageable phases, starting from a foundational minimum viable product (MVP) to advanced real-time features and community building.
 
-## User Review Required
+## Resolved Decisions
 
-> [!IMPORTANT]
-> Please review the expanded phases below.
-> 1. **Community Feature**: Building a "Discord-type community" (Phase 4) is complex. Do you want to build this natively on the website (e.g., using WebSockets/Stream/Pusher for real-time chat), or do you want to integrate with actual Discord using their API and widgets to save development time?
-> 2. **Blog System**: Should any verified student be able to write a blog/editorial, or should this be restricted to admins and core team members only?
-
-## Open Questions
-
-> [!WARNING]
-> 1. **Technology Stack:** Do you have a preferred tech stack? (e.g., Next.js for Frontend, Node.js/Express for Backend, PostgreSQL/MongoDB for Database)?
-> 2. **Hosting:** Where are you planning to host this? (Vercel, AWS, Heroku, etc.?)
+> [!NOTE]
+> 1. **Community Feature (Phase 4):** The team has decided to build the community chat **natively** on the website using WebSockets (Spring WebSockets/STOMP on backend).
+> 2. **Blog System:** Will be restricted to `ROLE_ADMIN` users in Phase 1. Open contribution may be considered in later phases.
+> 3. **Tech Stack (FINALIZED):** Frontend: Next.js 16.3 (React 19). Backend: Spring Boot 4.1.0 (Java 17). Database: PostgreSQL 15+.
+> 4. **Hosting (FINALIZED):** Frontend on Vercel. Backend on Render/AWS. Database on managed Postgres (Render/Supabase).
 
 ---
 

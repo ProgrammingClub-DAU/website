@@ -24,7 +24,7 @@ To develop, integrate, test, and deploy a functional, production-ready Minimum V
 ## 4. Current Repository State
 **ANALYSIS RESULT:** Stage 0 (Initialization) is **Complete**.
 *   **Frontend:** Next.js + Tailwind CSS initialized in `frontend/`.
-*   **Backend:** Java 17 + Spring Boot 3.3.0 boilerplate initialized in `backend/`.
+*   **Backend:** Java 17 + Spring Boot 4.1.0 boilerplate initialized in `backend/`.
 *   **Database:** `docker-compose.yml` for PostgreSQL created at root.
 *   **Git:** Repository initialized, root `.gitignore` and `README.md` created, and all boilerplate committed to `main` branch.
 *   **Missing for Phase 1:** All actual business logic, UI components, API endpoints, database entities, and external API integrations are unwritten and ready for development.
@@ -42,7 +42,7 @@ To develop, integrate, test, and deploy a functional, production-ready Minimum V
 
 ## 6. Environment Setup
 **Day 0 / Before Coding Checklist for ALL Members:**
-- [ ] Install **Node.js 18+** and **Java 17+**.
+- [ ] Install **Node.js 20+** (LTS) and **Java 17+**.
 - [ ] Install **Docker Desktop** (must be running).
 - [ ] Clone the repository: `git clone https://github.com/ProgrammingClub-DAU/website.git`.
 - [ ] Start Database: Run `docker-compose up -d` in the root folder. Verify port 5432 is active.
@@ -226,14 +226,15 @@ Phase 1
 
 | ID | Task | Owner | Depends On | Parallel With | Blocks | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| P1-001 | Build UI Layout Shell | M1 | None | P1-002, P1-004 | M3 UI Integration | Todo |
-| P1-002 | `User` Entity & JPA Repo | M4 | None | P1-001, P1-004 | P1-006, P1-003 | Todo |
+| P1-001 | Build UI Layout Shell | M1 | None | P1-002, P1-004 | P1-007 | Todo |
+| P1-002 | `User` Entity & JPA Repo | M4 | None | P1-001, P1-004 | P1-003, P1-006, P1-008 | Todo |
 | P1-003 | Auth APIs & JWT Config | M4 | P1-002 | P1-004 | P1-005 | Todo |
 | P1-004 | React Auth Forms (Mock) | M2 | None | P1-001, P1-002 | P1-005 | Todo |
 | P1-005 | Auth Integration (Axios/Zustand) | M2 | P1-003, P1-004 | None | P1-007 | Todo |
-| P1-006 | Data APIs & DTOs | M5 | P1-002 | P1-008 | P1-007 | Todo |
-| P1-007 | Profile & Leaderboard UI | M3 | P1-001, P1-006 | P1-008 | Deployment | Todo |
-| P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | Deployment | Todo |
+| P1-006 | Data APIs & DTOs | M5 | P1-002 | P1-008 | P1-007, P1-009 | Todo |
+| P1-007 | Profile & Members UI | M3 | P1-001, P1-005, P1-006 | P1-008 | P1-010 | Todo |
+| P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | Todo |
+| P1-009 | Leaderboard UI | M3 | P1-008, P1-006 | None | P1-010 | Todo |
 | P1-010 | Production Deployment | M6 | All Tasks | None | Phase 1 Sign-Off | Todo |
 
 ## 20. Phase 1 Sign-Off Checklist
