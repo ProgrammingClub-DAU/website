@@ -102,7 +102,7 @@ Stage 0 completed.
 
 ### Detailed Tasks
 *   **Task P1-S1-01 (Member 1):** Run `npx create-next-app@latest frontend`. Configure `tailwind.config.ts` with CP-theme colors. Build layout shell (Navbar, Footer).
-*   **Task P1-S1-02 (Member 4):** Generate Spring Boot project. Configure `application.yml` for Postgres. Create `User.java` JPA entity.
+*   **Task P1-S1-02 (Member 4):** Generate Spring Boot project. Configure `application.yml` for Postgres. Create `User.java` JPA entity (including a `Role` enum for `ROLE_USER` and `ROLE_ADMIN`).
 *   **Task P1-S1-03 (Member 6):** Add `springdoc-openapi` dependency to Spring Boot for automatic Swagger generation.
 
 ### Validation
@@ -137,7 +137,7 @@ Stage 1 merged to `main`.
 ### Detailed Tasks
 *   **Task P1-S2-01 (Member 2):** Build `/login` and `/register` Next.js pages using `react-hook-form` and `zod`. Print to `console.log` on submit.
 *   **Task P1-S2-02 (Member 3):** Build `/profile` and `/members` pages using mock JSON data.
-*   **Task P1-S2-03 (Member 4):** Implement `JwtUtils`, `JwtAuthenticationFilter`, and `AuthController` (`/register`, `/login`).
+*   **Task P1-S2-03 (Member 4):** Implement `JwtUtils`, `JwtAuthenticationFilter`, and `AuthController` (`/register`, `/login`). Ensure the JWT payload securely embeds the user's role (Admin vs Normal).
 *   **Task P1-S2-04 (Member 5):** Create `UserController` and `UserService` for `GET /api/users` and `PUT /api/users/{id}/handles`. Create `UserResponseDto`.
 
 ### Validation
@@ -173,7 +173,7 @@ Member 3 → Connect Profile & Member Directory
 Member 6 → Cross-Origin (CORS) Verification
 
 ### Detailed Tasks
-*   **Task P1-S3-01 (Member 2):** Create `src/lib/axios.ts` interceptor to attach JWT. Connect forms to `POST /api/auth/*`. Setup `zustand` to hold `user` state.
+*   **Task P1-S3-01 (Member 2):** Create `src/lib/axios.ts` interceptor to attach JWT. Connect forms to `POST /api/auth/*`. Setup `zustand` to hold `user` state (including the user's role to toggle Admin UI).
 *   **Task P1-S3-02 (Member 3):** Swap mock data with `axios.get('/api/users')`. Render real database profiles.
 *   **Task P1-S3-03 (Member 6):** Ensure Spring Boot CORS configuration allows `localhost:3000`.
 
@@ -322,8 +322,8 @@ Feature complete. Proceed to final deployment.
 **Responsibilities:** Spring Security, JWT, Auth Controllers.
 **Execution Order:** Stage 1 → Stage 2
 **Tasks:**
-1. Create `User` Entity.
-2. Setup `SecurityFilterChain`.
+1. Create `User` Entity (with `ROLE_USER` / `ROLE_ADMIN`).
+2. Setup `SecurityFilterChain` (restrict certain endpoints to Admins).
 3. Implement `JwtUtils`.
 4. Create `POST /register` and `POST /login`.
 **Validation:** Hit endpoints with Postman.
