@@ -8,11 +8,7 @@ out/
 
 # Java / Spring Boot
 target/
-*.jar
 *.war
-.mvn/
-!/.mvn/wrapper/maven-wrapper.jar
-!/.mvn/wrapper/maven-wrapper.properties
 .idea/
 *.iml
 .vscode/
