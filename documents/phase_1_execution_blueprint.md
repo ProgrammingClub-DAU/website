@@ -251,7 +251,7 @@ Phase 1
 - [ ] Review and merge all PRs daily.
 - [ ] Checkout `feature/M6-cf-sync`
 - [ ] Implement `@Scheduled` Codeforces API fetcher
-- [ ] Configure Render and Vercel deployments
+- [x] Configure Render and Vercel deployments
 
 ## 19. Master Task Tracker
 
@@ -266,7 +266,7 @@ Phase 1
 | P1-007 | Profile & Members UI | M3 | P1-001, P1-005, P1-006 | P1-008 | P1-010 | Todo |
 | P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | Todo |
 | P1-009 | Leaderboard UI | M3 | P1-008, P1-006 | None | P1-010 | Todo |
-| P1-010 | Production Deployment | M6 | All Tasks | None | Phase 1 Sign-Off | Todo |
+| P1-010 | Production Deployment | M6 | All Tasks | None | Phase 1 Sign-Off | **Done** |
 
 ## 20. Phase 1 Sign-Off Checklist
 *   [ ] All `Todo` items in Master Task Tracker are complete.
