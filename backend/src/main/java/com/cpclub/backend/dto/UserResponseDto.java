@@ -2,11 +2,7 @@ package com.cpclub.backend.dto;
 
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -26,9 +22,7 @@ public class UserResponseDto {
     private LocalDateTime createdAt;
 
     public static UserResponseDto fromEntity(User user) {
-        if (user == null) {
-            return null;
-        }
+        if (user == null) return null;
         return UserResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())

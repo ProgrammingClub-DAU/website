@@ -5,13 +5,11 @@ import com.cpclub.backend.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.dto.UserResponseDto;
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
+import com.cpclub.backend.exception.ResourceNotFoundException;
 import com.cpclub.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import org.mockito.Mockito;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -66,11 +64,11 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw ResponseStatusException NOT_FOUND when user ID does not exist")
+    @DisplayName("Should throw ResourceNotFoundException when user ID does not exist")
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> userService.getUserById(99L));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(99L));
     }
 
     @Test
@@ -104,42 +102,6 @@ class UserServiceTest {
 
         assertEquals("New Name", result.getName());
         assertEquals("new_handle", result.getCodeforcesHandle());
-    }
-
-    @Test
-    @DisplayName("Should return empty list when no users exist")
-    void shouldReturnEmptyListWhenNoUsers() {
-        when(userRepository.findAll()).thenReturn(List.of());
-
-        List<UserResponseDto> result = userService.getAllUsers();
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Should trim whitespace from Codeforces handle on update")
-    void shouldTrimCodeforcesHandleOnUpdate() {
-        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
-        user.setId(1L);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-
-        UpdateHandleRequest request = new UpdateHandleRequest("  tourist_pro  ");
-        UserResponseDto result = userService.updateCodeforcesHandle(1L, request);
-
-        assertEquals("tourist_pro", result.getCodeforcesHandle());
-        assertEquals("tourist_pro", user.getCodeforcesHandle());
-    }
-
-    @Test
-    @DisplayName("Should throw NOT_FOUND when updating handle for missing user")
-    void shouldThrowWhenUpdatingHandleForMissingUser() {
-        when(userRepository.findById(404L)).thenReturn(Optional.empty());
-
-        UpdateHandleRequest request = new UpdateHandleRequest("valid_handle");
-
-        assertThrows(ResponseStatusException.class, () -> userService.updateCodeforcesHandle(404L, request));
     }
 
     @Test

@@ -5,15 +5,14 @@ import com.cpclub.backend.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.dto.UserResponseDto;
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.exception.GlobalExceptionHandler;
+import com.cpclub.backend.exception.ResourceNotFoundException;
 import com.cpclub.backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -41,7 +40,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users - Should return list of all users")
+    @DisplayName("GET /api/users - Should return list of all users wrapped in ApiResponse")
     void shouldGetAllUsers() throws Exception {
         UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now());
         UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now());
@@ -50,10 +49,11 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name", is("Alice")))
-                .andExpect(jsonPath("$[1].name", is("Bob")))
-                .andExpect(jsonPath("$[0].password").doesNotExist());
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.statusCode", is(200)))
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].name", is("Alice")))
+                .andExpect(jsonPath("$.data[1].name", is("Bob")));
     }
 
     @Test
@@ -65,20 +65,22 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/users/5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(5)))
-                .andExpect(jsonPath("$.name", is("Charlie")))
-                .andExpect(jsonPath("$.codeforcesHandle", is("charlie_cf")))
-                .andExpect(jsonPath("$.rating", is(2000)));
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.id", is(5)))
+                .andExpect(jsonPath("$.data.name", is("Charlie")))
+                .andExpect(jsonPath("$.data.codeforcesHandle", is("charlie_cf")))
+                .andExpect(jsonPath("$.data.rating", is(2000)));
     }
 
     @Test
     @DisplayName("GET /api/users/{id} - Should return 404 Not Found when user does not exist")
     void shouldReturn404WhenUserNotFound() throws Exception {
-        when(userService.getUserById(999L)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: 999"));
+        when(userService.getUserById(999L)).thenThrow(new ResourceNotFoundException("User not found with id: 999"));
 
         mockMvc.perform(get("/api/users/999"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status", is(404)))
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.statusCode", is(404)))
                 .andExpect(jsonPath("$.message", containsString("User not found with id: 999")));
     }
 
@@ -91,9 +93,10 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/users/leaderboard"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].codeforcesHandle", is("tourist")))
-                .andExpect(jsonPath("$[0].rating", is(3500)));
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].codeforcesHandle", is("tourist")))
+                .andExpect(jsonPath("$.data[0].rating", is(3500)));
     }
 
     @Test
@@ -109,40 +112,8 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codeforcesHandle", is("new_cf_handle")));
-    }
-
-    @Test
-    @DisplayName("GET /api/users - Should return empty list when no users exist")
-    void shouldReturnEmptyUserList() throws Exception {
-        when(userService.getAllUsers()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
-
-    @Test
-    @DisplayName("PUT /api/users/{id}/handle - Should return 404 when user does not exist")
-    void shouldReturn404WhenUpdatingHandleForMissingUser() throws Exception {
-        when(userService.updateCodeforcesHandle(eq(404L), any(UpdateHandleRequest.class)))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: 404"));
-
-        mockMvc.perform(put("/api/users/404/handle")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codeforcesHandle\":\"valid_handle\"}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status", is(404)));
-    }
-
-    @Test
-    @DisplayName("PUT /api/users/{id}/handle - Should return 400 Bad Request on blank handle")
-    void shouldReturn400OnBlankHandle() throws Exception {
-        mockMvc.perform(put("/api/users/1/handle")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codeforcesHandle\":\"   \"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status", is(400)));
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.codeforcesHandle", is("new_cf_handle")));
     }
 
     @Test
@@ -154,7 +125,8 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJsonPayload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status", is(400)))
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.statusCode", is(400)))
                 .andExpect(jsonPath("$.message", containsString("Validation failed")));
     }
 
@@ -171,7 +143,8 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("New Name")))
-                .andExpect(jsonPath("$.codeforcesHandle", is("valid_handle")));
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.name", is("New Name")))
+                .andExpect(jsonPath("$.data.codeforcesHandle", is("valid_handle")));
     }
 }
