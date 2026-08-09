@@ -238,14 +238,14 @@ Phase 1
 
 ### Member 4 Checklist
 - [ ] Checkout `feature/M4-security`
-- [ ] Build `User` entity with Roles
+- [x] Build `User` entity with Roles *(Done by M5)*
 - [ ] Build `JwtUtils` and `SecurityFilterChain`
 - [ ] Open PR, request Member 6 review
 
 ### Member 5 Checklist
-- [ ] Checkout `feature/M5-data-apis` (Wait for Member 4's `User.java`)
-- [ ] Build `UserResponseDto` and `UserController`
-- [ ] Open PR, request Member 6 review
+- [x] Checkout `feature/M5-data-apis` (Wait for Member 4's `User.java`)
+- [x] Build `UserResponseDto` and `UserController`
+- [x] Open PR, request Member 6 review
 
 ### Member 6 Checklist (Leader)
 - [ ] Review and merge all PRs daily.
@@ -258,11 +258,11 @@ Phase 1
 | ID | Task | Owner | Depends On | Parallel With | Blocks | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | P1-001 | Build UI Layout Shell | M1 | None | P1-002, P1-004 | P1-007 | **Done** |
-| P1-002 | `User` Entity & JPA Repo | M4 | None | P1-001, P1-004 | P1-003, P1-006, P1-008 | Todo |
+| P1-002 | `User` Entity & JPA Repo | M4 *(Done by M5)* | None | P1-001, P1-004 | P1-003, P1-006, P1-008 | **Done** |
 | P1-003 | Auth APIs & JWT Config | M4 | P1-002 | P1-004 | P1-005 | Todo |
 | P1-004 | React Auth Forms (Mock) | M2 | None | P1-001, P1-002 | P1-005 | Todo |
 | P1-005 | Auth Integration (Axios/Zustand) | M2 | P1-003, P1-004 | None | P1-007 | Todo |
-| P1-006 | Data APIs & DTOs | M5 | P1-002 | P1-008 | P1-007, P1-009 | Todo |
+| P1-006 | Data APIs & DTOs | M5 | P1-002 | P1-008 | P1-007, P1-009 | **Done** |
 | P1-007 | Profile & Members UI | M3 | P1-001, P1-005, P1-006 | P1-008 | P1-010 | Todo |
 | P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | Todo |
 | P1-009 | Leaderboard UI | M3 | P1-008, P1-006 | None | P1-010 | Todo |
