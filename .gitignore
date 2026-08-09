@@ -16,3 +16,7 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code (personal local config, not shared with team)
+/.claude/
+/CLAUDE.md

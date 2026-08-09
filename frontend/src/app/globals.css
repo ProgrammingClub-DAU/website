@@ -1,26 +1,310 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+  --font-heading: var(--font-geist-sans);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-glass: var(--glass);
+  --color-glass-hi: var(--glass-hi);
+
+  --color-cf-newbie: var(--cf-newbie);
+  --color-cf-pupil: var(--cf-pupil);
+  --color-cf-specialist: var(--cf-specialist);
+  --color-cf-expert: var(--cf-expert);
+  --color-cf-candidate: var(--cf-candidate);
+  --color-cf-master: var(--cf-master);
+  --color-cf-grandmaster: var(--cf-grandmaster);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  /* Theme-aware: a fixed dark shadow blooms black over the light palette. */
+  --shadow-panel: var(--shadow-panel-color);
+
+  --animate-rise: rise 0.6s ease both;
+  --animate-pulse-ring: pulse-ring 2.4s ease-in-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pulse-ring {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 var(--primary-soft);
+    }
+    50% {
+      box-shadow: 0 0 0 5px var(--primary-soft);
+    }
+  }
+  /* One dot travelling the whole route — down the spine and out along the
+     branch — then idling until the next batch leaves the head. */
+  @keyframes dot-run {
+    0% {
+      offset-distance: 0%;
+      opacity: 0;
+    }
+    4% {
+      opacity: 1;
+    }
+    32% {
+      opacity: 1;
+    }
+    38% {
+      offset-distance: 100%;
+      opacity: 0;
+    }
+    100% {
+      offset-distance: 100%;
+      opacity: 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Light theme. Dark is the designed default, but both are supported. */
+:root {
+  --radius: 0.625rem;
+
+  --background: #ffffff;
+  --foreground: #08090a;
+  --surface: #fbfbfc;
+  --surface-2: #f1f2f4;
+  --surface-3: #f6f7f8;
+
+  --hairline: rgb(9 10 12 / 0.07);
+  --hairline-strong: rgb(9 10 12 / 0.22);
+  --border: rgb(9 10 12 / 0.12);
+  --input: rgb(9 10 12 / 0.12);
+
+  --fg-muted: #6b7075;
+  --fg-subtle: #5f646b;
+
+  --primary: #5e6ad2;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4c56c0;
+  --primary-soft: rgb(94 106 210 / 0.1);
+  --ring: #5e6ad2;
+
+  --glass: rgb(94 106 210 / 0.07);
+  --glass-hi: rgb(255 255 255 / 1);
+
+  --card: #fbfbfc;
+  --card-foreground: #08090a;
+  --popover: #ffffff;
+  --popover-foreground: #08090a;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #08090a;
+  --muted: #f1f2f4;
+  --muted-foreground: #6b7075;
+  --accent: #f1f2f4;
+  --accent-foreground: #08090a;
+  --destructive: #dc2626;
+
+  --cf-newbie: #75797e;
+  --cf-pupil: #1e9e4a;
+  --cf-specialist: #00868b;
+  --cf-expert: #2a5fe0;
+  --cf-candidate: #9333c4;
+  --cf-master: #d97706;
+  --cf-grandmaster: #dc2626;
+
+  --nav-bg: rgb(255 255 255 / 0.78);
+  --band: linear-gradient(180deg, #f6f7f8, #ffffff);
+  --shadow-panel-color: 0 20px 50px -24px rgb(9 10 12 / 0.18);
+}
+
+.dark {
+  --background: #08090a;
+  --foreground: #f7f8f8;
+  --surface: #111113;
+  --surface-2: #18191b;
+  --surface-3: #131315;
+
+  --hairline: rgb(255 255 255 / 0.08);
+  --hairline-strong: rgb(255 255 255 / 0.24);
+  --border: rgb(255 255 255 / 0.13);
+  --input: rgb(255 255 255 / 0.13);
+
+  --fg-muted: #8a8f98;
+  /* Carries 10–11px label text sitewide, so it has to clear WCAG AA (4.5:1)
+     on both --background and --surface. #62666d only reached 3.4:1. */
+  --fg-subtle: #7a7f87;
+
+  --primary: #5e6ad2;
+  --primary-foreground: #f7f8f8;
+  --primary-hover: #7075e0;
+  --primary-soft: rgb(94 106 210 / 0.16);
+  --ring: #5e6ad2;
+
+  --glass: rgb(255 255 255 / 0.055);
+  --glass-hi: rgb(255 255 255 / 0.14);
+
+  --card: #111113;
+  --card-foreground: #f7f8f8;
+  --popover: #111113;
+  --popover-foreground: #f7f8f8;
+  --secondary: #18191b;
+  --secondary-foreground: #f7f8f8;
+  --muted: #18191b;
+  --muted-foreground: #8a8f98;
+  --accent: #18191b;
+  --accent-foreground: #f7f8f8;
+  --destructive: #ff4d4d;
+
+  --cf-newbie: #9ba1a6;
+  --cf-pupil: #3fbf5f;
+  --cf-specialist: #00c2c7;
+  --cf-expert: #4c7dff;
+  --cf-candidate: #c066e0;
+  --cf-master: #ff9f45;
+  --cf-grandmaster: #ff4d4d;
+
+  --nav-bg: rgb(8 9 10 / 0.72);
+  --band: linear-gradient(180deg, #0b0c0e, #08090a);
+  --shadow-panel-color: 0 24px 60px -20px rgb(0 0 0 / 0.8);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background: var(--primary-soft);
+  }
+}
+
+/*
+ * Timeline hover cascade.
+ *
+ * Hovering a card lights the spine from the year head all the way down to that
+ * card, not just its own branch. `:has(~ .tl-entry:hover)` matches every entry
+ * that has the hovered one as a later sibling — CSS has no previous-sibling
+ * combinator, so this is what makes "everything above" selectable.
+ *
+ * Each segment carries a batch of pulses (staggered by --tl-d) and each entry
+ * offsets the batch further by its index (--tl-i), so a batch reads as one
+ * pulse descending the spine before firing into the hovered card.
+ */
+@layer components {
+  /* Set here rather than via a `bg-*` utility: utilities outrank the
+     components layer, so a Tailwind class would win over the hover rule. */
+  .tl-spine,
+  .tl-head {
+    background: var(--border);
+    transition: background-color 0.2s ease;
+  }
+
+  /* Entries above the hovered one carry the path through their full height;
+     the hovered entry only lights down as far as its own branch. */
+  .tl-entry:has(~ .tl-entry:hover) .tl-spine,
+  .tl-entry:hover .tl-spine-top,
+  .tl-group:has(.tl-entry:hover) .tl-head {
+    background: var(--primary);
+  }
+
+  /*
+   * A crisp dot riding the route, not a glow — a large blur reads as a smear,
+   * especially on light backgrounds, so the ring gives it presence instead.
+   *
+   * Position comes from `offset-path` (set on hover in JS) driving
+   * `offset-distance`, which the compositor can run without laying out a
+   * frame. Animating `top` here would force layout on every frame.
+   */
+  .tl-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+    offset-anchor: center;
+    offset-rotate: 0deg;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tl-group:has(.tl-entry:hover) .tl-dot {
+    animation: dot-run var(--tl-cycle) linear infinite;
+    animation-delay: var(--tl-d);
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Frosted panel — the prototype's signature surface for hero cards and CTAs. */
+@utility glass-panel {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-top-color: var(--glass-hi);
+  box-shadow: var(--shadow-panel-color);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
