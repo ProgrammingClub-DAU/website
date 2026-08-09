@@ -5,29 +5,26 @@ import com.cpclub.backend.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.dto.UserResponseDto;
 import com.cpclub.backend.entity.User;
 import com.cpclub.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     public List<UserResponseDto> getAllUsers() {
         return userRepository.findAll()
                 .stream()
                 .map(UserResponseDto::fromEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UserResponseDto getUserById(Long id) {
@@ -40,7 +37,7 @@ public class UserService {
         return userRepository.findAllByOrderByRatingDesc()
                 .stream()
                 .map(UserResponseDto::fromEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
