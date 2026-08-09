@@ -29,6 +29,37 @@ To develop, integrate, test, and deploy a functional, production-ready Minimum V
 *   **Git:** Repository initialized, root `.gitignore` and `README.md` created, and all boilerplate committed to `main` branch.
 *   **Missing for Phase 1:** All actual business logic, UI components, API endpoints, database entities, and external API integrations are unwritten and ready for development.
 
+## 4.1 Database Design (Phase 1)
+
+> **Owner: Member 4** (Backend Security)
+
+In Phase 1 there is **exactly one table**. Member 4 defines it as a JPA entity (`User.java`) and Hibernate auto-creates the table when the Spring Boot application starts.
+
+### `users` table
+
+| Column | Type | Constraint | Notes |
+| :--- | :--- | :--- | :--- |
+| `id` | `BIGINT` | PRIMARY KEY, AUTO_INCREMENT | |
+| `name` | `VARCHAR(255)` | NOT NULL | |
+| `email` | `VARCHAR(255)` | NOT NULL, UNIQUE | Used for login |
+| `password` | `VARCHAR(255)` | NOT NULL | Stored as BCrypt hash — NEVER plaintext |
+| `codeforces_handle` | `VARCHAR(100)` | NULLABLE | Set by user after registration |
+| `rating` | `INTEGER` | NULLABLE | Written by Member 6's cron job |
+| `role` | `VARCHAR(50)` | NOT NULL, DEFAULT 'ROLE_USER' | Either `ROLE_USER` or `ROLE_ADMIN` |
+| `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() | Auto-managed by `@CreatedDate` (Spring JPA Auditing) |
+| `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() | Auto-managed by `@LastModifiedDate` (Spring JPA Auditing) |
+
+### Who touches the DB in Phase 1?
+
+| Member | DB Role | Action |
+| :--- | :--- | :--- |
+| **Member 4** | Schema Owner | Creates `User.java` entity — defines all columns |
+| **Member 5** | Query Writer | Writes `UserRepository` methods (`findByEmail`, `findAll`, etc.) |
+| **Member 6** | Data Writer | Cron job updates the `rating` column from Codeforces API |
+| **Member 1, 2, 3** | No DB access | Frontend only — never touch the database directly |
+
+> **Note:** No other tables are created in Phase 1. Tables for blogs, events, and contests belong to Phases 2, 3, and 4.
+
 ## 5. Team & Ownership
 
 | Member | Phase 1 Role | Owns | Depends On | Blocks | Deliverables |
