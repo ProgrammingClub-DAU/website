@@ -249,8 +249,8 @@ Phase 1
 
 ### Member 6 Checklist (Leader)
 - [ ] Review and merge all PRs daily.
-- [ ] Checkout `feature/M6-cf-sync`
-- [ ] Implement `@Scheduled` Codeforces API fetcher
+- [x] Checkout `feature/M6-cf-sync`
+- [x] Implement `@Scheduled` Codeforces API fetcher
 - [x] Configure Render and Vercel deployments
 
 ## 19. Master Task Tracker
@@ -264,7 +264,7 @@ Phase 1
 | P1-005 | Auth Integration (Axios/Zustand) | M2 | P1-003, P1-004 | None | P1-007 | Todo |
 | P1-006 | Data APIs & DTOs | M5 | P1-002 | P1-008 | P1-007, P1-009 | **Done** |
 | P1-007 | Profile & Members UI | M3 | P1-001, P1-005, P1-006 | P1-008 | P1-010 | Todo |
-| P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | Todo |
+| P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | **Done** |
 | P1-009 | Leaderboard UI | M3 | P1-008, P1-006 | None | P1-010 | Todo |
 | P1-010 | Production Deployment | M6 | All Tasks | None | Phase 1 Sign-Off | **Done** |
 
