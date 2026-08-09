@@ -30,8 +30,13 @@ export const apiClient = {
   getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve([
-        { id: "1", rank: 1, handle: "tourist", cfRank: "grandmaster", rating: 3800, solvedCount: 5000 },
-        { id: "2", rank: 2, handle: "benq", cfRank: "grandmaster", rating: 3750, solvedCount: 4500 }
+        { id: "1", rank: 1, handle: "Sumeet.Verma", cfRank: "grandmaster", rating: 2502, solvedCount: 5000 },
+        { id: "2", rank: 2, handle: "Preet Sheth", cfRank: "master", rating: 2210, solvedCount: 4220 },
+        { id: "3", rank: 3, handle: "Jalp Patel", cfRank: "candidate", rating: 1990, solvedCount: 3822},
+        { id: "4", rank: 6, handle: "King-T", cfRank: "expert", rating: 1639, solvedCount: 2379},
+        { id: "5", rank: 10, handle: "Alice", cfRank: "specialist", rating: 1447, solvedCount: 2009},
+        { id: "6", rank: 15, handle: "XYZ", cfRank: "pupil", rating: 1218, solvedCount: 1210},
+        { id: "7", rank: 90, handle: "Binod", cfRank: "newbie", rating: 818, solvedCount: 933}
       ]), 500));
     }
     const response = await api.get<LeaderboardEntry[]>("/leaderboard");
