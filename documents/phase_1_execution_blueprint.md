@@ -217,10 +217,10 @@ Phase 1
 ## 18. Member-Wise Checklists
 
 ### Member 1 Checklist
-- [ ] Checkout `feature/M1-layout`
-- [ ] Configure `tailwind.config.ts`
-- [ ] Build `<Navbar>` and `<Footer>`
-- [ ] Open PR, request Member 6 review
+- [x] Checkout `feature/M1-layout`
+- [x] Configure `tailwind.config.ts` / CSS theme
+- [x] Build `<Navbar>` and `<Footer>`
+- [x] Open PR, request Member 6 review
 
 ### Member 2 Checklist
 - [ ] Checkout `feature/M2-auth-forms`
@@ -257,7 +257,7 @@ Phase 1
 
 | ID | Task | Owner | Depends On | Parallel With | Blocks | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| P1-001 | Build UI Layout Shell | M1 | None | P1-002, P1-004 | P1-007 | Todo |
+| P1-001 | Build UI Layout Shell | M1 | None | P1-002, P1-004 | P1-007 | **Done** |
 | P1-002 | `User` Entity & JPA Repo | M4 | None | P1-001, P1-004 | P1-003, P1-006, P1-008 | Todo |
 | P1-003 | Auth APIs & JWT Config | M4 | P1-002 | P1-004 | P1-005 | Todo |
 | P1-004 | React Auth Forms (Mock) | M2 | None | P1-001, P1-002 | P1-005 | Todo |
