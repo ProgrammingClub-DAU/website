@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
 import { apiClient } from "@/lib/api-client";
+import { rankColor } from "@/lib/cf-ranks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -30,16 +31,28 @@ export default async function LeaderboardPage() {
           {leaderboard.map((entry) => (
             <Card key={entry.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  #{entry.rank} - {entry.handle}
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <span className="text-fg-muted">#{entry.rank}</span>
+                  <span
+                    className="font-bold"
+                    style={{ color: rankColor(entry.cfRank) }}
+                  >
+                    {entry.handle}
+                  </span>
                 </CardTitle>
-                <div className="text-sm text-fg-muted">
+                <div 
+                  className="text-sm capitalize px-2 py-0.5 rounded-full border border-border"
+                  style={{ color: rankColor(entry.cfRank), borderColor: rankColor(entry.cfRank) }}
+                >
                   {entry.cfRank}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{entry.rating} Rating</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-bold">{entry.rating}</div>
+                  <div className="text-sm text-fg-muted">Rating</div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
                   {entry.solvedCount} problems solved
                 </p>
               </CardContent>
