@@ -3,6 +3,7 @@ package com.cpclub.backend.dto;
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseDto {
@@ -27,14 +29,14 @@ public class UserResponseDto {
         if (user == null) {
             return null;
         }
-        return new UserResponseDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCodeforcesHandle(),
-                user.getRating(),
-                user.getRole(),
-                user.getCreatedAt()
-        );
+        return UserResponseDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .codeforcesHandle(user.getCodeforcesHandle())
+                .rating(user.getRating())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 }
