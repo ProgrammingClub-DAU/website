@@ -46,6 +46,8 @@ In Phase 1 there is **exactly one table**. Member 4 defines it as a JPA entity (
 | `codeforces_handle` | `VARCHAR(100)` | NULLABLE | Set by user after registration |
 | `rating` | `INTEGER` | NULLABLE | Written by Member 6's cron job |
 | `role` | `VARCHAR(50)` | NOT NULL, DEFAULT 'ROLE_USER' | Either `ROLE_USER` or `ROLE_ADMIN` |
+| `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() | Auto-managed by `@CreatedDate` (Spring JPA Auditing) |
+| `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() | Auto-managed by `@LastModifiedDate` (Spring JPA Auditing) |
 
 ### Who touches the DB in Phase 1?
 
