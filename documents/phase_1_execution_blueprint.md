@@ -230,10 +230,10 @@ Phase 1
 - [ ] Open PR, request Member 6 review
 
 ### Member 3 Checklist
-- [ ] Checkout `feature/M3-dashboards`
-- [ ] Build UI for Profile using mock data
-- [ ] Wait for Member 5's APIs
-- [ ] Connect Profile and Leaderboard to Axios
+- [ ] Checkout `feature/M3-leaderboard`
+- [ ] Implement Leaderboard UI with Codeforces ratings
+- [ ] Implement Profile & Members UI (Blocked by Auth)
+- [ ] Add static Events & HOF data to frontend / Register test members
 - [ ] Open PR, request Member 6 review
 
 ### Member 4 Checklist
@@ -267,6 +267,7 @@ Phase 1
 | P1-008 | Codeforces Cron Sync | M6 | P1-002 | P1-006, P1-007 | P1-009 | **Done** |
 | P1-009 | Leaderboard UI | M3 | P1-008, P1-006 | None | P1-010 | Todo |
 | P1-010 | Production Deployment | M6 | All Tasks | None | Phase 1 Sign-Off | **Done** |
+| P1-011 | Add Static Content & Test Data | M3 | P1-006, P1-010 | None | Phase 1 Sign-Off | Todo |
 
 ## 20. Phase 1 Sign-Off Checklist
 *   [ ] All `Todo` items in Master Task Tracker are complete.
