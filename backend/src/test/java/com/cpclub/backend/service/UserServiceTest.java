@@ -107,6 +107,42 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Should return empty list when no users exist")
+    void shouldReturnEmptyListWhenNoUsers() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserResponseDto> result = userService.getAllUsers();
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should trim whitespace from Codeforces handle on update")
+    void shouldTrimCodeforcesHandleOnUpdate() {
+        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
+        user.setId(1L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        UpdateHandleRequest request = new UpdateHandleRequest("  tourist_pro  ");
+        UserResponseDto result = userService.updateCodeforcesHandle(1L, request);
+
+        assertEquals("tourist_pro", result.getCodeforcesHandle());
+        assertEquals("tourist_pro", user.getCodeforcesHandle());
+    }
+
+    @Test
+    @DisplayName("Should throw NOT_FOUND when updating handle for missing user")
+    void shouldThrowWhenUpdatingHandleForMissingUser() {
+        when(userRepository.findById(404L)).thenReturn(Optional.empty());
+
+        UpdateHandleRequest request = new UpdateHandleRequest("valid_handle");
+
+        assertThrows(ResponseStatusException.class, () -> userService.updateCodeforcesHandle(404L, request));
+    }
+
+    @Test
     @DisplayName("Should fetch leaderboard ordered by rating descending")
     void shouldGetLeaderboard() {
         User u1 = new User("High Rated", "h@example.com", "p", Role.ROLE_USER);
