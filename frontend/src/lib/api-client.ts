@@ -30,8 +30,8 @@ export const apiClient = {
   getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve([
-        { id: "1", rank: 1, handle: "tourist", cfRank: "legendary grandmaster", rating: 3800, solvedCount: 5000 },
-        { id: "2", rank: 2, handle: "benq", cfRank: "legendary grandmaster", rating: 3750, solvedCount: 4500 }
+        { id: "1", rank: 1, handle: "tourist", cfRank: "grandmaster", rating: 3800, solvedCount: 5000 },
+        { id: "2", rank: 2, handle: "benq", cfRank: "grandmaster", rating: 3750, solvedCount: 4500 }
       ]), 500));
     }
     const response = await api.get<LeaderboardEntry[]>("/leaderboard");
