@@ -113,6 +113,39 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/users - Should return empty list when no users exist")
+    void shouldReturnEmptyUserList() throws Exception {
+        when(userService.getAllUsers()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/{id}/handle - Should return 404 when user does not exist")
+    void shouldReturn404WhenUpdatingHandleForMissingUser() throws Exception {
+        when(userService.updateCodeforcesHandle(eq(404L), any(UpdateHandleRequest.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: 404"));
+
+        mockMvc.perform(put("/api/users/404/handle")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codeforcesHandle\":\"valid_handle\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status", is(404)));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/{id}/handle - Should return 400 Bad Request on blank handle")
+    void shouldReturn400OnBlankHandle() throws Exception {
+        mockMvc.perform(put("/api/users/1/handle")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codeforcesHandle\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is(400)));
+    }
+
+    @Test
     @DisplayName("PUT /api/users/{id}/handle - Should return 400 Bad Request on invalid handle format")
     void shouldReturn400OnInvalidHandleFormat() throws Exception {
         String invalidJsonPayload = "{\"codeforcesHandle\":\"a!\"}";
