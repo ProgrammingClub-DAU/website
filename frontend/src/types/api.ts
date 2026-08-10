@@ -12,6 +12,15 @@ export interface Member {
   role: string;
   cf: CfRankKey;
   about: string;
+  codeforcesHandle?: string;
+  rating?: number;
+  solvedCount?: number;
+  contestCount?: number;
+  avatarUrl?: string | null;
+  isActive?: boolean;
+  degree?: string;
+  gradYear?: string;
+  clubRoleCategory?: "Leadership" | "Core" | "Associate Core" | "Batch Representative" | "Student Participant";
 }
 
 export interface RatingHistoryEntry {

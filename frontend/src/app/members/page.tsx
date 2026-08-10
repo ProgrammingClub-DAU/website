@@ -22,16 +22,15 @@ export default async function MembersPage() {
       <Section className="pt-16 pb-10 md:pt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow>Members</Eyebrow>
+            <Eyebrow>Community Directory</Eyebrow>
             <h1 className="mt-6 text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
-              The directory.
+              OUR COMMUNITY.
             </h1>
           </div>
           <SampleBadge />
         </div>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          Who is in the club and what they look after. Each member writes their own short
-          note.
+          The people building the programming culture at DAU.
         </p>
       </Section>
 
