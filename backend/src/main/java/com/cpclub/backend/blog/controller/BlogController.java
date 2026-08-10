@@ -17,6 +17,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for the club's content management system.
+ * Provides public read access to published articles and admin-only write operations.
+ * Slugs are auto-generated from titles to support SEO-friendly URLs.
+ */
 @RestController
 @RequestMapping("/api/blogs")
 @RequiredArgsConstructor
@@ -25,6 +30,13 @@ public class BlogController {
 
     private final BlogService blogService;
 
+    /**
+     * Retrieves paginated list of published blog posts, ordered by recency.
+     *
+     * @param page zero-indexed page number
+     * @param size number of items per page
+     * @return paginated blog post summaries
+     */
     @GetMapping
     @Operation(summary = "Get published blog posts (paginated)")
     public ResponseEntity<ApiResponse<PagedResponse<BlogResponseDto>>> getPublishedBlogs(
@@ -35,6 +47,12 @@ public class BlogController {
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched blog posts successfully"));
     }
 
+    /**
+     * Fetches a single blog post by its database ID.
+     *
+     * @param id blog post primary key
+     * @return full blog post details
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get blog post by ID")
     public ResponseEntity<ApiResponse<BlogResponseDto>> getBlogById(@PathVariable Long id) {
@@ -42,6 +60,13 @@ public class BlogController {
         return ResponseEntity.ok(ApiResponse.success(blog, "Fetched blog post successfully"));
     }
 
+    /**
+     * Fetches a single blog post by its URL-friendly slug.
+     * Used by the frontend for SEO-friendly routing.
+     *
+     * @param slug URL-friendly identifier derived from the post title
+     * @return full blog post details
+     */
     @GetMapping("/slug/{slug}")
     @Operation(summary = "Get blog post by slug")
     public ResponseEntity<ApiResponse<BlogResponseDto>> getBlogBySlug(@PathVariable String slug) {
@@ -49,6 +74,14 @@ public class BlogController {
         return ResponseEntity.ok(ApiResponse.success(blog, "Fetched blog post successfully"));
     }
 
+    /**
+     * Creates a new blog post. Restricted to administrators.
+     * Author defaults to the authenticated user's email if not explicitly provided.
+     *
+     * @param request validated blog creation payload
+     * @param userDetails injected authentication principal
+     * @return the newly created blog post with HTTP 201 status
+     */
     @PostMapping
     @Operation(summary = "Create a new blog post (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -62,6 +95,13 @@ public class BlogController {
                 .body(ApiResponse.success(created, "Blog post created successfully"));
     }
 
+    /**
+     * Updates an existing blog post by ID. Restricted to administrators.
+     *
+     * @param id blog post primary key
+     * @param request validated update payload
+     * @return the updated blog post details
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing blog post (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -73,6 +113,12 @@ public class BlogController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Blog post updated successfully"));
     }
 
+    /**
+     * Permanently deletes a blog post by ID. Restricted to administrators.
+     *
+     * @param id blog post primary key
+     * @return empty response body on success
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a blog post (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -81,3 +127,4 @@ public class BlogController {
         return ResponseEntity.ok(ApiResponse.success(null, "Blog post deleted successfully"));
     }
 }
+

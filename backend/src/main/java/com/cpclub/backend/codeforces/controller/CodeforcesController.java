@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Administrative REST entry point for on-demand Codeforces synchronization.
+ *
+ * <p>The regular scheduler keeps ratings current; this endpoint exists for an
+ * administrator to refresh data after resolving a provider issue or adding members.</p>
+ */
 @RestController
 @RequestMapping("/api/codeforces")
 @RequiredArgsConstructor
@@ -19,6 +25,11 @@ public class CodeforcesController {
 
     private final CodeforcesSyncService codeforcesSyncService;
 
+    /**
+     * Runs the Codeforces synchronization workflow immediately.
+     *
+     * @return confirmation wrapped in the platform's standard API response
+     */
     @PostMapping("/sync")
     @Operation(summary = "Manually trigger Codeforces ratings sync (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")

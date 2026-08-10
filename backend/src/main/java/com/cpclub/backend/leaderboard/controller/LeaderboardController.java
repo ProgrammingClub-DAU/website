@@ -10,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for retrieving member rankings based on synchronized Codeforces ratings.
+ * Open to public access without authentication.
+ */
 @RestController
 @RequestMapping("/api/leaderboard")
 @RequiredArgsConstructor
@@ -18,6 +22,14 @@ public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
 
+    /**
+     * Resolves paginated ranked listing of club members.
+     * Ranks are dynamically offset based on the requested page and size parameters.
+     *
+     * @param page zero-indexed page number
+     * @param size page size limit
+     * @return payload containing ordered ranking lists
+     */
     @GetMapping
     @Operation(summary = "Get ranked member leaderboard (paginated)")
     public ResponseEntity<ApiResponse<PagedResponse<LeaderboardResponseDto>>> getLeaderboard(
@@ -28,3 +40,4 @@ public class LeaderboardController {
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched leaderboard successfully"));
     }
 }
+

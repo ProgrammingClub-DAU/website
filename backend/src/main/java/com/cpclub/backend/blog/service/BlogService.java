@@ -19,6 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Service class managing blog post lifecycle operations including
+ * creation with auto-generated slugs, updates, deletion, and paginated reads.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,6 +30,13 @@ public class BlogService {
 
     private final BlogRepository blogRepository;
 
+    /**
+     * Retrieves published blog posts sorted by creation date descending.
+     *
+     * @param page zero-indexed page number
+     * @param size items per page
+     * @return paginated wrapper of published blog post DTOs
+     */
     @Transactional(readOnly = true)
     public PagedResponse<BlogResponseDto> getPublishedBlogs(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -45,6 +56,13 @@ public class BlogService {
         );
     }
 
+    /**
+     * Fetches a blog post by its database primary key.
+     *
+     * @param id blog post ID
+     * @return immutable blog post DTO
+     * @throws ResourceNotFoundException if ID does not exist
+     */
     @Transactional(readOnly = true)
     public BlogResponseDto getBlogById(Long id) {
         BlogPost post = blogRepository.findById(id)
@@ -52,6 +70,13 @@ public class BlogService {
         return BlogResponseDto.fromEntity(post);
     }
 
+    /**
+     * Fetches a blog post by its URL-friendly slug identifier.
+     *
+     * @param slug SEO-friendly URL slug
+     * @return immutable blog post DTO
+     * @throws ResourceNotFoundException if slug does not exist
+     */
     @Transactional(readOnly = true)
     public BlogResponseDto getBlogBySlug(String slug) {
         BlogPost post = blogRepository.findBySlug(slug)
@@ -59,10 +84,19 @@ public class BlogService {
         return BlogResponseDto.fromEntity(post);
     }
 
+    /**
+     * Creates a new blog post with an auto-generated slug from the title.
+     * If a slug collision occurs, appends a timestamp suffix to ensure uniqueness.
+     *
+     * @param request creation payload with title, content, tags
+     * @param defaultAuthor fallback author name from the authenticated principal
+     * @return the persisted blog post DTO
+     */
     @Transactional
     public BlogResponseDto createBlog(BlogCreateRequest request, String defaultAuthor) {
         String slug = generateSlug(request.title());
         if (blogRepository.existsBySlug(slug)) {
+            // Append timestamp to resolve slug collision
             slug = slug + "-" + System.currentTimeMillis();
         }
 
@@ -84,6 +118,14 @@ public class BlogService {
         return BlogResponseDto.fromEntity(saved);
     }
 
+    /**
+     * Updates an existing blog post's title, content, tags, and publish status.
+     *
+     * @param id blog post ID
+     * @param request update payload
+     * @return the updated blog post DTO
+     * @throws ResourceNotFoundException if ID does not exist
+     */
     @Transactional
     public BlogResponseDto updateBlog(Long id, BlogUpdateRequest request) {
         BlogPost post = blogRepository.findById(id)
@@ -103,6 +145,12 @@ public class BlogService {
         return BlogResponseDto.fromEntity(saved);
     }
 
+    /**
+     * Permanently deletes a blog post by ID.
+     *
+     * @param id blog post ID
+     * @throws ResourceNotFoundException if ID does not exist
+     */
     @Transactional
     public void deleteBlog(Long id) {
         if (!blogRepository.existsById(id)) {
@@ -112,6 +160,13 @@ public class BlogService {
         log.info("Deleted blog post ID {}", id);
     }
 
+    /**
+     * Generates a URL-friendly slug from a blog title by lowercasing,
+     * stripping special characters, and replacing whitespace with hyphens.
+     *
+     * @param title raw blog post title
+     * @return sanitized slug string
+     */
     private String generateSlug(String title) {
         return title.toLowerCase()
                 .replaceAll("[^a-z0-9\\s-]", "")
@@ -119,3 +174,4 @@ public class BlogService {
                 .replaceAll("-+", "-");
     }
 }
+

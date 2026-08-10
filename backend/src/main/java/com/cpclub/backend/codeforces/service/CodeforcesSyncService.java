@@ -15,6 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Synchronizes stored member ratings with the public Codeforces {@code user.info} API.
+ *
+ * <p>It batches all valid linked handles into one provider request to limit traffic,
+ * updates only matching rated accounts, and contains external failures so a Codeforces
+ * outage never interrupts the rest of the application or discards prior ratings.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,6 +32,12 @@ public class CodeforcesSyncService {
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
 
+    /**
+     * Performs the scheduled or administrator-triggered rating refresh.
+     *
+     * <p>Blank handles are excluded before the external call. Provider errors are logged
+     * and intentionally not rethrown because the next scheduled execution can retry.</p>
+     */
     @Scheduled(cron = "${cpclub.codeforces.sync-cron:0 0 */6 * * *}")
     @Transactional
     public void syncCodeforcesRatings() {
@@ -62,6 +75,7 @@ public class CodeforcesSyncService {
                                 (existing, replacement) -> existing
                         ));
 
+                // Match provider results case-insensitively because Codeforces handles are not case-sensitive.
                 int updatedCount = 0;
                 for (CodeforcesUserDto cfUser : response.result()) {
                     User user = userMap.get(cfUser.handle().toLowerCase());

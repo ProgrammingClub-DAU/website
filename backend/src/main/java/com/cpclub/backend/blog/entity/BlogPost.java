@@ -7,6 +7,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * Database entity representing a club blog post or editorial article.
+ * Indexes on slug (for SEO lookups) and published flag (for filtered queries).
+ */
 @Entity
 @Table(name = "blog_posts", indexes = {
         @Index(name = "idx_blog_slug", columnList = "slug"),
