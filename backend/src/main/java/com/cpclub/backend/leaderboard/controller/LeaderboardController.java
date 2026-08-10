@@ -6,8 +6,11 @@ import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
 import com.cpclub.backend.leaderboard.service.LeaderboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/leaderboard")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Leaderboard", description = "Endpoints for viewing public member rankings based on Codeforces ratings")
 public class LeaderboardController {
 
@@ -33,8 +37,8 @@ public class LeaderboardController {
     @GetMapping
     @Operation(summary = "Get ranked member leaderboard (paginated)")
     public ResponseEntity<ApiResponse<PagedResponse<LeaderboardResponseDto>>> getLeaderboard(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         PagedResponse<LeaderboardResponseDto> response = leaderboardService.getLeaderboard(page, size);
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched leaderboard successfully"));
