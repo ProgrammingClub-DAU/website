@@ -1,10 +1,10 @@
-package com.cpclub.backend.controller;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
-import com.cpclub.backend.response.ApiResponse;
-import com.cpclub.backend.service.UserService;
+import com.cpclub.backend.user.UpdateHandleRequest;
+import com.cpclub.backend.user.UserProfileUpdateRequest;
+import com.cpclub.backend.user.UserResponseDto;
+import com.cpclub.backend.common.ApiResponse;
+import com.cpclub.backend.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +25,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final com.cpclub.backend.codeforces.CodeforcesSyncService codeforcesSyncService;
 
     @GetMapping
     @Operation(summary = "List all users", description = "Returns all registered club members as public user DTOs.")
@@ -63,7 +64,9 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDto>> updateCodeforcesHandle(
             @PathVariable Long id,
             @Valid @RequestBody UpdateHandleRequest request) {
-        return ApiResponse.success(userService.updateCodeforcesHandle(id, request), "Codeforces handle updated successfully");
+        userService.updateCodeforcesHandle(id, request);
+        codeforcesSyncService.syncRatingById(id);
+        return ApiResponse.success(userService.getUserById(id), "Codeforces handle updated successfully");
     }
 
     @PutMapping("/{id}/profile")
@@ -78,6 +81,10 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDto>> updateUserProfile(
             @PathVariable Long id,
             @Valid @RequestBody UserProfileUpdateRequest request) {
-        return ApiResponse.success(userService.updateUserProfile(id, request), "Profile updated successfully");
+        userService.updateUserProfile(id, request);
+        if (request.codeforcesHandle() != null) {
+            codeforcesSyncService.syncRatingById(id);
+        }
+        return ApiResponse.success(userService.getUserById(id), "Profile updated successfully");
     }
 }

@@ -1,12 +1,12 @@
-package com.cpclub.backend.controller;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
+import com.cpclub.backend.user.UpdateHandleRequest;
+import com.cpclub.backend.user.UserProfileUpdateRequest;
+import com.cpclub.backend.user.UserResponseDto;
 import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.exception.GlobalExceptionHandler;
-import com.cpclub.backend.exception.ResourceNotFoundException;
-import com.cpclub.backend.service.UserService;
+import com.cpclub.backend.common.GlobalExceptionHandler;
+import com.cpclub.backend.common.ResourceNotFoundException;
+import com.cpclub.backend.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,11 +29,13 @@ class UserControllerTest {
 
     private MockMvc mockMvc;
     private UserService userService;
+    private com.cpclub.backend.codeforces.CodeforcesSyncService codeforcesSyncService;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        UserController userController = new UserController(userService);
+        codeforcesSyncService = mock(com.cpclub.backend.codeforces.CodeforcesSyncService.class);
+        UserController userController = new UserController(userService, codeforcesSyncService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -42,8 +44,8 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users - Should return list of all users wrapped in ApiResponse")
     void shouldGetAllUsers() throws Exception {
-        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now());
-        UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now());
+        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now());
 
         when(userService.getAllUsers()).thenReturn(Arrays.asList(u1, u2));
 
@@ -59,7 +61,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Should return user when found")
     void shouldGetUserByIdWhenFound() throws Exception {
-        UserResponseDto user = new UserResponseDto(5L, "Charlie", "charlie@example.com", "charlie_cf", 2000, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto user = new UserResponseDto(5L, "Charlie", "charlie_cf", 2000, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.getUserById(5L)).thenReturn(user);
 
@@ -87,7 +89,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/leaderboard - Should return users sorted by rating")
     void shouldGetLeaderboard() throws Exception {
-        UserResponseDto topUser = new UserResponseDto(1L, "Top Coder", "top@example.com", "tourist", 3500, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto topUser = new UserResponseDto(1L, "Top Coder", "tourist", 3500, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.getLeaderboard()).thenReturn(Collections.singletonList(topUser));
 
@@ -102,9 +104,10 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users/{id}/handle - Should update Codeforces handle")
     void shouldUpdateCodeforcesHandle() throws Exception {
-        UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "alice@example.com", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateCodeforcesHandle(eq(1L), any(UpdateHandleRequest.class))).thenReturn(updatedUser);
+        when(userService.getUserById(eq(1L))).thenReturn(updatedUser);
 
         String jsonPayload = "{\"codeforcesHandle\":\"new_cf_handle\"}";
 
@@ -133,9 +136,10 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users/{id}/profile - Should update User profile name and handle")
     void shouldUpdateUserProfile() throws Exception {
-        UserResponseDto updatedUser = new UserResponseDto(1L, "New Name", "alice@example.com", "valid_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto updatedUser = new UserResponseDto(1L, "New Name", "valid_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateUserProfile(eq(1L), any(UserProfileUpdateRequest.class))).thenReturn(updatedUser);
+        when(userService.getUserById(eq(1L))).thenReturn(updatedUser);
 
         String jsonPayload = "{\"name\":\"New Name\",\"codeforcesHandle\":\"valid_handle\"}";
 

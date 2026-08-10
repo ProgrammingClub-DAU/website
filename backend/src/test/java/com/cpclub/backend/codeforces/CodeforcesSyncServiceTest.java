@@ -1,9 +1,9 @@
-package com.cpclub.backend.service;
+package com.cpclub.backend.codeforces;
 
-import com.cpclub.backend.dto.CodeforcesResponse;
-import com.cpclub.backend.dto.CodeforcesUserDto;
+
+
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.repository.UserRepository;
+import com.cpclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,13 +44,13 @@ public class CodeforcesSyncServiceTest {
     void syncCodeforcesRatings_Success() {
         when(userRepository.findByCodeforcesHandleIsNotNull()).thenReturn(List.of(user1));
 
-        CodeforcesUserDto dto = new CodeforcesUserDto();
-        dto.setHandle("tourist");
-        dto.setRating(4000); // Updated rating
+        CodeforcesUserDto dto = new CodeforcesUserDto("tourist", 4000, null, null);
         
-        CodeforcesResponse response = new CodeforcesResponse();
-        response.setStatus("OK");
-        response.setResult(List.of(dto));
+        
+        
+        CodeforcesResponse response = new CodeforcesResponse("OK", List.of(dto), null);
+        
+        
 
         when(restTemplate.getForObject(anyString(), eq(CodeforcesResponse.class))).thenReturn(response);
 
@@ -69,13 +69,13 @@ public class CodeforcesSyncServiceTest {
                 .thenThrow(new RestClientException("400 Bad Request"));
 
         // Second call succeeds
-        CodeforcesUserDto dto = new CodeforcesUserDto();
-        dto.setHandle("tourist");
-        dto.setRating(3500);
+        CodeforcesUserDto dto = new CodeforcesUserDto("tourist", 4000, null, null);
         
-        CodeforcesResponse response = new CodeforcesResponse();
-        response.setStatus("OK");
-        response.setResult(List.of(dto));
+        dto = new CodeforcesUserDto("tourist", 3500, null, null);
+        
+        CodeforcesResponse response = new CodeforcesResponse("OK", List.of(dto), null);
+        
+        
 
         when(restTemplate.getForObject(contains("tourist"), eq(CodeforcesResponse.class)))
                 .thenReturn(response);

@@ -1,11 +1,8 @@
-package com.cpclub.backend.service;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.exception.ResourceNotFoundException;
-import com.cpclub.backend.repository.UserRepository;
+
+import com.cpclub.backend.common.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +42,9 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        user.setCodeforcesHandle(request.getCodeforcesHandle().trim());
+        user.setCodeforcesHandle(request.codeforcesHandle().trim());
         User updatedUser = userRepository.save(user);
+        
         return UserResponseDto.fromEntity(updatedUser);
     }
 
@@ -55,14 +53,16 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (request.getName() != null && !request.getName().isBlank()) {
-            user.setName(request.getName().trim());
+        if (request.name() != null && !request.name().trim().isEmpty()) {
+            user.setName(request.name().trim());
         }
-        if (request.getCodeforcesHandle() != null) {
-            user.setCodeforcesHandle(request.getCodeforcesHandle().trim());
+
+        if (request.codeforcesHandle() != null) {
+            user.setCodeforcesHandle(request.codeforcesHandle().trim());
         }
 
         User updatedUser = userRepository.save(user);
+
         return UserResponseDto.fromEntity(updatedUser);
     }
 }

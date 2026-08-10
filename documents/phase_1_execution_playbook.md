@@ -206,7 +206,7 @@ Member 6 → Codeforces Cron Job
 Member 3 → Leaderboard UI
 
 ### Detailed Tasks
-*   **Task P1-S4-01 (Member 6):** Create `@Scheduled(cron = "0 0 */6 * * *")` service in Spring Boot. Fetch `https://codeforces.com/api/user.info` for all users. Save `currentRating` to Postgres.
+*   **Task P1-S4-01 (Member 6):** Create `@Scheduled(cron = "0 0 */6 * * *")` service in Spring Boot. Fetch `https://codeforces.com/api/user.info` for all users (Note: Sync also occurs instantaneously when a user updates their handle). Save `currentRating` to Postgres.
 *   **Task P1-S4-02 (Member 3):** Create `/leaderboard` Next.js page. Fetch users sorted by rating.
 
 ### Validation
@@ -333,7 +333,7 @@ Feature complete. Proceed to final deployment.
 - [ ] JWT validates correctly.
 
 ### Member 5 — Backend Content APIs
-**Responsibilities:** REST APIs and DTOs.
+**Responsibilities:** REST APIs and DTOs (implemented as Java Records).
 **Execution Order:** Stage 2
 **Tasks:**
 1. Create `UserResponseDto`.
@@ -342,7 +342,7 @@ Feature complete. Proceed to final deployment.
 **Validation:** Ensure password hashes NEVER return in JSON.
 **Handoff:** Endpoints ready for Member 3.
 **Completion Checklist:**
-- [ ] DTOs implemented.
+- [ ] DTOs implemented as immutable Java Records.
 - [ ] Pagination added.
 
 ### Member 6 — Team Leader (DevOps, DB & Integrations)
