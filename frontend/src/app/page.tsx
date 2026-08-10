@@ -176,7 +176,7 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="h-10 rounded-full px-5.5">
-              <Link href="/login">Join the Club</Link>
+              <Link href="/register">Join the Club</Link>
             </Button>
             <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
               <Link href="/events">See our events</Link>
@@ -327,7 +327,7 @@ export default function HomePage() {
               solve them with.
             </p>
             <Button asChild className="mt-8 h-10 rounded-full px-6">
-              <Link href="/login">Join the Club</Link>
+              <Link href="/register">Join the Club</Link>
             </Button>
           </div>
         </div>

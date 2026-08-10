@@ -223,16 +223,16 @@
 }
 
 /*
- * Timeline hover cascade.
+ * Timeline cascade.
  *
- * Hovering a card lights the spine from the year head all the way down to that
- * card, not just its own branch. `:has(~ .tl-entry:hover)` matches every entry
- * that has the hovered one as a later sibling — CSS has no previous-sibling
+ * Selecting a card lights the spine from the year head all the way down to it,
+ * not just its own branch. `:has(~ .tl-entry:…)` matches every entry that has
+ * the selected one as a later sibling — CSS has no previous-sibling
  * combinator, so this is what makes "everything above" selectable.
  *
- * Each segment carries a batch of pulses (staggered by --tl-d) and each entry
- * offsets the batch further by its index (--tl-i), so a batch reads as one
- * pulse descending the spine before firing into the hovered card.
+ * "Selected" is hover on a pointer device and `.tl-active` on a touch one,
+ * where hover does not exist and the class is driven by scroll position.
+ * Every rule matches both, so the two inputs stay in sync by construction.
  */
 @layer components {
   /* Set here rather than via a `bg-*` utility: utilities outrank the
@@ -243,19 +243,33 @@
     transition: background-color 0.2s ease;
   }
 
-  /* Entries above the hovered one carry the path through their full height;
-     the hovered entry only lights down as far as its own branch. */
-  .tl-entry:has(~ .tl-entry:hover) .tl-spine,
-  .tl-entry:hover .tl-spine-top,
-  .tl-group:has(.tl-entry:hover) .tl-head {
+  /* Entries above the selected one carry the path through their full height;
+     the selected entry only lights down as far as its own branch. */
+  .tl-entry:has(~ .tl-entry.tl-active) .tl-spine,
+  .tl-entry.tl-active .tl-spine-top,
+  .tl-group:has(.tl-entry.tl-active) .tl-head {
     background: var(--primary);
+  }
+
+  /*
+   * Hover is guarded so the two inputs can never both be live. A tap on a
+   * touchscreen leaves a sticky :hover behind; without this guard that card
+   * stays lit while scrolling marks a different one active, and two runs
+   * glow at once.
+   */
+  @media (hover: hover) {
+    .tl-entry:has(~ .tl-entry:hover) .tl-spine,
+    .tl-entry:hover .tl-spine-top,
+    .tl-group:has(.tl-entry:hover) .tl-head {
+      background: var(--primary);
+    }
   }
 
   /*
    * A crisp dot riding the route, not a glow — a large blur reads as a smear,
    * especially on light backgrounds, so the ring gives it presence instead.
    *
-   * Position comes from `offset-path` (set on hover in JS) driving
+   * Position comes from `offset-path` (measured in JS) driving
    * `offset-distance`, which the compositor can run without laying out a
    * frame. Animating `top` here would force layout on every frame.
    */
@@ -274,9 +288,16 @@
     pointer-events: none;
   }
 
-  .tl-group:has(.tl-entry:hover) .tl-dot {
+  .tl-group:has(.tl-entry.tl-active) .tl-dot {
     animation: dot-run var(--tl-cycle) linear infinite;
     animation-delay: var(--tl-d);
+  }
+
+  @media (hover: hover) {
+    .tl-group:has(.tl-entry:hover) .tl-dot {
+      animation: dot-run var(--tl-cycle) linear infinite;
+      animation-delay: var(--tl-d);
+    }
   }
 }
 
