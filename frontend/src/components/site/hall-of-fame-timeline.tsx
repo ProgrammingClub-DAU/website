@@ -78,7 +78,7 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                     <TimelineCard>
                       <div className="flex items-center gap-2.5">
                         <RankDot rank={entry.cf} />
-                        <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors group-hover/entry:text-primary">
+                        <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
                           {entry.cat}
                         </span>
                       </div>
