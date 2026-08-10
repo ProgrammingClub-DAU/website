@@ -1,14 +1,7 @@
 import type { CfRankKey } from "@/lib/cf-ranks";
 
-export type ClubEventType = "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
-
-export type ClubRole =
-  | "Convenor"
-  | "Deputy Convenor"
-  | "Core Member"
-  | "Associate Core Member"
-  | "Batch Representative"
-  | "Club Participant";
+// These are the types for our backend API responses.
+// They reflect the data we expect from the backend.
 
 export interface Member {
   id?: string;
@@ -19,15 +12,6 @@ export interface Member {
   role: string;
   cf: CfRankKey;
   about: string;
-  codeforcesHandle?: string;
-  rating?: number;
-  solvedCount?: number;
-  contestCount?: number;
-  avatarUrl?: string | null;
-  isActive?: boolean;
-  degree?: string;
-  gradYear?: string;
-  clubRoleCategory?: "Leadership" | "Core" | "Associate Core" | "Batch Representative" | "Student Participant";
 }
 
 export interface RatingHistoryEntry {
@@ -37,9 +21,9 @@ export interface RatingHistoryEntry {
 }
 
 export interface ActivityDay {
-  date: string;
-  count: number;
-  level: 0 | 1 | 2 | 3 | 4;
+  date: string;   // YYYY-MM-DD
+  count: number;  // number of problems solved that day
+  level: 0 | 1 | 2 | 3 | 4; // intensity level for the heat map
 }
 
 export interface PlatformStats {
@@ -47,15 +31,27 @@ export interface PlatformStats {
   solved: number;
 }
 
+// ── Club Activity & Event types ──
+
+export type ClubEventType = "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
+
+export type ClubRole =
+  | "Convenor"
+  | "Deputy Convenor"
+  | "Core Member"
+  | "Associate Core Member"
+  | "Batch Representative"
+  | "Club Participant";
+
 export interface EventParticipation {
   eventId: string;
   eventName: string;
   eventType: ClubEventType;
-  eventDate: string;
-  rank: number | null;
+  eventDate: string; // ISO date string
+  rank: number | null; // null for non-ranked events (workshops, etc.)
   totalParticipants: number;
   status: "participated" | "registered" | "winner" | "runner-up" | "top-3";
-  achievement: string | null;
+  achievement: string | null; // e.g. "🥇 1st Place", null if none
 }
 
 export interface Profile {

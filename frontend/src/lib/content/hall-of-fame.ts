@@ -22,6 +22,13 @@ export const hallOfFame: HofYear[] = [
     entries: [
       {
         cat: "ICPC",
+        title: "ICPC Amritapuri Regionals",
+        people: "Team DAUCoders (Sumeet Verma, Jalp Patel, King-T)",
+        note: "Qualified for regionals and placed top 50 in India.",
+        cf: "master",
+      },
+      {
+        cat: "ICPC",
         title: "[PLACEHOLDER] Regional standing",
         people: "[PLACEHOLDER] Team + members",
         note: "[PLACEHOLDER] Round reached and rank. Confirm from official standings before publishing.",

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, SampleBadge, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
-import { credits, members } from "@/lib/content/members";
+import { credits } from "@/lib/content/members";
+import { dashboardService } from "@/lib/services/dashboard";
 
 export const metadata: Metadata = {
   title: "Members",
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
     "Who is in the Programming Club @ DAU and what they look after, plus everyone who built this site.",
 };
 
-export default function MembersPage() {
+export default async function MembersPage() {
+  // Fetch members data from our API service instead of using static data
+  const apiMembers = await dashboardService.getMembers();
+
   return (
     <>
       <Section className="pt-16 pb-10 md:pt-24">
@@ -31,7 +35,7 @@ export default function MembersPage() {
       </Section>
 
       <Section className="pb-10">
-        <MembersDirectory members={members} />
+        <MembersDirectory members={apiMembers} />
       </Section>
 
       <Section className="pb-10">
