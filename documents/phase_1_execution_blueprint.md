@@ -223,16 +223,16 @@ Phase 1
 - [x] Open PR, request Member 6 review
 
 ### Member 2 Checklist
-- [ ] Checkout `feature/M2-auth-forms`
-- [ ] Build React forms with Zod
-- [ ] Wait for P1-C01 Contract to be merged
+- [x] Checkout `feature/M2-auth-forms`
+- [x] Build React forms with Zod
+- [x] Wait for P1-C01 Contract to be merged
 - [ ] Implement Axios interceptor and Zustand store
 - [ ] Open PR, request Member 6 review
 
 ### Member 3 Checklist
-- [ ] Checkout `feature/M3-leaderboard`
+- [x] Checkout `feature/M3-leaderboard`
 - [ ] Implement Leaderboard UI with Codeforces ratings
-- [ ] Implement Profile & Members UI (Blocked by Auth)
+- [x] Implement Profile & Members UI (Blocked by Auth)
 - [ ] Add static Events & HOF data to frontend / Register test members
 - [ ] Open PR, request Member 6 review
 

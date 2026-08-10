@@ -112,7 +112,7 @@ Member 1 runs `npm run dev` and sees the themed layout. Member 4 runs the Spring
 Member 4 pushes `User` entity to Git so Member 5 can use it. Member 1 pushes layout so Members 2 & 3 can build inside it.
 
 ### Exit Gate
-- [ ] Next.js app compiles.
+- [x] Next.js app compiles.
 - [ ] Spring Boot app compiles and connects to DB.
 - [ ] Base PRs reviewed and merged by Member 6.
 
@@ -147,7 +147,7 @@ Frontend forms validate locally. Backend APIs return 200 OK or 400 Bad Request v
 Member 4 & 5 provide Swagger UI URL (`localhost:8080/swagger-ui.html`) to Members 2 & 3.
 
 ### Exit Gate
-- [ ] Auth forms prevent invalid submissions (e.g., weak password).
+- [x] Auth forms prevent invalid submissions (e.g., weak password).
 - [x] Auth APIs successfully hash passwords and return valid JWTs.
 - [ ] Member 6 tests APIs via Postman.
 
@@ -288,8 +288,8 @@ Feature complete. Proceed to final deployment.
 **Validation:** Check responsive design on mobile viewport.
 **Handoff:** Tell Member 2 the layout is ready for forms.
 **Completion Checklist:**
-- [ ] App compiles.
-- [ ] Mobile responsive.
+- [x] App compiles.
+- [x] Mobile responsive.
 
 ### Member 2 — Frontend Auth & Forms
 **Responsibilities:** Login/Registration and API integration.
@@ -302,7 +302,7 @@ Feature complete. Proceed to final deployment.
 **Validation:** Verify invalid emails are rejected locally.
 **Handoff:** Auth state works, Member 3 can now build private pages.
 **Completion Checklist:**
-- [ ] Zod validation working.
+- [x] Zod validation working.
 - [ ] JWT stored securely.
 
 ### Member 3 — Frontend Data & Dashboards
