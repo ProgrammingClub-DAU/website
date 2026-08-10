@@ -29,6 +29,12 @@ class UserServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         userService = new UserService(userRepository);
+
+        org.springframework.security.core.Authentication authentication = mock(org.springframework.security.core.Authentication.class);
+        when(authentication.getName()).thenReturn("john@example.com");
+        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
