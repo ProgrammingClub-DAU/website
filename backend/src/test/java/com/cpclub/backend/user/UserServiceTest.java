@@ -1,7 +1,9 @@
 package com.cpclub.backend.user;
 
+import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
+import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
@@ -91,6 +93,19 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject a Codeforces handle already linked to another user")
+    void shouldRejectDuplicateCodeforcesHandle() {
+        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByCodeforcesHandle("taken_handle")).thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> userService.updateCodeforcesHandle(1L, new UpdateHandleRequest("taken_handle")));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("Should update User profile name and handle")
     void shouldUpdateUserProfile() {
         User user = new User("Old Name", "john@example.com", "pass", Role.ROLE_USER);
@@ -105,5 +120,28 @@ class UserServiceTest {
 
         assertEquals("New Name", result.name());
         assertEquals("new_handle", result.codeforcesHandle());
+    }
+
+    @Test
+    @DisplayName("Should update a user's role")
+    void shouldUpdateUserRole() {
+        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        UserResponseDto result = userService.updateUserRole(1L, new UpdateRoleRequest(Role.ROLE_ADMIN));
+
+        assertEquals(Role.ROLE_ADMIN, result.role());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("Should reject deletion of a user that does not exist")
+    void shouldRejectDeletingMissingUser() {
+        when(userRepository.existsById(99L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
+        verify(userRepository, never()).deleteById(any());
     }
 }
