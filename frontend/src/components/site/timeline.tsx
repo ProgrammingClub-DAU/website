@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -50,7 +51,7 @@ const BRANCH_PATH = "M32 0 V20 C32 42 32 46 88 46";
 const lastAimed = new WeakMap<Element, Element>();
 
 /**
- * Aims the dots at the hovered card.
+ * Aims the dots at one card.
  *
  * Builds ONE path in real pixel coordinates covering the whole route — down
  * the spine from the head, then out along the branch — and hands it to each
@@ -59,20 +60,18 @@ const lastAimed = new WeakMap<Element, Element>();
  * the branch SVG, whose `preserveAspectRatio="none"` makes stroke-dash length
  * maths unreliable (the same combination GSAP and anime.js both warn about).
  *
- * Runs by delegation on plain DOM, so hovering never touches React state.
+ * Plain DOM, so neither hovering nor scrolling touches React state.
  */
-function aimDots(event: MouseEvent<HTMLDivElement>) {
-  const group = event.currentTarget;
-  const entry = (event.target as Element).closest(".tl-entry");
+function aimAt(group: HTMLElement, entry: Element | null) {
   const branch = entry?.querySelector(".tl-branch");
   const head = group.querySelector(".tl-head");
-  if (!branch || !head) return;
+  if (!entry || !branch || !head) return;
 
   // mouseover bubbles from every descendant, and each measurement below
-  // forces layout while :hover is still animating. Only re-aim when the
-  // pointer actually moves to a different card.
+  // forces layout while the hover transition is still running. Only re-aim
+  // when the selection actually changes.
   if (lastAimed.get(group) === entry) return;
-  lastAimed.set(group, entry!);
+  lastAimed.set(group, entry);
 
   const groupBox = group.getBoundingClientRect();
   const branchBox = branch.getBoundingClientRect();
@@ -109,6 +108,165 @@ function aimDots(event: MouseEvent<HTMLDivElement>) {
     .forEach((dot) => (dot.style.offsetPath = `path("${d}")`));
 }
 
+/*
+ * Touch cascade.
+ *
+ * Touch devices never match `:hover`, so without this the whole effect sits
+ * inert on a phone. There, the card nearest the middle of the viewport stands
+ * in for the hovered one and gets `.tl-active`.
+ *
+ * The selection is deliberately page-wide rather than per-group. Hall of Fame
+ * renders one group per year, and a per-group observer would light one card in
+ * every year at once — only one card on the page may be active.
+ */
+const touchGroups = new Set<HTMLElement>();
+let scheduled = 0;
+
+/**
+ * Whether this device drives the cascade by hover.
+ *
+ * `@media (hover: hover)` gates the CSS, but `mouseover` is a JS event and
+ * fires on touchscreens too — a tap would re-aim the dots at the tapped card
+ * while `.tl-active` kept the lighting on the scrolled one. Both drivers have
+ * to check the same condition for them to stay exclusive.
+ */
+function canHover() {
+  return window.matchMedia("(hover: hover)").matches;
+}
+
+/**
+ * Marks one card across every group and points the dots at it.
+ *
+ * Only the outgoing and incoming elements are touched — sweeping every entry
+ * on each scroll frame would be needless work on a long timeline.
+ */
+let activeEntry: HTMLElement | null = null;
+
+function applySelection(group: HTMLElement | null, entry: HTMLElement | null) {
+  if (activeEntry !== entry) {
+    activeEntry?.classList.remove("tl-active");
+    entry?.classList.add("tl-active");
+    activeEntry = entry;
+  }
+  if (group && entry) aimAt(group, entry);
+}
+
+function selectNearest() {
+  scheduled = 0;
+  const middle = window.innerHeight / 2;
+  let best: HTMLElement | null = null;
+  let bestGroup: HTMLElement | null = null;
+  let bestDistance = Infinity;
+
+  for (const group of touchGroups) {
+    for (const entry of group.querySelectorAll<HTMLElement>(".tl-entry")) {
+      const box = entry.getBoundingClientRect();
+      if (box.bottom < 0 || box.top > window.innerHeight) continue;
+      const distance = Math.abs(box.top + box.height / 2 - middle);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = entry;
+        bestGroup = group;
+      }
+    }
+  }
+
+  applySelection(bestGroup, best);
+}
+
+function onTouchScroll() {
+  if (scheduled) return;
+  scheduled = requestAnimationFrame(selectNearest);
+}
+
+/**
+ * A tap picks a card outright, overriding whatever scrolling had chosen.
+ * Scrolling on afterwards takes over again, so the last thing you did wins.
+ */
+function onTouchTap(event: Event) {
+  const entry = (event.target as Element).closest<HTMLElement>(".tl-entry");
+  if (!entry) return;
+  applySelection(entry.closest<HTMLElement>(".tl-group"), entry);
+}
+
+/**
+ * Filtering swaps the rendered cards without any scroll or resize, so the
+ * selected card can vanish and leave nothing lit. Watching the group for
+ * child changes re-selects after those renders. The cached aim is dropped
+ * too: the surviving cards move, so an unchanged selection still needs a
+ * fresh path.
+ */
+const groupObservers = new WeakMap<HTMLElement, MutationObserver>();
+
+function watchEntries(group: HTMLElement) {
+  if (groupObservers.has(group)) return;
+  const observer = new MutationObserver(() => {
+    lastAimed.delete(group);
+    onTouchScroll();
+  });
+  observer.observe(group, { childList: true, subtree: true });
+  groupObservers.set(group, observer);
+}
+
+function unwatchEntries(group: HTMLElement) {
+  groupObservers.get(group)?.disconnect();
+  groupObservers.delete(group);
+}
+
+function useTouchCascade(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const group = ref.current;
+    if (!group) return;
+    const query = window.matchMedia("(hover: hover)");
+
+    const attach = () => {
+      if (touchGroups.has(group)) return;
+      const first = touchGroups.size === 0;
+      touchGroups.add(group);
+      if (first) {
+        window.addEventListener("scroll", onTouchScroll, { passive: true });
+        window.addEventListener("resize", onTouchScroll, { passive: true });
+        document.addEventListener("click", onTouchTap);
+      }
+      watchEntries(group);
+      selectNearest();
+    };
+
+    const detach = () => {
+      if (!touchGroups.has(group)) return;
+      touchGroups.delete(group);
+      unwatchEntries(group);
+      // Clear the marks, or a card stays lit once hover takes over again.
+      for (const entry of group.querySelectorAll(".tl-entry")) {
+        entry.classList.remove("tl-active");
+      }
+      if (activeEntry && group.contains(activeEntry)) activeEntry = null;
+      if (touchGroups.size === 0) {
+        if (scheduled) cancelAnimationFrame(scheduled);
+        scheduled = 0;
+        window.removeEventListener("scroll", onTouchScroll);
+        window.removeEventListener("resize", onTouchScroll);
+        document.removeEventListener("click", onTouchTap);
+      }
+    };
+
+    /*
+     * Re-evaluated whenever hover capability changes, not just at mount:
+     * toggling device emulation, docking a laptop, or pairing a mouse all
+     * flip this live. Without it the marks set under one mode linger into
+     * the other and two cards light at once.
+     */
+    const sync = () => (query.matches ? detach() : attach());
+
+    sync();
+    query.addEventListener("change", sync);
+    return () => {
+      query.removeEventListener("change", sync);
+      detach();
+    };
+  }, [ref]);
+}
+
 /** Wraps a head plus its entries: the run of spine a batch of pulses travels. */
 export function TimelineGroup({
   children,
@@ -117,11 +275,19 @@ export function TimelineGroup({
   children: ReactNode;
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useTouchCascade(ref);
+
   return (
     <div
+      ref={ref}
       className={cn("tl-group relative", className)}
       style={{ "--tl-cycle": `${BASE_CYCLE}s` } as CSSProperties}
-      onMouseOver={aimDots}
+      onMouseOver={(event: MouseEvent<HTMLDivElement>) => {
+        // On touch, scroll position owns the selection — see canHover().
+        if (!canHover()) return;
+        aimAt(event.currentTarget, (event.target as Element).closest(".tl-entry"));
+      }}
     >
       {PULSE_DELAYS.map((delay) => (
         <span
@@ -198,7 +364,7 @@ export function TimelineEntry({
         <svg
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           preserveAspectRatio="none"
-          className="tl-branch relative block h-15 w-full text-hairline-strong transition-colors group-hover/entry:text-primary"
+          className="tl-branch relative block h-15 w-full text-hairline-strong transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary"
           aria-hidden
         >
           <path
@@ -211,7 +377,7 @@ export function TimelineEntry({
         </svg>
 
         <span
-          className="absolute right-0 size-[7px] -translate-y-1/2 translate-x-1/2 rounded-full border-2 border-hairline-strong bg-background transition-colors group-hover/entry:border-primary group-hover/entry:bg-primary"
+          className="absolute right-0 size-[7px] -translate-y-1/2 translate-x-1/2 rounded-full border-2 border-hairline-strong bg-background transition-colors [@media(hover:hover)]:group-hover/entry:border-primary [@media(hover:hover)]:group-hover/entry:bg-primary group-[.tl-active]/entry:border-primary group-[.tl-active]/entry:bg-primary"
           style={{ top: NODE_Y_CSS }}
           aria-hidden
         />
@@ -250,7 +416,8 @@ export function TimelineCard({
     <article
       className={cn(
         "glass-panel flex flex-col gap-3.5 rounded-panel p-6 transition-all",
-        "group-hover/entry:-translate-y-0.5 group-hover/entry:border-primary",
+        "[@media(hover:hover)]:group-hover/entry:-translate-y-0.5 [@media(hover:hover)]:group-hover/entry:border-primary",
+        "group-[.tl-active]/entry:-translate-y-0.5 group-[.tl-active]/entry:border-primary",
         className
       )}
     >
