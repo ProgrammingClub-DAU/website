@@ -68,7 +68,7 @@ In Phase 1 there is **exactly one table**. Member 4 defines it as a JPA entity (
 | **Member 2** | Frontend Auth Engineer | Login/Register Forms, Zustand | Member 4 (APIs) | Member 3 (Auth State) | `login/page.tsx`, `axios.ts`, Zustand store |
 | **Member 3** | Frontend Data Engineer | Profile UI, Leaderboard UI | Member 5 (APIs), Member 2 | Deployment | `profile/page.tsx`, `leaderboard/page.tsx` |
 | **Member 4** | Backend Security | Spring Security, JWT, Auth APIs | None | Member 2 & 5 (Auth) | `User.java`, `JwtUtils`, `AuthController` |
-| **Member 5** | Backend API Engineer | REST APIs, DTOs, Queries | Member 4 (Entity) | Member 3 (Data) | `UserController`, `UserResponseDto` |
+| **Member 5** | Backend API Engineer | REST APIs, Java Record DTOs, Queries | Member 4 (Entity) | Member 3 (Data) | `UserController`, `UserResponseDto` |
 | **Member 6** | Team Lead (DevOps) | Codeforces Sync, Docker, QA | Member 5 (DB) | Leaderboard UI | `CodeforcesSyncService`, Deployments, PRs |
 
 ## 6. Environment Setup
@@ -172,8 +172,8 @@ Phase 1
 | `frontend/src/app/(dashboard)/` | Member 3 | Profile, Leaderboard, Members routes |
 | `backend/src/.../security/` | Member 4 | JWT Filters, Security Config |
 | `backend/src/.../entity/User.java` | Member 4 | Database schema definition |
-| `backend/src/.../controller/` | Member 5 | REST API Endpoints |
-| `backend/src/.../service/CFSync.java` | Member 6 | Cron job logic for Codeforces API |
+| `backend/src/.../user/` (Feature Folder) | Member 5 | REST API Endpoints |
+| `backend/src/.../codeforces/CodeforcesSyncService.java` | Member 6 | Cron job logic for Codeforces API |
 
 ## 13. Git/GitHub Workflow
 1.  **Sync:** `git pull origin main`
