@@ -1,6 +1,6 @@
 package com.cpclub.backend.security.jwt;
 
-import com.cpclub.backend.security.services.UserDetailsImpl;
+import com.cpclub.backend.security.service.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -10,40 +10,50 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-@Slf4j
 @Component
+@Slf4j
 public class JwtUtils {
 
-    @Value("${app.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${cpclub.app.jwtSecret:cpClubDefaultJwtSecretKeyForSecurityTestingAndProductionUsageKey32BytesLong}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-ms:86400000}")
+    @Value("${cpclub.app.jwtExpirationMs:86400000}")
     private int jwtExpirationMs;
 
     private SecretKey key() {
-        byte[] keyBytes;
-        try {
-            keyBytes = Decoders.BASE64.decode(jwtSecret);
-        } catch (IllegalArgumentException e) {
-            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        }
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(
+                jwtSecret.length() < 32 ?
+                        java.util.Base64.getEncoder().encodeToString(String.format("%-32s", jwtSecret).getBytes()) :
+                        java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes())
+        ));
     }
 
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        return generateTokenFromUsername(userPrincipal.getUsername());
-    }
 
-    public String generateTokenFromUsername(String username) {
         return Jwts.builder()
-                .subject(username)
+                .subject((userPrincipal.getUsername()))
+                .claim("id", userPrincipal.getId())
+                .claim("role", userPrincipal.getAuthorities().stream()
+                        .findFirst()
+                        .map(a -> a.getAuthority())
+                        .orElse("ROLE_USER"))
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key())
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateTokenFromEmail(String email, Long id, String role) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("id", id)
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -68,8 +78,6 @@ public class JwtUtils {
             log.error("JWT token is unsupported: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
             log.error("JWT claims string is empty: {}", e.getMessage());
-        } catch (Exception e) {
-            log.error("JWT validation error: {}", e.getMessage());
         }
         return false;
     }

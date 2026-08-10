@@ -1,17 +1,13 @@
 package com.cpclub.backend.auth.dto;
 
-import com.cpclub.backend.entity.Role;
+import com.cpclub.backend.user.entity.Role;
 
 public record AuthResponse(
-    String token,
-    String type,
-    Long id,
-    String fullName,
-    String email,
-    Role role,
-    String codeforcesHandle
+        String token,
+        Long id,
+        String name,
+        String email,
+        Role role,
+        String codeforcesHandle
 ) {
-    public AuthResponse(String token, Long id, String fullName, String email, Role role, String codeforcesHandle) {
-        this(token, "Bearer", id, fullName, email, role, codeforcesHandle);
-    }
 }
