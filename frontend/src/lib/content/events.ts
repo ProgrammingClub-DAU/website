@@ -18,8 +18,15 @@ export const nextEventMeta = [
   { k: "Format", v: "[PLACEHOLDER] problems, duration" },
 ];
 
-/** Placeholder records pending confirmation from club archives. */
 export const events: ClubEvent[] = [
+  {
+    type: "Contests",
+    date: "March 2025",
+    title: "Spring Code Sprint",
+    body: "Our annual spring competitive programming contest. 5 problems, 2 hours. Great for all skill levels.",
+    meta: "120 participants",
+    dots: ["master", "candidate", "expert", "specialist"],
+  },
   {
     type: "Flagship",
     date: "[PLACEHOLDER] Month, Year",

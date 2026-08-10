@@ -22,7 +22,7 @@ export const apiClient = {
       // Returning static data as mock
       return new Promise((resolve) => setTimeout(() => resolve(mockMembers), 500));
     }
-    const response = await api.get<Member[]>("/members");
+    const response = await api.get<Member[]>("/users");
     return response.data;
   },
 
@@ -30,16 +30,16 @@ export const apiClient = {
   getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve([
-        { id: "1", rank: 1, handle: "Sumeet.Verma", cfRank: "grandmaster", rating: 2502, solvedCount: 5000 },
-        { id: "2", rank: 2, handle: "Preet Sheth", cfRank: "master", rating: 2210, solvedCount: 4220 },
-        { id: "3", rank: 3, handle: "Jalp Patel", cfRank: "candidate", rating: 1990, solvedCount: 3822},
-        { id: "4", rank: 6, handle: "King-T", cfRank: "expert", rating: 1639, solvedCount: 2379},
-        { id: "5", rank: 10, handle: "Alice", cfRank: "specialist", rating: 1447, solvedCount: 2009},
-        { id: "6", rank: 15, handle: "XYZ", cfRank: "pupil", rating: 1218, solvedCount: 1210},
-        { id: "7", rank: 90, handle: "Binod", cfRank: "newbie", rating: 818, solvedCount: 933}
+        { id: 1, name: "Sumeet Verma", email: "sumeet@example.com", codeforcesHandle: "Sumeet.Verma", rating: 2502, role: "ROLE_USER", createdAt: "2024-01-01T00:00:00Z" },
+        { id: 2, name: "Preet Sheth", email: "preet@example.com", codeforcesHandle: "Preet Sheth", rating: 2210, role: "ROLE_USER", createdAt: "2024-01-02T00:00:00Z" },
+        { id: 3, name: "Jalp Patel", email: "jalp@example.com", codeforcesHandle: "Jalp Patel", rating: 1990, role: "ROLE_USER", createdAt: "2024-01-03T00:00:00Z" },
+        { id: 4, name: "King-T", email: "kingt@example.com", codeforcesHandle: "King-T", rating: 1639, role: "ROLE_USER", createdAt: "2024-01-04T00:00:00Z" },
+        { id: 5, name: "Alice", email: "alice@example.com", codeforcesHandle: "Alice", rating: 1447, role: "ROLE_USER", createdAt: "2024-01-05T00:00:00Z" },
+        { id: 6, name: "XYZ", email: "xyz@example.com", codeforcesHandle: "XYZ", rating: 1218, role: "ROLE_USER", createdAt: "2024-01-06T00:00:00Z" },
+        { id: 7, name: "Binod", email: "binod@example.com", codeforcesHandle: "Binod", rating: 818, role: "ROLE_USER", createdAt: "2024-01-07T00:00:00Z" }
       ]), 500));
     }
-    const response = await api.get<LeaderboardEntry[]>("/leaderboard");
+    const response = await api.get<LeaderboardEntry[]>("/users/leaderboard");
     return response.data;
   },
 
@@ -79,16 +79,15 @@ export const apiClient = {
       ];
 
       return new Promise((resolve) => setTimeout(() => resolve({
-        id: userId,
+        id: Number(userId) || 1,
         email: "sumeet.verma@dau.ac.in",
         name: "Sumeet Verma",
-        handle: "Sumeet.Verma",
+        codeforcesHandle: "Sumeet.Verma",
+        role: "ROLE_USER",
+        createdAt: "2024-01-01T00:00:00Z",
         avatarUrl: null,
-        cfRank: "candidate",
         rating: 1990,
         maxRating: 1990,
-        joinedAt: "2024-01-01T00:00:00Z",
-        totalSolved: 847,
         platformStats: [
           { platform: "Codeforces", solved: 520 },
           { platform: "LeetCode", solved: 210 },

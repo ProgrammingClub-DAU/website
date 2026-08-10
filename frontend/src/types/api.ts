@@ -32,26 +32,26 @@ export interface PlatformStats {
 }
 
 export interface Profile {
-  id: string;
-  email: string;
+  id: number;
   name: string;
-  handle: string;
-  avatarUrl: string | null;
-  cfRank: CfRankKey;
+  email: string;
+  codeforcesHandle: string;
   rating: number;
+  role: string;
+  createdAt: string;
+  avatarUrl: string | null;
   maxRating: number;
-  joinedAt: string;
-  totalSolved: number;
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
   activityData: ActivityDay[];
 }
 
 export interface LeaderboardEntry {
-  id: string;
-  rank: number;
-  handle: string;
-  cfRank: CfRankKey;
+  id: number;
+  name: string;
+  email: string;
+  codeforcesHandle: string;
   rating: number;
-  solvedCount: number;
+  role: string;
+  createdAt: string;
 }

@@ -1,13 +1,23 @@
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
 import { apiClient } from "@/lib/api-client";
-import { rankColor } from "@/lib/cf-ranks";
+import { rankColor, type CfRankKey } from "@/lib/cf-ranks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
   description: "Live CP Club leaderboard.",
 };
+
+function getCfRank(rating: number): CfRankKey {
+  if (rating >= 2400) return "grandmaster";
+  if (rating >= 2100) return "master";
+  if (rating >= 1900) return "candidate";
+  if (rating >= 1600) return "expert";
+  if (rating >= 1400) return "specialist";
+  if (rating >= 1200) return "pupil";
+  return "newbie";
+}
 
 export default async function LeaderboardPage() {
   const leaderboard = await apiClient.getLeaderboard();
@@ -28,23 +38,25 @@ export default async function LeaderboardPage() {
 
       <Section className="pb-10">
         <div className="grid gap-4">
-          {leaderboard.map((entry) => (
+          {leaderboard.map((entry, index) => {
+            const cfRank = getCfRank(entry.rating);
+            return (
             <Card key={entry.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <span className="text-fg-muted">#{entry.rank}</span>
+                  <span className="text-fg-muted">#{index + 1}</span>
                   <span
                     className="font-bold"
-                    style={{ color: rankColor(entry.cfRank) }}
+                    style={{ color: rankColor(cfRank) }}
                   >
-                    {entry.handle}
+                    {entry.codeforcesHandle}
                   </span>
                 </CardTitle>
                 <div 
                   className="text-sm capitalize px-2 py-0.5 rounded-full border border-border"
-                  style={{ color: rankColor(entry.cfRank), borderColor: rankColor(entry.cfRank) }}
+                  style={{ color: rankColor(cfRank), borderColor: rankColor(cfRank) }}
                 >
-                  {entry.cfRank}
+                  {cfRank}
                 </div>
               </CardHeader>
               <CardContent>
@@ -52,12 +64,9 @@ export default async function LeaderboardPage() {
                   <div className="text-2xl font-bold">{entry.rating}</div>
                   <div className="text-sm text-fg-muted">Rating</div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {entry.solvedCount} problems solved
-                </p>
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       </Section>
     </>

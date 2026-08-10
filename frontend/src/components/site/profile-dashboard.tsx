@@ -40,8 +40,19 @@ function ratingToRankName(rating: number): string {
 
 export default function ProfileDashboard({ profile }: { profile: Profile }) {
   // Resolve the CF rank color using the existing utility
-  const nameColor = rankColor(profile.cfRank);
-  const rankName = CF_RANKS.find((r) => r.key === profile.cfRank)?.name ?? profile.cfRank;
+  const getCfRank = (rating: number): import("@/lib/cf-ranks").CfRankKey => {
+    if (rating >= 2400) return "grandmaster";
+    if (rating >= 2100) return "master";
+    if (rating >= 1900) return "candidate";
+    if (rating >= 1600) return "expert";
+    if (rating >= 1400) return "specialist";
+    if (rating >= 1200) return "pupil";
+    return "newbie";
+  };
+  const actualCfRank = getCfRank(profile.rating);
+  const nameColor = rankColor(actualCfRank);
+  const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
+  const totalSolved = profile.platformStats?.reduce((acc, curr) => acc + curr.solved, 0) || 0;
 
   return (
     <div className="space-y-8">
@@ -73,7 +84,7 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
               >
                 {profile.name}
               </h2>
-              <p className="mt-1 text-sm text-fg-muted">@{profile.handle}</p>
+              <p className="mt-1 text-sm text-fg-muted">@{profile.codeforcesHandle}</p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium capitalize"
@@ -92,11 +103,11 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
             {/* Quick stats cards */}
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{profile.totalSolved}</div>
+                <div className="text-2xl font-bold">{totalSolved}</div>
                 <div className="text-[11px] text-fg-muted">Total Solved</div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{profile.ratingHistory.length}</div>
+                <div className="text-2xl font-bold">{profile.ratingHistory?.length || 0}</div>
                 <div className="text-[11px] text-fg-muted">Contests</div>
               </div>
             </div>
@@ -114,7 +125,7 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {profile.platformStats.map((ps) => (
+            {profile.platformStats?.map((ps) => (
               <div
                 key={ps.platform}
                 className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
@@ -226,12 +237,12 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
           <Separator />
           <div className="flex justify-between">
             <span className="text-fg-muted">Codeforces Handle</span>
-            <span style={{ color: nameColor }}>@{profile.handle}</span>
+            <span style={{ color: nameColor }}>@{profile.codeforcesHandle}</span>
           </div>
           <Separator />
           <div className="flex justify-between">
             <span className="text-fg-muted">Member Since</span>
-            <span>{new Date(profile.joinedAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+            <span>{new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
           </div>
         </CardContent>
       </Card>
