@@ -53,7 +53,7 @@ export function EventsTimeline({ events }: { events: ClubEvent[] }) {
                 <TimelineEntry key={event.title} isLast={i === visible.length - 1}>
                   <TimelineCard>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors group-hover/entry:text-primary">
+                      <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
                         {event.date}
                       </span>
                       <span className="ml-auto rounded-full border border-border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] whitespace-nowrap text-fg-muted uppercase">
