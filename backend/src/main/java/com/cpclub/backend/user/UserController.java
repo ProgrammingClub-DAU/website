@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Users", description = "User directory, profile, and leaderboard APIs")
 public class UserController {
 
