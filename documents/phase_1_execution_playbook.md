@@ -112,7 +112,7 @@ Member 1 runs `npm run dev` and sees the themed layout. Member 4 runs the Spring
 Member 4 pushes `User` entity to Git so Member 5 can use it. Member 1 pushes layout so Members 2 & 3 can build inside it.
 
 ### Exit Gate
-- [ ] Next.js app compiles.
+- [x] Next.js app compiles.
 - [ ] Spring Boot app compiles and connects to DB.
 - [ ] Base PRs reviewed and merged by Member 6.
 
@@ -147,8 +147,8 @@ Frontend forms validate locally. Backend APIs return 200 OK or 400 Bad Request v
 Member 4 & 5 provide Swagger UI URL (`localhost:8080/swagger-ui.html`) to Members 2 & 3.
 
 ### Exit Gate
-- [ ] Auth forms prevent invalid submissions (e.g., weak password).
-- [ ] Auth APIs successfully hash passwords and return valid JWTs.
+- [x] Auth forms prevent invalid submissions (e.g., weak password).
+- [x] Auth APIs successfully hash passwords and return valid JWTs.
 - [ ] Member 6 tests APIs via Postman.
 
 ## 9. Stage 3 — The Integration Layer
@@ -250,10 +250,10 @@ Feature complete. Proceed to final deployment.
 *   **End-to-End (Manual):** Create User -> Login -> Edit Profile -> Add Codeforces Handle -> Check Leaderboard.
 
 ## 15. Security Validation
-- [ ] **Authentication:** JWT is stateless. No session cookies stored in Spring Boot memory.
-- [ ] **Passwords:** BCrypt algorithm with complexity strength 12.
-- [ ] **CORS:** Only permit frontend origin domains (e.g., `localhost:3000`, `production-url.com`).
-- [ ] **Secrets:** `JWT_SECRET` and `DB_PASSWORD` are strictly in `.env` and never committed to Git.
+- [x] **Authentication:** JWT is stateless. No session cookies stored in Spring Boot memory.
+- [x] **Passwords:** BCrypt algorithm with complexity strength 12.
+- [x] **CORS:** Only permit frontend origin domains (e.g., `localhost:3000`, `production-url.com`).
+- [x] **Secrets:** `JWT_SECRET` and `DB_PASSWORD` are strictly in `.env` and never committed to Git.
 
 ## 16. Performance Validation
 - [ ] **API Latency:** Codeforces Sync Job must batch requests if member count > 100 to avoid CF API bans.
@@ -288,8 +288,8 @@ Feature complete. Proceed to final deployment.
 **Validation:** Check responsive design on mobile viewport.
 **Handoff:** Tell Member 2 the layout is ready for forms.
 **Completion Checklist:**
-- [ ] App compiles.
-- [ ] Mobile responsive.
+- [x] App compiles.
+- [x] Mobile responsive.
 
 ### Member 2 — Frontend Auth & Forms
 **Responsibilities:** Login/Registration and API integration.
@@ -302,7 +302,7 @@ Feature complete. Proceed to final deployment.
 **Validation:** Verify invalid emails are rejected locally.
 **Handoff:** Auth state works, Member 3 can now build private pages.
 **Completion Checklist:**
-- [ ] Zod validation working.
+- [x] Zod validation working.
 - [ ] JWT stored securely.
 
 ### Member 3 — Frontend Data & Dashboards
@@ -329,8 +329,8 @@ Feature complete. Proceed to final deployment.
 **Validation:** Hit endpoints with Postman.
 **Handoff:** Swagger UI updated for Member 2.
 **Completion Checklist:**
-- [ ] Passwords hashed.
-- [ ] JWT validates correctly.
+- [x] Passwords hashed.
+- [x] JWT validates correctly.
 
 ### Member 5 — Backend Content APIs
 **Responsibilities:** REST APIs and DTOs (implemented as Java Records).
@@ -415,10 +415,10 @@ DAY / STAGE
 - [ ] Global Exception Handler intercepts all Java errors.
 
 ### Security
-- [ ] Stateless JWT authentication enforced.
-- [ ] Passwords hashed with BCrypt.
-- [ ] CORS policies restrict unauthorized domains.
-- [ ] Secrets isolated in `.env`.
+- [x] Stateless JWT authentication enforced.
+- [x] Passwords hashed with BCrypt.
+- [x] CORS policies restrict unauthorized domains.
+- [x] Secrets isolated in `.env`.
 
 ### Git/Code Quality
 - [ ] `main` branch is completely green.

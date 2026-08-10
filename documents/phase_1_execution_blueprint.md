@@ -223,24 +223,24 @@ Phase 1
 - [x] Open PR, request Member 6 review
 
 ### Member 2 Checklist
-- [ ] Checkout `feature/M2-auth-forms`
-- [ ] Build React forms with Zod
-- [ ] Wait for P1-C01 Contract to be merged
+- [x] Checkout `feature/M2-auth-forms`
+- [x] Build React forms with Zod
+- [x] Wait for P1-C01 Contract to be merged
 - [ ] Implement Axios interceptor and Zustand store
 - [ ] Open PR, request Member 6 review
 
 ### Member 3 Checklist
-- [ ] Checkout `feature/M3-leaderboard`
+- [x] Checkout `feature/M3-leaderboard`
 - [ ] Implement Leaderboard UI with Codeforces ratings
-- [ ] Implement Profile & Members UI (Blocked by Auth)
+- [x] Implement Profile & Members UI (Blocked by Auth)
 - [ ] Add static Events & HOF data to frontend / Register test members
 - [ ] Open PR, request Member 6 review
 
 ### Member 4 Checklist
-- [ ] Checkout `feature/M4-security`
-- [x] Build `User` entity with Roles *(Done by M5)*
-- [ ] Build `JwtUtils` and `SecurityFilterChain`
-- [ ] Open PR, request Member 6 review
+- [x] Checkout `feature/M4-security`
+- [x] Create `User` database entity mapping
+- [x] Build `JwtUtils` and `SecurityFilterChain`
+- [x] Open PR, request Member 6 review
 
 ### Member 5 Checklist
 - [x] Checkout `feature/M5-data-apis` (Wait for Member 4's `User.java`)
@@ -272,8 +272,8 @@ Phase 1
 ## 20. Phase 1 Sign-Off Checklist
 *   [ ] All `Todo` items in Master Task Tracker are complete.
 *   [ ] `main` branch compiles locally on a clean clone.
-*   [ ] JWT authorization headers are securely functioning.
-*   [ ] Admin endpoints successfully reject Normal users (403 Forbidden).
+*   [x] JWT authorization headers are securely functioning.
+*   [x] Admin endpoints successfully reject Normal users (403 Forbidden).
 *   [ ] Live deployment URLs are accessible.
 
 ## 21. Phase 1 Completion Criteria
