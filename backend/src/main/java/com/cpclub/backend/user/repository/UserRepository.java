@@ -58,13 +58,30 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByCodeforcesHandleIsNotNull();
 
     /**
+     * Counts the number of users whose rating is strictly greater than the given rating.
+     * Used for calculating standard competition ranking (ties get the same rank).
+     *
+     * @param rating the rating to compare against
+     * @return the number of users strictly better
+     */
+    long countByRatingGreaterThan(Integer rating);
+
+    /**
+     * Counts the total number of members who have a non-null rating.
+     * Used to assign a rank to unrated members (which are placed at the end).
+     *
+     * @return total count of rated members
+     */
+    long countByRatingIsNotNull();
+
+    /**
      * Resolves paginated list of users ordered by rating descending.
      * Non-rated members (null ratings) are pushed to the end of the ranking list.
      *
      * @param pageable requested page and size
      * @return page of members in ranking order
      */
-    @Query("SELECT u FROM User u ORDER BY u.rating DESC NULLS LAST")
+    @Query("SELECT u FROM User u ORDER BY u.rating DESC NULLS LAST, u.id ASC")
     Page<User> findAllByOrderByRatingDescNullsLast(Pageable pageable);
 
     /**
