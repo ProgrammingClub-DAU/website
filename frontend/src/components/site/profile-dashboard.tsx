@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { ActivityCalendar } from "react-activity-calendar";
 import { User, Trophy, Code, Calendar } from "lucide-react";
+import Image from "next/image";
 
 // ── Rank color helper for rating values (Codeforces thresholds) ──
 function ratingToRankName(rating: number): string {
@@ -66,9 +67,11 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
               style={{ borderColor: nameColor }}
             >
               {profile.avatarUrl ? (
-                <img
+                <Image
                   src={profile.avatarUrl}
                   alt={profile.name}
+                  width={96}
+                  height={96}
                   className="size-full rounded-full object-cover"
                 />
               ) : (
@@ -170,12 +173,12 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
                     borderRadius: "8px",
                     fontSize: "12px",
                   }}
-                  labelFormatter={(label: any) => {
+                  labelFormatter={(label: string | number | Date) => {
                     if (!label) return "";
-                    const d = new Date(label as string);
+                    const d = new Date(label);
                     return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
                   }}
-                  formatter={(value: any, _name: any, props: any) => {
+                  formatter={(value: number, _name: string, props: { payload?: { contestName?: string } }) => {
                     const contestName = props.payload?.contestName ?? "";
                     return [
                       `${value} (${ratingToRankName(Number(value))})`,
