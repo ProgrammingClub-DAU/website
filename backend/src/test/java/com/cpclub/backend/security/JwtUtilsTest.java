@@ -55,4 +55,23 @@ class JwtUtilsTest {
 
         assertFalse(isValid);
     }
+
+    @Test
+    @DisplayName("Should reject an expired JWT token")
+    void validateJwtToken_Expired() {
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", -1);
+        String expiredToken = jwtUtils.generateTokenFromEmail("alice@example.com", 1L, "ROLE_USER");
+
+        assertFalse(jwtUtils.validateJwtToken(expiredToken));
+    }
+
+    @Test
+    @DisplayName("Should reject a JWT with an invalid signature")
+    void validateJwtToken_InvalidSignature() {
+        String validToken = jwtUtils.generateTokenFromEmail("alice@example.com", 1L, "ROLE_USER");
+        String invalidSignatureToken = validToken.substring(0, validToken.length() - 1)
+                + (validToken.endsWith("a") ? "b" : "a");
+
+        assertFalse(jwtUtils.validateJwtToken(invalidSignatureToken));
+    }
 }
