@@ -134,12 +134,19 @@ function canHover() {
   return window.matchMedia("(hover: hover)").matches;
 }
 
-/** Marks one card across every group, and points the dots at it. */
+/**
+ * Marks one card across every group and points the dots at it.
+ *
+ * Only the outgoing and incoming elements are touched — sweeping every entry
+ * on each scroll frame would be needless work on a long timeline.
+ */
+let activeEntry: HTMLElement | null = null;
+
 function applySelection(group: HTMLElement | null, entry: HTMLElement | null) {
-  for (const other of touchGroups) {
-    for (const candidate of other.querySelectorAll<HTMLElement>(".tl-entry")) {
-      candidate.classList.toggle("tl-active", candidate === entry);
-    }
+  if (activeEntry !== entry) {
+    activeEntry?.classList.remove("tl-active");
+    entry?.classList.add("tl-active");
+    activeEntry = entry;
   }
   if (group && entry) aimAt(group, entry);
 }
@@ -182,6 +189,30 @@ function onTouchTap(event: Event) {
   applySelection(entry.closest<HTMLElement>(".tl-group"), entry);
 }
 
+/**
+ * Filtering swaps the rendered cards without any scroll or resize, so the
+ * selected card can vanish and leave nothing lit. Watching the group for
+ * child changes re-selects after those renders. The cached aim is dropped
+ * too: the surviving cards move, so an unchanged selection still needs a
+ * fresh path.
+ */
+const groupObservers = new WeakMap<HTMLElement, MutationObserver>();
+
+function watchEntries(group: HTMLElement) {
+  if (groupObservers.has(group)) return;
+  const observer = new MutationObserver(() => {
+    lastAimed.delete(group);
+    onTouchScroll();
+  });
+  observer.observe(group, { childList: true, subtree: true });
+  groupObservers.set(group, observer);
+}
+
+function unwatchEntries(group: HTMLElement) {
+  groupObservers.get(group)?.disconnect();
+  groupObservers.delete(group);
+}
+
 function useTouchCascade(ref: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const group = ref.current;
@@ -197,16 +228,19 @@ function useTouchCascade(ref: React.RefObject<HTMLDivElement | null>) {
         window.addEventListener("resize", onTouchScroll, { passive: true });
         document.addEventListener("click", onTouchTap);
       }
+      watchEntries(group);
       selectNearest();
     };
 
     const detach = () => {
       if (!touchGroups.has(group)) return;
       touchGroups.delete(group);
+      unwatchEntries(group);
       // Clear the marks, or a card stays lit once hover takes over again.
       for (const entry of group.querySelectorAll(".tl-entry")) {
         entry.classList.remove("tl-active");
       }
+      if (activeEntry && group.contains(activeEntry)) activeEntry = null;
       if (touchGroups.size === 0) {
         if (scheduled) cancelAnimationFrame(scheduled);
         scheduled = 0;
