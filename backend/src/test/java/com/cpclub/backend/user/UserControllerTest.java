@@ -29,11 +29,13 @@ class UserControllerTest {
 
     private MockMvc mockMvc;
     private UserService userService;
+    private com.cpclub.backend.codeforces.CodeforcesSyncService codeforcesSyncService;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        UserController userController = new UserController(userService);
+        codeforcesSyncService = mock(com.cpclub.backend.codeforces.CodeforcesSyncService.class);
+        UserController userController = new UserController(userService, codeforcesSyncService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -105,6 +107,7 @@ class UserControllerTest {
         UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateCodeforcesHandle(eq(1L), any(UpdateHandleRequest.class))).thenReturn(updatedUser);
+        when(userService.getUserById(eq(1L))).thenReturn(updatedUser);
 
         String jsonPayload = "{\"codeforcesHandle\":\"new_cf_handle\"}";
 
@@ -136,6 +139,7 @@ class UserControllerTest {
         UserResponseDto updatedUser = new UserResponseDto(1L, "New Name", "valid_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateUserProfile(eq(1L), any(UserProfileUpdateRequest.class))).thenReturn(updatedUser);
+        when(userService.getUserById(eq(1L))).thenReturn(updatedUser);
 
         String jsonPayload = "{\"name\":\"New Name\",\"codeforcesHandle\":\"valid_handle\"}";
 

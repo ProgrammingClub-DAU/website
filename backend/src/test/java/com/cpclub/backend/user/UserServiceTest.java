@@ -5,7 +5,7 @@ import com.cpclub.backend.user.UserProfileUpdateRequest;
 import com.cpclub.backend.user.UserResponseDto;
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.codeforces.CodeforcesSyncService;
+
 import com.cpclub.backend.common.ResourceNotFoundException;
 import com.cpclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,14 +23,12 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     private UserRepository userRepository;
-    private CodeforcesSyncService codeforcesSyncService;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
-        codeforcesSyncService = mock(CodeforcesSyncService.class);
-        userService = new UserService(userRepository, codeforcesSyncService);
+        userService = new UserService(userRepository);
     }
 
     @Test
@@ -89,7 +87,6 @@ class UserServiceTest {
         assertNotNull(result);
         assertEquals("tourist_pro", result.codeforcesHandle());
         verify(userRepository, times(1)).save(user);
-        verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
 
     @Test
@@ -106,7 +103,6 @@ class UserServiceTest {
 
         assertEquals("New Name", result.name());
         assertEquals("new_handle", result.codeforcesHandle());
-        verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
 
     @Test

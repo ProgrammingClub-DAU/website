@@ -2,7 +2,7 @@ package com.cpclub.backend.user;
 
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
-import lombok.*;
+
 
 import java.time.LocalDateTime;
 

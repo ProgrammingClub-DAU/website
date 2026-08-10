@@ -1,7 +1,7 @@
 package com.cpclub.backend.user;
 
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.codeforces.CodeforcesSyncService;
+
 import com.cpclub.backend.common.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final CodeforcesSyncService codeforcesSyncService;
 
     public List<UserResponseDto> getAllUsers() {
         return userRepository.findAll()
@@ -46,9 +45,6 @@ public class UserService {
         user.setCodeforcesHandle(request.codeforcesHandle().trim());
         User updatedUser = userRepository.save(user);
         
-        // Immediately try to sync the rating
-        codeforcesSyncService.syncUserRating(updatedUser);
-        
         return UserResponseDto.fromEntity(updatedUser);
     }
 
@@ -66,11 +62,6 @@ public class UserService {
         }
 
         User updatedUser = userRepository.save(user);
-
-        // Instantly sync the rating if the handle was updated
-        if (request.codeforcesHandle() != null) {
-            codeforcesSyncService.syncUserRating(updatedUser);
-        }
 
         return UserResponseDto.fromEntity(updatedUser);
     }

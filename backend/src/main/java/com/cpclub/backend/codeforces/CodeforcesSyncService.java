@@ -1,7 +1,7 @@
 package com.cpclub.backend.codeforces;
 
-import com.cpclub.backend.codeforces.CodeforcesResponse;
-import com.cpclub.backend.codeforces.CodeforcesUserDto;
+
+
 import com.cpclub.backend.entity.User;
 import com.cpclub.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -84,5 +84,13 @@ public class CodeforcesSyncService {
             log.warn("HTTP Error fetching rating for handle {}: {}", handle, e.getMessage());
             return false;
         }
+    }
+
+    public boolean syncRatingById(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            return syncUserRating(user);
+        }
+        return false;
     }
 }

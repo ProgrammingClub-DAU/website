@@ -25,6 +25,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final com.cpclub.backend.codeforces.CodeforcesSyncService codeforcesSyncService;
 
     @GetMapping
     @Operation(summary = "List all users", description = "Returns all registered club members as public user DTOs.")
@@ -63,7 +64,9 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDto>> updateCodeforcesHandle(
             @PathVariable Long id,
             @Valid @RequestBody UpdateHandleRequest request) {
-        return ApiResponse.success(userService.updateCodeforcesHandle(id, request), "Codeforces handle updated successfully");
+        userService.updateCodeforcesHandle(id, request);
+        codeforcesSyncService.syncRatingById(id);
+        return ApiResponse.success(userService.getUserById(id), "Codeforces handle updated successfully");
     }
 
     @PutMapping("/{id}/profile")
@@ -78,6 +81,10 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDto>> updateUserProfile(
             @PathVariable Long id,
             @Valid @RequestBody UserProfileUpdateRequest request) {
-        return ApiResponse.success(userService.updateUserProfile(id, request), "Profile updated successfully");
+        userService.updateUserProfile(id, request);
+        if (request.codeforcesHandle() != null) {
+            codeforcesSyncService.syncRatingById(id);
+        }
+        return ApiResponse.success(userService.getUserById(id), "Profile updated successfully");
     }
 }

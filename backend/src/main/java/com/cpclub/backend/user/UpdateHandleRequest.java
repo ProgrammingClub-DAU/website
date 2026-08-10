@@ -2,7 +2,7 @@ package com.cpclub.backend.user;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.*;
+
 
 public record UpdateHandleRequest(
     @NotBlank(message = "Codeforces handle cannot be blank")
