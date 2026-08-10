@@ -79,4 +79,9 @@ export interface LeaderboardEntry {
   rating: number;
   role: string;
   createdAt: string;
+  clubRole?: ClubRole;
+  lastEventDate?: string;
+  solvedCount?: number;
+  yearlyActivityCount?: number;
+  avatarUrl?: string | null;
 }

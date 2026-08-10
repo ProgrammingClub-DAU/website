@@ -98,7 +98,7 @@ export function Navbar() {
             asChild
             className="hidden h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase lg:inline-flex"
           >
-            <Link href="/login">Join</Link>
+            <Link href="/register">Join</Link>
           </Button>
 
           <Sheet open={open} onOpenChange={setOpen}>
@@ -152,7 +152,7 @@ export function Navbar() {
                 </SheetClose>
                 <SheetClose asChild>
                   <Button asChild className="h-10 rounded-full">
-                    <Link href="/login">Join the Club</Link>
+                    <Link href="/register">Join the Club</Link>
                   </Button>
                 </SheetClose>
               </div>

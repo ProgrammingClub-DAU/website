@@ -22,4 +22,6 @@ export const navItems = [
   { href: "/blog", label: "Blog" },
   { href: "/members", label: "Members" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/login", label: "Login" },
 ] as const;
+

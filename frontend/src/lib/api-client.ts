@@ -30,13 +30,16 @@ export const apiClient = {
   getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve([
-        { id: 1, name: "Sumeet Verma", email: "sumeet@example.com", codeforcesHandle: "Sumeet.Verma", rating: 2502, role: "ROLE_USER", createdAt: "2024-01-01T00:00:00Z" },
-        { id: 2, name: "Preet Sheth", email: "preet@example.com", codeforcesHandle: "Preet Sheth", rating: 2210, role: "ROLE_USER", createdAt: "2024-01-02T00:00:00Z" },
-        { id: 3, name: "Jalp Patel", email: "jalp@example.com", codeforcesHandle: "Jalp Patel", rating: 1990, role: "ROLE_USER", createdAt: "2024-01-03T00:00:00Z" },
-        { id: 4, name: "King-T", email: "kingt@example.com", codeforcesHandle: "King-T", rating: 1639, role: "ROLE_USER", createdAt: "2024-01-04T00:00:00Z" },
-        { id: 5, name: "Alice", email: "alice@example.com", codeforcesHandle: "Alice", rating: 1447, role: "ROLE_USER", createdAt: "2024-01-05T00:00:00Z" },
-        { id: 6, name: "XYZ", email: "xyz@example.com", codeforcesHandle: "XYZ", rating: 1218, role: "ROLE_USER", createdAt: "2024-01-06T00:00:00Z" },
-        { id: 7, name: "Binod", email: "binod@example.com", codeforcesHandle: "Binod", rating: 818, role: "ROLE_USER", createdAt: "2024-01-07T00:00:00Z" }
+        { id: 1, name: "Sumeet Verma", email: "sumeet@example.com", codeforcesHandle: "Sumeet.Verma", rating: 2502, role: "ROLE_USER", clubRole: "Convenor", createdAt: "2024-01-01T00:00:00Z", lastEventDate: "2026-03-15T00:00:00Z", solvedCount: 1289, yearlyActivityCount: 42, avatarUrl: null },
+        { id: 2, name: "Preet Sheth", email: "preet@example.com", codeforcesHandle: "Preet Sheth", rating: 2210, role: "ROLE_USER", clubRole: "Core Member", createdAt: "2024-01-02T00:00:00Z", lastEventDate: "2026-03-08T00:00:00Z", solvedCount: 1042, yearlyActivityCount: 38, avatarUrl: null },
+        { id: 3, name: "Jalp Patel", email: "jalp@example.com", codeforcesHandle: "Jalp Patel", rating: 1990, role: "ROLE_USER", clubRole: "Core Member", createdAt: "2024-01-03T00:00:00Z", lastEventDate: "2026-02-28T00:00:00Z", solvedCount: 915, yearlyActivityCount: 29, avatarUrl: null },
+        { id: 4, name: "King-T", email: "kingt@example.com", codeforcesHandle: "King-T", rating: 1639, role: "ROLE_USER", clubRole: "Associate Core Member", createdAt: "2024-01-04T00:00:00Z", lastEventDate: "2026-02-22T00:00:00Z", solvedCount: 654, yearlyActivityCount: 24, avatarUrl: null },
+        { id: 5, name: "Alice Sharma", email: "alice@example.com", codeforcesHandle: "Alice", rating: 1447, role: "ROLE_USER", clubRole: "Batch Representative", createdAt: "2024-01-05T00:00:00Z", lastEventDate: "2026-01-20T00:00:00Z", solvedCount: 512, yearlyActivityCount: 18, avatarUrl: null },
+        { id: 6, name: "XYZ Coder", email: "xyz@example.com", codeforcesHandle: "XYZ", rating: 1218, role: "ROLE_USER", clubRole: "Club Participant", createdAt: "2024-01-06T00:00:00Z", lastEventDate: "2025-11-10T00:00:00Z", solvedCount: 380, yearlyActivityCount: 12, avatarUrl: null },
+        { id: 7, name: "Binod Kumar", email: "binod@example.com", codeforcesHandle: "Binod", rating: 818, role: "ROLE_USER", clubRole: "Club Participant", createdAt: "2024-01-07T00:00:00Z", lastEventDate: "2024-03-01T00:00:00Z", solvedCount: 120, yearlyActivityCount: 0, avatarUrl: null },
+        { id: 8, name: "Rohan Gupta", email: "rohan@example.com", codeforcesHandle: "rohan_dp", rating: 1750, role: "ROLE_USER", clubRole: "Associate Core Member", createdAt: "2024-02-01T00:00:00Z", lastEventDate: "2026-03-01T00:00:00Z", solvedCount: 780, yearlyActivityCount: 31, avatarUrl: null },
+        { id: 9, name: "Meher Singh", email: "meher@example.com", codeforcesHandle: "meher.solves", rating: 1890, role: "ROLE_USER", clubRole: "Batch Representative", createdAt: "2024-02-15T00:00:00Z", lastEventDate: "2026-02-15T00:00:00Z", solvedCount: 810, yearlyActivityCount: 27, avatarUrl: null },
+        { id: 10, name: "Arjun Mehta", email: "arjun@example.com", codeforcesHandle: "arjun_bitset", rating: 2050, role: "ROLE_USER", clubRole: "Core Member", createdAt: "2023-09-01T00:00:00Z", lastEventDate: "2023-11-20T00:00:00Z", solvedCount: 610, yearlyActivityCount: 0, avatarUrl: null },
       ]), 500));
     }
     const response = await api.get<LeaderboardEntry[]>("/users/leaderboard");
