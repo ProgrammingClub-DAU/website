@@ -1,9 +1,9 @@
-package com.cpclub.backend.service;
+package com.cpclub.backend.codeforces;
 
-import com.cpclub.backend.dto.CodeforcesResponse;
-import com.cpclub.backend.dto.CodeforcesUserDto;
+import com.cpclub.backend.codeforces.CodeforcesResponse;
+import com.cpclub.backend.codeforces.CodeforcesUserDto;
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.repository.UserRepository;
+import com.cpclub.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -64,11 +64,11 @@ public class CodeforcesSyncService {
         try {
             CodeforcesResponse response = restTemplate.getForObject(CODEFORCES_API_URL + handle, CodeforcesResponse.class);
             
-            if (response != null && "OK".equals(response.getStatus()) && response.getResult() != null && !response.getResult().isEmpty()) {
-                CodeforcesUserDto cfUser = response.getResult().get(0);
+            if (response != null && "OK".equals(response.status()) && response.result() != null && !response.result().isEmpty()) {
+                CodeforcesUserDto cfUser = response.result().get(0);
                 
-                if (cfUser.getRating() != null) {
-                    user.setRating(cfUser.getRating());
+                if (cfUser.rating() != null) {
+                    user.setRating(cfUser.rating());
                 } else {
                     // User has no rating (e.g. unrated), ensure it drops back to null
                     user.setRating(null);

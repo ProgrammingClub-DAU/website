@@ -1,4 +1,4 @@
-package com.cpclub.backend.config;
+package com.cpclub.backend.common;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,12 +1,13 @@
-package com.cpclub.backend.service;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
+import com.cpclub.backend.user.UpdateHandleRequest;
+import com.cpclub.backend.user.UserProfileUpdateRequest;
+import com.cpclub.backend.user.UserResponseDto;
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
-import com.cpclub.backend.exception.ResourceNotFoundException;
-import com.cpclub.backend.repository.UserRepository;
+import com.cpclub.backend.codeforces.CodeforcesSyncService;
+import com.cpclub.backend.common.ResourceNotFoundException;
+import com.cpclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,8 +46,8 @@ class UserServiceTest {
         List<UserResponseDto> result = userService.getAllUsers();
 
         assertEquals(2, result.size());
-        assertEquals("User One", result.get(0).getName());
-        assertEquals("User Two", result.get(1).getName());
+        assertEquals("User One", result.get(0).name());
+        assertEquals("User Two", result.get(1).name());
         verify(userRepository, times(1)).findAll();
     }
 
@@ -61,8 +62,8 @@ class UserServiceTest {
         UserResponseDto dto = userService.getUserById(10L);
 
         assertNotNull(dto);
-        assertEquals(10L, dto.getId());
-        assertEquals("John Doe", dto.getName());
+        assertEquals(10L, dto.id());
+        assertEquals("John Doe", dto.name());
     }
 
     @Test
@@ -86,7 +87,7 @@ class UserServiceTest {
         UserResponseDto result = userService.updateCodeforcesHandle(1L, request);
 
         assertNotNull(result);
-        assertEquals("tourist_pro", result.getCodeforcesHandle());
+        assertEquals("tourist_pro", result.codeforcesHandle());
         verify(userRepository, times(1)).save(user);
         verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
@@ -103,8 +104,8 @@ class UserServiceTest {
         UserProfileUpdateRequest request = new UserProfileUpdateRequest("New Name", "new_handle");
         UserResponseDto result = userService.updateUserProfile(1L, request);
 
-        assertEquals("New Name", result.getName());
-        assertEquals("new_handle", result.getCodeforcesHandle());
+        assertEquals("New Name", result.name());
+        assertEquals("new_handle", result.codeforcesHandle());
         verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
 
@@ -121,7 +122,7 @@ class UserServiceTest {
         List<UserResponseDto> leaderboard = userService.getLeaderboard();
 
         assertEquals(2, leaderboard.size());
-        assertEquals(2400, leaderboard.get(0).getRating());
-        assertEquals(1200, leaderboard.get(1).getRating());
+        assertEquals(2400, leaderboard.get(0).rating());
+        assertEquals(1200, leaderboard.get(1).rating());
     }
 }

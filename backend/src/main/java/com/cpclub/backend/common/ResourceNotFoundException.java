@@ -1,4 +1,4 @@
-package com.cpclub.backend.exception;
+package com.cpclub.backend.common;
 
 public class ResourceNotFoundException extends RuntimeException {
 

@@ -1,6 +1,6 @@
-package com.cpclub.backend.exception;
+package com.cpclub.backend.common;
 
-import com.cpclub.backend.response.ApiResponse;
+import com.cpclub.backend.common.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,10 +31,10 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals(404, response.getBody().getStatusCode());
-        assertEquals("User not found with id: 42", response.getBody().getMessage());
-        assertNotNull(response.getBody().getTimestamp());
+        assertFalse(response.getBody().success());
+        assertEquals(404, response.getBody().statusCode());
+        assertEquals("User not found with id: 42", response.getBody().message());
+        assertNotNull(response.getBody().timestamp());
     }
 
     @Test
@@ -46,9 +46,9 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals(400, response.getBody().getStatusCode());
-        assertEquals("Invalid request data", response.getBody().getMessage());
+        assertFalse(response.getBody().success());
+        assertEquals(400, response.getBody().statusCode());
+        assertEquals("Invalid request data", response.getBody().message());
     }
 
     @Test
@@ -60,9 +60,9 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals(404, response.getBody().getStatusCode());
-        assertEquals("User not found", response.getBody().getMessage());
+        assertFalse(response.getBody().success());
+        assertEquals(404, response.getBody().statusCode());
+        assertEquals("User not found", response.getBody().message());
     }
 
     @Test
@@ -77,10 +77,10 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals(400, response.getBody().getStatusCode());
-        assertTrue(response.getBody().getMessage().contains("Validation failed"));
-        assertTrue(response.getBody().getMessage().contains("codeforcesHandle"));
+        assertFalse(response.getBody().success());
+        assertEquals(400, response.getBody().statusCode());
+        assertTrue(response.getBody().message().contains("Validation failed"));
+        assertTrue(response.getBody().message().contains("codeforcesHandle"));
     }
 
     @Test
@@ -90,9 +90,9 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals(500, response.getBody().getStatusCode());
-        assertEquals("An unexpected internal error occurred", response.getBody().getMessage());
-        assertFalse(response.getBody().getMessage().contains("database down"));
+        assertFalse(response.getBody().success());
+        assertEquals(500, response.getBody().statusCode());
+        assertEquals("An unexpected internal error occurred", response.getBody().message());
+        assertFalse(response.getBody().message().contains("database down"));
     }
 }

@@ -1,10 +1,10 @@
-package com.cpclub.backend.controller;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
-import com.cpclub.backend.response.ApiResponse;
-import com.cpclub.backend.service.UserService;
+import com.cpclub.backend.user.UpdateHandleRequest;
+import com.cpclub.backend.user.UserProfileUpdateRequest;
+import com.cpclub.backend.user.UserResponseDto;
+import com.cpclub.backend.common.ApiResponse;
+import com.cpclub.backend.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

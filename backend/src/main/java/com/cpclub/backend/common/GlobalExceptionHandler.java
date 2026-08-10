@@ -1,6 +1,6 @@
-package com.cpclub.backend.exception;
+package com.cpclub.backend.common;
 
-import com.cpclub.backend.response.ApiResponse;
+import com.cpclub.backend.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

@@ -1,4 +1,4 @@
-package com.cpclub.backend.dto;
+package com.cpclub.backend.user;
 
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
@@ -20,11 +20,11 @@ class UserResponseDtoTest {
         UserResponseDto dto = UserResponseDto.fromEntity(user);
 
         assertNotNull(dto);
-        assertEquals(42L, dto.getId());
-        assertEquals("Alice Smith", dto.getName());
-        assertEquals("tourist_fan", dto.getCodeforcesHandle());
-        assertEquals(1500, dto.getRating());
-        assertEquals(Role.ROLE_USER, dto.getRole());
+        assertEquals(42L, dto.id());
+        assertEquals("Alice Smith", dto.name());
+        assertEquals("tourist_fan", dto.codeforcesHandle());
+        assertEquals(1500, dto.rating());
+        assertEquals(Role.ROLE_USER, dto.role());
     }
 
     @Test

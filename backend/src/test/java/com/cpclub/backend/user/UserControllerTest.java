@@ -1,12 +1,12 @@
-package com.cpclub.backend.controller;
+package com.cpclub.backend.user;
 
-import com.cpclub.backend.dto.UpdateHandleRequest;
-import com.cpclub.backend.dto.UserProfileUpdateRequest;
-import com.cpclub.backend.dto.UserResponseDto;
+import com.cpclub.backend.user.UpdateHandleRequest;
+import com.cpclub.backend.user.UserProfileUpdateRequest;
+import com.cpclub.backend.user.UserResponseDto;
 import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.exception.GlobalExceptionHandler;
-import com.cpclub.backend.exception.ResourceNotFoundException;
-import com.cpclub.backend.service.UserService;
+import com.cpclub.backend.common.GlobalExceptionHandler;
+import com.cpclub.backend.common.ResourceNotFoundException;
+import com.cpclub.backend.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
