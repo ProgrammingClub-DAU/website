@@ -33,29 +33,13 @@ public class CodeforcesSyncService {
         for (User user : users) {
             String handle = user.getCodeforcesHandle();
             try {
-                CodeforcesResponse response = restTemplate.getForObject(CODEFORCES_API_URL + handle, CodeforcesResponse.class);
-                
-                if (response != null && "OK".equals(response.getStatus()) && response.getResult() != null && !response.getResult().isEmpty()) {
-                    CodeforcesUserDto cfUser = response.getResult().get(0);
-                    
-                    if (cfUser.getRating() != null) {
-                        user.setRating(cfUser.getRating());
-                    } else {
-                        // User has no rating (e.g. unrated), ensure it drops back to null
-                        user.setRating(null);
-                    }
-                    userRepository.save(user);
+                if (syncUserRating(user)) {
                     successCount++;
-                    log.debug("Successfully updated rating for handle: {}", handle);
                 } else {
-                    log.warn("Codeforces API returned non-OK status or empty result for handle: {}", handle);
                     failureCount++;
                 }
-            } catch (RestClientException e) {
-                log.warn("HTTP Error fetching rating for handle {}: {}", handle, e.getMessage());
-                failureCount++;
             } catch (Exception e) {
-                log.error("Unexpected error fetching rating for handle {}: {}", handle, e.getMessage());
+                log.error("Unexpected error syncing user {}: {}", user.getCodeforcesHandle(), e.getMessage());
                 failureCount++;
             }
 
@@ -70,5 +54,35 @@ public class CodeforcesSyncService {
         }
 
         log.info("Codeforces sync completed. Successful: {}, Failed: {}", successCount, failureCount);
+    }
+
+    public boolean syncUserRating(User user) {
+        if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
+            return false;
+        }
+        String handle = user.getCodeforcesHandle();
+        try {
+            CodeforcesResponse response = restTemplate.getForObject(CODEFORCES_API_URL + handle, CodeforcesResponse.class);
+            
+            if (response != null && "OK".equals(response.getStatus()) && response.getResult() != null && !response.getResult().isEmpty()) {
+                CodeforcesUserDto cfUser = response.getResult().get(0);
+                
+                if (cfUser.getRating() != null) {
+                    user.setRating(cfUser.getRating());
+                } else {
+                    // User has no rating (e.g. unrated), ensure it drops back to null
+                    user.setRating(null);
+                }
+                userRepository.save(user);
+                log.debug("Successfully updated rating for handle: {}", handle);
+                return true;
+            } else {
+                log.warn("Codeforces API returned non-OK status or empty result for handle: {}", handle);
+                return false;
+            }
+        } catch (RestClientException e) {
+            log.warn("HTTP Error fetching rating for handle {}: {}", handle, e.getMessage());
+            return false;
+        }
     }
 }

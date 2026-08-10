@@ -22,12 +22,14 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     private UserRepository userRepository;
+    private CodeforcesSyncService codeforcesSyncService;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
-        userService = new UserService(userRepository);
+        codeforcesSyncService = mock(CodeforcesSyncService.class);
+        userService = new UserService(userRepository, codeforcesSyncService);
     }
 
     @Test
@@ -86,6 +88,7 @@ class UserServiceTest {
         assertNotNull(result);
         assertEquals("tourist_pro", result.getCodeforcesHandle());
         verify(userRepository, times(1)).save(user);
+        verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
 
     @Test
@@ -102,6 +105,7 @@ class UserServiceTest {
 
         assertEquals("New Name", result.getName());
         assertEquals("new_handle", result.getCodeforcesHandle());
+        verify(codeforcesSyncService, times(1)).syncUserRating(user);
     }
 
     @Test
