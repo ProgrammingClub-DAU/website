@@ -15,16 +15,15 @@ function getRankName(key: string): string {
 }
 
 const FILTER_CATEGORIES = [
-  "Everyone",
+  "All Members",
   "Core",
   "Associate Core",
   "Batch Representatives",
-  "Students",
 ] as const;
 
 export function MembersDirectory({ members }: { members: Member[] }) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("Everyone");
+  const [activeFilter, setActiveFilter] = useState<string>("All Members");
 
   const q = query.trim().toLowerCase();
 
@@ -41,11 +40,10 @@ export function MembersDirectory({ members }: { members: Member[] }) {
       if (!matchesSearch) return false;
 
       // Filter category
-      if (activeFilter === "Everyone") return true;
+      if (activeFilter === "All Members") return true;
       if (activeFilter === "Core") return m.clubRoleCategory === "Leadership" || m.clubRoleCategory === "Core";
       if (activeFilter === "Associate Core") return m.clubRoleCategory === "Associate Core";
       if (activeFilter === "Batch Representatives") return m.clubRoleCategory === "Batch Representative";
-      if (activeFilter === "Students") return m.clubRoleCategory === "Student Participant" || !m.clubRoleCategory;
 
       return true;
     });
@@ -68,20 +66,14 @@ export function MembersDirectory({ members }: { members: Member[] }) {
     () => filteredMembers.filter((m) => m.clubRoleCategory === "Batch Representative"),
     [filteredMembers]
   );
-  const communityParticipants = useMemo(
-    () => filteredMembers.filter((m) => m.clubRoleCategory === "Student Participant" || !m.clubRoleCategory),
-    [filteredMembers]
-  );
 
   // Dynamic header stats
   const totalParticipants = 818;
-  const officialMembersCount = members.filter(
-    (m) => m.clubRoleCategory && m.clubRoleCategory !== "Student Participant"
-  ).length;
+  const officialMembersCount = members.length;
   const totalEvents = 20;
   const totalContests = 14;
 
-  const isFiltering = q !== "" || activeFilter !== "Everyone";
+  const isFiltering = q !== "" || activeFilter !== "All Members";
 
   return (
     <div className="space-y-10">
@@ -202,20 +194,6 @@ export function MembersDirectory({ members }: { members: Member[] }) {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {batchReps.map((m) => (
                   <MemberCard key={m.name} member={m} />
-                ))}
-              </div>
-            </SectionGroup>
-          )}
-
-          {/* 🌐 COMMUNITY PARTICIPANTS SECTION */}
-          {(!isFiltering || communityParticipants.length > 0) && (
-            <SectionGroup
-              title="🌐 COMMUNITY PARTICIPANTS"
-              subtitle="Student participants active in club contests, workshops, and practice."
-            >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {communityParticipants.map((m) => (
-                  <MemberCard key={m.name} member={m} isStudent />
                 ))}
               </div>
             </SectionGroup>
