@@ -31,6 +31,29 @@ export interface PlatformStats {
   solved: number;
 }
 
+// ── Club Activity & Event types ──
+
+export type ClubEventType = "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
+
+export type ClubRole =
+  | "Convenor"
+  | "Deputy Convenor"
+  | "Core Member"
+  | "Associate Core Member"
+  | "Batch Representative"
+  | "Club Participant";
+
+export interface EventParticipation {
+  eventId: string;
+  eventName: string;
+  eventType: ClubEventType;
+  eventDate: string; // ISO date string
+  rank: number | null; // null for non-ranked events (workshops, etc.)
+  totalParticipants: number;
+  status: "participated" | "registered" | "winner" | "runner-up" | "top-3";
+  achievement: string | null; // e.g. "🥇 1st Place", null if none
+}
+
 export interface Profile {
   id: number;
   name: string;
@@ -41,6 +64,8 @@ export interface Profile {
   createdAt: string;
   avatarUrl: string | null;
   maxRating: number;
+  clubRole: ClubRole;
+  eventParticipations: EventParticipation[];
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
   activityData: ActivityDay[];
