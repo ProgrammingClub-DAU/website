@@ -37,12 +37,20 @@ public class LeaderboardService {
         Pageable pageable = PageRequest.of(page, size);
         Page<User> userPage = userRepository.findAllByOrderByRatingDescNullsLast(pageable);
 
-        // Absolute rank starts from page boundary index + 1
-        int startRank = page * size + 1;
         List<LeaderboardResponseDto> content = new ArrayList<>();
-        for (int i = 0; i < userPage.getContent().size(); i++) {
-            User user = userPage.getContent().get(i);
-            content.add(LeaderboardResponseDto.fromEntity(user, startRank + i));
+        long unratedRank = -1; // Cache for users with null rating
+
+        for (User user : userPage.getContent()) {
+            int rank;
+            if (user.getRating() != null) {
+                rank = 1 + (int) userRepository.countByRatingGreaterThan(user.getRating());
+            } else {
+                if (unratedRank == -1) {
+                    unratedRank = 1 + userRepository.countByRatingIsNotNull();
+                }
+                rank = (int) unratedRank;
+            }
+            content.add(LeaderboardResponseDto.fromEntity(user, rank));
         }
 
         return new PagedResponse<>(
