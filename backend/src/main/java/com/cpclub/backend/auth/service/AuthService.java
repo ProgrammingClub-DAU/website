@@ -18,6 +18,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service class orchestrating authentication workflows.
+ * Responsible for hashing passwords via BCrypt, querying database unique constraints,
+ * and calling {@link JwtUtils} to issue access tokens.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,6 +33,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
+    /**
+     * Registers a new user, checks for unique email and handle constraints,
+     * hashes password, saves the user to DB, and returns a pre-signed JWT token.
+     *
+     * @param request user registration details
+     * @return payload containing generated token and user details
+     */
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
         String email = request.email().toLowerCase().trim();
@@ -65,6 +77,13 @@ public class AuthService {
         );
     }
 
+    /**
+     * Authenticates existing user credentials via Spring Security's AuthenticationManager,
+     * updates SecurityContext, and issues a signed JWT token.
+     *
+     * @param request user login credentials
+     * @return payload containing generated token and user details
+     */
     public AuthResponse authenticateUser(LoginRequest request) {
         String email = request.email().toLowerCase().trim();
 
@@ -90,3 +109,4 @@ public class AuthService {
         );
     }
 }
+

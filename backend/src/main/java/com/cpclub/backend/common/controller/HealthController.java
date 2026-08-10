@@ -10,11 +10,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * Lightweight unauthenticated liveness endpoint for deployment platforms and clients.
+ *
+ * <p>It deliberately avoids database and external-service checks, making it safe to
+ * call frequently while still confirming that the HTTP application is available.</p>
+ */
 @RestController
 @RequestMapping("/api/health")
 @Tag(name = "Health Check", description = "Endpoints for service health checks")
 public class HealthController {
 
+    /**
+     * Returns the current API liveness metadata.
+     *
+     * @return standard success response containing service status and version
+     */
     @GetMapping
     @Operation(summary = "Check backend API status")
     public ResponseEntity<ApiResponse<Map<String, String>>> checkHealth() {

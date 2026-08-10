@@ -25,6 +25,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Central Spring Security configuration for stateless JWT authentication.
+ *
+ * <p>It defines password verification, CORS, public API routes, and the request filter
+ * that reconstructs authentication from a signed token. Fine-grained admin checks stay
+ * near endpoints through method-security annotations.</p>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -35,6 +42,11 @@ public class SecurityConfig {
     private final AuthEntryPointJwt unauthorizedHandler;
     private final AuthTokenFilter authTokenFilter;
 
+    /**
+     * Connects repository-backed user lookup and BCrypt password verification to Spring Security.
+     *
+     * @return configured authentication provider
+     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
@@ -42,16 +54,33 @@ public class SecurityConfig {
         return authProvider;
     }
 
+    /**
+     * Exposes Spring Security's configured authentication manager to the auth service.
+     *
+     * @param authConfig framework authentication configuration
+     * @return authentication manager for email/password login
+     * @throws Exception if the framework cannot construct the manager
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
+    /**
+     * Supplies BCrypt hashing so passwords are never stored or compared as plaintext.
+     *
+     * @return password encoder with an intentionally adaptive work factor
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Defines browser origins, methods, and headers permitted to call the API.
+     *
+     * @return global CORS policy for frontend-to-backend requests
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -66,6 +95,16 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Creates the HTTP security policy and inserts JWT authentication before password login.
+     *
+     * <p>Sessions and CSRF are disabled because authentication is supplied on every request
+     * by a bearer token instead of a server-held browser session.</p>
+     *
+     * @param http mutable Spring Security DSL
+     * @return immutable filter chain used for every request
+     * @throws Exception if an invalid security configuration is detected
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

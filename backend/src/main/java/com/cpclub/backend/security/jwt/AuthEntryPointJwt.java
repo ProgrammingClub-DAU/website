@@ -13,12 +13,24 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * Writes the platform's JSON error envelope when an unauthenticated request reaches a protected route.
+ */
 @Component
 @Slf4j
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Produces a JSON HTTP 401 response instead of the default HTML/login redirect.
+     *
+     * @param request rejected HTTP request
+     * @param response HTTP response to populate
+     * @param authException security failure that caused the rejection
+     * @throws IOException if the response body cannot be written
+     * @throws ServletException if the servlet container reports an error
+     */
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {

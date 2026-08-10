@@ -18,6 +18,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller handling authentication requests including user registration,
+ * credential validation (login), and fetching current session details.
+ * Communicates with {@link AuthService} for core security operations and token vending.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -27,6 +32,13 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
+    /**
+     * Registers a new user account.
+     * Checks for duplicate credentials and generates a secure salted password hash via BCrypt.
+     *
+     * @param registerRequest details of the new student account
+     * @return payload containing generated JWT access token and user metadata
+     */
     @PostMapping("/register")
     @Operation(summary = "Register a new student account")
     public ResponseEntity<ApiResponse<AuthResponse>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
@@ -35,6 +47,13 @@ public class AuthController {
                 .body(ApiResponse.success(response, "User registered successfully"));
     }
 
+    /**
+     * Authenticates an existing user's email and password.
+     * Standardizes login using Spring Security's AuthenticationManager and returns JWT.
+     *
+     * @param loginRequest login credentials
+     * @return payload containing generated JWT access token and user metadata
+     */
     @PostMapping("/login")
     @Operation(summary = "Authenticate user and receive JWT token")
     public ResponseEntity<ApiResponse<AuthResponse>> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -42,6 +61,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "User authenticated successfully"));
     }
 
+    /**
+     * Resolves the details of the currently authenticated user from the JWT SecurityContext.
+     *
+     * @param userDetails injected spring security context details of the caller
+     * @return public user profile details
+     */
     @GetMapping("/me")
     @Operation(summary = "Get current authenticated user's profile details")
     @PreAuthorize("isAuthenticated()")
@@ -50,3 +75,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(userResponse, "Current user details retrieved successfully"));
     }
 }
+

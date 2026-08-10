@@ -9,9 +9,20 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configures the generated OpenAPI document and shared bearer-token security scheme.
+ *
+ * <p>Publishing the scheme once lets protected endpoints appear consistently in Swagger
+ * UI and provides clients with an accurate contract for JWT authentication.</p>
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Builds the public OpenAPI metadata and HTTP bearer authentication definition.
+     *
+     * @return configured OpenAPI document exposed by springdoc
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         final String securitySchemeName = "bearerAuth";
