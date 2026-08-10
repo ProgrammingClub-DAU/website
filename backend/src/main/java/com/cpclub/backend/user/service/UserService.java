@@ -21,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Service class managing member directory lookups, user profiles,
+ * and administrative role/deletion operations.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,6 +32,13 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    /**
+     * Resolves a user profile by database primary key.
+     *
+     * @param id user ID
+     * @return mapped immutable user profile details DTO
+     * @throws ResourceNotFoundException if user ID does not exist
+     */
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long id) {
         User user = userRepository.findById(id)
@@ -35,6 +46,13 @@ public class UserService {
         return UserResponseDto.fromEntity(user);
     }
 
+    /**
+     * Resolves a user profile by unique email address.
+     *
+     * @param email user email
+     * @return mapped immutable user profile details DTO
+     * @throws ResourceNotFoundException if user email does not exist
+     */
     @Transactional(readOnly = true)
     public UserResponseDto getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
@@ -42,6 +60,11 @@ public class UserService {
         return UserResponseDto.fromEntity(user);
     }
 
+    /**
+     * Retrieves all registered users in the database.
+     *
+     * @return list of user details DTOs
+     */
     @Transactional(readOnly = true)
     public List<UserResponseDto> getAllUsers() {
         return userRepository.findAll()
@@ -50,6 +73,14 @@ public class UserService {
                 .toList();
     }
 
+    /**
+     * Searches and paginates members directory sorted alphabetically by name.
+     *
+     * @param query search filter matching name or Codeforces handle
+     * @param page zero-indexed page number
+     * @param size page size limit
+     * @return standardized paginated wrapper containing results page
+     */
     @Transactional(readOnly = true)
     public PagedResponse<UserResponseDto> getMembersDirectory(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
@@ -69,6 +100,15 @@ public class UserService {
         );
     }
 
+    /**
+     * Updates the Codeforces handle of a user.
+     * Ensures handle is not registered to another user to maintain unique mapping.
+     *
+     * @param userId user ID to modify
+     * @param request update handle details
+     * @return updated user details DTO
+     * @throws BadRequestException if the handle is already registered
+     */
     @Transactional
     public UserResponseDto updateCodeforcesHandle(Long userId, UpdateHandleRequest request) {
         User user = userRepository.findById(userId)
@@ -86,6 +126,14 @@ public class UserService {
         return UserResponseDto.fromEntity(savedUser);
     }
 
+    /**
+     * Updates full user profile details.
+     * Checks Codeforces handle uniqueness constraints if updated.
+     *
+     * @param userId user ID to modify
+     * @param request update details containing name and handle
+     * @return updated user details DTO
+     */
     @Transactional
     public UserResponseDto updateProfile(Long userId, UserProfileUpdateRequest request) {
         User user = userRepository.findById(userId)
@@ -105,6 +153,13 @@ public class UserService {
         return UserResponseDto.fromEntity(saved);
     }
 
+    /**
+     * Updates administrative authorization role of a user.
+     *
+     * @param userId user ID to modify
+     * @param request role update payload
+     * @return updated user details DTO
+     */
     @Transactional
     public UserResponseDto updateUserRole(Long userId, UpdateRoleRequest request) {
         User user = userRepository.findById(userId)
@@ -116,6 +171,11 @@ public class UserService {
         return UserResponseDto.fromEntity(saved);
     }
 
+    /**
+     * Permanently deletes a user by ID.
+     *
+     * @param userId user ID to delete
+     */
     @Transactional
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {

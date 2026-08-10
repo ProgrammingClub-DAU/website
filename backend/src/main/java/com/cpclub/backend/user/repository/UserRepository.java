@@ -11,22 +11,69 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * JPA repository interface for managing {@link User} database entities.
+ * Includes custom queries for paginated rating lookups (leaderboard) and matching handles/names.
+ */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    /**
+     * Finds the member whose normalized email is used as the login principal.
+     *
+     * @param email unique member email
+     * @return matching member when one exists
+     */
     Optional<User> findByEmail(String email);
 
+    /**
+     * Checks email uniqueness without loading the full entity during registration.
+     *
+     * @param email candidate email
+     * @return whether a member already owns the email
+     */
     Boolean existsByEmail(String email);
 
+    /**
+     * Checks whether a Codeforces handle is linked to any member.
+     *
+     * @param codeforcesHandle candidate external-account handle
+     * @return whether the handle is already linked
+     */
     Boolean existsByCodeforcesHandle(String codeforcesHandle);
 
+    /**
+     * Locates a member by their linked Codeforces handle for synchronization workflows.
+     *
+     * @param codeforcesHandle external-account handle
+     * @return matching member when one exists
+     */
     Optional<User> findByCodeforcesHandle(String codeforcesHandle);
 
+    /**
+     * Returns members eligible for Codeforces synchronization.
+     *
+     * @return members that have supplied a Codeforces handle
+     */
     List<User> findByCodeforcesHandleIsNotNull();
 
+    /**
+     * Resolves paginated list of users ordered by rating descending.
+     * Non-rated members (null ratings) are pushed to the end of the ranking list.
+     *
+     * @param pageable requested page and size
+     * @return page of members in ranking order
+     */
     @Query("SELECT u FROM User u ORDER BY u.rating DESC NULLS LAST")
     Page<User> findAllByOrderByRatingDescNullsLast(Pageable pageable);
 
+    /**
+     * Case-insensitive keyword search matching user names or Codeforces handles.
+     *
+     * @param query optional name or Codeforces-handle fragment
+     * @param pageable requested page and sort order
+     * @return page of matching members
+     */
     @Query("SELECT u FROM User u WHERE " +
            "(:query IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.codeforcesHandle) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<User> searchUsers(@Param("query") String query, Pageable pageable);
