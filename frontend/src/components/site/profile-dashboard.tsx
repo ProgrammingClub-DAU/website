@@ -24,7 +24,11 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { ActivityCalendar } from "react-activity-calendar";
+import dynamic from "next/dynamic";
+const ActivityCalendar = dynamic(
+  () => import("react-activity-calendar").then((mod) => mod.ActivityCalendar),
+  { ssr: false }
+);
 import { User, Trophy, Code, Calendar } from "lucide-react";
 import Image from "next/image";
 
@@ -173,12 +177,13 @@ export default function ProfileDashboard({ profile }: { profile: Profile }) {
                     borderRadius: "8px",
                     fontSize: "12px",
                   }}
-                  labelFormatter={(label: string | number | Date) => {
+                  labelFormatter={(label: unknown) => {
                     if (!label) return "";
-                    const d = new Date(label);
+                    const d = new Date(label as string | number);
                     return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
                   }}
-                  formatter={(value: number, _name: string, props: { payload?: { contestName?: string } }) => {
+                  formatter={(value: unknown, _name: unknown, props: { payload?: { contestName?: string } }) => {
+                    if (value == null) return ["", ""];
                     const contestName = props.payload?.contestName ?? "";
                     return [
                       `${value} (${ratingToRankName(Number(value))})`,
