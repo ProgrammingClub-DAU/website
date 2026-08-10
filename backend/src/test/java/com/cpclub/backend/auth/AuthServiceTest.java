@@ -106,6 +106,26 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject registration when the Codeforces handle is already linked")
+    void registerUser_DuplicateCodeforcesHandle() {
+        RegisterRequest registerRequest = new RegisterRequest(
+                "Alice Developer",
+                "new-alice@example.com",
+                "Password123!",
+                "alice_cp"
+        );
+
+        when(userRepository.existsByEmail("new-alice@example.com")).thenReturn(false);
+        when(userRepository.existsByCodeforcesHandle("alice_cp")).thenReturn(true);
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> authService.registerUser(registerRequest));
+
+        assertTrue(exception.getMessage().contains("Codeforces handle"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("Should authenticate user and return valid token")
     void authenticateUser_Success() {
         LoginRequest loginRequest = new LoginRequest("alice@example.com", "Password123!");
