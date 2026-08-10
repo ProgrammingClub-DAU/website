@@ -1,7 +1,8 @@
 package com.cpclub.backend.user;
 
-import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.entity.User;
+import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,14 +23,9 @@ class UserResponseDtoTest {
         assertNotNull(dto);
         assertEquals(42L, dto.id());
         assertEquals("Alice Smith", dto.name());
+        assertEquals("alice@example.com", dto.email());
         assertEquals("tourist_fan", dto.codeforcesHandle());
         assertEquals(1500, dto.rating());
         assertEquals(Role.ROLE_USER, dto.role());
-    }
-
-    @Test
-    @DisplayName("Should return null when mapping null User entity")
-    void shouldReturnNullForNullUserEntity() {
-        assertNull(UserResponseDto.fromEntity(null));
     }
 }

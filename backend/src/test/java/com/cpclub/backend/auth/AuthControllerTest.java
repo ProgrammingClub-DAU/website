@@ -1,11 +1,15 @@
 package com.cpclub.backend.auth;
 
+import com.cpclub.backend.auth.controller.AuthController;
 import com.cpclub.backend.auth.dto.AuthResponse;
 import com.cpclub.backend.auth.dto.LoginRequest;
 import com.cpclub.backend.auth.dto.RegisterRequest;
-import com.cpclub.backend.common.BadRequestException;
-import com.cpclub.backend.common.GlobalExceptionHandler;
-import com.cpclub.backend.entity.Role;
+import com.cpclub.backend.auth.service.AuthService;
+import com.cpclub.backend.common.exception.BadRequestException;
+import com.cpclub.backend.common.exception.GlobalExceptionHandler;
+import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +35,9 @@ class AuthControllerTest {
 
     @Mock
     private AuthService authService;
+
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private AuthController authController;

@@ -1,8 +1,9 @@
 package com.cpclub.backend.security;
 
-import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.security.jwt.JwtUtils;
-import com.cpclub.backend.security.services.UserDetailsImpl;
+import com.cpclub.backend.security.service.UserDetailsImpl;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,9 +27,16 @@ class JwtUtilsTest {
     @Test
     @DisplayName("Should generate valid JWT token for authenticated user")
     void generateJwtToken_Success() {
-        UserDetailsImpl userDetails = new UserDetailsImpl(
-                1L, "Alice Doe", "alice@example.com", "password", Role.ROLE_USER, "alice_cp", null
-        );
+        User user = User.builder()
+                .id(1L)
+                .name("Alice Doe")
+                .email("alice@example.com")
+                .password("password")
+                .role(Role.ROLE_USER)
+                .codeforcesHandle("alice_cp")
+                .build();
+
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
         String token = jwtUtils.generateJwtToken(auth);
@@ -46,5 +54,24 @@ class JwtUtilsTest {
         boolean isValid = jwtUtils.validateJwtToken(invalidToken);
 
         assertFalse(isValid);
+    }
+
+    @Test
+    @DisplayName("Should reject an expired JWT token")
+    void validateJwtToken_Expired() {
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", -1);
+        String expiredToken = jwtUtils.generateTokenFromEmail("alice@example.com", 1L, "ROLE_USER");
+
+        assertFalse(jwtUtils.validateJwtToken(expiredToken));
+    }
+
+    @Test
+    @DisplayName("Should reject a JWT with an invalid signature")
+    void validateJwtToken_InvalidSignature() {
+        String validToken = jwtUtils.generateTokenFromEmail("alice@example.com", 1L, "ROLE_USER");
+        String invalidSignatureToken = validToken.substring(0, validToken.length() - 1)
+                + (validToken.endsWith("a") ? "b" : "a");
+
+        assertFalse(jwtUtils.validateJwtToken(invalidSignatureToken));
     }
 }

@@ -1,15 +1,17 @@
 package com.cpclub.backend.user;
 
-import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.entity.User;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.entity.User;
+import com.cpclub.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,11 +53,11 @@ class UserRepositoryTest {
         userRepository.save(lowRated);
         userRepository.save(highRated);
 
-        List<User> leaderboard = userRepository.findAllByOrderByRatingDesc();
+        Page<User> leaderboard = userRepository.findAllByOrderByRatingDescNullsLast(PageRequest.of(0, 10));
 
-        assertEquals(2, leaderboard.size());
-        assertEquals(2400, leaderboard.get(0).getRating());
-        assertEquals(1200, leaderboard.get(1).getRating());
+        assertEquals(2, leaderboard.getContent().size());
+        assertEquals(2400, leaderboard.getContent().get(0).getRating());
+        assertEquals(1200, leaderboard.getContent().get(1).getRating());
     }
 
     @Test
