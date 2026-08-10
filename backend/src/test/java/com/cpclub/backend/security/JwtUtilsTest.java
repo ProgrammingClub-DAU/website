@@ -69,8 +69,8 @@ class JwtUtilsTest {
     @DisplayName("Should reject a JWT with an invalid signature")
     void validateJwtToken_InvalidSignature() {
         String validToken = jwtUtils.generateTokenFromEmail("alice@example.com", 1L, "ROLE_USER");
-        String invalidSignatureToken = validToken.substring(0, validToken.length() - 1)
-                + (validToken.endsWith("a") ? "b" : "a");
+        // Changing a character in the middle of the signature guarantees a different byte array
+        String invalidSignatureToken = validToken.substring(0, validToken.length() - 5) + "invalid";
 
         assertFalse(jwtUtils.validateJwtToken(invalidSignatureToken));
     }
