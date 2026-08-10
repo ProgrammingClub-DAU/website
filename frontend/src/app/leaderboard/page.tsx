@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
-import { apiClient } from "@/lib/api-client";
+import { dashboardService } from "@/lib/services/dashboard";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const leaderboard = await apiClient.getLeaderboard();
+  const leaderboard = await dashboardService.getLeaderboard();
 
   return (
     <>

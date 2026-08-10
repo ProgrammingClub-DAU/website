@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
-import { apiClient } from "@/lib/api-client";
 import ProfileDashboard from "@/components/site/profile-dashboard";
 
 export const metadata: Metadata = {
@@ -18,10 +17,7 @@ export const metadata: Metadata = {
  * TODO: Replace mockUserId with the actual auth session ID
  * once Role 2 finishes the authentication implementation.
  */
-export default async function ProfilePage() {
-  const mockUserId = "logged-in-user-id";
-  const profile = await apiClient.getProfile(mockUserId);
-
+export default function ProfilePage() {
   return (
     <>
       <Section className="pt-16 pb-10 md:pt-24">
@@ -37,7 +33,7 @@ export default async function ProfilePage() {
       </Section>
 
       <Section className="pb-22">
-        <ProfileDashboard profile={profile} />
+        <ProfileDashboard />
       </Section>
     </>
   );

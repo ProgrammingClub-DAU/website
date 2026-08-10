@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow, SampleBadge, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
 import { credits } from "@/lib/content/members";
-import { apiClient } from "@/lib/api-client";
+import { dashboardService } from "@/lib/services/dashboard";
 
 export const metadata: Metadata = {
   title: "Members",
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  // Fetch members data from our API client instead of using static data
-  const apiMembers = await apiClient.getMembers();
+  // Fetch members data from our API service instead of using static data
+  const apiMembers = await dashboardService.getMembers();
 
   return (
     <>

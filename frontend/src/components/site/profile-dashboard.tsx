@@ -12,7 +12,9 @@
  * - Platform-wise breakdown of problems solved
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { dashboardService } from "@/lib/services/dashboard";
+import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
@@ -126,7 +128,39 @@ const EVENT_FILTERS: EventFilter[] = ["All", "Contest", "Workshop", "ICPC", "Fla
 
 const EVENTS_PER_PAGE = 5;
 
-export default function ProfileDashboard({ profile }: { profile: Profile }) {
+export default function ProfileDashboard() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    async function loadProfile() {
+      // In Stage 3, this will use user?.id. For now, we'll fall back to "1"
+      const userId = user?.id || "1";
+      try {
+        const data = await dashboardService.getProfile(userId);
+        setProfile(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProfile();
+  }, [user]);
+
+  if (loading) {
+    return <div className="animate-pulse flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Loading profile data...</div>;
+  }
+
+  if (!profile) {
+    return <div className="flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Please log in to view your profile.</div>;
+  }
+
+  return <ProfileDashboardContent profile={profile} />;
+}
+
+function ProfileDashboardContent({ profile }: { profile: Profile }) {
   // ── State ──
   const [eventFilter, setEventFilter] = useState<EventFilter>("All");
   const [showAllEvents, setShowAllEvents] = useState(false);
