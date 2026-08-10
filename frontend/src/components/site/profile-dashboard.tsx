@@ -46,8 +46,58 @@ import {
   Swords,
   Crown,
   Star,
+  ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
+
+// ── Platform Icons ──
+function CodeforcesIcon({ className = "size-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/codeforces-logo.png"
+      alt="Codeforces"
+      width={24}
+      height={24}
+      className={`object-contain ${className}`}
+    />
+  );
+}
+
+function LeetCodeIcon({ className = "size-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/leetcode-logo.png"
+      alt="LeetCode"
+      width={24}
+      height={24}
+      className={`object-contain ${className}`}
+    />
+  );
+}
+
+function CodeChefIcon({ className = "size-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/codechef-logo.jpg"
+      alt="CodeChef"
+      width={100}
+      height={100}
+      className={`object-contain ${className}`}
+    />
+  );
+}
+
+function AtCoderIcon({ className = "size-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/atcoder-logo.png"
+      alt="AtCoder"
+      width={24}
+      height={24}
+      className={`object-contain ${className}`}
+    />
+  );
+}
 
 // ── Rank color helper for rating values (Codeforces thresholds) ──
 function ratingToRankName(rating: number): string {
@@ -178,7 +228,69 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
   const actualCfRank = getCfRank(profile.rating);
   const nameColor = rankColor(actualCfRank);
   const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
-  const totalSolved = profile.platformStats?.reduce((acc, curr) => acc + curr.solved, 0) || 0;
+
+  // Total Solved is strictly Codeforces + LeetCode
+  const totalSolved = useMemo(() => {
+    if (!profile.platformStats) return 0;
+    return profile.platformStats
+      .filter((ps) => ps.platform === "Codeforces" || ps.platform === "LeetCode")
+      .reduce((acc, curr) => acc + (curr.solved || 0), 0);
+  }, [profile.platformStats]);
+
+  // Resolve platform profiles and cards data
+  const platformCards = useMemo(() => {
+    const statsMap = new Map(profile.platformStats?.map((ps) => [ps.platform, ps]) || []);
+
+    const cfStat = statsMap.get("Codeforces");
+    const cfHandle = cfStat?.handle || profile.codeforcesHandle;
+
+    const lcStat = statsMap.get("LeetCode");
+    const lcHandle = lcStat?.handle || (profile.codeforcesHandle ? profile.codeforcesHandle.toLowerCase() : undefined);
+
+    const ccStat = statsMap.get("CodeChef");
+    const ccHandle = ccStat?.handle || (profile.codeforcesHandle ? profile.codeforcesHandle.toLowerCase() : undefined);
+
+    const acStat = statsMap.get("AtCoder");
+    const acHandle = acStat?.handle || (profile.codeforcesHandle ? profile.codeforcesHandle.toLowerCase() : undefined);
+
+    return [
+      {
+        name: "Codeforces",
+        icon: <CodeforcesIcon className="size-6" />,
+        handle: cfHandle,
+        url: cfHandle ? `https://codeforces.com/profile/${encodeURIComponent(cfHandle)}` : null,
+        showSolved: true,
+        solved: cfStat?.solved,
+        rating: cfStat?.rating ?? profile.rating,
+        maxRating: cfStat?.maxRating ?? profile.maxRating,
+      },
+      {
+        name: "LeetCode",
+        icon: <LeetCodeIcon className="size-6" />,
+        handle: lcHandle,
+        url: lcHandle ? `https://leetcode.com/u/${encodeURIComponent(lcHandle)}/` : null,
+        showSolved: true,
+        solved: lcStat?.solved,
+        rating: lcStat?.rating,
+      },
+      {
+        name: "CodeChef",
+        icon: <CodeChefIcon className="size-6" />,
+        handle: ccHandle,
+        url: ccHandle ? `https://www.codechef.com/users/${encodeURIComponent(ccHandle)}` : null,
+        showSolved: false,
+        rating: ccStat?.rating,
+      },
+      {
+        name: "AtCoder",
+        icon: <AtCoderIcon className="size-6" />,
+        handle: acHandle,
+        url: acHandle ? `https://atcoder.jp/users/${encodeURIComponent(acHandle)}` : null,
+        showSolved: false,
+        rating: acStat?.rating,
+      },
+    ];
+  }, [profile]);
 
   // ── Club activity computed values ──
   const eventParticipations = useMemo(() => profile.eventParticipations ?? [], [profile.eventParticipations]);
@@ -245,7 +357,15 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
               >
                 {profile.name}
               </h2>
-              <p className="mt-1 text-sm text-fg-muted">@{profile.codeforcesHandle}</p>
+              <a
+                href={profile.codeforcesHandle ? `https://codeforces.com/profile/${encodeURIComponent(profile.codeforcesHandle)}` : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-primary hover:underline transition-colors"
+              >
+                <span>@{profile.codeforcesHandle}</span>
+                <ExternalLink className="size-3" />
+              </a>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium capitalize"
@@ -465,25 +585,103 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
         </CardContent>
       </Card>
 
-      {/* ── Platform Stats ── */}
+      {/* ── Competitive Programming Profiles ── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Code className="size-4" />
-            Problems Solved by Platform
+            Competitive Programming Profiles
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {profile.platformStats?.map((ps) => (
-              <div
-                key={ps.platform}
-                className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
-              >
-                <div className="text-2xl font-bold">{ps.solved}</div>
-                <div className="mt-1 text-xs text-fg-muted">{ps.platform}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {platformCards.map((pc) => {
+              const hasUrl = Boolean(pc.url);
+
+              return (
+                <a
+                  key={pc.name}
+                  href={pc.url || "#"}
+                  target={hasUrl ? "_blank" : undefined}
+                  rel={hasUrl ? "noopener noreferrer" : undefined}
+                  onClick={(e) => {
+                    if (!hasUrl) e.preventDefault();
+                  }}
+                  className={`group relative flex flex-col justify-between rounded-panel border border-border bg-surface-2 p-5 transition-all ${hasUrl
+                    ? "hover:-translate-y-1 hover:border-hairline-strong hover:shadow-panel hover:bg-surface-3/40"
+                    : "opacity-75 cursor-default"
+                    }`}
+                >
+                  <div>
+                    {/* Header: Logo & External link icon */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/80 p-1.5 shadow-xs">
+                          {pc.icon}
+                        </div>
+                        <span className="font-semibold text-sm tracking-tight text-foreground">
+                          {pc.name}
+                        </span>
+                      </div>
+                      {hasUrl && (
+                        <ExternalLink className="size-4 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-primary" />
+                      )}
+                    </div>
+
+                    {/* Handle */}
+                    <div className="mt-4">
+                      <div className="text-[10px] font-mono text-fg-muted uppercase tracking-wider">
+                        Handle / Profile
+                      </div>
+                      <div className="mt-0.5 text-sm font-semibold font-mono text-foreground truncate group-hover:text-primary transition-colors">
+                        {pc.handle ? `@${pc.handle}` : "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistics */}
+                  <div className="mt-5 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
+                    {pc.showSolved ? (
+                      <>
+                        <div>
+                          <div className="text-[10px] text-fg-muted uppercase tracking-wider">Solved</div>
+                          <div className="font-bold text-foreground font-mono mt-0.5">
+                            {pc.solved != null ? pc.solved : "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-fg-muted uppercase tracking-wider">Rating</div>
+                          <div className="font-bold text-foreground font-mono mt-0.5">
+                            {pc.rating != null ? (
+                              <span>
+                                {pc.rating}
+                                {pc.maxRating != null && (
+                                  <span className="text-[10px] font-normal text-fg-subtle"> (max {pc.maxRating})</span>
+                                )}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-span-2 flex justify-between items-center">
+                        <div>
+                          <div className="text-[10px] text-fg-muted uppercase tracking-wider">Contest Rating</div>
+                          <div className="font-bold text-foreground font-mono mt-0.5">
+                            {pc.rating != null ? pc.rating : "—"}
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-fg-subtle italic">
+                          No solved count
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -586,9 +784,18 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
             <span>{profile.email}</span>
           </div>
           <Separator />
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-fg-muted">Codeforces Handle</span>
-            <span style={{ color: nameColor }}>@{profile.codeforcesHandle}</span>
+            <a
+              href={`https://codeforces.com/profile/${encodeURIComponent(profile.codeforcesHandle)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline flex items-center gap-1.5"
+              style={{ color: nameColor }}
+            >
+              <span>@{profile.codeforcesHandle}</span>
+              <ExternalLink className="size-3" />
+            </a>
           </div>
           <Separator />
           <div className="flex justify-between">

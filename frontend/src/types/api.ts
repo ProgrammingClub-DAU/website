@@ -37,7 +37,11 @@ export interface ActivityDay {
 
 export interface PlatformStats {
   platform: string;
-  solved: number;
+  solved?: number;
+  handle?: string;
+  rating?: number;
+  maxRating?: number;
+  contestCount?: number;
 }
 
 // ── Club Activity & Event types ──
