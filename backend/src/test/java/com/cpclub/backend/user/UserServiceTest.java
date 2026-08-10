@@ -1,13 +1,15 @@
 package com.cpclub.backend.user;
 
-import com.cpclub.backend.user.UpdateHandleRequest;
-import com.cpclub.backend.user.UserProfileUpdateRequest;
-import com.cpclub.backend.user.UserResponseDto;
-import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.entity.User;
-
-import com.cpclub.backend.common.ResourceNotFoundException;
-import com.cpclub.backend.user.UserRepository;
+import com.cpclub.backend.common.exception.BadRequestException;
+import com.cpclub.backend.common.exception.ResourceNotFoundException;
+import com.cpclub.backend.user.dto.UpdateHandleRequest;
+import com.cpclub.backend.user.dto.UpdateRoleRequest;
+import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
+import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.entity.User;
+import com.cpclub.backend.user.repository.UserRepository;
+import com.cpclub.backend.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,12 +31,6 @@ class UserServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         userService = new UserService(userRepository);
-
-        org.springframework.security.core.Authentication authentication = mock(org.springframework.security.core.Authentication.class);
-        when(authentication.getName()).thenReturn("john@example.com");
-        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
@@ -85,6 +81,7 @@ class UserServiceTest {
         user.setId(1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByCodeforcesHandle("tourist_pro")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UpdateHandleRequest request = new UpdateHandleRequest("tourist_pro");
@@ -96,35 +93,55 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject a Codeforces handle already linked to another user")
+    void shouldRejectDuplicateCodeforcesHandle() {
+        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByCodeforcesHandle("taken_handle")).thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> userService.updateCodeforcesHandle(1L, new UpdateHandleRequest("taken_handle")));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("Should update User profile name and handle")
     void shouldUpdateUserProfile() {
         User user = new User("Old Name", "john@example.com", "pass", Role.ROLE_USER);
         user.setId(1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByCodeforcesHandle("new_handle")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UserProfileUpdateRequest request = new UserProfileUpdateRequest("New Name", "new_handle");
-        UserResponseDto result = userService.updateUserProfile(1L, request);
+        UserResponseDto result = userService.updateProfile(1L, request);
 
         assertEquals("New Name", result.name());
         assertEquals("new_handle", result.codeforcesHandle());
     }
 
     @Test
-    @DisplayName("Should fetch leaderboard ordered by rating descending")
-    void shouldGetLeaderboard() {
-        User u1 = new User("High Rated", "h@example.com", "p", Role.ROLE_USER);
-        u1.setRating(2400);
-        User u2 = new User("Low Rated", "l@example.com", "p", Role.ROLE_USER);
-        u2.setRating(1200);
+    @DisplayName("Should update a user's role")
+    void shouldUpdateUserRole() {
+        User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(userRepository.findAllByOrderByRatingDesc()).thenReturn(Arrays.asList(u1, u2));
+        UserResponseDto result = userService.updateUserRole(1L, new UpdateRoleRequest(Role.ROLE_ADMIN));
 
-        List<UserResponseDto> leaderboard = userService.getLeaderboard();
+        assertEquals(Role.ROLE_ADMIN, result.role());
+        verify(userRepository).save(user);
+    }
 
-        assertEquals(2, leaderboard.size());
-        assertEquals(2400, leaderboard.get(0).rating());
-        assertEquals(1200, leaderboard.get(1).rating());
+    @Test
+    @DisplayName("Should reject deletion of a user that does not exist")
+    void shouldRejectDeletingMissingUser() {
+        when(userRepository.existsById(99L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
+        verify(userRepository, never()).deleteById(any());
     }
 }

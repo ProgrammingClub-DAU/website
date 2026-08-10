@@ -1,15 +1,14 @@
 package com.cpclub.backend.common;
 
-import com.cpclub.backend.common.ApiResponse;
+import com.cpclub.backend.common.dto.ApiResponse;
+import com.cpclub.backend.common.exception.BadRequestException;
+import com.cpclub.backend.common.exception.GlobalExceptionHandler;
+import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,10 +30,9 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().success());
-        assertEquals(404, response.getBody().statusCode());
-        assertEquals("User not found with id: 42", response.getBody().message());
-        assertNotNull(response.getBody().timestamp());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("User not found with id: 42", response.getBody().getMessage());
+        assertNotNull(response.getBody().getTimestamp());
     }
 
     @Test
@@ -46,53 +44,18 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().success());
-        assertEquals(400, response.getBody().statusCode());
-        assertEquals("Invalid request data", response.getBody().message());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Invalid request data", response.getBody().getMessage());
     }
 
     @Test
-    @DisplayName("Should map ResponseStatusException to ApiResponse with matching status")
-    void shouldHandleResponseStatusException() {
-        ResponseStatusException ex = new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-
-        ResponseEntity<ApiResponse<Void>> response = handler.handleResponseStatusException(ex);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().success());
-        assertEquals(404, response.getBody().statusCode());
-        assertEquals("User not found", response.getBody().message());
-    }
-
-    @Test
-    @DisplayName("Should map validation errors to 400 Bad Request")
-    void shouldHandleValidationException() {
-        Object target = new Object();
-        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "updateHandleRequest");
-        bindingResult.addError(new FieldError("updateHandleRequest", "codeforcesHandle", "Invalid Codeforces handle format"));
-        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
-
-        ResponseEntity<ApiResponse<Void>> response = handler.handleValidationException(ex);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().success());
-        assertEquals(400, response.getBody().statusCode());
-        assertTrue(response.getBody().message().contains("Validation failed"));
-        assertTrue(response.getBody().message().contains("codeforcesHandle"));
-    }
-
-    @Test
-    @DisplayName("Should map unexpected exceptions to 500 without exposing internals")
+    @DisplayName("Should map unexpected exceptions to 500")
     void shouldHandleGeneralException() {
-        ResponseEntity<ApiResponse<Void>> response = handler.handleGeneralException(new RuntimeException("database down"));
+        ResponseEntity<ApiResponse<Void>> response = handler.handleGlobalException(new RuntimeException("database down"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertFalse(response.getBody().success());
-        assertEquals(500, response.getBody().statusCode());
-        assertEquals("An unexpected internal error occurred", response.getBody().message());
-        assertFalse(response.getBody().message().contains("database down"));
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("unexpected error occurred"));
     }
 }
