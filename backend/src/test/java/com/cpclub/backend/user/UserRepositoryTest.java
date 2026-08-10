@@ -1,4 +1,4 @@
-package com.cpclub.backend.repository;
+package com.cpclub.backend.user;
 
 import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;

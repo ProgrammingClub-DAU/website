@@ -37,7 +37,7 @@ To ensure we build this efficiently, the project is divided into specialized rol
 * **Choose this if:** You want to learn enterprise-grade backend security. This is a highly sought-after skill in the software engineering industry.
 
 ## 📦 Role 5: Backend Data & API Engineer
-* **Focus:** Database Queries, Business Logic, and DTOs
+* **Focus:** Database Queries, Business Logic, and Java Record DTOs
 * **Technologies:** Java, Spring Boot, Spring Data JPA (Hibernate), PostgreSQL
 * **What you will do:** You are the architect of our data flow. You will build the REST APIs that the frontend uses to fetch users, update profiles, and read blogs. You will ensure the database queries are efficient.
 * **Choose this if:** You love backend architecture, designing API routes (GET, POST, PUT), and working directly with databases and JSON data.
