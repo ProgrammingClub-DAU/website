@@ -40,7 +40,7 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .name(request.name().trim())
+                .name(request.fullName().trim())
                 .email(request.email().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.password()))
                 .codeforcesHandle(request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank() ? request.codeforcesHandle().trim() : null)

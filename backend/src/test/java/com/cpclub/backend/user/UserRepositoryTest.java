@@ -4,26 +4,27 @@ import com.cpclub.backend.entity.Role;
 import com.cpclub.backend.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
+@ActiveProfiles("test")
 class UserRepositoryTest {
 
-    @Mock
+    @Autowired
     private UserRepository userRepository;
 
     @Test
     @DisplayName("Should return empty list when database has no users")
     void shouldReturnEmptyListWhenNoUsers() {
-        when(userRepository.findAll()).thenReturn(List.of());
         assertTrue(userRepository.findAll().isEmpty());
     }
 
@@ -31,7 +32,7 @@ class UserRepositoryTest {
     @DisplayName("Should find user by email")
     void shouldFindByEmail() {
         User user = new User("Alice", "alice@example.com", "hashed", Role.ROLE_USER);
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+        userRepository.save(user);
 
         Optional<User> found = userRepository.findByEmail("alice@example.com");
 
@@ -47,7 +48,8 @@ class UserRepositoryTest {
         User highRated = new User("High", "high@example.com", "hashed", Role.ROLE_USER);
         highRated.setRating(2400);
 
-        when(userRepository.findAllByOrderByRatingDesc()).thenReturn(List.of(highRated, lowRated));
+        userRepository.save(lowRated);
+        userRepository.save(highRated);
 
         List<User> leaderboard = userRepository.findAllByOrderByRatingDesc();
 
@@ -59,8 +61,7 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Should detect existing email")
     void shouldDetectExistingEmail() {
-        when(userRepository.existsByEmail("bob@example.com")).thenReturn(true);
-        when(userRepository.existsByEmail("missing@example.com")).thenReturn(false);
+        userRepository.save(new User("Bob", "bob@example.com", "hashed", Role.ROLE_USER));
 
         assertTrue(userRepository.existsByEmail("bob@example.com"));
         assertFalse(userRepository.existsByEmail("missing@example.com"));

@@ -4,6 +4,8 @@ import com.cpclub.backend.entity.User;
 
 import com.cpclub.backend.common.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,11 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+        String authEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equalsIgnoreCase(authEmail)) {
+            throw new AccessDeniedException("You can only modify your own profile");
+        }
+
         user.setCodeforcesHandle(request.codeforcesHandle().trim());
         User updatedUser = userRepository.save(user);
         
@@ -53,8 +60,13 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (request.name() != null && !request.name().trim().isEmpty()) {
-            user.setName(request.name().trim());
+        String authEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equalsIgnoreCase(authEmail)) {
+            throw new AccessDeniedException("You can only modify your own profile");
+        }
+
+        if (request.fullName() != null && !request.fullName().trim().isEmpty()) {
+            user.setName(request.fullName().trim());
         }
 
         if (request.codeforcesHandle() != null) {
