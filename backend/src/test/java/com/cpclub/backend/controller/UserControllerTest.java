@@ -42,8 +42,8 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users - Should return list of all users wrapped in ApiResponse")
     void shouldGetAllUsers() throws Exception {
-        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now());
-        UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now());
+        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now());
 
         when(userService.getAllUsers()).thenReturn(Arrays.asList(u1, u2));
 
@@ -59,7 +59,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Should return user when found")
     void shouldGetUserByIdWhenFound() throws Exception {
-        UserResponseDto user = new UserResponseDto(5L, "Charlie", "charlie@example.com", "charlie_cf", 2000, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto user = new UserResponseDto(5L, "Charlie", "charlie_cf", 2000, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.getUserById(5L)).thenReturn(user);
 
@@ -87,7 +87,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/leaderboard - Should return users sorted by rating")
     void shouldGetLeaderboard() throws Exception {
-        UserResponseDto topUser = new UserResponseDto(1L, "Top Coder", "top@example.com", "tourist", 3500, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto topUser = new UserResponseDto(1L, "Top Coder", "tourist", 3500, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.getLeaderboard()).thenReturn(Collections.singletonList(topUser));
 
@@ -102,7 +102,7 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users/{id}/handle - Should update Codeforces handle")
     void shouldUpdateCodeforcesHandle() throws Exception {
-        UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "alice@example.com", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateCodeforcesHandle(eq(1L), any(UpdateHandleRequest.class))).thenReturn(updatedUser);
 
@@ -133,7 +133,7 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users/{id}/profile - Should update User profile name and handle")
     void shouldUpdateUserProfile() throws Exception {
-        UserResponseDto updatedUser = new UserResponseDto(1L, "New Name", "alice@example.com", "valid_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
+        UserResponseDto updatedUser = new UserResponseDto(1L, "New Name", "valid_handle", 1600, Role.ROLE_USER, LocalDateTime.now());
 
         when(userService.updateUserProfile(eq(1L), any(UserProfileUpdateRequest.class))).thenReturn(updatedUser);
 

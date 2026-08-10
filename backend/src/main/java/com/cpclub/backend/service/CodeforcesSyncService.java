@@ -23,7 +23,7 @@ public class CodeforcesSyncService {
 
     private static final String CODEFORCES_API_URL = "https://codeforces.com/api/user.info?handles=";
 
-    @Scheduled(cron = "0 0 * * * *") // Runs at minute 0 of every hour
+    @Scheduled(cron = "0 0 */6 * * *") // Runs every 6 hours
     public void syncCodeforcesRatings() {
         log.info("Starting Codeforces rating sync...");
         List<User> users = userRepository.findByCodeforcesHandleIsNotNull();
@@ -41,8 +41,8 @@ public class CodeforcesSyncService {
                     if (cfUser.getRating() != null) {
                         user.setRating(cfUser.getRating());
                     } else {
-                        // User has no rating (e.g. unrated), ensure it drops back to 0
-                        user.setRating(0);
+                        // User has no rating (e.g. unrated), ensure it drops back to null
+                        user.setRating(null);
                     }
                     userRepository.save(user);
                     successCount++;

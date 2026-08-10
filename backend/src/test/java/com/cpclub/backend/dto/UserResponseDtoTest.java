@@ -22,7 +22,6 @@ class UserResponseDtoTest {
         assertNotNull(dto);
         assertEquals(42L, dto.getId());
         assertEquals("Alice Smith", dto.getName());
-        assertEquals("alice@example.com", dto.getEmail());
         assertEquals("tourist_fan", dto.getCodeforcesHandle());
         assertEquals(1500, dto.getRating());
         assertEquals(Role.ROLE_USER, dto.getRole());

@@ -8,7 +8,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_codeforces_handle", columnList = "codeforces_handle"),
+        @Index(name = "idx_rating", columnList = "rating")
+})
 @Getter
 @Setter
 @Builder
@@ -29,11 +32,10 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "codeforces_handle")
+    @Column(name = "codeforces_handle", unique = true)
     private String codeforcesHandle;
 
-    @Builder.Default
-    private Integer rating = 0;
+    private Integer rating;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -53,6 +55,6 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role != null ? role : Role.ROLE_USER;
-        this.rating = 0;
+        this.rating = null;
     }
 }

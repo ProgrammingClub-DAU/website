@@ -15,7 +15,6 @@ public class UserResponseDto {
 
     private Long id;
     private String name;
-    private String email;
     private String codeforcesHandle;
     private Integer rating;
     private Role role;
@@ -26,7 +25,6 @@ public class UserResponseDto {
         return UserResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())
-                .email(user.getEmail())
                 .codeforcesHandle(user.getCodeforcesHandle())
                 .rating(user.getRating())
                 .role(user.getRole())
