@@ -6,9 +6,18 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      # validate: checks schema matches entities at startup but never alters it.
+      # Prevents accidental schema mutations in production on each deploy.
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
     show-sql: false
+
+# Disable Swagger UI and API docs in production to reduce attack surface.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

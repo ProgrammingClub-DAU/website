@@ -4,6 +4,7 @@ import com.cpclub.backend.security.jwt.AuthEntryPointJwt;
 import com.cpclub.backend.security.jwt.AuthTokenFilter;
 import com.cpclub.backend.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,6 +39,14 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    /**
+     * Comma-separated list of allowed CORS origins.
+     * Set CORS_ALLOWED_ORIGINS env var in production to include the Vercel frontend URL.
+     * Example: https://cpclub.vercel.app,http://localhost:3000
+     */
+    @Value("${cpclub.cors.allowed-origins:http://localhost:3000}")
+    private String corsAllowedOrigins;
 
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
@@ -78,13 +88,17 @@ public class SecurityConfig {
 
     /**
      * Defines browser origins, methods, and headers permitted to call the API.
+     * Origins are read from the {@code cpclub.cors.allowed-origins} property, which maps
+     * to the {@code CORS_ALLOWED_ORIGINS} environment variable in production.
      *
      * @return global CORS policy for frontend-to-backend requests
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        // Split on comma to support multiple origins (e.g. Vercel + localhost)
+        List<String> origins = Arrays.asList(corsAllowedOrigins.split(","));
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));
