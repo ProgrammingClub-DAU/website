@@ -22,11 +22,26 @@ import java.util.Date;
 @Slf4j
 public class JwtUtils {
 
-    @Value("${cpclub.app.jwtSecret:cpClubDefaultJwtSecretKeyForSecurityTestingAndProductionUsageKey32BytesLong}")
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${cpclub.app.jwtExpirationMs:86400000}")
+    @Value("${app.jwt.expiration-ms:86400000}")
     private int jwtExpirationMs;
+
+    /**
+     * Validates the JWT secret on application startup.
+     * Throws an exception if the secret is missing or too short, preventing
+     * the application from starting with an insecure or default configuration.
+     */
+    @jakarta.annotation.PostConstruct
+    private void validateSecret() {
+        if (jwtSecret == null || jwtSecret.isBlank() || jwtSecret.length() < 32) {
+            throw new IllegalStateException(
+                "[SECURITY] app.jwt.secret must be configured and at least 32 characters long. " +
+                "Set the JWT_SECRET environment variable before starting the application."
+            );
+        }
+    }
 
     /**
      * Derives the HS256 signing key from the configured secret.
