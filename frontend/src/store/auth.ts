@@ -8,10 +8,11 @@
 import { create } from "zustand";
 
 export interface User {
-  id: string;
+  id: number; // Persisted unique user identifier on the backend
   email: string;
   fullName: string;
   role: string;
+  codeforcesHandle: string | null; // Optional synced Codeforces profile handle
 }
 
 interface AuthState {
