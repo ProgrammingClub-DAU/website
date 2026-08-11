@@ -3,12 +3,13 @@ package com.cpclub.backend.auth;
 import com.cpclub.backend.auth.dto.AuthResponse;
 import com.cpclub.backend.auth.dto.LoginRequest;
 import com.cpclub.backend.auth.dto.RegisterRequest;
-import com.cpclub.backend.common.BadRequestException;
-import com.cpclub.backend.entity.Role;
-import com.cpclub.backend.entity.User;
+import com.cpclub.backend.auth.service.AuthService;
+import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.security.jwt.JwtUtils;
-import com.cpclub.backend.security.services.UserDetailsImpl;
-import com.cpclub.backend.user.UserRepository;
+import com.cpclub.backend.security.service.UserDetailsImpl;
+import com.cpclub.backend.user.entity.Role;
+import com.cpclub.backend.user.entity.User;
+import com.cpclub.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -74,11 +75,10 @@ class AuthServiceTest {
         );
 
         when(userRepository.existsByEmail("alice@example.com")).thenReturn(false);
-        when(userRepository.findByCodeforcesHandle("alice_cp")).thenReturn(Optional.empty());
+        when(userRepository.existsByCodeforcesHandle("alice_cp")).thenReturn(false);
         when(passwordEncoder.encode("Password123!")).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(sampleUser);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(sampleAuth);
-        when(jwtUtils.generateJwtToken(any(Authentication.class))).thenReturn("mock_jwt_token");
+        when(jwtUtils.generateTokenFromEmail(eq("alice@example.com"), eq(1L), eq("ROLE_USER"))).thenReturn("mock_jwt_token");
 
         AuthResponse response = authService.registerUser(registerRequest);
 
@@ -106,12 +106,33 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject registration when the Codeforces handle is already linked")
+    void registerUser_DuplicateCodeforcesHandle() {
+        RegisterRequest registerRequest = new RegisterRequest(
+                "Alice Developer",
+                "new-alice@example.com",
+                "Password123!",
+                "alice_cp"
+        );
+
+        when(userRepository.existsByEmail("new-alice@example.com")).thenReturn(false);
+        when(userRepository.existsByCodeforcesHandle("alice_cp")).thenReturn(true);
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> authService.registerUser(registerRequest));
+
+        assertTrue(exception.getMessage().contains("Codeforces handle"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("Should authenticate user and return valid token")
     void authenticateUser_Success() {
         LoginRequest loginRequest = new LoginRequest("alice@example.com", "Password123!");
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(sampleAuth);
         when(jwtUtils.generateJwtToken(sampleAuth)).thenReturn("mock_jwt_token");
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(sampleUser));
 
         AuthResponse response = authService.authenticateUser(loginRequest);
 
