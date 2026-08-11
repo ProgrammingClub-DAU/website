@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 
@@ -17,6 +17,7 @@ import {
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { navItems, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth";
 
 function Wordmark({ className }: { className?: string }) {
   return (
@@ -38,10 +39,15 @@ function Wordmark({ className }: { className?: string }) {
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -87,19 +93,44 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
 
-          <Button
-            asChild
-            variant="ghost"
-            className="hidden h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase lg:inline-flex"
-          >
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button
-            asChild
-            className="hidden h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase lg:inline-flex"
-          >
-            <Link href="/register">Join</Link>
-          </Button>
+          {/* Desktop auth controls: swap Login/Join for user name + Logout */}
+          <div className="hidden lg:flex items-center gap-2">
+            {!isMounted ? (
+              <div className="h-8 w-24 animate-pulse rounded-full bg-surface-2" />
+            ) : isAuthenticated ? (
+              <>
+                <span className="font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase">
+                  {user?.fullName}
+                </span>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    logout();
+                    router.push("/login");
+                  }}
+                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                >
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase inline-flex"
+                >
+                  <Link href="/register">Join</Link>
+                </Button>
+              </>
+            )}
+          </div>
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild className="lg:hidden">
@@ -144,17 +175,45 @@ export function Navbar() {
                 ))}
               </div>
 
+              {/* Mobile auth controls: swap Login/Join for user name + Logout */}
               <div className="flex flex-col gap-2 border-t border-hairline p-4">
-                <SheetClose asChild>
-                  <Button asChild variant="outline" className="h-10 rounded-full">
-                    <Link href="/login">Login</Link>
-                  </Button>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Button asChild className="h-10 rounded-full">
-                    <Link href="/register">Join the Club</Link>
-                  </Button>
-                </SheetClose>
+                {!isMounted ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="h-10 w-full animate-pulse rounded-full bg-surface-2" />
+                    <div className="h-10 w-full animate-pulse rounded-full bg-surface-2" />
+                  </div>
+                ) : isAuthenticated ? (
+                  <>
+                    <p className="px-3 py-2 text-center font-mono text-xs tracking-[0.06em] text-fg-muted uppercase">
+                      {user?.fullName}
+                    </p>
+                    <SheetClose asChild>
+                      <Button
+                        variant="outline"
+                        className="h-10 rounded-full"
+                        onClick={() => {
+                          logout();
+                          router.push("/login");
+                        }}
+                      >
+                        Logout
+                      </Button>
+                    </SheetClose>
+                  </>
+                ) : (
+                  <>
+                    <SheetClose asChild>
+                      <Button asChild variant="outline" className="h-10 rounded-full">
+                        <Link href="/login">Login</Link>
+                      </Button>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Button asChild className="h-10 rounded-full">
+                        <Link href="/register">Join the Club</Link>
+                      </Button>
+                    </SheetClose>
+                  </>
+                )}
               </div>
             </SheetContent>
           </Sheet>

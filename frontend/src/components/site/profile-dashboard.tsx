@@ -13,6 +13,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { dashboardService } from "@/lib/services/dashboard";
 import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,9 +132,15 @@ const EVENTS_PER_PAGE = 5;
 export default function ProfileDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
     async function loadProfile() {
       // In Stage 3, this will use user?.id. For now, we'll fall back to "1"
       const userId = user?.id ? String(user.id) : "1";
@@ -147,7 +154,7 @@ export default function ProfileDashboard() {
       }
     }
     loadProfile();
-  }, [user]);
+  }, [user, isAuthenticated, router]);
 
   if (loading) {
     return <div className="animate-pulse flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Loading profile data...</div>;
