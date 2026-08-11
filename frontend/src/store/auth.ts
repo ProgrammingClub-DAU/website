@@ -2,7 +2,10 @@
  * Auth Zustand State Store
  * Purpose: Centralized in-memory global state store managing authentication status and user details.
  * Auth Connection: Provides user, token, role, login(), logout(), and isAuthenticated state across components.
- * Deferred: Persistence layer (localStorage/cookies) and real backend JWT decoding (deferred to Stage 3).
+ *
+ * The token is held in memory only, so a refresh or any full page load signs the
+ * user out. That keeps it out of localStorage and away from XSS, at the cost of
+ * session continuity — revisit together, not one without the other.
  */
 
 import { create } from "zustand";

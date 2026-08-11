@@ -71,12 +71,16 @@ export default function LoginForm() {
       // Redirect home on success
       router.push("/");
     } catch (err: unknown) {
-      // Safely access backend error response message or fallback
-      let msg = "Failed to sign in. Please check your credentials.";
+      // A request that never reached the server has no response. Reporting that
+      // as a credentials problem sends people hunting for a wrong password when
+      // the backend simply is not running.
+      let msg = "Failed to sign in. Please try again.";
       if (axios.isAxiosError(err)) {
-        const responseData = err.response?.data as { message?: string } | undefined;
-        if (responseData?.message) {
-          msg = responseData.message;
+        if (!err.response) {
+          msg = "Cannot reach the server. Check your connection and try again.";
+        } else {
+          const responseData = err.response.data as { message?: string } | undefined;
+          msg = responseData?.message ?? "Failed to sign in. Please check your credentials.";
         }
       }
       setApiError(msg);

@@ -75,12 +75,15 @@ export default function RegisterForm() {
       // Redirect home on success
       router.push("/");
     } catch (err: unknown) {
-      // Safely access backend error response message or fallback
+      // A request that never reached the server has no response, so it must not
+      // be reported as a rejected registration — the backend may simply be down.
       let msg = "Failed to create account. Please try again.";
       if (axios.isAxiosError(err)) {
-        const responseData = err.response?.data as { message?: string } | undefined;
-        if (responseData?.message) {
-          msg = responseData.message;
+        if (!err.response) {
+          msg = "Cannot reach the server. Check your connection and try again.";
+        } else {
+          const responseData = err.response.data as { message?: string } | undefined;
+          msg = responseData?.message ?? msg;
         }
       }
       setApiError(msg);
