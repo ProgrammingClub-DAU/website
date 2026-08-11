@@ -43,8 +43,10 @@ export function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -91,39 +93,43 @@ export function Navbar() {
           <ThemeToggle />
 
           {/* Desktop auth controls: swap Login/Join for user name + Logout */}
-          {isAuthenticated ? (
-            <>
-              <span className="hidden font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase lg:inline">
-                {user?.fullName}
-              </span>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  logout();
-                  router.push("/login");
-                }}
-                className="hidden h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase lg:inline-flex"
-              >
-                Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                asChild
-                variant="ghost"
-                className="hidden h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase lg:inline-flex"
-              >
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button
-                asChild
-                className="hidden h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase lg:inline-flex"
-              >
-                <Link href="/register">Join</Link>
-              </Button>
-            </>
-          )}
+          <div className="hidden lg:flex items-center gap-2">
+            {!isMounted ? (
+              <div className="h-8 w-24 animate-pulse rounded-full bg-surface-2" />
+            ) : isAuthenticated ? (
+              <>
+                <span className="font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase">
+                  {user?.fullName}
+                </span>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    logout();
+                    router.push("/login");
+                  }}
+                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                >
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase inline-flex"
+                >
+                  <Link href="/register">Join</Link>
+                </Button>
+              </>
+            )}
+          </div>
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild className="lg:hidden">
@@ -170,7 +176,12 @@ export function Navbar() {
 
               {/* Mobile auth controls: swap Login/Join for user name + Logout */}
               <div className="flex flex-col gap-2 border-t border-hairline p-4">
-                {isAuthenticated ? (
+                {!isMounted ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="h-10 w-full animate-pulse rounded-full bg-surface-2" />
+                    <div className="h-10 w-full animate-pulse rounded-full bg-surface-2" />
+                  </div>
+                ) : isAuthenticated ? (
                   <>
                     <p className="px-3 py-2 text-center font-mono text-xs tracking-[0.06em] text-fg-muted uppercase">
                       {user?.fullName}
