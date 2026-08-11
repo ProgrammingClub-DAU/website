@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, LogIn, User as UserIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,22 +16,29 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
-import { navItems, site } from "@/lib/site";
+import { navItems } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth";
 
-function Wordmark({ className }: { className?: string }) {
+function BrandLogo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
       className={cn(
-        "flex items-baseline gap-2 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap",
+        "flex items-center gap-2.5 rounded-control text-sm font-bold tracking-tight whitespace-nowrap transition-opacity hover:opacity-90",
         "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         className
       )}
     >
-      <span>{site.name}</span>
-      <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
-        {site.suffix}
+      <Image
+        src="/programming-club-logo.jpg"
+        alt="Programming Club Logo"
+        width={32}
+        height={32}
+        className="size-8 rounded-full object-cover ring-1 ring-border"
+      />
+      <span className="font-sans text-sm font-semibold tracking-tight text-foreground">
+        Programming Club
       </span>
     </Link>
   );
@@ -40,6 +48,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -54,87 +63,115 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b backdrop-blur-xl",
-        scrolled ? "border-border" : "border-hairline"
+        "sticky top-0 z-50 border-b backdrop-blur-xl transition-all",
+        scrolled ? "border-border bg-background/90 shadow-xs" : "border-hairline bg-background/75"
       )}
-      style={{ backgroundColor: "var(--nav-bg)" }}
     >
-      <nav className="mx-auto flex min-h-14 max-w-[1240px] items-center gap-4 px-6 py-2">
-        <Wordmark />
+      <nav className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4 sm:px-6">
+        {/* Left: Brand Logo & Title */}
+        <div className="flex items-center gap-8">
+          <BrandLogo />
 
-        {/* Desktop navigation. Below lg the links move into the sheet. */}
-        <div className="hidden flex-1 items-center gap-0.5 lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "relative rounded-control px-2.5 py-2 font-mono text-[13px] tracking-[0.06em] uppercase whitespace-nowrap transition-colors",
-                "hover:bg-surface-2 hover:text-foreground",
-                "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-                isActive(item.href) ? "text-foreground" : "text-fg-muted"
-              )}
-            >
-              {item.label}
-              {isActive(item.href) && (
-                <span className="absolute inset-x-2.5 bottom-0.5 h-px bg-foreground" />
-              )}
-            </Link>
-          ))}
+          {/* Desktop Navigation Links */}
+          <div className="hidden items-center gap-1 lg:flex">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "relative px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors rounded-md",
+                    "hover:text-foreground hover:bg-surface-2/60",
+                    "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                    active ? "text-foreground font-semibold" : "text-fg-muted"
+                  )}
+                >
+                  {item.label}
+                  {active && (
+                    <span className="absolute inset-x-3 -bottom-3.5 h-0.5 rounded-full bg-primary" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        {/* Right Actions: Theme Toggle, Login/Profile, Join */}
+        <div className="flex items-center gap-3">
           <ThemeToggle />
 
+          {/* Login or Profile button */}
+          {isAuthenticated ? (
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                "hidden h-9 px-3.5 text-xs font-semibold uppercase tracking-wider text-fg-muted hover:text-foreground lg:inline-flex",
+                pathname.startsWith("/profile") && "text-foreground bg-surface-2"
+              )}
+            >
+              <Link href="/profile" className="flex items-center gap-1.5">
+                <UserIcon className="size-3.5" />
+                Profile
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                "hidden h-9 px-3.5 text-xs font-semibold uppercase tracking-wider text-fg-muted hover:text-foreground lg:inline-flex",
+                pathname.startsWith("/login") && "text-foreground bg-surface-2"
+              )}
+            >
+              <Link href="/login" className="flex items-center gap-1.5">
+                <LogIn className="size-3.5" />
+                Login
+              </Link>
+            </Button>
+          )}
+
+          {/* Join Button */}
           <Button
             asChild
-            variant="ghost"
-            className="hidden h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase lg:inline-flex"
-          >
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button
-            asChild
-            className="hidden h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase lg:inline-flex"
+            className="hidden h-9 rounded-full px-5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:shadow-primary/20 lg:inline-flex"
           >
             <Link href="/register">Join</Link>
           </Button>
 
+          {/* Mobile Sheet Trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild className="lg:hidden">
-              <Button variant="outline" size="icon" aria-label="Open menu">
-                <Menu />
+              <Button variant="ghost" size="icon" aria-label="Open menu" className="size-9">
+                <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            {/* Needs the data-[side] prefix: sheet.tsx sets w-3/4 at that
-                specificity, which a bare w-* class loses to. */}
             <SheetContent
               side="right"
               aria-describedby={undefined}
-              className="gap-0 data-[side=right]:w-[min(20rem,85vw)]"
+              className="flex flex-col gap-0 border-l border-border bg-surface-1 p-0 data-[side=right]:w-[min(20rem,85vw)]"
             >
-              <SheetHeader className="border-b border-hairline px-6 py-4">
+              <SheetHeader className="border-b border-hairline px-5 py-4">
                 <SheetTitle asChild>
-                  {/* Also a link, so it must close the sheet like the rest —
-                      the sheet lives in the layout and survives navigation. */}
                   <SheetClose asChild>
-                    <Wordmark className="text-base" />
+                    <BrandLogo />
                   </SheetClose>
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+              <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <Link
                       href={item.href}
                       aria-current={isActive(item.href) ? "page" : undefined}
                       className={cn(
-                        "rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] uppercase transition-colors",
-                        "hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                        "flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium tracking-wider uppercase transition-colors",
+                        "hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-ring",
                         isActive(item.href)
-                          ? "bg-surface-2 text-foreground"
+                          ? "bg-surface-2 font-bold text-primary"
                           : "text-fg-muted"
                       )}
                     >
@@ -144,15 +181,21 @@ export function Navbar() {
                 ))}
               </div>
 
-              <div className="flex flex-col gap-2 border-t border-hairline p-4">
+              <div className="flex flex-col gap-2.5 border-t border-hairline p-4 bg-surface-2/30">
                 <SheetClose asChild>
-                  <Button asChild variant="outline" className="h-10 rounded-full">
-                    <Link href="/login">Login</Link>
-                  </Button>
+                  {isAuthenticated ? (
+                    <Button asChild variant="outline" className="h-10 w-full rounded-full text-xs uppercase tracking-wider">
+                      <Link href="/profile">Profile</Link>
+                    </Button>
+                  ) : (
+                    <Button asChild variant="outline" className="h-10 w-full rounded-full text-xs uppercase tracking-wider">
+                      <Link href="/login">Login</Link>
+                    </Button>
+                  )}
                 </SheetClose>
                 <SheetClose asChild>
-                  <Button asChild className="h-10 rounded-full">
-                    <Link href="/register">Join the Club</Link>
+                  <Button asChild className="h-10 w-full rounded-full text-xs font-bold uppercase tracking-wider">
+                    <Link href="/register">Join</Link>
                   </Button>
                 </SheetClose>
               </div>

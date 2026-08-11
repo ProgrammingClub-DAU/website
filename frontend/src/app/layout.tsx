@@ -37,6 +37,11 @@ export const metadata: Metadata = {
     locale: "en_IN",
   },
   twitter: { card: "summary_large_image", title: site.fullName, description },
+  icons: {
+    icon: "/programming-club-logo.jpg",
+    shortcut: "/programming-club-logo.jpg",
+    apple: "/programming-club-logo.jpg",
+  },
 };
 
 export default function RootLayout({

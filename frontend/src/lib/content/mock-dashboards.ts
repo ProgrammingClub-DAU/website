@@ -146,5 +146,25 @@ export const getMockProfile = (userId: string): Profile => {
     ],
     ratingHistory: mockRatingHistory,
     activityData: generateMockActivityData(),
+    socialLinks: {
+      github: "https://github.com/SumeetVerma",
+      linkedin: "https://linkedin.com/in/sumeetverma",
+      instagram: "https://instagram.com/sumeet_verma",
+    },
+    cpHandles: {
+      codeforces: "Sumeet.Verma",
+      leetcode: "sumeet_verma",
+      codechef: "sumeet_v",
+      atcoder: "sumeet_v",
+    },
+    manualAchievements: [
+      {
+        id: "ach-1",
+        title: "Hackathon Winner",
+        description: "Won 1st place at Intra-DAU CodeHack 2026.",
+        icon: "🏆",
+        dateOrYear: "2026",
+      },
+    ],
   };
 };

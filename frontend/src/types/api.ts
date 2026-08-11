@@ -67,6 +67,27 @@ export interface EventParticipation {
   achievement: string | null; // e.g. "🥇 1st Place", null if none
 }
 
+export interface ManualAchievement {
+  id: string;
+  title: string;
+  description?: string;
+  icon?: string;
+  dateOrYear?: string;
+}
+
+export interface SocialLinks {
+  github?: string;
+  linkedin?: string;
+  instagram?: string;
+}
+
+export interface CpHandles {
+  codeforces?: string;
+  leetcode?: string;
+  codechef?: string;
+  atcoder?: string;
+}
+
 export interface Profile {
   id: number;
   name: string;
@@ -82,6 +103,9 @@ export interface Profile {
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
   activityData: ActivityDay[];
+  manualAchievements?: ManualAchievement[];
+  socialLinks?: SocialLinks;
+  cpHandles?: CpHandles;
 }
 
 export interface LeaderboardEntry {
