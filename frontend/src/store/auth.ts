@@ -9,6 +9,7 @@
  */
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface User {
   id: number; // Persisted unique user identifier on the backend
@@ -59,25 +60,33 @@ interface AuthState {
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
-  role: null,
-  isAuthenticated: false,
-
-  login: (user: User, token: string) =>
-    set({
-      user,
-      token,
-      role: user.role,
-      isAuthenticated: true,
-    }),
-
-  logout: () =>
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       user: null,
       token: null,
       role: null,
       isAuthenticated: false,
+
+      login: (user: User, token: string) =>
+        set({
+          user,
+          token,
+          role: user.role,
+          isAuthenticated: true,
+        }),
+
+      logout: () =>
+        set({
+          user: null,
+          token: null,
+          role: null,
+          isAuthenticated: false,
+        }),
     }),
-}));
+    {
+      name: "cpclub-auth",
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);
