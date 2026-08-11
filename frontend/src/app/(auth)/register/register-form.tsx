@@ -1,16 +1,17 @@
 /**
- * Register Page Component
- * Purpose: Renders the member sign-up form with full name, email, password strength, and match validation.
- * Auth Connection: Validates registration payload, ensuring password complexity rules before submission.
- * Deferred: Wiring submit handler to `POST /api/auth/register` endpoint (deferred to Stage 3).
+ * RegisterForm Client Component
+ * Renders sign-up interface and handles logic connecting to POST /api/auth/register.
  */
 
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,8 +24,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import { apiClient } from "@/lib/axios";
+import { useAuthStore } from "@/store/auth";
 
-export default function RegisterPage() {
+export default function RegisterForm() {
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -39,9 +46,48 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = (data: RegisterInput) => {
-    // Stage 2 mock submit handler per specification
-    console.log("Registration submitted:", data);
+  const onSubmit = async (data: RegisterInput) => {
+    setApiError(null);
+    try {
+      // Connect to real backend endpoint
+      const response = await apiClient.post("/api/auth/register", {
+        name: data.fullName, // Backend key name is 'name'
+        email: data.email,
+        password: data.password,
+        codeforcesHandle: null, // Fixed payload requirement
+      });
+
+      // API Response follows ApiResponse<AuthResponse> structure
+      const authData = response.data.data;
+
+      // Map backend 'name' to frontend store 'fullName'
+      login(
+        {
+          id: authData.id,
+          email: authData.email,
+          fullName: authData.name,
+          role: authData.role,
+          codeforcesHandle: authData.codeforcesHandle,
+        },
+        authData.token
+      );
+
+      // Redirect home on success
+      router.push("/");
+    } catch (err: unknown) {
+      // A request that never reached the server has no response, so it must not
+      // be reported as a rejected registration — the backend may simply be down.
+      let msg = "Failed to create account. Please try again.";
+      if (axios.isAxiosError(err)) {
+        if (!err.response) {
+          msg = "Cannot reach the server. Check your connection and try again.";
+        } else {
+          const responseData = err.response.data as { message?: string } | undefined;
+          msg = responseData?.message ?? msg;
+        }
+      }
+      setApiError(msg);
+    }
   };
 
   return (
@@ -65,10 +111,11 @@ export default function RegisterPage() {
                 placeholder="Alex Turing"
                 autoComplete="name"
                 aria-invalid={!!errors.fullName}
+                aria-describedby={errors.fullName ? "fullname-error" : undefined}
                 {...register("fullName")}
               />
               {errors.fullName && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="fullname-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.fullName.message}
                 </p>
               )}
@@ -82,10 +129,11 @@ export default function RegisterPage() {
                 placeholder="member@university.edu"
                 autoComplete="email"
                 aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
               {errors.email && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="email-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.email.message}
                 </p>
               )}
@@ -99,10 +147,11 @@ export default function RegisterPage() {
                 placeholder="Min 8 chars, 1 uppercase & 1 number"
                 autoComplete="new-password"
                 aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register("password")}
               />
               {errors.password && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="password-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.password.message}
                 </p>
               )}
@@ -116,14 +165,25 @@ export default function RegisterPage() {
                 placeholder="Re-enter password"
                 autoComplete="new-password"
                 aria-invalid={!!errors.confirmPassword}
+                aria-describedby={errors.confirmPassword ? "confirmpassword-error" : undefined}
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="confirmpassword-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.confirmPassword.message}
                 </p>
               )}
             </div>
+
+            {apiError && (
+              <div
+                id="register-api-error"
+                role="alert"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-center text-xs text-destructive font-mono"
+              >
+                {apiError}
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4">

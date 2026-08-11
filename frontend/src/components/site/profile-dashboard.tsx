@@ -136,7 +136,7 @@ export default function ProfileDashboard() {
   useEffect(() => {
     async function loadProfile() {
       // In Stage 3, this will use user?.id. For now, we'll fall back to "1"
-      const userId = user?.id || "1";
+      const userId = user?.id ? String(user.id) : "1";
       try {
         const data = await dashboardService.getProfile(userId);
         setProfile(data);

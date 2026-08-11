@@ -1,16 +1,17 @@
 /**
- * Login Page Component
- * Purpose: Renders the user sign-in form with Zod schema validation and accessibility features.
- * Auth Connection: Collects credentials, validates formats, and simulates login submission via console log.
- * Deferred: Wiring submit handler to `POST /api/auth/login` endpoint (deferred to Stage 3).
+ * LoginForm Client Component
+ * Renders sign-in interface and handles logic connecting to POST /api/auth/login.
  */
 
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,8 +24,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
+import { apiClient } from "@/lib/axios";
+import { useAuthStore } from "@/store/auth";
 
-export default function LoginPage() {
+export default function LoginForm() {
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -37,9 +44,47 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = (data: LoginInput) => {
-    // Stage 2 mock submit handler per specification
-    console.log("Login submitted:", data);
+  const onSubmit = async (data: LoginInput) => {
+    setApiError(null);
+    try {
+      // Connect to real backend endpoint
+      const response = await apiClient.post("/api/auth/login", {
+        email: data.email,
+        password: data.password,
+      });
+
+      // API Response follows ApiResponse<AuthResponse> structure
+      const authData = response.data.data;
+
+      // Map backend 'name' to frontend store 'fullName'
+      login(
+        {
+          id: authData.id,
+          email: authData.email,
+          fullName: authData.name,
+          role: authData.role,
+          codeforcesHandle: authData.codeforcesHandle,
+        },
+        authData.token
+      );
+
+      // Redirect home on success
+      router.push("/");
+    } catch (err: unknown) {
+      // A request that never reached the server has no response. Reporting that
+      // as a credentials problem sends people hunting for a wrong password when
+      // the backend simply is not running.
+      let msg = "Failed to sign in. Please try again.";
+      if (axios.isAxiosError(err)) {
+        if (!err.response) {
+          msg = "Cannot reach the server. Check your connection and try again.";
+        } else {
+          const responseData = err.response.data as { message?: string } | undefined;
+          msg = responseData?.message ?? "Failed to sign in. Please check your credentials.";
+        }
+      }
+      setApiError(msg);
+    }
   };
 
   return (
@@ -63,33 +108,43 @@ export default function LoginPage() {
                 placeholder="member@university.edu"
                 autoComplete="email"
                 aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
               {errors.email && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="email-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.email.message}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
                 aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register("password")}
               />
               {errors.password && (
-                <p className="font-mono text-xs text-destructive">
+                <p id="password-error" role="alert" className="font-mono text-xs text-destructive">
                   {errors.password.message}
                 </p>
               )}
             </div>
+
+            {apiError && (
+              <div
+                id="login-api-error"
+                role="alert"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-center text-xs text-destructive font-mono"
+              >
+                {apiError}
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4">
