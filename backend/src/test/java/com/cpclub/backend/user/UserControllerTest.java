@@ -9,10 +9,16 @@ import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.service.UserService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -37,7 +43,27 @@ class UserControllerTest {
         UserController userController = new UserController(userService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Prevent SecurityContext from leaking between tests.
+        SecurityContextHolder.clearContext();
+    }
+
+    /**
+     * Helper: sets a mock authenticated user in SecurityContextHolder so
+     * @AuthenticationPrincipal is populated in standaloneSetup tests.
+     */
+    private void authenticateAs(String email, String role) {
+        var userDetails = User.withUsername(email)
+                .password("irrelevant")
+                .authorities(new SimpleGrantedAuthority(role))
+                .build();
+        var auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Test
@@ -98,30 +124,46 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/users/{id}/handle - Should update Codeforces handle")
+    @DisplayName("PUT /api/users/{id}/handle - Should update Codeforces handle when caller owns the resource")
     void shouldUpdateCodeforcesHandle() throws Exception {
+        authenticateAs("alice@example.com", "ROLE_USER");
+
+        UserResponseDto caller = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
         UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "alice@example.com", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
 
+        when(userService.getUserByEmail("alice@example.com")).thenReturn(caller);
         when(userService.updateCodeforcesHandle(eq(1L), any(UpdateHandleRequest.class))).thenReturn(updatedUser);
-
-        String jsonPayload = "{\"handle\":\"new_cf_handle\"}";
 
         mockMvc.perform(put("/api/users/1/handle")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonPayload))
+                        .content("{\"handle\":\"new_cf_handle\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.codeforcesHandle", is("new_cf_handle")));
     }
 
     @Test
-    @DisplayName("PUT /api/users/{id}/handle - Should return 400 Bad Request on blank handle")
-    void shouldReturn400OnBlankHandle() throws Exception {
-        String invalidJsonPayload = "{\"handle\":\"\"}";
+    @DisplayName("PUT /api/users/{id}/handle - Should return 403 when caller tries to update another user's handle (IDOR guard)")
+    void shouldReturn403WhenUpdatingOtherUsersHandle() throws Exception {
+        // Bob (id=2) tries to update Alice's (id=1) handle — must be rejected.
+        authenticateAs("bob@example.com", "ROLE_USER");
+
+        UserResponseDto bob = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
+        when(userService.getUserByEmail("bob@example.com")).thenReturn(bob);
 
         mockMvc.perform(put("/api/users/1/handle")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidJsonPayload))
+                        .content("{\"handle\":\"stolen_handle\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success", is(false)));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/{id}/handle - Should return 400 Bad Request on blank handle")
+    void shouldReturn400OnBlankHandle() throws Exception {
+        mockMvc.perform(put("/api/users/1/handle")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"handle\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Validation failed")));

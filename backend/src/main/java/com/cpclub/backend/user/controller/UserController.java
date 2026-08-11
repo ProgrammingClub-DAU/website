@@ -10,11 +10,15 @@ import com.cpclub.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "User Management", description = "Endpoints for fetching and managing user profiles and member directory")
 public class UserController {
 
@@ -43,20 +48,22 @@ public class UserController {
     @Operation(summary = "Get members directory (paginated & searchable)")
     public ResponseEntity<ApiResponse<PagedResponse<UserResponseDto>>> getMembersDirectory(
             @RequestParam(required = false) String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         PagedResponse<UserResponseDto> response = userService.getMembersDirectory(query, page, size);
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched members directory successfully"));
     }
 
     /**
-     * Retrieves list of all users without pagination. Primarily for internal lookup.
+     * Retrieves list of all users without pagination. Restricted to authenticated users
+     * to prevent anonymous enumeration of the full user list and email addresses.
      *
      * @return list of all users
      */
     @GetMapping("/all")
-    @Operation(summary = "Get all users (unpaginated)")
+    @Operation(summary = "Get all users (unpaginated, authenticated only)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
         List<UserResponseDto> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users, "Fetched all users successfully"));
@@ -111,19 +118,31 @@ public class UserController {
     }
 
     /**
-     * Updates Codeforces handle for a given user.
+     * Updates the Codeforces handle for a given user.
+     * Enforces ownership: only the resource owner or an admin may update the handle.
      *
-     * @param id user ID to update
-     * @param request body containing the handle
-     * @return updated user profile details
+     * @param id          user ID to update
+     * @param request     body containing the new handle
+     * @param userDetails injected authenticated caller
+     * @return updated user profile details, or 403 if caller does not own the resource
      */
     @PutMapping("/{id}/handle")
-    @Operation(summary = "Update Codeforces handle")
+    @Operation(summary = "Update Codeforces handle (owner or admin only)")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponseDto>> updateCodeforcesHandle(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateHandleRequest request
+            @Valid @RequestBody UpdateHandleRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
+        // Ownership check: resolve the authenticated caller and compare IDs.
+        // Admins are exempt from the ownership restriction.
+        UserResponseDto caller = userService.getUserByEmail(userDetails.getUsername());
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!caller.id().equals(id) && !isAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("You are not authorised to update another user's Codeforces handle"));
+        }
         UserResponseDto updatedUser = userService.updateCodeforcesHandle(id, request);
         return ResponseEntity.ok(ApiResponse.success(updatedUser, "Codeforces handle updated successfully"));
     }
