@@ -1,3 +1,6 @@
+// Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
+// Public route remains /profile.
+
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
 import ProfileDashboard from "@/components/site/profile-dashboard";

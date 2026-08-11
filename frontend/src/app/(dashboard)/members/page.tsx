@@ -1,3 +1,6 @@
+// Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
+// Public route remains /members.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 

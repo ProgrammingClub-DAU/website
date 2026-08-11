@@ -1,3 +1,6 @@
+// Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
+// Public route remains /leaderboard.
+
 import type { Metadata } from "next";
 import { Eyebrow, Section } from "@/components/site/primitives";
 import { dashboardService } from "@/lib/services/dashboard";
