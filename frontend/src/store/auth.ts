@@ -18,6 +18,38 @@ export interface User {
   codeforcesHandle: string | null; // Optional synced Codeforces profile handle
 }
 
+// Standard API response envelope matching com.cpclub.backend.common.dto.ApiResponse
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+// Successful credentials validation payload matching com.cpclub.backend.auth.dto.AuthResponse
+export interface AuthResponse {
+  token: string;
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  codeforcesHandle: string | null;
+}
+
+/**
+ * Shared mapper translating backend AuthResponse DTO into frontend User model.
+ * Handles the name -> fullName field translation.
+ */
+export function mapAuthResponseToUser(authData: AuthResponse): User {
+  return {
+    id: authData.id,
+    email: authData.email,
+    fullName: authData.name,
+    role: authData.role,
+    codeforcesHandle: authData.codeforcesHandle,
+  };
+}
+
 interface AuthState {
   user: User | null;
   token: string | null;
