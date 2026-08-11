@@ -26,6 +26,10 @@ export const members: Member[] = [
     cf: "grandmaster",
     isActive: true,
     about: "Club Lead & Grandmaster. Organizing campus contests and leading the ICPC training initiative.",
+    isWebDev: true,
+    devRole: "Platform Architect & Full-Stack Lead",
+    githubUrl: "https://github.com/SumeetVerma",
+    linkedinUrl: "https://linkedin.com/in/sumeetverma",
   },
   {
     name: "Preet Sheth",
@@ -43,6 +47,10 @@ export const members: Member[] = [
     cf: "master",
     isActive: true,
     about: "Deputy Lead & Master. Overseeing weekly contests and advanced data structures workshops.",
+    isWebDev: true,
+    devRole: "UI/UX & Frontend Lead",
+    githubUrl: "https://github.com/PreetSheth",
+    linkedinUrl: "https://linkedin.com/in/preetsheth",
   },
 
   // ── ⚡ CORE TEAM (4) ──
@@ -113,6 +121,10 @@ export const members: Member[] = [
     cf: "master",
     isActive: true,
     about: "Leading technical infrastructure and Codeforces API integration.",
+    isWebDev: true,
+    devRole: "Backend & API Systems Developer",
+    githubUrl: "https://github.com/TNair",
+    linkedinUrl: "https://linkedin.com/in/tnair",
   },
 
   // ── ◈ ASSOCIATE CORE (6) ──
@@ -166,6 +178,10 @@ export const members: Member[] = [
     cf: "expert",
     isActive: true,
     about: "Organizing beginner C++ and STL workshops.",
+    isWebDev: true,
+    devRole: "Auth & Directory Developer",
+    githubUrl: "https://github.com/KVerma",
+    linkedinUrl: "https://linkedin.com/in/kverma",
   },
   {
     name: "P. Joshi",
@@ -253,6 +269,10 @@ export const members: Member[] = [
     cf: "specialist",
     isActive: true,
     about: "2nd year batch rep and website design contributor.",
+    isWebDev: true,
+    devRole: "Design & Frontend Engineer",
+    githubUrl: "https://github.com/NDesai",
+    linkedinUrl: "https://linkedin.com/in/ndesai",
   },
   {
     name: "R. Shah",
@@ -270,6 +290,10 @@ export const members: Member[] = [
     cf: "pupil",
     isActive: true,
     about: "Freshman batch rep helping 1st years get started with competitive programming.",
+    isWebDev: true,
+    devRole: "Leaderboard & Codeforces Sync Engineer",
+    githubUrl: "https://github.com/RShah",
+    linkedinUrl: "https://linkedin.com/in/rshah",
   },
   {
     name: "V. Patel",

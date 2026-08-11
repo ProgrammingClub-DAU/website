@@ -21,6 +21,10 @@ export interface Member {
   degree?: string;
   gradYear?: string;
   clubRoleCategory?: "Leadership" | "Core" | "Associate Core" | "Batch Representative" | "Student Participant";
+  isWebDev?: boolean;
+  devRole?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
 }
 
 export interface RatingHistoryEntry {
