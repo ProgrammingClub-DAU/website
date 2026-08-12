@@ -5,6 +5,8 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Eyebrow, Section } from "@/components/site/primitives";
 import { dashboardService } from "@/lib/services/dashboard";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
@@ -34,6 +36,11 @@ export default async function LeaderboardPage() {
         <p className="mt-4 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           The current standing of our club members and competitive programming activity.
         </p>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <Button asChild className="h-10 rounded-full px-5.5">
+            <Link href="/profile">Add CF Handle to Join</Link>
+          </Button>
+        </div>
       </Section>
 
       <Section className="pb-16">
