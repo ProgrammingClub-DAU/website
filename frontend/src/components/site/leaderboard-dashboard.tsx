@@ -209,7 +209,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                 return (
                   <Link
                     key={entry.id}
-                    href="/profile"
+                    href={`/profile/${entry.id}`}
                     className="flex items-center justify-between rounded-panel border border-border bg-surface-2 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -287,7 +287,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
             </CardHeader>
             <CardContent>
               <Link
-                href="/profile"
+                href={`/profile/${mostActiveMember.id}`}
                 className="group flex items-center gap-4 rounded-panel border border-amber-500/20 bg-background/50 p-3 transition-all hover:border-amber-500/40"
               >
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/50 bg-surface-2">
@@ -399,7 +399,7 @@ function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 
 
   return (
     <Link
-      href="/profile"
+      href={`/profile/${entry.id}`}
       className={`group relative flex flex-col justify-between rounded-panel border ${placeConfig.borderColor} bg-surface-2 p-3 text-center transition-all hover:-translate-y-1 ${placeConfig.height} ${placeConfig.glow}`}
     >
       {/* Top medal indicator */}

@@ -99,9 +99,9 @@ export function Navbar() {
               <div className="h-8 w-24 animate-pulse rounded-full bg-surface-2" />
             ) : isAuthenticated ? (
               <>
-                <span className="font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase">
+                <Link href={`/profile/${user?.id}`} className="font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase hover:text-foreground hover:underline transition-colors">
                   {user?.fullName}
-                </span>
+                </Link>
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -184,9 +184,9 @@ export function Navbar() {
                   </div>
                 ) : isAuthenticated ? (
                   <>
-                    <p className="px-3 py-2 text-center font-mono text-xs tracking-[0.06em] text-fg-muted uppercase">
+                    <Link href={`/profile/${user?.id}`} className="px-3 py-2 text-center font-mono text-xs tracking-[0.06em] text-fg-muted uppercase hover:text-foreground hover:underline transition-colors block">
                       {user?.fullName}
-                    </p>
+                    </Link>
                     <SheetClose asChild>
                       <Button
                         variant="outline"

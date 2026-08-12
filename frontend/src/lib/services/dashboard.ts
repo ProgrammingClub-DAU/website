@@ -90,6 +90,15 @@ export const dashboardService = {
     return mapUserToProfile(response.data?.data || response.data);
   },
 
+  // Public Profile (by ID)
+  getUserProfileById: async (userId: string): Promise<Profile> => {
+    if (IS_MOCK) {
+      return new Promise((resolve) => setTimeout(() => resolve(getMockProfile(userId)), 500));
+    }
+    const response = await apiClient.get(`/api/users/${userId}`);
+    return mapUserToProfile(response.data?.data || response.data);
+  },
+
   // Update Codeforces Handle
   updateCodeforcesHandle: async (userId: string, handle: string): Promise<Profile> => {
     const response = await apiClient.put(`/api/users/${userId}/handle`, { handle });
