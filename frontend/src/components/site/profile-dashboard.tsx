@@ -52,6 +52,7 @@ import {
   Edit2,
   Check,
   X,
+  Plus
 } from "lucide-react";
 import Image from "next/image";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
@@ -139,7 +140,7 @@ const EVENT_FILTERS: EventFilter[] = ["All", "Contest", "Workshop", "ICPC", "Fla
 
 const EVENTS_PER_PAGE = 5;
 
-export default function ProfileDashboard() {
+export default function ProfileDashboard({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cfInfo, setCfInfo] = useState<CfUserInfo | null>(null);
   const [cfHistory, setCfHistory] = useState<CfRatingHistoryEntry[]>([]);
@@ -147,9 +148,13 @@ export default function ProfileDashboard() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
 
+  const isOwner = isAuthenticated && String(user?.id) === userId;
+
   const loadProfile = useCallback(async () => {
     try {
-      const data = await dashboardService.getProfile(String(user?.id ?? ""));
+      const data = isOwner 
+        ? await dashboardService.getProfile(userId)
+        : await dashboardService.getUserProfileById(userId);
       setProfile(data);
 
       if (data.codeforcesHandle) {
@@ -165,16 +170,14 @@ export default function ProfileDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [userId, isOwner]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    // We allow viewing without auth for public profiles, but redirect if no profile is found.
+    // Actually, dashboardService handles public profiles, so we just load it.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch is intentional
     loadProfile();
-  }, [isAuthenticated, router, loadProfile]);
+  }, [loadProfile]);
 
   if (loading) {
     return <div className="animate-pulse flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Loading profile data...</div>;
@@ -184,10 +187,10 @@ export default function ProfileDashboard() {
     return <div className="flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Please log in to view your profile.</div>;
   }
 
-  return <ProfileDashboardContent profile={profile} cfInfo={cfInfo} cfHistory={cfHistory} onUpdate={loadProfile} />;
+  return <ProfileDashboardContent profile={profile} cfInfo={cfInfo} cfHistory={cfHistory} onUpdate={loadProfile} isOwner={isOwner} />;
 }
 
-function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate }: { profile: Profile, cfInfo: CfUserInfo | null, cfHistory: CfRatingHistoryEntry[], onUpdate: () => void }) {
+function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner }: { profile: Profile, cfInfo: CfUserInfo | null, cfHistory: CfRatingHistoryEntry[], onUpdate: () => void, isOwner: boolean }) {
   // ── State ──
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [eventFilter, setEventFilter] = useState<EventFilter>("All");
@@ -296,7 +299,7 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate }: { pro
               >
                 {profile.name}
               </h2>
-              {isEditingHandle ? (
+              {isOwner && isEditingHandle ? (
                 <form onSubmit={handleUpdateCfHandle} className="mt-1 flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-sm text-fg-muted">@</span>
                   <input
@@ -318,15 +321,28 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate }: { pro
               ) : (
                 <p className="mt-1 flex items-center justify-center sm:justify-start gap-2 text-sm text-fg-muted group">
                   @{profile.codeforcesHandle || "No handle linked"}
-                  <button 
-                    onClick={() => { setNewHandle(profile.codeforcesHandle || ""); setIsEditingHandle(true); }} 
-                    className="opacity-0 transition-opacity group-hover:opacity-100 text-fg-subtle hover:text-foreground"
-                    title="Edit Codeforces Handle"
-                  >
-                    <Edit2 className="size-3.5" />
-                  </button>
+                  {isOwner && (
+                    <button 
+                      onClick={() => { setNewHandle(profile.codeforcesHandle || ""); setIsEditingHandle(true); }} 
+                      className="opacity-0 transition-opacity group-hover:opacity-100 text-fg-subtle hover:text-foreground"
+                      title="Edit Codeforces Handle"
+                    >
+                      <Edit2 className="size-3.5" />
+                    </button>
+                  )}
                 </p>
               )}
+              {isOwner && !profile.codeforcesHandle && !isEditingHandle && (
+                <div className="mt-3">
+                  <button 
+                    onClick={() => { setNewHandle(""); setIsEditingHandle(true); }} 
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-fg-muted hover:bg-surface-2 hover:text-foreground transition-colors"
+                  >
+                    <Plus className="size-3.5" /> Add CF Handle
+                  </button>
+                </div>
+              )}
+
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium capitalize"
