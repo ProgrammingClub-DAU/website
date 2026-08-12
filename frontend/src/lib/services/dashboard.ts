@@ -63,7 +63,7 @@ export const dashboardService = {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve(mockMembers), 500));
     }
-    const response = await apiClient.get("/users");
+    const response = await apiClient.get("/api/users");
     // Unwrap Spring Data PagedResponse
     const content = response.data?.data?.content || [];
     return content.map(mapUserToMember);
@@ -74,7 +74,7 @@ export const dashboardService = {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve(mockLeaderboardEntries), 500));
     }
-    const response = await apiClient.get("/leaderboard");
+    const response = await apiClient.get("/api/leaderboard");
     // Unwrap Spring Data PagedResponse
     const content = response.data?.data?.content || [];
     return content.map(mapUserToLeaderboard);
@@ -86,13 +86,13 @@ export const dashboardService = {
     if (IS_MOCK) {
       return new Promise((resolve) => setTimeout(() => resolve(getMockProfile(_userId)), 500));
     }
-    const response = await apiClient.get("/users/profile");
+    const response = await apiClient.get("/api/users/profile");
     return mapUserToProfile(response.data?.data || response.data);
   },
 
   // Update Codeforces Handle
   updateCodeforcesHandle: async (userId: string, handle: string): Promise<Profile> => {
-    const response = await apiClient.put(`/users/${userId}/handle`, { handle });
+    const response = await apiClient.put(`/api/users/${userId}/handle`, { handle });
     return mapUserToProfile(response.data?.data || response.data);
   }
 };
