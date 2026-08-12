@@ -12,7 +12,7 @@
  * - Platform-wise breakdown of problems solved
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { dashboardService } from "@/lib/services/dashboard";
 import { useAuthStore } from "@/store/auth";
@@ -41,14 +41,21 @@ import {
   Calendar,
   Award,
   Target,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ChevronDown,
   Zap,
   BookOpen,
   Swords,
   Crown,
   Star,
+  Lock,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 import Image from "next/image";
+import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
+import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
 // ── Rank color helper for rating values (Codeforces thresholds) ──
 function ratingToRankName(rating: number): string {
@@ -61,7 +68,8 @@ function ratingToRankName(rating: number): string {
   return "Newbie";
 }
 
-// ── Event type icon and color ──
+// ── Event type icon and color (used in Phase 2 event section) ──
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getEventTypeIcon(type: ClubEventType) {
   switch (type) {
     case "Contest": return <Swords className="size-4" />;
@@ -72,6 +80,7 @@ function getEventTypeIcon(type: ClubEventType) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getEventTypeColor(type: ClubEventType): string {
   switch (type) {
     case "Contest": return "var(--cf-expert)";
@@ -123,38 +132,49 @@ function generateAchievements(events: EventParticipation[]): { icon: string; lab
   return achievements;
 }
 
-// ── Filter type ──
+// ── Filter type (used in Phase 2 event section) ──
 type EventFilter = "All" | "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EVENT_FILTERS: EventFilter[] = ["All", "Contest", "Workshop", "ICPC", "Flagship"];
 
 const EVENTS_PER_PAGE = 5;
 
 export default function ProfileDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [cfInfo, setCfInfo] = useState<CfUserInfo | null>(null);
+  const [cfHistory, setCfHistory] = useState<CfRatingHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const data = await dashboardService.getProfile(String(user?.id ?? ""));
+      setProfile(data);
+
+      if (data.codeforcesHandle) {
+        const [info, history] = await Promise.all([
+          codeforcesService.getUserInfo(data.codeforcesHandle),
+          codeforcesService.getRatingHistory(data.codeforcesHandle),
+        ]);
+        setCfInfo(info);
+        setCfHistory(history);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
-
-    async function loadProfile() {
-      // In Stage 3, this will use user?.id. For now, we'll fall back to "1"
-      const userId = user?.id ? String(user.id) : "1";
-      try {
-        const data = await dashboardService.getProfile(userId);
-        setProfile(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch is intentional
     loadProfile();
-  }, [user, isAuthenticated, router]);
+  }, [isAuthenticated, router, loadProfile]);
 
   if (loading) {
     return <div className="animate-pulse flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Loading profile data...</div>;
@@ -164,13 +184,33 @@ export default function ProfileDashboard() {
     return <div className="flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Please log in to view your profile.</div>;
   }
 
-  return <ProfileDashboardContent profile={profile} />;
+  return <ProfileDashboardContent profile={profile} cfInfo={cfInfo} cfHistory={cfHistory} onUpdate={loadProfile} />;
 }
 
-function ProfileDashboardContent({ profile }: { profile: Profile }) {
+function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate }: { profile: Profile, cfInfo: CfUserInfo | null, cfHistory: CfRatingHistoryEntry[], onUpdate: () => void }) {
   // ── State ──
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [eventFilter, setEventFilter] = useState<EventFilter>("All");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showAllEvents, setShowAllEvents] = useState(false);
+  const [isEditingHandle, setIsEditingHandle] = useState(false);
+  const [newHandle, setNewHandle] = useState("");
+  const [isSubmittingHandle, setIsSubmittingHandle] = useState(false);
+
+  const handleUpdateCfHandle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHandle.trim()) return;
+    setIsSubmittingHandle(true);
+    try {
+      await dashboardService.updateCodeforcesHandle(String(profile.id), newHandle.trim());
+      setIsEditingHandle(false);
+      onUpdate();
+    } catch (error) {
+      console.error("Failed to update handle:", error);
+    } finally {
+      setIsSubmittingHandle(false);
+    }
+  };
 
   // Resolve the CF rank color using the existing utility
   const getCfRank = (rating: number): import("@/lib/cf-ranks").CfRankKey => {
@@ -186,19 +226,23 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
   const nameColor = rankColor(actualCfRank);
   const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
   const totalSolved = profile.platformStats?.reduce((acc, curr) => acc + curr.solved, 0) || 0;
+  void totalSolved; // Platform stats locked until Phase 2
 
-  // ── Club activity computed values ──
+  // ── Club activity computed values (used in Phase 2 event section) ──
+   
   const eventParticipations = useMemo(() => profile.eventParticipations ?? [], [profile.eventParticipations]);
   const sortedEvents = useMemo(() =>
     [...eventParticipations].sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()),
     [eventParticipations]
   );
 
+   
   const filteredEvents = useMemo(() => {
     if (eventFilter === "All") return sortedEvents;
     return sortedEvents.filter((e) => e.eventType === eventFilter);
   }, [sortedEvents, eventFilter]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const visibleEvents = showAllEvents ? filteredEvents : filteredEvents.slice(0, EVENTS_PER_PAGE);
 
   const clubStats = useMemo(() => {
@@ -231,9 +275,9 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
               className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 bg-surface-2"
               style={{ borderColor: nameColor }}
             >
-              {profile.avatarUrl ? (
+              {cfInfo?.titlePhoto || cfInfo?.avatar || profile.avatarUrl ? (
                 <Image
-                  src={profile.avatarUrl}
+                  src={cfInfo?.titlePhoto || cfInfo?.avatar || profile.avatarUrl || ""}
                   alt={profile.name}
                   width={96}
                   height={96}
@@ -252,7 +296,37 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
               >
                 {profile.name}
               </h2>
-              <p className="mt-1 text-sm text-fg-muted">@{profile.codeforcesHandle}</p>
+              {isEditingHandle ? (
+                <form onSubmit={handleUpdateCfHandle} className="mt-1 flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-sm text-fg-muted">@</span>
+                  <input
+                    type="text"
+                    value={newHandle}
+                    onChange={(e) => setNewHandle(e.target.value)}
+                    className="h-7 rounded border border-border bg-surface-1 px-2 text-sm outline-none focus:border-primary w-32"
+                    placeholder="CF Handle"
+                    autoFocus
+                    disabled={isSubmittingHandle}
+                  />
+                  <button type="submit" disabled={isSubmittingHandle || !newHandle.trim()} className="text-primary hover:text-primary/80 disabled:opacity-50">
+                    <Check className="size-4" />
+                  </button>
+                  <button type="button" onClick={() => setIsEditingHandle(false)} disabled={isSubmittingHandle} className="text-fg-muted hover:text-foreground">
+                    <X className="size-4" />
+                  </button>
+                </form>
+              ) : (
+                <p className="mt-1 flex items-center justify-center sm:justify-start gap-2 text-sm text-fg-muted group">
+                  @{profile.codeforcesHandle || "No handle linked"}
+                  <button 
+                    onClick={() => { setNewHandle(profile.codeforcesHandle || ""); setIsEditingHandle(true); }} 
+                    className="opacity-0 transition-opacity group-hover:opacity-100 text-fg-subtle hover:text-foreground"
+                    title="Edit Codeforces Handle"
+                  >
+                    <Edit2 className="size-3.5" />
+                  </button>
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium capitalize"
@@ -274,20 +348,23 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
                   {profile.clubRole ?? "Club Participant"}
                 </span>
                 <span className="text-sm text-fg-muted">
-                  Rating: <strong className="text-foreground">{profile.rating}</strong>
-                  <span className="text-fg-subtle"> (max {profile.maxRating})</span>
+                  Rating: <strong className="text-foreground">{profile.rating || "Unrated"}</strong>
+                  {cfInfo?.maxRating && <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>}
                 </span>
               </div>
             </div>
 
             {/* Quick stats cards */}
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{totalSolved}</div>
+              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3 relative overflow-hidden">
+                <div className="text-2xl font-bold opacity-30 blur-[2px]">247</div>
                 <div className="text-[11px] text-fg-muted">Total Solved</div>
+                <div className="absolute inset-0 flex items-center justify-center bg-surface-2/60 backdrop-blur-[1px]">
+                  <Lock className="size-4 text-fg-subtle" />
+                </div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{profile.ratingHistory?.length || 0}</div>
+                <div className="text-2xl font-bold">{cfHistory.length}</div>
                 <div className="text-[11px] text-fg-muted">Contests</div>
               </div>
             </div>
@@ -369,106 +446,23 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {eventParticipations.length > 0 ? (
-            <>
-              {/* Filter tabs */}
-              <div className="mb-6 flex flex-wrap gap-2">
-                {EVENT_FILTERS.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => { setEventFilter(filter); setShowAllEvents(false); }}
-                    className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
-                    style={{
-                      borderColor: eventFilter === filter ? "var(--primary)" : "var(--border)",
-                      backgroundColor: eventFilter === filter ? "rgba(138,43,226,0.12)" : "transparent",
-                      color: eventFilter === filter ? "var(--primary)" : "var(--fg-muted)",
-                    }}
-                  >
-                    {filter === "All" ? "All Events" : filter}
-                  </button>
+          <div className="relative py-12">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
+              <Lock className="size-8 text-fg-muted mb-2" />
+              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
+              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
+                Event tracking and club leaderboards will be unlocked in the next major update.
+              </p>
+            </div>
+            <div className="opacity-30 pointer-events-none select-none blur-[2px]">
+              {/* Dummy content to give the locked section some shape */}
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 rounded-panel border border-border bg-surface-2 p-4"></div>
                 ))}
               </div>
-
-              {/* Event cards */}
-              {filteredEvents.length > 0 ? (
-                <div className="space-y-3">
-                  {visibleEvents.map((event) => (
-                    <div
-                      key={event.eventId}
-                      className="flex items-center gap-4 rounded-panel border border-border bg-surface-2 p-4 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
-                    >
-                      {/* Event type icon */}
-                      <div
-                        className="flex size-10 shrink-0 items-center justify-center rounded-full border"
-                        style={{
-                          borderColor: getEventTypeColor(event.eventType),
-                          color: getEventTypeColor(event.eventType),
-                          backgroundColor: `color-mix(in srgb, ${getEventTypeColor(event.eventType)} 10%, transparent)`,
-                        }}
-                      >
-                        {getEventTypeIcon(event.eventType)}
-                      </div>
-
-                      {/* Event info */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-semibold">{event.eventName}</span>
-                          {event.achievement && (
-                            <span className="shrink-0 text-sm">{event.achievement.split(" ")[0]}</span>
-                          )}
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
-                          <span>{new Date(event.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                          <span
-                            className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                            style={{
-                              borderColor: getEventTypeColor(event.eventType),
-                              color: getEventTypeColor(event.eventType),
-                            }}
-                          >
-                            {event.eventType}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Rank / status */}
-                      <div className="shrink-0 text-right">
-                        {event.rank !== null ? (
-                          <>
-                            <div className="text-lg font-bold" style={{ color: event.rank <= 3 ? "var(--cf-master)" : "var(--foreground)" }}>
-                              #{event.rank}
-                            </div>
-                            <div className="text-[10px] text-fg-muted">/ {event.totalParticipants}</div>
-                          </>
-                        ) : (
-                          <div className="text-xs font-medium text-fg-muted">Participated</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Show more button */}
-                  {filteredEvents.length > EVENTS_PER_PAGE && !showAllEvents && (
-                    <button
-                      onClick={() => setShowAllEvents(true)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-panel border border-border py-3 text-xs font-medium text-fg-muted transition-all hover:border-hairline-strong hover:text-foreground"
-                    >
-                      <ChevronDown className="size-3.5" />
-                      Show {filteredEvents.length - EVENTS_PER_PAGE} more events
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <p className="py-6 text-center text-sm text-fg-muted">
-                  No {eventFilter.toLowerCase()} events found.
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="py-6 text-center text-sm text-fg-muted">
-              No club activities yet. Participate in an event to see your activity here.
-            </p>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -481,16 +475,24 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {profile.platformStats?.map((ps) => (
-              <div
-                key={ps.platform}
-                className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
-              >
-                <div className="text-2xl font-bold">{ps.solved}</div>
-                <div className="mt-1 text-xs text-fg-muted">{ps.platform}</div>
+          <div className="relative">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
+              <Lock className="size-8 text-fg-muted mb-2" />
+              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
+              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
+                Multi-platform integration (LeetCode, CodeChef, etc.) will be available soon.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 opacity-30 blur-[2px] pointer-events-none select-none">
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
+                <div className="text-2xl font-bold">142</div>
+                <div className="mt-1 text-xs text-fg-muted">Codeforces</div>
               </div>
-            ))}
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
+                <div className="text-2xl font-bold">45</div>
+                <div className="mt-1 text-xs text-fg-muted">LeetCode</div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -504,54 +506,61 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={profile.ratingHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
-                  tickFormatter={(v: string) => {
-                    const d = new Date(v);
-                    return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-                  }}
-                />
-                <YAxis
-                  domain={["dataMin - 100", "dataMax + 100"]}
-                  tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  labelFormatter={(label: unknown) => {
-                    if (!label) return "";
-                    const d = new Date(label as string | number);
-                    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-                  }}
-                  formatter={(value: unknown, _name: unknown, props: { payload?: { contestName?: string } }) => {
-                    if (value == null) return ["", ""];
-                    const contestName = props.payload?.contestName ?? "";
-                    return [
-                      `${value} (${ratingToRankName(Number(value))})`,
-                      contestName,
-                    ];
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="rating"
-                  stroke="var(--primary)"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "var(--primary)" }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {cfHistory.length > 0 ? (
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={cfHistory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
+                    tickFormatter={(v: string) => {
+                      const d = new Date(v);
+                      return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+                    }}
+                  />
+                  <YAxis
+                    domain={["dataMin - 100", "dataMax + 100"]}
+                    tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                    labelFormatter={(label: unknown) => {
+                      if (!label) return "";
+                      const d = new Date(label as string | number);
+                      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                    }}
+                    formatter={(value: unknown, _name: unknown, props: { payload?: { contestName?: string } }) => {
+                      if (value == null) return ["", ""];
+                      const contestName = props.payload?.contestName ?? "";
+                      return [
+                        `${value} (${ratingToRankName(Number(value))})`,
+                        contestName,
+                      ];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="rating"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: "var(--primary)" }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex h-[300px] flex-col items-center justify-center text-sm text-fg-muted gap-2">
+              <Trophy className="size-8 opacity-20" />
+              {profile.codeforcesHandle ? "No rating history found for this user." : "No Codeforces handle linked."}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -564,20 +573,29 @@ function ProfileDashboardContent({ profile }: { profile: Profile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <ActivityCalendar
-              data={profile.activityData}
-              theme={{
-                dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-                light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
-              }}
-              labels={{
-                totalCount: "{{count}} problems solved in the last year",
-              }}
-              blockSize={12}
-              blockMargin={3}
-              fontSize={12}
-            />
+          <div className="relative py-8">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
+              <Lock className="size-8 text-fg-muted mb-2" />
+              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
+              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
+                Daily practice heatmap and activity tracking will be unlocked soon.
+              </p>
+            </div>
+            <div className="overflow-x-auto opacity-30 blur-[2px] pointer-events-none select-none">
+              <ActivityCalendar
+                data={[{ date: "2024-01-01", count: 1, level: 1 }]}
+                theme={{
+                  dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+                  light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+                }}
+                labels={{
+                  totalCount: "{{count}} problems solved in the last year",
+                }}
+                blockSize={12}
+                blockMargin={3}
+                fontSize={12}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
