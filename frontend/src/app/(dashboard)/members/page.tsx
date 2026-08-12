@@ -1,6 +1,9 @@
 // Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
 // Public route remains /members.
 
+// Never statically pre-render — this page fetches live member data from the backend.
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -17,8 +20,13 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  // Fetch members data from our API service instead of using static data
-  const apiMembers = await dashboardService.getMembers();
+  // Fetch live members from the backend. Falls back to [] if API is unavailable at build time.
+  let apiMembers: Awaited<ReturnType<typeof dashboardService.getMembers>> = [];
+  try {
+    apiMembers = await dashboardService.getMembers();
+  } catch {
+    // API unreachable — render with empty list, page stays functional
+  }
 
   return (
     <>
