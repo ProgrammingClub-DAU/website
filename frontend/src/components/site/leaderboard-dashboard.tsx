@@ -34,16 +34,11 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("All");
 
-  // 1. Filter by Tab (Current = active in last 2 years)
+  // 1. Filter by Tab (Current = users with recent activity or a rating)
   const tabFilteredEntries = useMemo(() => {
     if (tab === "Overall") return entries;
-
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
     return entries.filter((e) => {
-      if (!e.lastEventDate) return true; // default include if date unparsed
-      return new Date(e.lastEventDate) >= twoYearsAgo;
+      return (e.yearlyActivityCount ?? 0) > 0 || e.rating !== null;
     });
   }, [entries, tab]);
 
@@ -82,7 +77,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
 
   // Sort by rating descending
   const sortedEntries = useMemo(() => {
-    return [...filteredEntries].sort((a, b) => b.rating - a.rating);
+    return [...filteredEntries].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
   }, [filteredEntries]);
 
   // Podium splits (#1 center, #2 left, #3 right)
@@ -204,7 +199,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
             <div className="space-y-2">
               {rank4Onwards.map((entry, index) => {
                 const rankNum = index + 4;
-                const cfRank = getCfRank(entry.rating);
+                const cfRank = getCfRank(entry.rating ?? 0);
                 const color = rankColor(cfRank);
                 return (
                   <Link
@@ -306,7 +301,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                 <div className="min-w-0 flex-1">
                   <h4
                     className="truncate text-base font-bold group-hover:underline"
-                    style={{ color: rankColor(getCfRank(mostActiveMember.rating)) }}
+                    style={{ color: rankColor(getCfRank(mostActiveMember.rating ?? 0)) }}
                   >
                     {mostActiveMember.name}
                   </h4>
@@ -370,7 +365,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
 
 // ── Podium Card Sub-Component ──
 function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 3 }) {
-  const cfRank = getCfRank(entry.rating);
+  const cfRank = getCfRank(entry.rating ?? 0);
   const color = rankColor(cfRank);
 
   const placeConfig = {

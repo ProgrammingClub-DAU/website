@@ -13,7 +13,6 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { dashboardService } from "@/lib/services/dashboard";
 import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,7 +145,6 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   const [cfHistory, setCfHistory] = useState<CfRatingHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
-  const router = useRouter();
 
   const isOwner = isAuthenticated && String(user?.id) === userId;
 

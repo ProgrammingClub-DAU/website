@@ -3,6 +3,7 @@ package com.cpclub.backend.user.service;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
+import com.cpclub.backend.user.dto.PublicUserResponseDto;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
@@ -81,6 +82,15 @@ public class UserService {
      * @param size page size limit
      * @return standardized paginated wrapper containing results page
      */
+    /**
+     * Searches and paginates members directory sorted alphabetically by name.
+     * Returns full DTO including email — for admin/authenticated use only.
+     *
+     * @param query search filter matching name or Codeforces handle
+     * @param page zero-indexed page number
+     * @param size page size limit
+     * @return standardized paginated wrapper containing results page
+     */
     @Transactional(readOnly = true)
     public PagedResponse<UserResponseDto> getMembersDirectory(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
@@ -98,6 +108,49 @@ public class UserService {
                 userPage.getTotalPages(),
                 userPage.isLast()
         );
+    }
+
+    /**
+     * Public-safe version of the members directory that omits email, role, and updatedAt.
+     * Use this for the public-facing {@code GET /api/users} endpoint.
+     *
+     * @param query search filter matching name or Codeforces handle
+     * @param page zero-indexed page number
+     * @param size page size limit
+     * @return standardized paginated wrapper containing public-safe user projections
+     */
+    @Transactional(readOnly = true)
+    public PagedResponse<PublicUserResponseDto> getMembersDirectoryPublic(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        Page<User> userPage = userRepository.searchUsers(query, pageable);
+
+        List<PublicUserResponseDto> content = userPage.getContent().stream()
+                .map(PublicUserResponseDto::fromEntity)
+                .toList();
+
+        return new PagedResponse<>(
+                content,
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isLast()
+        );
+    }
+
+    /**
+     * Public-safe profile lookup by ID — omits email, role, and updatedAt.
+     * Use this for the public-facing {@code GET /api/users/{id}} endpoint.
+     *
+     * @param id user ID
+     * @return public-safe immutable user projection
+     * @throws ResourceNotFoundException if user ID does not exist
+     */
+    @Transactional(readOnly = true)
+    public PublicUserResponseDto getPublicUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return PublicUserResponseDto.fromEntity(user);
     }
 
     /**
