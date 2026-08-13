@@ -302,7 +302,16 @@ the `default` profile — it will still serve traffic and look healthy while run
 `ddl-auto: update`, logging every SQL statement, and exposing Swagger.
 
 ## 19. Failure Recovery / Rollback Plan
-*   **Database Failure:** If migrations corrupt data, drop schema and restore from local backup SQL dump.
+*   **Database Failure:** Follow [DATABASE-BACKUP.md](DATABASE-BACKUP.md) — take a
+    dump of the broken state, restore the last good dump into a scratch database,
+    verify it, then restore into production. **Do not drop the schema.** Production
+    runs `ddl-auto: validate` with Flyway-managed migrations, so an empty schema
+    means the application will not start at all, turning a partial failure into a
+    total one.
+*   **Bad Migration:** Write a forward migration that undoes the change, or restore
+    a dump taken before it ran. Reverting the code alone does not revert the
+    schema, and `validate` will then fail against the older entities. Take a backup
+    before deploying any migration.
 *   **Deployment Failure:** In Vercel/Render, use the "Rollback to previous deployment" button. Revert the bad commit in Git (`git revert <commit-hash>`).
 
 ---

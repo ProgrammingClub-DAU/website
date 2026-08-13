@@ -15,12 +15,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilsTest {
 
+    /** Any sufficiently long value that is not the previously-leaked one. */
+    private static final String TEST_SECRET =
+            "test-only-signing-key-not-used-anywhere-outside-this-suite-0123456789";
+
+    /** The value that leaked via this repository's git history. */
+    private static final String LEAKED_SECRET =
+            "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+
     private JwtUtils jwtUtils;
 
     @BeforeEach
     void setUp() {
         jwtUtils = new JwtUtils();
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", TEST_SECRET);
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000);
     }
 
@@ -73,5 +81,42 @@ class JwtUtilsTest {
         String invalidSignatureToken = validToken.substring(0, validToken.length() - 5) + "invalid";
 
         assertFalse(jwtUtils.validateJwtToken(invalidSignatureToken));
+    }
+
+    /**
+     * Rotation is a dashboard action, so nothing in the codebase can force it.
+     * This guard is the substitute: if the leaked secret is still configured, the
+     * application refuses to start rather than serving traffic on a key anyone
+     * can read from the git history.
+     */
+    @Test
+    @DisplayName("Startup fails when the previously-leaked secret is configured")
+    void validateSecret_RejectsKnownCompromisedSecret() {
+        JwtUtils utils = new JwtUtils();
+        ReflectionTestUtils.setField(utils, "jwtSecret", LEAKED_SECRET);
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(utils, "validateSecret"));
+        assertTrue(thrown.getMessage().contains("publicly known"),
+                "the message must tell the operator why it refused: " + thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Startup fails when the secret is too short to be safe")
+    void validateSecret_RejectsShortSecret() {
+        JwtUtils utils = new JwtUtils();
+        ReflectionTestUtils.setField(utils, "jwtSecret", "too-short");
+
+        assertThrows(IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(utils, "validateSecret"));
+    }
+
+    @Test
+    @DisplayName("A properly generated secret is accepted")
+    void validateSecret_AcceptsGoodSecret() {
+        JwtUtils utils = new JwtUtils();
+        ReflectionTestUtils.setField(utils, "jwtSecret", TEST_SECRET);
+
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(utils, "validateSecret"));
     }
 }

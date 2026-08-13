@@ -28,3 +28,7 @@ Thumbs.db
 # before this rule existed (one-off scripts and a 317 KB diff dump).
 /*.py
 /*_diff.txt
+
+# Local database dumps — never commit member data
+/backend/backups/
+*.dump
