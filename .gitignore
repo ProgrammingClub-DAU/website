@@ -3,8 +3,11 @@ node_modules/
 dist/
 .next/
 out/
-.env
-.env.local
+
+# Any env file except the committed examples. `.env` / `.env.local` alone missed
+# .env.production and friends.
+.env*
+!.env.example
 
 # Java / Spring Boot
 target/
@@ -20,3 +23,8 @@ Thumbs.db
 # Claude Code (personal local config, not shared with team)
 /.claude/
 /CLAUDE.md
+
+# Scratch files from local tooling. Six of these were committed to the repo root
+# before this rule existed (one-off scripts and a 317 KB diff dump).
+/*.py
+/*_diff.txt

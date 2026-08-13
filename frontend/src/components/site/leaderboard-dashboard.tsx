@@ -3,20 +3,10 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { rankColor, CF_RANKS, type CfRankKey } from "@/lib/cf-ranks";
+import { rankColor, ratingToRank, CF_RANKS, type CfRankKey } from "@/lib/cf-ranks";
 import type { LeaderboardEntry } from "@/types/api";
-import { Search, Flame, Users, Code2, CalendarCheck, Trophy, User } from "lucide-react";
+import { Search, Flame, Users, Code2, Trophy, User } from "lucide-react";
 import Image from "next/image";
-
-function getCfRank(rating: number): CfRankKey {
-  if (rating >= 2400) return "grandmaster";
-  if (rating >= 2100) return "master";
-  if (rating >= 1900) return "candidate";
-  if (rating >= 1600) return "expert";
-  if (rating >= 1400) return "specialist";
-  if (rating >= 1200) return "pupil";
-  return "newbie";
-}
 
 function getRankName(key: CfRankKey): string {
   return CF_RANKS.find((r) => r.key === key)?.name ?? key;
@@ -47,9 +37,11 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
     return tabFilteredEntries.filter((e) => {
       // Search check
       const query = searchQuery.toLowerCase();
+      // codeforcesHandle is nullable on the backend — members who have not linked
+      // an account still appear here, so this must not assume a string.
       const matchesSearch =
         e.name.toLowerCase().includes(query) ||
-        e.codeforcesHandle.toLowerCase().includes(query);
+        (e.codeforcesHandle ?? "").toLowerCase().includes(query);
 
       if (!matchesSearch) return false;
 
@@ -86,21 +78,30 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
   const top3 = sortedEntries[2];
   const rank4Onwards = sortedEntries.slice(3);
 
-  // Overall Club Stats (computed dynamically from entries)
-  const clubStats = useMemo(() => {
-    const totalParticipants = entries.length;
-    const totalSolved = entries.reduce((acc, curr) => acc + (curr.solvedCount || 0), 0);
-    const activeThisYear = entries.filter((e) => (e.yearlyActivityCount || 0) > 0).length;
-    const contests = 20; // Dynamic count of club contests held
-    return { totalParticipants, totalSolved, activeThisYear, contests };
-  }, [entries]);
+  /*
+   * Only figures the API actually supplies. `solvedCount`, `yearlyActivityCount`
+   * and a club contest count are all Phase 2 — they were previously summed into
+   * "0 Problems Solved" and a hardcoded "20 Contests" presented as real club
+   * statistics. Restore each stat when its data source exists.
+   */
+  const clubStats = useMemo(
+    () => ({
+      totalParticipants: entries.length,
+      rated: entries.filter((e) => e.rating != null).length,
+    }),
+    [entries]
+  );
 
-  // Most Active Member of the Year
-  const mostActiveMember = useMemo(() => {
-    if (entries.length === 0) return null;
-    return [...entries].sort(
-      (a, b) => (b.yearlyActivityCount || b.solvedCount || 0) - (a.yearlyActivityCount || a.solvedCount || 0)
-    )[0];
+  /*
+   * Highest-rated member. This was previously labelled "Most Active Member of the
+   * Year" and sorted on fields the API never returns, so every comparison was
+   * 0 - 0 and the winner was simply whoever the backend listed first — a false
+   * claim about a named person. Rating is something we can actually rank on.
+   */
+  const topRatedMember = useMemo(() => {
+    const rated = entries.filter((e) => e.rating != null);
+    if (rated.length === 0) return null;
+    return [...rated].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
   }, [entries]);
 
   return (
@@ -199,7 +200,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
             <div className="space-y-2">
               {rank4Onwards.map((entry, index) => {
                 const rankNum = index + 4;
-                const cfRank = getCfRank(entry.rating ?? 0);
+                const cfRank = ratingToRank(entry.rating);
                 const color = rankColor(cfRank);
                 return (
                   <Link
@@ -269,27 +270,27 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
 
       {/* ── RIGHT COLUMN (~40% / 5 cols) ── */}
       <div className="space-y-6 lg:col-span-5">
-        {/* 🔥 Most Active Member of the Year */}
-        {mostActiveMember && (
+        {/* Highest-rated member — the only "top member" the API can support today. */}
+        {topRatedMember && (
           <Card className="relative overflow-hidden border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-surface-2 to-surface-2">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2 text-amber-400">
-                <Flame className="size-4 animate-bounce" />
+                <Flame className="size-4" />
                 <span className="text-xs font-bold tracking-wide uppercase">
-                  Most Active Member of the Year
+                  Highest Rated Member
                 </span>
               </div>
             </CardHeader>
             <CardContent>
               <Link
-                href={`/profile/${mostActiveMember.id}`}
+                href={`/profile/${topRatedMember.id}`}
                 className="group flex items-center gap-4 rounded-panel border border-amber-500/20 bg-background/50 p-3 transition-all hover:border-amber-500/40"
               >
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/50 bg-surface-2">
-                  {mostActiveMember.avatarUrl ? (
+                  {topRatedMember.avatarUrl ? (
                     <Image
-                      src={mostActiveMember.avatarUrl}
-                      alt={mostActiveMember.name}
+                      src={topRatedMember.avatarUrl}
+                      alt={topRatedMember.name}
                       width={48}
                       height={48}
                       className="size-full rounded-full object-cover"
@@ -301,15 +302,15 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                 <div className="min-w-0 flex-1">
                   <h4
                     className="truncate text-base font-bold group-hover:underline"
-                    style={{ color: rankColor(getCfRank(mostActiveMember.rating ?? 0)) }}
+                    style={{ color: rankColor(ratingToRank(topRatedMember.rating)) }}
                   >
-                    {mostActiveMember.name}
+                    {topRatedMember.name}
                   </h4>
-                  <p className="text-xs text-fg-muted">
-                    @{mostActiveMember.codeforcesHandle}
-                  </p>
+                  {topRatedMember.codeforcesHandle && (
+                    <p className="text-xs text-fg-muted">@{topRatedMember.codeforcesHandle}</p>
+                  )}
                   <div className="mt-1 text-xs font-semibold text-amber-400">
-                    🔥 {mostActiveMember.solvedCount || (mostActiveMember.yearlyActivityCount! * 30)} activities
+                    {topRatedMember.rating} rating
                   </div>
                 </div>
               </Link>
@@ -332,28 +333,14 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                   <Users className="size-4" />
                 </div>
                 <div className="text-xl font-bold">{clubStats.totalParticipants}</div>
-                <div className="text-[11px] text-fg-muted">Participants</div>
+                <div className="text-[11px] text-fg-muted">Members</div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 p-3">
                 <div className="flex justify-center mb-1 text-cf-master">
                   <Code2 className="size-4" />
                 </div>
-                <div className="text-xl font-bold">{clubStats.totalSolved}</div>
-                <div className="text-[11px] text-fg-muted">Problems Solved</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-3">
-                <div className="flex justify-center mb-1 text-cf-candidate">
-                  <Flame className="size-4" />
-                </div>
-                <div className="text-xl font-bold">{clubStats.activeThisYear}</div>
-                <div className="text-[11px] text-fg-muted">Active This Year</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-3">
-                <div className="flex justify-center mb-1 text-cf-expert">
-                  <CalendarCheck className="size-4" />
-                </div>
-                <div className="text-xl font-bold">{clubStats.contests}</div>
-                <div className="text-[11px] text-fg-muted">Contests</div>
+                <div className="text-xl font-bold">{clubStats.rated}</div>
+                <div className="text-[11px] text-fg-muted">Rated on Codeforces</div>
               </div>
             </div>
           </CardContent>
@@ -365,7 +352,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
 
 // ── Podium Card Sub-Component ──
 function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 3 }) {
-  const cfRank = getCfRank(entry.rating ?? 0);
+  const cfRank = ratingToRank(entry.rating);
   const color = rankColor(cfRank);
 
   const placeConfig = {

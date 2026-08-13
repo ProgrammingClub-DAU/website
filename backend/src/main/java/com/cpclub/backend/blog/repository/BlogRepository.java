@@ -24,6 +24,18 @@ public interface BlogRepository extends JpaRepository<BlogPost, Long> {
     Optional<BlogPost> findBySlug(String slug);
 
     /**
+     * Publication-aware lookups used by the public read endpoints.
+     *
+     * <p>The unfiltered {@code findById}/{@code findBySlug} above must not serve
+     * anonymous callers: they return unpublished drafts, so anyone could walk IDs
+     * and read embargoed content before the club intends to publish it. Admin
+     * paths keep using the unfiltered finders.
+     */
+    Optional<BlogPost> findByIdAndPublishedTrue(Long id);
+
+    Optional<BlogPost> findBySlugAndPublishedTrue(String slug);
+
+    /**
      * Checks a generated slug before creating an article to avoid unique-constraint errors.
      *
      * @param slug candidate slug

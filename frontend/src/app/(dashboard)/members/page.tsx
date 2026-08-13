@@ -5,10 +5,8 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-import { Eyebrow, SampleBadge, Section, SectionHeader } from "@/components/site/primitives";
+import { Eyebrow, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
 import { MembersPageCta } from "@/components/site/members-page-cta";
 import { credits } from "@/lib/content/members";
@@ -39,7 +37,6 @@ export default async function MembersPage() {
               OUR COMMUNITY.
             </h1>
           </div>
-          <SampleBadge />
         </div>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           The people building the programming culture at DAU.
