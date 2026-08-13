@@ -2,6 +2,7 @@ package com.cpclub.backend.user.controller;
 
 import com.cpclub.backend.common.dto.ApiResponse;
 import com.cpclub.backend.common.dto.PagedResponse;
+import com.cpclub.backend.user.dto.PublicUserResponseDto;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
@@ -45,13 +46,13 @@ public class UserController {
      * @return paginated response containing user profiles
      */
     @GetMapping
-    @Operation(summary = "Get members directory (paginated & searchable)")
-    public ResponseEntity<ApiResponse<PagedResponse<UserResponseDto>>> getMembersDirectory(
+    @Operation(summary = "Get members directory — public, email-safe (paginated & searchable)")
+    public ResponseEntity<ApiResponse<PagedResponse<PublicUserResponseDto>>> getMembersDirectory(
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
-        PagedResponse<UserResponseDto> response = userService.getMembersDirectory(query, page, size);
+        PagedResponse<PublicUserResponseDto> response = userService.getMembersDirectoryPublic(query, page, size);
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched members directory successfully"));
     }
 
@@ -76,9 +77,9 @@ public class UserController {
      * @return user profile details
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get user profile by ID")
-    public ResponseEntity<ApiResponse<UserResponseDto>> getUserById(@PathVariable Long id) {
-        UserResponseDto user = userService.getUserById(id);
+    @Operation(summary = "Get public user profile by ID — email-safe")
+    public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(@PathVariable Long id) {
+        PublicUserResponseDto user = userService.getPublicUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user, "Fetched user successfully"));
     }
 

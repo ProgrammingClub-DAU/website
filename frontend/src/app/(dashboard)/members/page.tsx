@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, SampleBadge, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
+import { MembersPageCta } from "@/components/site/members-page-cta";
 import { credits } from "@/lib/content/members";
 import { dashboardService } from "@/lib/services/dashboard";
 
@@ -92,9 +93,7 @@ export default async function MembersPage() {
             Your profile appears here once you sign in and add a photo and a line about
             yourself.
           </p>
-          <Button asChild className="h-10 rounded-full px-5.5">
-            <Link href="/login">Claim your profile</Link>
-          </Button>
+          <MembersPageCta />
         </div>
       </Section>
     </>

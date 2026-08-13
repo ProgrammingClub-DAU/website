@@ -81,15 +81,13 @@ export interface Profile {
 }
 
 export interface LeaderboardEntry {
-  id: number;
+  id: number;           // maps to backend userId
   name: string;
-  email: string;
   codeforcesHandle: string;
-  rating: number;
-  role: string;
-  createdAt: string;
+  rating: number | null;
+  rank: number;         // backend-computed rank (1-based)
+  tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"
   clubRole?: ClubRole;
-  lastEventDate?: string;
   solvedCount?: number;
   yearlyActivityCount?: number;
   avatarUrl?: string | null;

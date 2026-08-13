@@ -4,6 +4,7 @@ import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.GlobalExceptionHandler;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.controller.UserController;
+import com.cpclub.backend.user.dto.PublicUserResponseDto;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
@@ -83,12 +84,12 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users - Should return members directory")
+    @DisplayName("GET /api/users - Should return members directory (email-safe)")
     void shouldGetMembersDirectory() throws Exception {
-        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
-        PagedResponse<UserResponseDto> paged = new PagedResponse<>(List.of(u1), 0, 20, 1L, 1, true);
+        PublicUserResponseDto u1 = new PublicUserResponseDto(1L, "Alice", "alice_cf", 1600, LocalDateTime.now());
+        PagedResponse<PublicUserResponseDto> paged = new PagedResponse<>(List.of(u1), 0, 20, 1L, 1, true);
 
-        when(userService.getMembersDirectory(null, 0, 20)).thenReturn(paged);
+        when(userService.getMembersDirectoryPublic(null, 0, 20)).thenReturn(paged);
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -97,11 +98,11 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users/{id} - Should return user when found")
+    @DisplayName("GET /api/users/{id} - Should return public profile when found (no email)")
     void shouldGetUserByIdWhenFound() throws Exception {
-        UserResponseDto user = new UserResponseDto(5L, "Charlie", "charlie@example.com", "charlie_cf", 2000, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
+        PublicUserResponseDto user = new PublicUserResponseDto(5L, "Charlie", "charlie_cf", 2000, LocalDateTime.now());
 
-        when(userService.getUserById(5L)).thenReturn(user);
+        when(userService.getPublicUserById(5L)).thenReturn(user);
 
         mockMvc.perform(get("/api/users/5"))
                 .andExpect(status().isOk())
@@ -115,7 +116,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Should return 404 Not Found when user does not exist")
     void shouldReturn404WhenUserNotFound() throws Exception {
-        when(userService.getUserById(999L)).thenThrow(new ResourceNotFoundException("User not found with id: 999"));
+        when(userService.getPublicUserById(999L)).thenThrow(new ResourceNotFoundException("User not found with id: 999"));
 
         mockMvc.perform(get("/api/users/999"))
                 .andExpect(status().isNotFound())

@@ -26,14 +26,15 @@ function mapUserToMember(user: any): Member {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapUserToLeaderboard(user: any): LeaderboardEntry {
+  // Backend LeaderboardResponseDto fields: rank, userId, name, codeforcesHandle, rating, tier
+  // NOTE: field is "userId" not "id" — backend uses userId to distinguish from entity id
   return {
-    id: user.id,
+    id: user.userId,
     name: user.name,
-    email: user.email,
     codeforcesHandle: user.codeforcesHandle,
     rating: user.rating,
-    role: user.role,
-    createdAt: user.createdAt,
+    rank: user.rank,
+    tier: user.tier,
   };
 }
 

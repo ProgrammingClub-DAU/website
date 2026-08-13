@@ -16,7 +16,10 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    # JWT_SECRET must be set as an environment variable in production.
+    # Minimum 256-bit (64 hex chars) random string. Generate with: openssl rand -hex 32
+    # If not set, the application will fail to start intentionally.
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000
 
 cpclub:
