@@ -287,9 +287,11 @@ Feature complete. Proceed to final deployment.
         while every browser-side write fails preflight.
     *   `SPRING_PROFILES_ACTIVE=prod` is baked into the Dockerfile, so it does not
         need setting — but verify it took effect (see below).
-*   **Database (Render/Supabase):** Provision managed Postgres. The schema is
-    created by Hibernate on first boot under the `default` profile; production runs
-    `ddl-auto: validate` and will not alter it.
+*   **Database (Render/Supabase):** Provision managed Postgres and leave it empty.
+    The schema is created by **Flyway** on first boot, from the versioned migrations
+    in `backend/src/main/resources/db/migration/`. Hibernate runs `ddl-auto: validate`
+    in every profile and never creates or alters anything — do not run DDL by hand,
+    or `validate` will fail against a schema Flyway has no history for.
 
 ### Verifying a deployment
 
@@ -298,8 +300,10 @@ curl -i https://<backend-host>/v3/api-docs
 ```
 
 A **404 confirms the `prod` profile is active.** A 200 means the app fell back to
-the `default` profile — it will still serve traffic and look healthy while running
-`ddl-auto: update`, logging every SQL statement, and exposing Swagger.
+the `default` profile — it will still serve traffic and look healthy while logging
+every SQL statement and exposing the full API schema to the internet. The datasource
+is unaffected either way: the `SPRING_DATASOURCE_*` environment variables bind in
+both profiles, which is precisely why the fallback is silent rather than obvious.
 
 ## 19. Failure Recovery / Rollback Plan
 *   **Database Failure:** Follow [DATABASE-BACKUP.md](DATABASE-BACKUP.md) — take a

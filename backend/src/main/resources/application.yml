@@ -14,6 +14,10 @@ spring:
       # If this fails after you pull a schema change, add the new migration and
       # restart; do not switch this back to `update`, or your local schema will
       # silently diverge from everyone else's.
+      #
+      # If it fails the first time you pull this change, your local database was
+      # built by the old `update` setting and has drifted. Local data is
+      # disposable — recreate it:  docker compose down -v && docker compose up -d
       ddl-auto: validate
     properties:
       hibernate:

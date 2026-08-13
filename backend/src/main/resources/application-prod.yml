@@ -24,7 +24,10 @@ spring:
     # refuses to run against a non-empty schema it has no history for.
     baseline-on-migrate: true
     baseline-version: 1
-    # A partially-applied migration must not be left behind on a failure.
+    # Refuse to start if an already-applied migration file has been edited since
+    # it ran: the deployed schema would no longer match what the file now says.
+    # This is Flyway's default; stated explicitly so it is not turned off by
+    # accident when someone hits a checksum error.
     validate-on-migrate: true
 
 # Disable Swagger UI and API docs in production to reduce attack surface.
