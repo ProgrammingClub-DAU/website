@@ -51,4 +51,24 @@ public record LeaderboardResponseDto(
                 calculateTier(user.getRating())
         );
     }
+
+    /**
+     * Maps a database-ranked row into an immutable leaderboard entry.
+     *
+     * <p>Unlike {@link #fromEntity}, the rank here is read from the query rather
+     * than counted in Java, so no caller has to know how ranking works.</p>
+     *
+     * @param row projection carrying the member and its computed placement
+     * @return public ranking entry with a calculated Codeforces tier
+     */
+    public static LeaderboardResponseDto fromProjection(LeaderboardEntryProjection row) {
+        return new LeaderboardResponseDto(
+                row.getPlacement().intValue(),
+                row.getId(),
+                row.getName(),
+                row.getHandle(),
+                row.getRating(),
+                calculateTier(row.getRating())
+        );
+    }
 }

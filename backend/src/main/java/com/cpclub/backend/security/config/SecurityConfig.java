@@ -130,7 +130,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        // Public reads are listed one by one rather than as a wildcard.
+                        // /api/users/all and /api/users/profile return UserResponseDto,
+                        // which carries the member's email address; they are protected
+                        // by @PreAuthorize on the controller. A blanket
+                        // GET /api/users/** permitAll would make that annotation the
+                        // only thing standing between an anonymous request and every
+                        // student's email, so deleting one line during a refactor would
+                        // silently publish the roster. Listing the public paths keeps the
+                        // filter chain deny-by-default: a new endpoint under /api/users
+                        // requires a token until someone deliberately opens it.
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id:[0-9]+}").permitAll()
+                        .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

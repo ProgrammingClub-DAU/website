@@ -1,5 +1,6 @@
 package com.cpclub.backend.user.repository;
 
+import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
 import com.cpclub.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,23 +59,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByCodeforcesHandleIsNotNull();
 
     /**
-     * Counts the number of users whose rating is strictly greater than the given rating.
-     * Used for calculating standard competition ranking (ties get the same rank).
-     *
-     * @param rating the rating to compare against
-     * @return the number of users strictly better
-     */
-    long countByRatingGreaterThan(Integer rating);
-
-    /**
-     * Counts the total number of members who have a non-null rating.
-     * Used to assign a rank to unrated members (which are placed at the end).
-     *
-     * @return total count of rated members
-     */
-    long countByRatingIsNotNull();
-
-    /**
      * Resolves paginated list of users ordered by rating descending.
      * Non-rated members (null ratings) are pushed to the end of the ranking list.
      *
@@ -83,6 +67,39 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u ORDER BY u.rating DESC NULLS LAST, u.id ASC")
     Page<User> findAllByOrderByRatingDescNullsLast(Pageable pageable);
+
+    /**
+     * Resolves one page of the leaderboard with each member's absolute rank already
+     * computed by the database.
+     *
+     * <p>{@code RANK()} implements standard competition ranking: tied ratings share
+     * a position and the next distinct rating skips the gap (1, 1, 3). Unrated
+     * members sort last and, being all equal under {@code NULLS LAST}, tie with each
+     * other on a single trailing rank.</p>
+     *
+     * <p>The window function is evaluated over the whole table before {@code LIMIT}
+     * is applied, so ranks stay absolute across pages — page 2 continues from where
+     * page 1 stopped rather than restarting at 1.</p>
+     *
+     * <p>This replaces a per-row {@code COUNT}, which cost one query per member on
+     * every page load. Column aliases are deliberately single lowercase words; see
+     * {@link com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection}.</p>
+     *
+     * @param pageable requested page and size
+     * @return one page of ranked members
+     */
+    @Query(value = """
+            SELECT u.id                AS id,
+                   u.name              AS name,
+                   u.codeforces_handle AS handle,
+                   u.rating            AS rating,
+                   RANK() OVER (ORDER BY u.rating DESC NULLS LAST) AS placement
+            FROM users u
+            ORDER BY u.rating DESC NULLS LAST, u.id ASC
+            """,
+            countQuery = "SELECT count(*) FROM users",
+            nativeQuery = true)
+    Page<LeaderboardEntryProjection> findLeaderboardPage(Pageable pageable);
 
     /**
      * Case-insensitive keyword search matching user names or Codeforces handles.

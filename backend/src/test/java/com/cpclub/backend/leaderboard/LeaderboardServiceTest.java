@@ -1,26 +1,37 @@
 package com.cpclub.backend.leaderboard;
 
 import com.cpclub.backend.common.dto.PagedResponse;
+import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
 import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
 import com.cpclub.backend.leaderboard.service.LeaderboardService;
-import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for the parts of the leaderboard that live in Java: tier thresholds
+ * and projection-to-DTO mapping.
+ *
+ * <p>Rank <em>calculation</em> is deliberately not tested here. It is performed by
+ * a SQL window function, so asserting it against a mocked repository would only
+ * prove the mock returns what it was told to. Those assertions live in
+ * {@link LeaderboardRankingIntegrationTest}, which runs the real query against a
+ * real database.</p>
+ */
 class LeaderboardServiceTest {
 
     @Test
@@ -29,14 +40,23 @@ class LeaderboardServiceTest {
         tiers.put(0, "Newbie");
         tiers.put(1199, "Newbie");
         tiers.put(1200, "Pupil");
+        tiers.put(1399, "Pupil");
         tiers.put(1400, "Specialist");
+        tiers.put(1599, "Specialist");
         tiers.put(1600, "Expert");
+        tiers.put(1899, "Expert");
         tiers.put(1900, "Candidate Master");
+        tiers.put(2099, "Candidate Master");
         tiers.put(2100, "Master");
+        tiers.put(2299, "Master");
         tiers.put(2300, "International Master");
+        tiers.put(2399, "International Master");
         tiers.put(2400, "International Grandmaster");
+        tiers.put(2599, "International Grandmaster");
         tiers.put(2600, "Grandmaster");
+        tiers.put(2999, "Grandmaster");
         tiers.put(3000, "Legendary Grandmaster");
+        tiers.put(4000, "Legendary Grandmaster");
 
         assertEquals("Unrated", LeaderboardResponseDto.calculateTier(null));
         tiers.forEach((rating, expectedTier) -> assertEquals(expectedTier, LeaderboardResponseDto.calculateTier(rating)));
@@ -46,7 +66,7 @@ class LeaderboardServiceTest {
     void getLeaderboard_returnsEmptyPageWhenNoMembersExist() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        when(repository.findAllByOrderByRatingDescNullsLast(any()))
+        when(repository.findLeaderboardPage(any()))
                 .thenReturn(Page.empty(PageRequest.of(0, 20)));
 
         PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 20);
@@ -57,124 +77,68 @@ class LeaderboardServiceTest {
     }
 
     @Test
-    void getLeaderboard_calculatesRanksCorrectly_noTies() {
+    @DisplayName("Every projection field reaches the response, and the tier is derived from the rating")
+    void getLeaderboard_mapsProjectionOntoResponse() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        
-        List<User> users = Arrays.asList(
-            createUser(1L, 1800),
-            createUser(2L, 1700),
-            createUser(3L, 1600)
-        );
-        when(repository.findAllByOrderByRatingDescNullsLast(any())).thenReturn(new PageImpl<>(users, PageRequest.of(0, 10), 3));
-        when(repository.countByRatingGreaterThan(1800)).thenReturn(0L);
-        when(repository.countByRatingGreaterThan(1700)).thenReturn(1L);
-        when(repository.countByRatingGreaterThan(1600)).thenReturn(2L);
+        when(repository.findLeaderboardPage(any())).thenReturn(new PageImpl<>(
+                List.of(row(7L, "Ada", "ada_cf", 1650, 4L)),
+                PageRequest.of(0, 20), 1));
 
-        PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 10);
-        
-        assertEquals(3, response.content().size());
-        assertEquals(1, response.content().get(0).rank());
-        assertEquals(2, response.content().get(1).rank());
-        assertEquals(3, response.content().get(2).rank());
+        LeaderboardResponseDto entry = service.getLeaderboard(0, 20).content().get(0);
+
+        assertEquals(4, entry.rank());
+        assertEquals(7L, entry.userId());
+        assertEquals("Ada", entry.name());
+        assertEquals("ada_cf", entry.codeforcesHandle());
+        assertEquals(1650, entry.rating());
+        assertEquals("Expert", entry.tier());
     }
 
     @Test
-    void getLeaderboard_calculatesRanksCorrectly_withTies() {
+    @DisplayName("A member with no linked handle maps to nulls, not to a crash")
+    void getLeaderboard_toleratesUnratedMemberWithoutHandle() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        
-        List<User> users = Arrays.asList(
-            createUser(1L, 1800),
-            createUser(2L, 1800),
-            createUser(3L, 1700)
-        );
-        when(repository.findAllByOrderByRatingDescNullsLast(any())).thenReturn(new PageImpl<>(users, PageRequest.of(0, 10), 3));
-        when(repository.countByRatingGreaterThan(1800)).thenReturn(0L);
-        when(repository.countByRatingGreaterThan(1700)).thenReturn(2L);
+        when(repository.findLeaderboardPage(any())).thenReturn(new PageImpl<>(
+                List.of(row(9L, "Newcomer", null, null, 12L)),
+                PageRequest.of(0, 20), 1));
 
-        PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 10);
-        
-        assertEquals(3, response.content().size());
-        assertEquals(1, response.content().get(0).rank());
-        assertEquals(1, response.content().get(1).rank());
-        assertEquals(3, response.content().get(2).rank());
+        LeaderboardResponseDto entry = service.getLeaderboard(0, 20).content().get(0);
+
+        assertEquals(12, entry.rank());
+        assertNull(entry.codeforcesHandle());
+        assertNull(entry.rating());
+        assertEquals("Unrated", entry.tier());
     }
 
-    @Test
-    void getLeaderboard_calculatesRanksCorrectly_multipleTies() {
-        UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
-        
-        List<User> users = Arrays.asList(
-            createUser(1L, 1800),
-            createUser(2L, 1800),
-            createUser(3L, 1700),
-            createUser(4L, 1600),
-            createUser(5L, 1600)
-        );
-        when(repository.findAllByOrderByRatingDescNullsLast(any())).thenReturn(new PageImpl<>(users, PageRequest.of(0, 10), 5));
-        when(repository.countByRatingGreaterThan(1800)).thenReturn(0L);
-        when(repository.countByRatingGreaterThan(1700)).thenReturn(2L);
-        when(repository.countByRatingGreaterThan(1600)).thenReturn(3L);
+    /** Builds a stub projection; Spring supplies the real implementation at runtime. */
+    private LeaderboardEntryProjection row(Long id, String name, String handle, Integer rating, Long placement) {
+        return new LeaderboardEntryProjection() {
+            @Override
+            public Long getId() {
+                return id;
+            }
 
-        PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 10);
-        
-        assertEquals(5, response.content().size());
-        assertEquals(1, response.content().get(0).rank());
-        assertEquals(1, response.content().get(1).rank());
-        assertEquals(3, response.content().get(2).rank());
-        assertEquals(4, response.content().get(3).rank());
-        assertEquals(4, response.content().get(4).rank());
-    }
+            @Override
+            public String getName() {
+                return name;
+            }
 
-    @Test
-    void getLeaderboard_calculatesRanksCorrectly_tiesAcrossPages() {
-        UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
-        
-        // Simulating Page 2 where the users have 1700 rating, but there are already two 1800s and one 1700 on Page 1.
-        List<User> users = Arrays.asList(
-            createUser(4L, 1700),
-            createUser(5L, 1600)
-        );
-        when(repository.findAllByOrderByRatingDescNullsLast(any())).thenReturn(new PageImpl<>(users, PageRequest.of(1, 2), 5));
-        when(repository.countByRatingGreaterThan(1700)).thenReturn(2L); // the two 1800 users
-        when(repository.countByRatingGreaterThan(1600)).thenReturn(4L); // the two 1800s + two 1700s
+            @Override
+            public String getHandle() {
+                return handle;
+            }
 
-        PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(1, 2);
-        
-        assertEquals(2, response.content().size());
-        assertEquals(3, response.content().get(0).rank());
-        assertEquals(5, response.content().get(1).rank());
-    }
+            @Override
+            public Integer getRating() {
+                return rating;
+            }
 
-    @Test
-    void getLeaderboard_calculatesRanksCorrectly_nullRatings() {
-        UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
-        
-        List<User> users = Arrays.asList(
-            createUser(1L, 1500),
-            createUser(2L, null),
-            createUser(3L, null)
-        );
-        when(repository.findAllByOrderByRatingDescNullsLast(any())).thenReturn(new PageImpl<>(users, PageRequest.of(0, 10), 3));
-        when(repository.countByRatingGreaterThan(1500)).thenReturn(0L);
-        when(repository.countByRatingIsNotNull()).thenReturn(1L);
-
-        PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 10);
-        
-        assertEquals(3, response.content().size());
-        assertEquals(1, response.content().get(0).rank());
-        assertEquals(2, response.content().get(1).rank());
-        assertEquals(2, response.content().get(2).rank());
-    }
-
-    private User createUser(Long id, Integer rating) {
-        User user = new User();
-        user.setId(id);
-        user.setRating(rating);
-        return user;
+            @Override
+            public Long getPlacement() {
+                return placement;
+            }
+        };
     }
 }
