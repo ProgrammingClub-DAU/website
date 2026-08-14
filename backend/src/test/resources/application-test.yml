@@ -12,7 +12,20 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
     open-in-view: false
 
+  # Off for tests: the migrations are PostgreSQL-specific and Flyway 10+ has no
+  # H2 support module, so they cannot run against the in-memory database. The
+  # schema here is therefore generated from the entities.
+  #
+  # Consequence worth knowing: this suite cannot detect a migration that has
+  # drifted from the entities. V1__init.sql was generated from the entities via
+  # Hibernate's PostgreSQL dialect, so they agree today. Closing this properly
+  # needs Testcontainers running real PostgreSQL.
+  flyway:
+    enabled: false
+
 app:
   jwt:
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    # Test-only value. Deliberately NOT the previously-committed secret, which the
+    # startup guard in JwtUtils now rejects outright.
+    secret: test-only-signing-key-not-used-anywhere-outside-this-suite-0123456789
     expiration-ms: 86400000

@@ -65,7 +65,9 @@ public class BlogService {
      */
     @Transactional(readOnly = true)
     public BlogResponseDto getBlogById(Long id) {
-        BlogPost post = blogRepository.findById(id)
+        // Published-only: this endpoint is public, and an unfiltered lookup lets
+        // anyone walk IDs to read unpublished drafts.
+        BlogPost post = blogRepository.findByIdAndPublishedTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Blog post not found with id: " + id));
         return BlogResponseDto.fromEntity(post);
     }
@@ -79,7 +81,8 @@ public class BlogService {
      */
     @Transactional(readOnly = true)
     public BlogResponseDto getBlogBySlug(String slug) {
-        BlogPost post = blogRepository.findBySlug(slug)
+        // Published-only, for the same reason as getBlogById.
+        BlogPost post = blogRepository.findBySlugAndPublishedTrue(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Blog post not found with slug: " + slug));
         return BlogResponseDto.fromEntity(post);
     }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Creates and verifies signed JSON Web Tokens used by the stateless security layer.
@@ -29,9 +30,27 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     /**
+     * Secrets that must never sign a real token.
+     *
+     * <p>The first entry was committed to this repository as a fallback default
+     * for a period, so it is public in the git history and, being the canonical
+     * value from a widely-copied tutorial, appears in thousands of other public
+     * repositories. Anyone holding it can forge a token for any account,
+     * including an administrator.
+     *
+     * <p>A length check alone cannot catch this: the value is 64 characters and
+     * passes every strength test. It has to be rejected by identity.
+     */
+    private static final Set<String> KNOWN_COMPROMISED_SECRETS = Set.of(
+            "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    );
+
+    /**
      * Validates the JWT secret on application startup.
-     * Throws an exception if the secret is missing or too short, preventing
-     * the application from starting with an insecure or default configuration.
+     *
+     * <p>Deliberately fails startup rather than warning. A running application on
+     * a compromised or weak secret looks completely healthy from the outside,
+     * so there is nothing to notice until an account is taken over.
      */
     @jakarta.annotation.PostConstruct
     private void validateSecret() {
@@ -39,6 +58,14 @@ public class JwtUtils {
             throw new IllegalStateException(
                 "[SECURITY] app.jwt.secret must be configured and at least 32 characters long. " +
                 "Set the JWT_SECRET environment variable before starting the application."
+            );
+        }
+
+        if (KNOWN_COMPROMISED_SECRETS.contains(jwtSecret.trim())) {
+            throw new IllegalStateException(
+                "[SECURITY] app.jwt.secret is a publicly known value that was previously " +
+                "committed to this repository. Anyone can forge tokens with it. " +
+                "Generate a new one (openssl rand -base64 48) and set JWT_SECRET before starting."
             );
         }
     }

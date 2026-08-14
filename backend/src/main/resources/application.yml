@@ -6,13 +6,31 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      # validate, matching production. The schema is owned by the migrations in
+      # db/migration, so a local database and a deployed one are built the same
+      # way — and a migration that has drifted from the entities fails here first,
+      # rather than on a deploy.
+      #
+      # If this fails after you pull a schema change, add the new migration and
+      # restart; do not switch this back to `update`, or your local schema will
+      # silently diverge from everyone else's.
+      #
+      # If it fails the first time you pull this change, your local database was
+      # built by the old `update` setting and has drifted. Local data is
+      # disposable — recreate it:  docker compose down -v && docker compose up -d
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
     open-in-view: false
+
+  flyway:
+    enabled: true
+    # Local databases created before Flyway existed already have these tables.
+    baseline-on-migrate: true
+    baseline-version: 1
 
 app:
   jwt:

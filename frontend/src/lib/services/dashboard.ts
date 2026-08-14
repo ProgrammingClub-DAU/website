@@ -1,5 +1,6 @@
 import apiClient from "@/lib/axios";
 import { Member, Profile, LeaderboardEntry } from "@/types/api";
+import { ratingToRank } from "@/lib/cf-ranks";
 import { members as mockMembers } from "@/lib/content/members";
 import { mockLeaderboardEntries, getMockProfile } from "@/lib/content/mock-dashboards";
 
@@ -14,13 +15,19 @@ function mapUserToMember(user: any): Member {
     id: String(user.id),
     name: user.name,
     initials: user.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase(),
-    batch: "", // Phase 2
+    batch: "", // Phase 2 — no batch field on the backend yet
     group: "Associate team", // Phase 2
     role: user.role,
-    cf: "newbie", // Resolved dynamically by UI
+    // Derived from the rating rather than hardcoded, or every member renders
+    // as a grey Newbie regardless of their actual standing.
+    cf: ratingToRank(user.rating),
     about: "",
     codeforcesHandle: user.codeforcesHandle,
     rating: user.rating,
+    // The directory buckets members by this field. Without it every bucket is
+    // empty and the page renders no members at all. The backend has no club-role
+    // concept yet (Phase 2), so everyone is a participant until it does.
+    clubRoleCategory: "Student Participant",
   };
 }
 

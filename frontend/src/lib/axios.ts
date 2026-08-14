@@ -15,6 +15,10 @@ import { useAuthStore } from "@/store/auth";
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+  // Axios defaults to no timeout at all. Server Components await these calls, so
+  // a hung backend would hold the render open until the hosting gateway killed
+  // it. 15s is generous enough for a sleeping free-tier instance to wake.
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
