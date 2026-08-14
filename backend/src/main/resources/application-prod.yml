@@ -15,6 +15,21 @@ spring:
         format_sql: false
     show-sql: false
 
+  # Schema is owned by the versioned migrations in db/migration, not by Hibernate.
+  # ddl-auto stays `validate`, so a mismatch between entities and the migrated
+  # schema fails the deploy loudly instead of silently altering production data.
+  flyway:
+    enabled: true
+    # The database already exists and predates Flyway. Without this, Flyway
+    # refuses to run against a non-empty schema it has no history for.
+    baseline-on-migrate: true
+    baseline-version: 1
+    # Refuse to start if an already-applied migration file has been edited since
+    # it ran: the deployed schema would no longer match what the file now says.
+    # This is Flyway's default; stated explicitly so it is not turned off by
+    # accident when someone hits a checksum error.
+    validate-on-migrate: true
+
 # Disable Swagger UI and API docs in production to reduce attack surface.
 springdoc:
   api-docs:

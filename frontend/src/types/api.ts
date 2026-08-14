@@ -83,7 +83,9 @@ export interface Profile {
 export interface LeaderboardEntry {
   id: number;           // maps to backend userId
   name: string;
-  codeforcesHandle: string;
+  // Nullable: the backend returns members who have not linked a Codeforces
+  // account. Typing this as `string` previously hid a crash in the search filter.
+  codeforcesHandle: string | null;
   rating: number | null;
   rank: number;         // backend-computed rank (1-based)
   tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"

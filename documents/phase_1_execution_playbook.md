@@ -265,12 +265,57 @@ Feature complete. Proceed to final deployment.
 *   `API.md` (or Swagger): Living documentation of API routes.
 
 ## 18. Deployment Plan
-*   **Frontend (Vercel):** Connect Vercel to GitHub `main` branch. Set Environment Variables (`NEXT_PUBLIC_API_URL`).
-*   **Backend (Render/AWS):** Connect to `main` branch. Provide `DATABASE_URL` and `JWT_SECRET` in environment settings.
-*   **Database (Render/Supabase):** Provision managed Postgres. Run DDL scripts.
+
+> Every environment variable is documented in `backend/.env.example` and
+> `frontend/.env.example`. Those files are the source of truth — if a variable is
+> not in them, the code does not read it.
+
+*   **Frontend (Vercel):** Connect Vercel to the GitHub `main` branch. Set
+    `NEXT_PUBLIC_API_URL` (the deployed backend URL) and `NEXT_PUBLIC_SITE_URL`
+    (this site's public origin). Both are inlined at build time, so changing
+    either requires a redeploy.
+*   **Backend (Render):** Connect to `main`. Set:
+    *   `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
+        `SPRING_DATASOURCE_PASSWORD` — **not** `DATABASE_URL`. Render injects a
+        variable by that name automatically, but Spring does not read it and its
+        `postgres://user:pass@host/db` form cannot be parsed by the JDBC driver.
+        Rewrite it as `jdbc:postgresql://host:5432/db` and split the credentials
+        into the two variables above.
+    *   `JWT_SECRET` — required, no default; the app fails to start without it.
+        Generate with `openssl rand -base64 48`.
+    *   `CORS_ALLOWED_ORIGINS` — must include the Vercel URL, or reads will work
+        while every browser-side write fails preflight.
+    *   `SPRING_PROFILES_ACTIVE=prod` is baked into the Dockerfile, so it does not
+        need setting — but verify it took effect (see below).
+*   **Database (Render/Supabase):** Provision managed Postgres and leave it empty.
+    The schema is created by **Flyway** on first boot, from the versioned migrations
+    in `backend/src/main/resources/db/migration/`. Hibernate runs `ddl-auto: validate`
+    in every profile and never creates or alters anything — do not run DDL by hand,
+    or `validate` will fail against a schema Flyway has no history for.
+
+### Verifying a deployment
+
+```bash
+curl -i https://<backend-host>/v3/api-docs
+```
+
+A **404 confirms the `prod` profile is active.** A 200 means the app fell back to
+the `default` profile — it will still serve traffic and look healthy while logging
+every SQL statement and exposing the full API schema to the internet. The datasource
+is unaffected either way: the `SPRING_DATASOURCE_*` environment variables bind in
+both profiles, which is precisely why the fallback is silent rather than obvious.
 
 ## 19. Failure Recovery / Rollback Plan
-*   **Database Failure:** If migrations corrupt data, drop schema and restore from local backup SQL dump.
+*   **Database Failure:** Follow [DATABASE-BACKUP.md](DATABASE-BACKUP.md) — take a
+    dump of the broken state, restore the last good dump into a scratch database,
+    verify it, then restore into production. **Do not drop the schema.** Production
+    runs `ddl-auto: validate` with Flyway-managed migrations, so an empty schema
+    means the application will not start at all, turning a partial failure into a
+    total one.
+*   **Bad Migration:** Write a forward migration that undoes the change, or restore
+    a dump taken before it ran. Reverting the code alone does not revert the
+    schema, and `validate` will then fail against the older entities. Take a backup
+    before deploying any migration.
 *   **Deployment Failure:** In Vercel/Render, use the "Rollback to previous deployment" button. Revert the bad commit in Git (`git revert <commit-hash>`).
 
 ---

@@ -29,6 +29,14 @@ public class CodeforcesSyncService {
 
     private static final String CODEFORCES_API_URL = "https://codeforces.com/api/user.info?handles=";
 
+    /**
+     * Handles per request. Codeforces accepts a semicolon-separated list, but a
+     * single unbounded list eventually exceeds the request-line limit, and the
+     * endpoint is all-or-nothing — so smaller batches also shrink the blast
+     * radius of one bad handle.
+     */
+    private static final int BATCH_SIZE = 100;
+
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
 
@@ -60,37 +68,85 @@ public class CodeforcesSyncService {
             return;
         }
 
-        String handlesQueryParam = String.join(";", handles);
-        String requestUrl = CODEFORCES_API_URL + handlesQueryParam;
+        // Match provider results case-insensitively: Codeforces handles are not
+        // case-sensitive, so a member stored as "Tourist" must match "tourist".
+        Map<String, User> userMap = usersWithHandle.stream()
+                .filter(u -> u.getCodeforcesHandle() != null && !u.getCodeforcesHandle().isBlank())
+                .collect(java.util.stream.Collectors.toMap(
+                        u -> u.getCodeforcesHandle().toLowerCase(),
+                        u -> u,
+                        (existing, replacement) -> existing
+                ));
 
-        try {
-            log.info("Fetching rating info from Codeforces API for {} handles...", handles.size());
-            CodeforcesResponse response = restTemplate.getForObject(requestUrl, CodeforcesResponse.class);
-
-            if (response != null && "OK".equalsIgnoreCase(response.status()) && response.result() != null) {
-                Map<String, User> userMap = usersWithHandle.stream()
-                        .collect(java.util.stream.Collectors.toMap(
-                                u -> u.getCodeforcesHandle().toLowerCase(),
-                                u -> u,
-                                (existing, replacement) -> existing
-                        ));
-
-                // Match provider results case-insensitively because Codeforces handles are not case-sensitive.
-                int updatedCount = 0;
-                for (CodeforcesUserDto cfUser : response.result()) {
-                    User user = userMap.get(cfUser.handle().toLowerCase());
-                    if (user != null && cfUser.rating() != null) {
-                        user.setRating(cfUser.rating());
-                        userRepository.save(user);
-                        updatedCount++;
-                    }
-                }
-                log.info("Successfully updated ratings for {} users from Codeforces API.", updatedCount);
-            } else {
-                log.warn("Codeforces API response returned non-OK status: {}", response != null ? response.comment() : "null");
-            }
-        } catch (Exception e) {
-            log.error("Failed to sync ratings from Codeforces API: {}", e.getMessage());
+        int updatedCount = 0;
+        for (int start = 0; start < handles.size(); start += BATCH_SIZE) {
+            List<String> batch = handles.subList(start, Math.min(start + BATCH_SIZE, handles.size()));
+            updatedCount += syncBatch(batch, userMap);
         }
+
+        log.info("Codeforces sync complete. Updated {} of {} handles.", updatedCount, handles.size());
+    }
+
+    /**
+     * Syncs one batch, falling back to individual requests if the batch fails.
+     *
+     * <p>The Codeforces {@code user.info} endpoint is all-or-nothing: a single
+     * invalid handle — a typo, a renamed or deleted account — makes the whole
+     * response {@code FAILED} with a null result. Without the fallback below, one
+     * member's bad handle silently freezes the leaderboard for the entire club,
+     * indefinitely, with only a warning in the log.
+     *
+     * @return how many users were updated
+     */
+    private int syncBatch(List<String> batch, Map<String, User> userMap) {
+        CodeforcesResponse response = fetch(batch);
+
+        if (response != null && "OK".equalsIgnoreCase(response.status()) && response.result() != null) {
+            return applyResults(response.result(), userMap);
+        }
+
+        if (batch.size() == 1) {
+            // Already isolated: this specific handle is the bad one.
+            log.warn("Codeforces rejected handle '{}' — leaving its rating unchanged. "
+                    + "The member should correct it on their profile.", batch.get(0));
+            return 0;
+        }
+
+        log.warn("Batch of {} handles failed ({}). Retrying individually to isolate the bad handle(s).",
+                batch.size(), response != null ? response.comment() : "no response");
+
+        int updated = 0;
+        for (String handle : batch) {
+            updated += syncBatch(List.of(handle), userMap);
+        }
+        return updated;
+    }
+
+    /** Single outbound call. Never throws: a provider failure must not abort the run. */
+    private CodeforcesResponse fetch(List<String> handles) {
+        try {
+            return restTemplate.getForObject(
+                    CODEFORCES_API_URL + String.join(";", handles), CodeforcesResponse.class);
+        } catch (Exception e) {
+            log.warn("Codeforces request failed for {} handle(s): {}", handles.size(), e.getMessage());
+            return null;
+        }
+    }
+
+    /** Writes ratings for the users a response covers. Unrated accounts are left alone. */
+    private int applyResults(List<CodeforcesUserDto> results, Map<String, User> userMap) {
+        int updated = 0;
+        for (CodeforcesUserDto cfUser : results) {
+            if (cfUser.handle() == null) {
+                continue;
+            }
+            User user = userMap.get(cfUser.handle().toLowerCase());
+            if (user != null && cfUser.rating() != null) {
+                user.setRating(cfUser.rating());
+                userRepository.save(user);
+                updated++;
+            }
+        }
+        return updated;
     }
 }

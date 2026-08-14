@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ArrowRight, ShieldCheck, Zap, Crown, Users, GraduationCap } from "lucide-react";
+import { Search, ArrowRight, Users, GraduationCap } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { RankDot } from "@/components/site/primitives";
@@ -66,35 +66,43 @@ export function MembersDirectory({ members }: { members: Member[] }) {
     () => filteredMembers.filter((m) => m.clubRoleCategory === "Batch Representative"),
     [filteredMembers]
   );
+  /*
+   * Everyone the four named sections do not claim. Without this the page silently
+   * renders no members at all: the backend has no club-role concept yet, so every
+   * member arrives as a participant and every named bucket is empty.
+   */
+  const participants = useMemo(
+    () =>
+      filteredMembers.filter(
+        (m) =>
+          m.clubRoleCategory !== "Leadership" &&
+          m.clubRoleCategory !== "Core" &&
+          m.clubRoleCategory !== "Associate Core" &&
+          m.clubRoleCategory !== "Batch Representative"
+      ),
+    [filteredMembers]
+  );
 
-  // Dynamic header stats
-  const totalParticipants = 818;
   const officialMembersCount = members.length;
-  const totalEvents = 20;
-  const totalContests = 14;
 
   const isFiltering = q !== "" || activeFilter !== "All Members";
 
   return (
     <div className="space-y-10">
-      {/* ── Compact Header Stats Row ── */}
+      {/*
+        Only counts the site can actually derive are shown. Participant, event and
+        contest totals were previously hardcoded (818 / 20 / 14) and rendered as
+        fact on a real club's public site — restore them once the backend can
+        supply real figures.
+      */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-panel border border-border bg-surface-2 px-6 py-4">
         <div className="flex flex-wrap items-center gap-6 sm:gap-8 font-mono text-xs">
           <div className="flex items-center gap-2">
             <Users className="size-4 text-primary" />
-            <span><strong className="text-foreground">{totalParticipants}</strong> Participants</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Crown className="size-4 text-amber-400" />
-            <span><strong className="text-foreground">{officialMembersCount}</strong> Official Members</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="size-4 text-cf-master" />
-            <span><strong className="text-foreground">{totalEvents}</strong> Events</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-cf-candidate" />
-            <span><strong className="text-foreground">{totalContests}</strong> Contests</span>
+            <span>
+              <strong className="text-foreground">{officialMembersCount}</strong> Registered
+              Members
+            </span>
           </div>
         </div>
       </div>
@@ -151,7 +159,7 @@ export function MembersDirectory({ members }: { members: Member[] }) {
             >
               <div className="grid gap-4 md:grid-cols-2">
                 {leadership.map((m) => (
-                  <MemberCard key={m.name} member={m} isProminent />
+                  <MemberCard key={m.id ?? m.name} member={m} isProminent />
                 ))}
               </div>
             </SectionGroup>
@@ -165,7 +173,7 @@ export function MembersDirectory({ members }: { members: Member[] }) {
             >
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {coreTeam.map((m) => (
-                  <MemberCard key={m.name} member={m} />
+                  <MemberCard key={m.id ?? m.name} member={m} />
                 ))}
               </div>
             </SectionGroup>
@@ -179,7 +187,7 @@ export function MembersDirectory({ members }: { members: Member[] }) {
             >
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {associateCore.map((m) => (
-                  <MemberCard key={m.name} member={m} />
+                  <MemberCard key={m.id ?? m.name} member={m} />
                 ))}
               </div>
             </SectionGroup>
@@ -193,7 +201,21 @@ export function MembersDirectory({ members }: { members: Member[] }) {
             >
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {batchReps.map((m) => (
-                  <MemberCard key={m.name} member={m} />
+                  <MemberCard key={m.id ?? m.name} member={m} />
+                ))}
+              </div>
+            </SectionGroup>
+          )}
+
+          {/* Everyone the named sections above do not claim. */}
+          {participants.length > 0 && (
+            <SectionGroup
+              title="◇ MEMBERS"
+              subtitle="Everyone registered on the club platform."
+            >
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {participants.map((m) => (
+                  <MemberCard key={m.id ?? m.name} member={m} />
                 ))}
               </div>
             </SectionGroup>

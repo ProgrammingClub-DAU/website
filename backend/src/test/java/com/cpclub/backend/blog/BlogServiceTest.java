@@ -64,7 +64,8 @@ class BlogServiceTest {
     @Test
     @DisplayName("Should fetch blog by slug")
     void getBlogBySlug_Success() {
-        when(blogRepository.findBySlug("introduction-to-dynamic-programming")).thenReturn(Optional.of(samplePost));
+        when(blogRepository.findBySlugAndPublishedTrue("introduction-to-dynamic-programming"))
+                .thenReturn(Optional.of(samplePost));
 
         BlogResponseDto response = blogService.getBlogBySlug("introduction-to-dynamic-programming");
 
@@ -75,9 +76,36 @@ class BlogServiceTest {
     @Test
     @DisplayName("Should throw ResourceNotFoundException for non-existent blog slug")
     void getBlogBySlug_NotFound() {
-        when(blogRepository.findBySlug("non-existent")).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndPublishedTrue("non-existent")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> blogService.getBlogBySlug("non-existent"));
+    }
+
+    /*
+     * Drafts must not be reachable by the public read endpoints. Both lookups
+     * previously used the unfiltered finders, so anyone could walk IDs or guess a
+     * slug and read unpublished content — embargoed contest problems, unannounced
+     * events — before the club chose to publish it.
+     *
+     * These assert against the publication-aware finders, so reverting to
+     * findById/findBySlug fails the build.
+     */
+    @Test
+    @DisplayName("An unpublished draft is not readable by slug")
+    void getBlogBySlug_DraftNotExposed() {
+        when(blogRepository.findBySlugAndPublishedTrue("secret-draft")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> blogService.getBlogBySlug("secret-draft"));
+        verify(blogRepository, never()).findBySlug("secret-draft");
+    }
+
+    @Test
+    @DisplayName("An unpublished draft is not readable by id")
+    void getBlogById_DraftNotExposed() {
+        when(blogRepository.findByIdAndPublishedTrue(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> blogService.getBlogById(99L));
+        verify(blogRepository, never()).findById(99L);
     }
 
     @Test
