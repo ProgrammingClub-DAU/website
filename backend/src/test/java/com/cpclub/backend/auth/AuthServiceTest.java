@@ -10,6 +10,7 @@ import com.cpclub.backend.security.service.UserDetailsImpl;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,6 +50,17 @@ class AuthServiceTest {
 
     private User sampleUser;
     private Authentication sampleAuth;
+
+    @AfterEach
+    void clearSecurityContext() {
+        // AuthService.login() writes the authenticated user into the SecurityContext,
+        // which is a thread-local that outlives this test class. Without this, the
+        // login test leaves "alice@example.com" authenticated for every test that runs
+        // afterwards in the same JVM — so any later test asserting that an anonymous
+        // caller is rejected would instead see an authenticated one, and pass or fail
+        // depending only on class execution order.
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {
