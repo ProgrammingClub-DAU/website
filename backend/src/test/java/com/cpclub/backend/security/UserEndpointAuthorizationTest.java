@@ -5,10 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -42,6 +42,13 @@ class UserEndpointAuthorizationTest {
 
     @BeforeEach
     void setUp() {
+        // The SecurityContext is a thread-local that outlives individual test classes,
+        // and MockMvc's security integration reads whatever is in it. Any earlier test
+        // that authenticated would otherwise make these requests non-anonymous and
+        // quietly invert what they assert. Cleared here so the premise is stated rather
+        // than inherited.
+        SecurityContextHolder.clearContext();
+
         // Built from the application context with the security filter chain applied,
         // so requests pass through the same authorization rules production uses.
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
@@ -75,11 +82,7 @@ class UserEndpointAuthorizationTest {
     @Test
     @DisplayName("Anonymous callers are refused the current-user profile")
     void ownProfileRequiresAuthentication() throws Exception {
-        // TEMPORARY: prints the matched handler and response body. This passes on
-        // Windows and returns 404 on Linux CI, and the handler is what distinguishes
-        // the possible causes. Removed once CI has answered.
         mockMvc.perform(get("/api/users/profile"))
-                .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isUnauthorized());
     }
 
