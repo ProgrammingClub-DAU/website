@@ -4,6 +4,20 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # Cap the pool at 3 connections — a student club site has low concurrency
+      # and Render's free Postgres tier limits simultaneous connections anyway.
+      # The default of 10 pre-allocates 10 idle OS sockets that consume ~5 MB
+      # each in off-heap buffers.
+      maximum-pool-size: 3
+      minimum-idle: 1
+      # Drop a connection if the server closes it under us (common on free-tier
+      # Postgres that reaps idle sockets). 25s is safely under Supabase's 60s
+      # idle timeout.
+      idle-timeout: 25000
+      # Fail fast rather than hanging: if no connection is free within 5s,
+      # return an error immediately instead of holding an HTTP thread.
+      connection-timeout: 5000
   jpa:
     hibernate:
       # validate: checks schema matches entities at startup but never alters it.
@@ -30,9 +44,18 @@ spring:
     # accident when someone hits a checksum error.
     validate-on-migrate: true
 
+  main:
+    # Defer bean creation until first use, not at startup. This cuts the 51-second
+    # WebApplicationContext init time and significantly reduces peak startup memory
+    # — Hibernate entity proxies, RestTemplate, scheduler threads, and service beans
+    # are all created lazily. Beans that must be eager (e.g. security filters) are
+    # already marked @Lazy(false) by the framework.
+    lazy-initialization: true
+
 # Disable Swagger UI and API docs in production to reduce attack surface.
 springdoc:
   api-docs:
     enabled: false
   swagger-ui:
     enabled: false
+
