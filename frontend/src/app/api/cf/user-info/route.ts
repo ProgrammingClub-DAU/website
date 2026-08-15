@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
   const trimmedHandle = handle.trim();
 
   // ── 3. Validate handle belongs to a registered member ───────────────────────
-  const backendUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+  const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
+    .replace("localhost", "127.0.0.1");
   try {
     const check = await fetch(
       `${backendUrl}/api/users/handle/${encodeURIComponent(trimmedHandle)}/exists`,
