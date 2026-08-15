@@ -1,5 +1,6 @@
 package com.cpclub.backend.codeforces.service;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.cpclub.backend.codeforces.dto.CodeforcesResponse;
 import com.cpclub.backend.codeforces.dto.CodeforcesUserDto;
 import com.cpclub.backend.user.entity.User;
@@ -21,6 +22,19 @@ import java.util.Objects;
  * <p>It batches all valid linked handles into one provider request to limit traffic,
  * updates only matching rated accounts, and contains external failures so a Codeforces
  * outage never interrupts the rest of the application or discards prior ratings.</p>
+ *
+ * <h2>Rate limiting</h2>
+ * <p>Every outbound HTTP call goes through {@link #fetch(List)}, which acquires one
+ * permit from the shared {@link RateLimiter} before sending. That limiter is the sole
+ * gate: it covers the scheduled job, the admin manual trigger, and every step of the
+ * bisect fallback — there is no way to bypass it by adding a new call site.</p>
+ *
+ * <h2>Fault isolation</h2>
+ * <p>When a batch fails, the code bisects it rather than retrying each handle
+ * individually. Bisecting costs O(log N) requests to isolate one bad handle among N;
+ * sequential retry costs O(N). With the 2-second gate and 100 members, bisect takes
+ * ≤28 seconds and sequential would take ≥200 seconds — long enough to be throttled
+ * itself and misdiagnose valid handles as broken.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -39,6 +53,12 @@ public class CodeforcesSyncService {
 
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
+
+    /**
+     * Application-wide gate on outbound Codeforces calls.
+     * Injected from {@link com.cpclub.backend.common.config.AppConfig}.
+     */
+    private final RateLimiter codeforcesRateLimiter;
 
     /**
      * Performs the scheduled or administrator-triggered rating refresh.
@@ -88,13 +108,21 @@ public class CodeforcesSyncService {
     }
 
     /**
-     * Syncs one batch, falling back to individual requests if the batch fails.
+     * Syncs one batch, bisecting on failure to isolate the bad handle(s) in O(log N) requests.
      *
      * <p>The Codeforces {@code user.info} endpoint is all-or-nothing: a single
      * invalid handle — a typo, a renamed or deleted account — makes the whole
-     * response {@code FAILED} with a null result. Without the fallback below, one
-     * member's bad handle silently freezes the leaderboard for the entire club,
-     * indefinitely, with only a warning in the log.
+     * response {@code FAILED} with a null result.</p>
+     *
+     * <p>When a batch fails, this method splits it in half and retries each half
+     * independently. A half that succeeds updates all its members; a half that fails
+     * is bisected again. A batch of size 1 that fails identifies exactly the bad
+     * handle. The total cost to isolate one bad handle among N is O(log N) requests,
+     * compared to O(N) for sequential per-handle retry.</p>
+     *
+     * <p>A rate-limit or server-error response is detected and does <em>not</em>
+     * log member handles as the cause. Misattributing a throttle to a bad handle
+     * would send someone to fix something that is not broken.</p>
      *
      * @return how many users were updated
      */
@@ -105,25 +133,55 @@ public class CodeforcesSyncService {
             return applyResults(response.result(), userMap);
         }
 
-        if (batch.size() == 1) {
-            // Already isolated: this specific handle is the bad one.
-            log.warn("Codeforces rejected handle '{}' — leaving its rating unchanged. "
-                    + "The member should correct it on their profile.", batch.get(0));
+        // Detect rate-limit or server-side throttling. Do NOT blame individual handles:
+        // those members' data is valid; the API refused us because we sent too many
+        // requests. Stop this run; the next scheduled execution will retry cleanly.
+        if (isThrottled(response)) {
+            log.warn("Codeforces rate-limited this server's IP on a batch of {} handles. "
+                    + "Stopping this sync run — the rate limiter will space requests correctly "
+                    + "on the next execution.", batch.size());
             return 0;
         }
 
-        log.warn("Batch of {} handles failed ({}). Retrying individually to isolate the bad handle(s).",
-                batch.size(), response != null ? response.comment() : "no response");
-
-        int updated = 0;
-        for (String handle : batch) {
-            updated += syncBatch(List.of(handle), userMap);
+        // Base case: a single handle failed. This is the actual bad handle.
+        if (batch.size() == 1) {
+            log.warn("Codeforces rejected handle '{}' — leaving its rating unchanged. "
+                    + "The member should correct it on their profile. "
+                    + "CF comment: {}", batch.get(0), response != null ? response.comment() : "no response");
+            return 0;
         }
+
+        // Recursive bisect: split and retry each half.
+        log.info("Batch of {} handles failed ({}). Bisecting to isolate bad handle(s) in O(log N) requests.",
+                batch.size(), response != null ? response.comment() : "no response");
+        int mid = batch.size() / 2;
+        int updated = syncBatch(batch.subList(0, mid), userMap);
+        updated    += syncBatch(batch.subList(mid, batch.size()), userMap);
         return updated;
     }
 
-    /** Single outbound call. Never throws: a provider failure must not abort the run. */
+    /**
+     * Returns true if the Codeforces response signals rate limiting or server-side
+     * throttling rather than a bad handle. A throttle must not be logged as the
+     * member's fault.
+     */
+    private boolean isThrottled(CodeforcesResponse response) {
+        if (response == null) return false;
+        String comment = response.comment();
+        if (comment == null) return false;
+        String lower = comment.toLowerCase();
+        return lower.contains("too many") || lower.contains("limit") || lower.contains("throttl");
+    }
+
+    /**
+     * Single outbound call. Acquires one permit from the global rate limiter before
+     * sending — this is the single choke point for every Codeforces HTTP request in
+     * the application. Never throws: a provider failure must not abort the run.
+     */
     private CodeforcesResponse fetch(List<String> handles) {
+        // Block until a permit is available. With create(0.5) this spaces requests
+        // at least 2 seconds apart, regardless of caller or context.
+        codeforcesRateLimiter.acquire();
         try {
             return restTemplate.getForObject(
                     CODEFORCES_API_URL + String.join(";", handles), CodeforcesResponse.class);

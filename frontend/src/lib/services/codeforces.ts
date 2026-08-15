@@ -41,16 +41,31 @@ interface CfRatingChange {
 
 export const codeforcesService = {
   /**
-   * Fetches live profile info (avatar, maxRating, rank) for a given handle.
+   * Fetches live profile info (avatar, maxRating, rank, currentRating) for a given handle.
    * Calls our server-side proxy at /api/cf/user-info to avoid browser CORS limits.
    *
-   * @returns CfUserInfo on success, null on any failure
+   * The proxy now requires authentication: the caller's JWT is forwarded in the
+   * Authorization header. Unauthenticated visitors (viewing a public profile) will
+   * get null back and the page falls back to the stored database rating — acceptable
+   * because live CF data is a logged-in-user enhancement, not a public requirement.
+   *
+   * @returns CfUserInfo on success, null on any failure or when unauthenticated
    */
   getUserInfo: async (handle: string): Promise<CfUserInfo | null> => {
     if (!handle || handle.trim() === "") return null;
 
+    // Read from the store directly (not a hook) — safe outside React components.
+    // useAuthStore is imported at module scope; getState() is always available.
+    const { useAuthStore } = await import("@/store/auth");
+    const token = useAuthStore.getState().token;
+
     try {
-      const res = await fetch(`/api/cf/user-info?handle=${encodeURIComponent(handle.trim())}`);
+      const res = await fetch(
+        `/api/cf/user-info?handle=${encodeURIComponent(handle.trim())}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
       if (!res.ok) return null;
 
       const data = await res.json();

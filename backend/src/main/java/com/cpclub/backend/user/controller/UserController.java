@@ -84,6 +84,24 @@ public class UserController {
     }
 
     /**
+     * Validates that a Codeforces handle is linked to a registered club member.
+     *
+     * <p>Used by the Next.js server-side CF proxy route to prevent arbitrary handle
+     * lookups. Authentication is required so this endpoint cannot itself be used for
+     * anonymous enumeration of member handles.</p>
+     *
+     * @param handle Codeforces handle to validate (case-insensitive)
+     * @return 200 if the handle belongs to a member, 404 otherwise
+     */
+    @GetMapping("/handle/{handle}/exists")
+    @Operation(summary = "Check whether a Codeforces handle belongs to a registered member (authenticated)")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> handleExists(@PathVariable String handle) {
+        boolean exists = userService.codeforcesHandleExists(handle);
+        return exists ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    /**
      * Fetches private profile details of the authenticated caller.
      *
      * @param userDetails injected authentication details

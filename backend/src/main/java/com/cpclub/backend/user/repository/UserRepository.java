@@ -44,6 +44,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByCodeforcesHandle(String codeforcesHandle);
 
     /**
+     * Case-insensitive check used by the CF proxy endpoint to verify a handle
+     * belongs to a registered member before forwarding it to Codeforces.
+     * Codeforces treats handles case-insensitively, so this check must too.
+     *
+     * @param codeforcesHandle candidate external-account handle
+     * @return whether the handle is linked to any registered member
+     */
+    Boolean existsByCodeforcesHandleIgnoreCase(String codeforcesHandle);
+
+    /**
      * Locates a member by their linked Codeforces handle for synchronization workflows.
      *
      * @param codeforcesHandle external-account handle
