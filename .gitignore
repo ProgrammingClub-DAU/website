@@ -32,3 +32,8 @@ Thumbs.db
 # Local database dumps — never commit member data
 /backend/backups/
 *.dump
+
+# Internal audit reports. Kept out of the repository because this repo is public
+# and the security audit documents findings, affected files and attack paths.
+# The reports still exist locally in documents/audits/ — they are simply not shared.
+/documents/audits/
