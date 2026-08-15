@@ -8,6 +8,7 @@ import com.cpclub.backend.security.jwt.JwtUtils;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final CodeforcesSyncService codeforcesSyncService;
 
     /**
      * Registers a new user, checks for unique email and handle constraints,
@@ -63,6 +65,11 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        if (savedUser.getCodeforcesHandle() != null) {
+            codeforcesSyncService.syncSingleUser(savedUser);
+        }
+
         log.info("Registered new user with email: {}", email);
 
         String jwt = jwtUtils.generateTokenFromEmail(savedUser.getEmail(), savedUser.getId(), savedUser.getRole().name());
