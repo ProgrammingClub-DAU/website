@@ -48,6 +48,18 @@ public class UserService {
     }
 
     /**
+     * Checks whether a Codeforces handle is linked to any registered member.
+     * Used by the Next.js CF proxy to gate arbitrary handle lookups.
+     *
+     * @param handle Codeforces handle to check (case-insensitive)
+     * @return true if a registered member owns this handle
+     */
+    @Transactional(readOnly = true)
+    public boolean codeforcesHandleExists(String handle) {
+        return Boolean.TRUE.equals(userRepository.existsByCodeforcesHandleIgnoreCase(handle));
+    }
+
+    /**
      * Resolves a user profile by unique email address.
      *
      * @param email user email

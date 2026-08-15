@@ -94,6 +94,18 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!--
+			Guava RateLimiter: a production-ready token-bucket implementation used as
+			a global gate on all outbound Codeforces API calls. Prevents the batch
+			fallback from issuing a burst and getting the server IP throttled, which
+			would break leaderboard sync for every member at once.
+		-->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>33.2.1-jre</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

@@ -5,6 +5,7 @@ import com.cpclub.backend.codeforces.dto.CodeforcesUserDto;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import com.google.common.util.concurrent.RateLimiter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -44,6 +46,12 @@ public class CodeforcesSyncServiceTest {
     void setUp() {
         tourist = User.builder().id(1L).codeforcesHandle("tourist").rating(3000).build();
         badHandle = User.builder().id(2L).codeforcesHandle("not_a_real_handle").rating(1500).build();
+
+        // @InjectMocks bypasses Spring DI, so the RateLimiter field stays null.
+        // Inject a max-throughput limiter so tests don't throttle themselves
+        // while still exercising the real acquire() code path.
+        ReflectionTestUtils.setField(
+                codeforcesSyncService, "codeforcesRateLimiter", RateLimiter.create(Double.MAX_VALUE));
     }
 
     private static CodeforcesResponse ok(CodeforcesUserDto... users) {

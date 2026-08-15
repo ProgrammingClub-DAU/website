@@ -223,7 +223,18 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
     if (rating >= 1200) return "pupil";
     return "newbie";
   };
-  const actualCfRank = getCfRank(profile.rating);
+
+  /*
+   * Prefer the live Codeforces value when it is available — cfInfo is already
+   * fetched for the avatar on every profile page visit, so this is free.
+   * The database copy (profile.rating) exists for the leaderboard, which cannot
+   * call Codeforces once per row; on the profile page it is only the fallback.
+   *
+   * Using ?? not || : rating 0 is a valid (unrated) value; || would skip it.
+   */
+  const currentRating = cfInfo?.rating ?? profile.rating;
+
+  const actualCfRank = getCfRank(currentRating ?? 0);
   const nameColor = rankColor(actualCfRank);
   const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
   const totalSolved = profile.platformStats?.reduce((acc, curr) => acc + curr.solved, 0) || 0;
@@ -362,8 +373,13 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
                   {profile.clubRole ?? "Club Participant"}
                 </span>
                 <span className="text-sm text-fg-muted">
-                  Rating: <strong className="text-foreground">{profile.rating || "Unrated"}</strong>
-                  {cfInfo?.maxRating && <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>}
+                  Rating:{" "}
+                  <strong className="text-foreground">
+                    {currentRating ?? "Unrated"}
+                  </strong>
+                  {cfInfo?.maxRating && currentRating !== cfInfo.maxRating && (
+                    <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>
+                  )}
                 </span>
               </div>
             </div>
