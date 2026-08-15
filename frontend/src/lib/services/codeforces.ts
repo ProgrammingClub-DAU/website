@@ -42,7 +42,7 @@ interface CfRatingChange {
 export const codeforcesService = {
   /**
    * Fetches live profile info (avatar, maxRating, rank, currentRating) for a given handle.
-   * Calls our server-side proxy at /api/cf/user-info to avoid browser CORS limits.
+   * Calls our server-side proxy at /next-api/cf/user-info to avoid browser CORS limits.
    *
    * The proxy now requires authentication: the caller's JWT is forwarded in the
    * Authorization header. Unauthenticated visitors (viewing a public profile) will
@@ -61,7 +61,7 @@ export const codeforcesService = {
 
     try {
       const res = await fetch(
-        `/api/cf/user-info?handle=${encodeURIComponent(handle.trim())}`,
+        `/next-api/cf/user-info?handle=${encodeURIComponent(handle.trim())}`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
@@ -82,7 +82,7 @@ export const codeforcesService = {
   /**
    * Fetches the full contest rating history for a given handle.
    * Maps the CF response to our frontend RatingHistoryEntry shape.
-   * Calls our server-side proxy at /api/cf/user-rating.
+   * Calls our server-side proxy at /next-api/cf/user-rating.
    *
    * @returns Array of RatingHistoryEntry (may be empty on failure or unrated user)
    */
@@ -90,7 +90,7 @@ export const codeforcesService = {
     if (!handle || handle.trim() === "") return [];
 
     try {
-      const res = await fetch(`/api/cf/user-rating?handle=${encodeURIComponent(handle.trim())}`);
+      const res = await fetch(`/next-api/cf/user-rating?handle=${encodeURIComponent(handle.trim())}`);
       if (!res.ok) return [];
 
       const data = await res.json();
