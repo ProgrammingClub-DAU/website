@@ -10,6 +10,7 @@ import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.user.service.UserService;
+import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,11 +27,13 @@ class UserServiceTest {
 
     private UserRepository userRepository;
     private UserService userService;
+    private CodeforcesSyncService codeforcesSyncService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
-        userService = new UserService(userRepository);
+        codeforcesSyncService = mock(CodeforcesSyncService.class);
+        userService = new UserService(userRepository, codeforcesSyncService);
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CodeforcesSyncService codeforcesSyncService;
 
     /**
      * Resolves a user profile by database primary key.
@@ -187,6 +189,7 @@ public class UserService {
 
         user.setCodeforcesHandle(handle);
         User savedUser = userRepository.save(user);
+        codeforcesSyncService.syncSingleUser(savedUser);
         log.info("Updated Codeforces handle for user id {} to '{}'", userId, handle);
         return UserResponseDto.fromEntity(savedUser);
     }
@@ -215,6 +218,7 @@ public class UserService {
         }
 
         User saved = userRepository.save(user);
+        codeforcesSyncService.syncSingleUser(saved);
         return UserResponseDto.fromEntity(saved);
     }
 

@@ -45,6 +45,9 @@ class AuthServiceTest {
     @Mock
     private JwtUtils jwtUtils;
 
+    @Mock
+    private com.cpclub.backend.codeforces.service.CodeforcesSyncService codeforcesSyncService;
+
     @InjectMocks
     private AuthService authService;
 

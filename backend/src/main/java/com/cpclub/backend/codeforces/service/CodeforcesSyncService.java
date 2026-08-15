@@ -108,6 +108,22 @@ public class CodeforcesSyncService {
     }
 
     /**
+     * Synchronously fetches and applies the rating for a single user.
+     * Used for Just-in-Time (JIT) updates when a user registers or updates their handle.
+     * Reuses the batch sync logic for a single element.
+     */
+    @Transactional
+    public void syncSingleUser(User user) {
+        if (user == null || user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
+            return;
+        }
+        
+        List<String> batch = List.of(user.getCodeforcesHandle());
+        Map<String, User> userMap = Map.of(user.getCodeforcesHandle().toLowerCase(), user);
+        syncBatch(batch, userMap);
+    }
+
+    /**
      * Syncs one batch, bisecting on failure to isolate the bad handle(s) in O(log N) requests.
      *
      * <p>The Codeforces {@code user.info} endpoint is all-or-nothing: a single
