@@ -65,7 +65,7 @@ export function Navbar() {
       )}
       style={{ backgroundColor: "var(--nav-bg)" }}
     >
-      <nav className="mx-auto flex min-h-14 max-w-[1240px] items-center gap-4 px-6 py-2">
+      <nav className="container-page flex min-h-14 items-center gap-4 py-2">
         <Wordmark />
 
         {/* Desktop navigation. Below lg the links move into the sheet. */}

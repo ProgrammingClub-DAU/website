@@ -75,15 +75,11 @@ export default function RegisterForm() {
     <div className="grid min-h-[calc(100vh-3.5rem)] w-full lg:grid-cols-2">
       {/* Left Column: Branding and Ranks (hidden on mobile) */}
       <div className="hidden flex-col justify-between p-12 lg:p-16 border-r border-hairline bg-surface-3/30 lg:flex select-none">
-        {/* Branding header */}
-        <div>
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            Programming Club
-          </span>
-          <span className="font-mono text-xs font-medium tracking-wide text-fg-muted ml-2">
-            @ DAU
-          </span>
-        </div>
+        {/* No wordmark here: the global navbar already renders one directly above
+            this panel, so repeating it showed "Programming Club @ DAU" twice on
+            the same screen, at two different left offsets. The spacer keeps the
+            three-part justify-between layout intact. */}
+        <div aria-hidden="true" />
 
         {/* Hero headline */}
         <div className="space-y-4">

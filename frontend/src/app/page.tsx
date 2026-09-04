@@ -317,7 +317,7 @@ export default function HomePage() {
         className="border-t border-hairline"
         style={{ background: "var(--band)" }}
       >
-        <div className="mx-auto max-w-[1240px] px-6 py-20">
+        <div className="container-page py-20">
           <div className="glass-panel mx-auto max-w-[680px] rounded-panel px-8 py-14 text-center">
             <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold tracking-[-0.02em]">
               Ready to compete?

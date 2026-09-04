@@ -30,7 +30,7 @@ const linkClass =
 export function Footer() {
   return (
     <footer className="border-t border-hairline">
-      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-page grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-baseline gap-2">
             <span className="text-sm font-semibold tracking-tight">{site.name}</span>
@@ -72,7 +72,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1240px] px-6 pb-10">
+      <div className="container-page pb-10">
         <div className="border-t border-hairline pt-6 font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
           © {new Date().getFullYear()} {site.fullName}
         </div>
