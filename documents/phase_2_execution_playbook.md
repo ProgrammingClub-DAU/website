@@ -1,7 +1,7 @@
-﻿# Phase 2 â€” Senior Engineer Implementation Plan
-**Branch:** `feature/phase-2` (branched off `main` post Phase 1 merge)  
-**Duration:** 3 sprints Â· ~3 weeks  
-**Team:** 6 members  
+﻿# Phase 2 â€” Senior Engineer Implementation Plan (v3 â€” Updated)
+**Branch:** `feature/phase-2` (branched off `main` post Phase 1 merge)
+**Duration:** 3 sprints Â· ~3 weeks
+**Team:** 6 members
 **Stack:** Spring Boot 4.1 Â· PostgreSQL Â· Next.js 15 Â· Cloudinary Â· Apache POI
 
 ---
@@ -10,17 +10,31 @@
 
 | Decision | Choice | Why |
 |---|---|---|
-| CodeChef / AtCoder sync | **No sync. Link only.** User pastes their profile URL. | No stable public API. Scraping breaks on DOM changes. Not worth maintenance cost. |
-| LeetCode sync | **Full sync via GraphQL API.** JIT on handle save + every 6h cron. | LeetCode exposes a public GraphQL endpoint with contest rating. Reliable. |
-| Avatar | **Cloudinary Upload Widget.** URL saved to DB. | Account already exists. Eliminates storing binary blobs in PostgreSQL. |
-| Phone number | **Mandatory on user profile.** Cannot be blank after saving profile. | Required for admin to add a student to an event without a separate form. |
-| Event attendance | **Admin-only.** Admin searches by User ID. Details auto-fill. | No self-RSVP. Attendance is official record, not user-controlled. |
-| Excel export | **Apache POI XSSF.** Server-side `.xlsx` streamed as binary download. | Most universal format for club administrators. |
-| Soft delete for events | Events are **deactivated** (`is_active = false`), never hard deleted. | Preserves attendance history. Admin can reactivate if needed. |
+| CodeChef / AtCoder sync | **No sync. Link only.** | No stable public API. Scraping breaks on DOM changes. |
+| LeetCode sync | **Full GraphQL API sync.** JIT on handle save + every 6h cron. | Reliable public endpoint. |
+| Avatar | **Cloudinary Upload Widget.** URL saved to DB. | Eliminates binary blobs in PostgreSQL. |
+| Phone number | **Mandatory on user profile.** | Required before admin can add a student to an event. |
+| Event attendance | **Admin-only.** Admin searches by User ID; details auto-fill from DB. | Official record, not self-controlled. |
+| Excel export | **Apache POI XSSF.** Server-side `.xlsx` streamed as binary. | Universal format for club admins. |
+| Soft delete for events | Events are **deactivated**, never hard deleted. | Preserves attendance + gallery history. |
+| `clubRole` vs `role` | **Two separate fields.** `role` = platform permission (Admin/User). `clubRole` = club position (Core, Convenor, etc.). | Conflating them causes security issues â€” a Batch Rep should not have admin API access. |
+| Gallery storage | **Cloudinary.** Admin uploads image via Upload Widget; URL stored in DB. | Consistent with avatar approach. No binary in DB. |
 
 ---
 
-## Section 2 â€” Implementation Stages & Dependencies
+## Section 2 â€” New Features Added in This Version
+
+The following features are **new additions** on top of the original Phase 2 scope:
+
+1. **Club Role System** â€” `clubRole` enum column on `users`. Admin can assign any member a club position. Leaderboard filters (All, Core, Batch Rep, Students) become data-driven.
+2. **Admin Event Management** â€” Admin creates, edits, and publishes upcoming events directly from the website (no hardcoding).
+3. **Event Photo Gallery** â€” Admin uploads event photos (past events) to Cloudinary; displayed in a public gallery per event.
+4. **Club Member Photo Gallery (Batch-wise)** â€” Admin uploads group/batch photos; displayed publicly, filterable by batch year.
+5. **Completed Events** â€” Past events shown publicly with date, description, location, and their photo gallery.
+
+---
+
+## Section 3 â€” Implementation Stages & Dependencies
 
 ```
 STAGE 0 â”€â”€â”€ DB Migrations + Entity Layer
@@ -32,7 +46,7 @@ STAGE 0 â”€â”€â”€ DB Migrations + Entity Layer
 STAGE 1A â”€ Backend Security   STAGE 1B â”€ Backend Data & APIs
   Owner: M4                     Owner: M5
   PR: phase2/backend-security   PR: phase2/backend-data
-  Can run parallel with M5      Can run parallel with M4
+  Runs parallel with M5         Runs parallel with M4
         â”‚                               â”‚
         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
                     â–¼
@@ -51,784 +65,661 @@ STAGE 3 â”€â”€â”€ Integration, Tests, Polish, Deploy
 ```
 
 > [!IMPORTANT]
-> Every member branches off `feature/phase-2`, **not off `main`**. PRs are submitted back into `feature/phase-2`. Only when the entire Phase 2 is complete does `feature/phase-2` get merged into `main` via one final PR reviewed by M6.
+> Every member branches off `feature/phase-2`, **not off `main`**. PRs go back into `feature/phase-2`. Only when all Phase 2 work is done does `feature/phase-2` merge into `main` via one final PR reviewed by M6.
 
 ---
 
-## Section 3 â€” Stage 0: Database Migrations & Entity Layer
-**Owner: Member 6**  
-**PR: `phase2/stage-0-migrations`**  
-**Estimated time: 1â€“2 days**  
+## Section 4 â€” Stage 0: Database Migrations & Entity Layer
+**Owner: Member 6 (Team Lead)**
+**PR: `phase2/stage-0-migrations`**
+**Estimated time: 2 days**
 **Blocks: All other members**
 
 ---
 
-### 3.1 Migration V2 â€” Extend `users` Table
+### 4.1 Migration V2 â€” Extend `users` Table
 
-**File:** `backend/src/main/resources/db/migration/V2__extend_user_profile.sql`
+**File:** `V2__extend_user_profile.sql`
 
-Add the following **nullable** columns to `users`. All nullable â€” existing rows have no data for these fields, which is correct.
+Add the following **nullable** columns to `users`:
 
-| Column Name | Data Type | Constraint | Reason |
+| Column | Type | Constraint | Purpose |
 |---|---|---|---|
-| `avatar_url` | `VARCHAR(512)` | nullable | Cloudinary secure URL, up to 512 chars |
-| `phone_number` | `VARCHAR(20)` | nullable | Stored even though UI enforces mandatory â€” allows admin-added users pre-migration |
-| `leetcode_handle` | `VARCHAR(255)` | `UNIQUE`, nullable | For LeetCode sync |
-| `leetcode_rating` | `INTEGER` | nullable | Populated by sync job |
-| `codechef_url` | `VARCHAR(512)` | nullable | Profile link only |
-| `atcoder_url` | `VARCHAR(512)` | nullable | Profile link only |
-| `github_url` | `VARCHAR(512)` | nullable | Social link |
-| `linkedin_url` | `VARCHAR(512)` | nullable | Social link |
+| `avatar_url` | VARCHAR(512) | nullable | Cloudinary profile photo |
+| `phone_number` | VARCHAR(20) | nullable | Mandatory in UI; nullable in DB for backward compat |
+| `leetcode_handle` | VARCHAR(255) | UNIQUE, nullable | For LeetCode sync |
+| `leetcode_rating` | INTEGER | nullable | Populated by sync |
+| `codechef_url` | VARCHAR(512) | nullable | Link only, no sync |
+| `atcoder_url` | VARCHAR(512) | nullable | Link only, no sync |
+| `github_url` | VARCHAR(512) | nullable | Social link |
+| `linkedin_url` | VARCHAR(512) | nullable | Social link |
+| `club_role` | VARCHAR(50) | nullable, CHECK constraint | Club position (see enum below) |
+| `batch_year` | INTEGER | nullable | e.g. 2023, 2024 â€” used for batch gallery filtering |
 
-**Index to add:**
-- `CREATE INDEX idx_leetcode_handle ON users (leetcode_handle)` â€” the sync job looks up users by this field, needs to be fast.
+**`club_role` allowed values (CHECK constraint):**
+`CONVENOR`, `DEPUTY_CONVENOR`, `CORE`, `ASSOCIATE_CORE`, `BATCH_REPRESENTATIVE`, `EX_PC_MEMBER`, `EX_CORE`, `EX_CDC`, `STUDENT`
+
+> [!NOTE]
+> `STUDENT` is the default when `club_role` is set but the member holds no special position. `null` means unassigned (shown as "Member" on the frontend). This is distinct from `role` (ROLE_ADMIN / ROLE_USER) which controls API access.
+
+**Indexes to add:**
+- `CREATE INDEX idx_leetcode_handle ON users(leetcode_handle)`
+- `CREATE INDEX idx_club_role ON users(club_role)` â€” for leaderboard filter queries
 
 ---
 
-### 3.2 Migration V3 â€” Create `events` Table
+### 4.2 Migration V3 â€” Create `events` Table
 
-**File:** `backend/src/main/resources/db/migration/V3__create_events.sql`
+**File:** `V3__create_events.sql`
 
-| Column Name | Data Type | Constraint | Reason |
+| Column | Type | Constraint | Purpose |
 |---|---|---|---|
-| `id` | `BIGSERIAL` | `PRIMARY KEY` | Auto-increment |
-| `title` | `VARCHAR(255)` | `NOT NULL` | Event name |
-| `description` | `TEXT` | nullable | Optional long description |
-| `event_date` | `TIMESTAMP` | `NOT NULL` | When the event happens |
-| `location` | `VARCHAR(255)` | `NOT NULL` | Physical or online location |
-| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT TRUE` | Soft delete flag |
-| `created_by` | `BIGINT` | `FK â†’ users.id NOT NULL` | Which admin created it |
-| `created_at` | `TIMESTAMP(6)` | `NOT NULL DEFAULT NOW()` | Audit |
-| `updated_at` | `TIMESTAMP(6)` | `NOT NULL DEFAULT NOW()` | Audit |
+| `id` | BIGSERIAL | PK | Auto-increment |
+| `title` | VARCHAR(255) | NOT NULL | Event name |
+| `description` | TEXT | nullable | Long description |
+| `event_date` | TIMESTAMP | NOT NULL | When the event happens |
+| `location` | VARCHAR(255) | NOT NULL | Physical or online |
+| `status` | VARCHAR(20) | NOT NULL DEFAULT 'UPCOMING' | `UPCOMING`, `COMPLETED`, `CANCELLED` |
+| `cover_image_url` | VARCHAR(512) | nullable | Cloudinary URL for event banner |
+| `created_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who created it |
+| `created_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | Audit |
+| `updated_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | Audit |
+
+> [!NOTE]
+> `status` replaces the earlier `is_active` boolean. It gives 3 states: upcoming (public, accepting attendance), completed (public, read-only, gallery shown), cancelled (hidden from public).
 
 ---
 
-### 3.3 Migration V4 â€” Create `event_attendees` Table
+### 4.3 Migration V4 â€” Create `event_attendees` Table
 
-**File:** `backend/src/main/resources/db/migration/V4__create_event_attendees.sql`
+**File:** `V4__create_event_attendees.sql`
 
-| Column Name | Data Type | Constraint | Reason |
+| Column | Type | Constraint | Purpose |
 |---|---|---|---|
-| `id` | `BIGSERIAL` | `PRIMARY KEY` | Auto-increment |
-| `event_id` | `BIGINT` | `FK â†’ events.id ON DELETE CASCADE, NOT NULL` | Link to event |
-| `user_id` | `BIGINT` | `FK â†’ users.id ON DELETE CASCADE, NOT NULL` | Link to student |
-| `added_by` | `BIGINT` | `FK â†’ users.id NOT NULL` | Which admin added this student |
-| `added_at` | `TIMESTAMP(6)` | `NOT NULL DEFAULT NOW()` | Audit â€” when attendance was recorded |
+| `id` | BIGSERIAL | PK | |
+| `event_id` | BIGINT | FK â†’ events.id ON DELETE CASCADE, NOT NULL | |
+| `user_id` | BIGINT | FK â†’ users.id ON DELETE CASCADE, NOT NULL | |
+| `added_by` | BIGINT | FK â†’ users.id NOT NULL | Which admin added the student |
+| `added_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
+| **UNIQUE(event_id, user_id)** | | DB-level constraint | Prevents double-attendance |
 
-**Critical constraint:** `UNIQUE(event_id, user_id)` â€” enforced at the **database level**, not just in application code. Even if a bug in the service layer tries to insert a duplicate, the DB rejects it.
-
-**Indexes:**
-- `CREATE INDEX idx_attendees_event ON event_attendees(event_id)` â€” for fast "get all attendees for event" queries
-- `CREATE INDEX idx_attendees_user ON event_attendees(user_id)` â€” for fast "which events has this student attended" queries
+**Indexes:** on `event_id` and `user_id` separately.
 
 ---
 
-### 3.4 Migration V5 â€” Create `weekly_snapshots` Table
+### 4.4 Migration V5 â€” Create `event_photos` Table
 
-**File:** `backend/src/main/resources/db/migration/V5__create_weekly_snapshots.sql`
+**File:** `V5__create_event_photos.sql`
 
-| Column Name | Data Type | Constraint | Reason |
+| Column | Type | Constraint | Purpose |
 |---|---|---|---|
-| `id` | `BIGSERIAL` | `PRIMARY KEY` | Auto-increment |
-| `user_id` | `BIGINT` | `FK â†’ users.id ON DELETE CASCADE, NOT NULL` | Whose rating this is |
-| `platform` | `VARCHAR(20)` | `NOT NULL CHECK IN ('CODEFORCES','LEETCODE')` | Which platform |
-| `rating` | `INTEGER` | `NOT NULL` | Rating at time of recording |
-| `recorded_at` | `TIMESTAMP(6)` | `NOT NULL DEFAULT NOW()` | When snapshot was taken |
+| `id` | BIGSERIAL | PK | |
+| `event_id` | BIGINT | FK â†’ events.id ON DELETE CASCADE, NOT NULL | Which event this photo belongs to |
+| `image_url` | VARCHAR(512) | NOT NULL | Cloudinary secure URL |
+| `caption` | VARCHAR(255) | nullable | Optional photo caption |
+| `uploaded_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who uploaded |
+| `uploaded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
 
-**Index:** `CREATE INDEX idx_snapshots_user_platform ON weekly_snapshots(user_id, platform)` â€” the chart query always filters by both user_id and platform, then orders by recorded_at.
-
----
-
-### 3.5 Update `User.java` JPA Entity
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/entity/User.java`
-
-Add 8 new private fields with `@Column` annotations that **exactly match** the migration column names. Also add the `leetcode_handle` index to `@Table(indexes = {...})`.
-
-> [!WARNING]
-> Column names in `@Column(name = "...")` must exactly match migration SQL. A mismatch causes `ddl-auto: validate` to fail on startup with a `SchemaManagementException`.
+**Index:** on `event_id` for fast gallery load.
 
 ---
 
-## Section 4 â€” Stage 1A: Backend Security
-**Owner: Member 4**  
-**PR: `phase2/backend-security`**  
-**Estimated time: 1 day**  
+### 4.5 Migration V6 â€” Create `member_gallery` Table
+
+**File:** `V6__create_member_gallery.sql`
+
+For batch-wise group photos of club members, separate from individual avatars.
+
+| Column | Type | Constraint | Purpose |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `batch_year` | INTEGER | NOT NULL | e.g. 2023, 2024 |
+| `image_url` | VARCHAR(512) | NOT NULL | Cloudinary URL |
+| `caption` | VARCHAR(255) | nullable | e.g. "Batch 2023 - Inauguration Day" |
+| `uploaded_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who uploaded |
+| `uploaded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
+
+**Index:** on `batch_year` for fast batch-filter queries.
+
+---
+
+### 4.6 Migration V7 â€” Create `weekly_snapshots` Table
+
+**File:** `V7__create_weekly_snapshots.sql`
+
+| Column | Type | Constraint | Purpose |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `user_id` | BIGINT | FK â†’ users.id ON DELETE CASCADE, NOT NULL | |
+| `platform` | VARCHAR(20) | NOT NULL CHECK IN ('CODEFORCES','LEETCODE') | |
+| `rating` | INTEGER | NOT NULL | |
+| `recorded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
+
+**Index:** on `(user_id, platform)` combined.
+
+---
+
+### 4.7 Entity Layer Updates
+
+**`User.java`:** Add all new fields with `@Column` annotations matching migration column names exactly. Add `ClubRole` enum (Java enum) with values: `CONVENOR`, `DEPUTY_CONVENOR`, `CORE`, `ASSOCIATE_CORE`, `BATCH_REPRESENTATIVE`, `EX_PC_MEMBER`, `EX_CORE`, `EX_CDC`, `STUDENT`. Store as `@Enumerated(EnumType.STRING)`. Also add `batchYear` Integer field.
+
+**`Event.java`:** New entity. Add `EventStatus` enum with values: `UPCOMING`, `COMPLETED`, `CANCELLED`. Stored as `@Enumerated(EnumType.STRING)`. Include a `@OneToMany` to `EventPhoto` for convenience.
+
+**`EventAttendee.java`:** New entity. Three `@ManyToOne` to `Event`, `User` (student), `User` (admin who added).
+
+**`EventPhoto.java`:** New entity. `@ManyToOne` to `Event`. Fields: imageUrl, caption, uploadedBy, uploadedAt.
+
+**`MemberGalleryPhoto.java`:** New entity. No foreign key to Event. Fields: batchYear, imageUrl, caption, uploadedBy, uploadedAt.
+
+**`WeeklySnapshot.java`:** New entity. `@ManyToOne` to `User`. Fields: platform (String), rating (Integer), recordedAt.
+
+---
+
+## Section 5 â€” Stage 1A: Backend Security
+**Owner: Member 4**
+**PR: `phase2/backend-security`**
+**Estimated time: 1â€“2 days**
 **Depends on: Stage 0 merged**
 
----
+### Files & What Changes
 
-### 4.1 Update `SecurityConfig.java`
+#### `SecurityConfig.java`
+Add the following rules **before** `anyRequest().authenticated()`, in this exact order (top-to-bottom matters):
 
-**File:** `backend/src/main/java/com/cpclub/backend/security/config/SecurityConfig.java`
-
-The `filterChain` method's `authorizeHttpRequests` block needs 3 new rules, inserted **before** the existing `anyRequest().authenticated()` catch-all.
-
-**Rule 1 â€” Public event reads:**
-```
-GET /api/events         â†’ permitAll()
-GET /api/events/{id}    â†’ permitAll()
-```
-
-**Rule 2 â€” Admin-only event management:**
-```
-/api/events/**          â†’ hasRole('ADMIN')
-```
-
-**Rule 3 â€” Admin-only user lookup:**
-```
-GET /api/users/{id}/lookup  â†’ hasRole('ADMIN')
-```
-
-**Why the order matters:** Spring Security evaluates rules top-to-bottom and stops at the first match. If Rule 2 (`/api/events/**` â†’ ADMIN) appears before Rule 1 (`GET /api/events` â†’ public), the public GET is blocked. Rule 1 must come first.
-
-**Also add to the public snapshot endpoint:**
-```
-GET /api/snapshots/**   â†’ isAuthenticated()
-```
-
----
-
-### 4.2 Add Lookup Endpoint in `UserController.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/controller/UserController.java`
-
-Add one new `@GetMapping("/{id}/lookup")` method:
-- **Auth:** `@PreAuthorize("hasRole('ADMIN')")` â€” only admins can call this
-- **Input:** `@PathVariable Long id`
-- **Calls:** `userService.lookupUserById(id)` (defined by M5)
-- **Returns:** `ResponseEntity<ApiResponse<UserLookupDto>>`
-- **Error case:** If user not found, `ResourceNotFoundException` is thrown by service â†’ `GlobalExceptionHandler` returns `404`
-
----
-
-## Section 5 â€” Stage 1B: Backend Data & APIs
-**Owner: Member 5**  
-**PR: `phase2/backend-data`**  
-**Estimated time: 5â€“6 days**  
-**Depends on: Stage 0 merged**  
-**This is the largest backend task in Phase 2.**
-
----
-
-### 5.1 Update `UserProfileUpdateRequest.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/dto/UserProfileUpdateRequest.java`
-
-The existing record only has `name` and `codeforcesHandle`. Replace with a new record containing all fields. Validation rules:
-
-| Field | Validation | Rule |
+| Rule | Path Pattern | Auth Required |
 |---|---|---|
-| `name` | `@NotBlank @Size(min=2, max=100)` | Required, 2â€“100 chars |
-| `phoneNumber` | `@Size(max=20)` | Optional at DTO level; frontend enforces mandatory |
+| Public â€” list & view events | `GET /api/events`, `GET /api/events/{id}` | None |
+| Public â€” event gallery | `GET /api/events/{id}/photos` | None |
+| Public â€” member gallery | `GET /api/gallery/members` | None |
+| Admin â€” all other event ops | `/api/events/**` | `hasRole('ADMIN')` |
+| Admin â€” gallery upload | `/api/gallery/**` | `hasRole('ADMIN')` |
+| Admin â€” user lookup for event | `GET /api/users/{id}/lookup` | `hasRole('ADMIN')` |
+| Admin â€” assign club role | `PUT /api/users/{id}/club-role` | `hasRole('ADMIN')` |
+| Authenticated â€” snapshots | `GET /api/snapshots/**` | `isAuthenticated()` |
+
+#### `UserController.java`
+Add two new endpoints:
+1. `GET /api/users/{id}/lookup` â€” `@PreAuthorize("hasRole('ADMIN')")` â€” returns `UserLookupDto`. Calls `userService.lookupUserById(id)`.
+2. `PUT /api/users/{id}/club-role` â€” `@PreAuthorize("hasRole('ADMIN')")` â€” body: `{ clubRole: "CORE" }`. Returns updated `UserResponseDto`. Calls `userService.updateClubRole(id, request)`.
+
+---
+
+## Section 6 â€” Stage 1B: Backend Data & APIs
+**Owner: Member 5**
+**PR: `phase2/backend-data`**
+**Estimated time: 6â€“7 days**
+**Depends on: Stage 0 merged**
+**This is the largest single task in Phase 2.**
+
+---
+
+### 6.1 User Profile Changes
+
+#### `UserProfileUpdateRequest.java`
+Replace existing record. Fields and validations:
+
+| Field | Validation | Notes |
+|---|---|---|
+| `name` | `@NotBlank @Size(min=2, max=100)` | Required |
+| `phoneNumber` | `@Size(max=20)` | Frontend enforces mandatory |
 | `codeforcesHandle` | `@Size(max=100)` | Optional |
 | `leetcodeHandle` | `@Size(max=100)` | Optional |
-| `codechefUrl` | `@Size(max=512)` | Optional, should be URL but we don't validate format |
+| `codechefUrl` | `@Size(max=512)` | Optional, URL format |
 | `atcoderUrl` | `@Size(max=512)` | Optional |
 | `githubUrl` | `@Size(max=512)` | Optional |
 | `linkedinUrl` | `@Size(max=512)` | Optional |
-| `avatarUrl` | `@Size(max=512)` | Optional; populated by Cloudinary on frontend |
+| `avatarUrl` | `@Size(max=512)` | Set by Cloudinary, optional |
+
+#### `UpdateClubRoleRequest.java` [NEW]
+Single-field record: `clubRole` of type `ClubRole` enum. Annotated with `@NotNull`. Validated by the framework.
+
+#### `UserLookupDto.java` [NEW]
+Admin-only full view for the event attendance panel. Fields:
+`id`, `name`, `email`, `phoneNumber`, `avatarUrl`, `codeforcesHandle`, `cfRating`, `leetcodeHandle`, `leetcodeRating`, `codechefUrl`, `atcoderUrl`, `githubUrl`, `linkedinUrl`, `clubRole`, `batchYear`.
+Has static `fromEntity(User)` factory.
+
+#### `UserResponseDto.java` [MODIFY]
+Extend with all new fields: `avatarUrl`, `phoneNumber`, `leetcodeHandle`, `leetcodeRating`, `codechefUrl`, `atcoderUrl`, `githubUrl`, `linkedinUrl`, `clubRole`, `batchYear`.
+
+#### `UserService.java` [MODIFY]
+- `updateProfile()` â€” persist all new fields. If `leetcodeHandle` changed â†’ call `leetCodeSyncService.syncSingleUser()`. If `codeforcesHandle` changed â†’ call `codeforcesSyncService.syncSingleUser()`.
+- `updateClubRole(Long userId, UpdateClubRoleRequest req)` â†’ loads user, sets `clubRole`, saves, returns `UserResponseDto`.
+- `lookupUserById(Long id)` â†’ loads user, returns `UserLookupDto.fromEntity(user)`. Throws `ResourceNotFoundException` if missing.
+
+#### `UserRepository.java` [MODIFY]
+Add:
+- `List<User> findByLeetcodeHandleIsNotNull()` â€” for bulk LeetCode sync
+- `boolean existsByLeetcodeHandle(String handle)` â€” for uniqueness check
+- `List<User> findByClubRoleIn(List<ClubRole> roles)` â€” for leaderboard filtering
 
 ---
 
-### 5.2 Create `UserLookupDto.java`
+### 6.2 Leaderboard Enhancement
 
-**File:** `backend/src/main/java/com/cpclub/backend/user/dto/UserLookupDto.java`
+#### `LeaderboardService.java` [MODIFY]
+The existing leaderboard currently sorts by rating. Extend it to accept two query params:
+- `platform` â€” `CODEFORCES` (default) or `LEETCODE`
+- `filter` â€” `ALL` (default), `CORE`, `BATCH_REP`, `STUDENTS`
 
-A new read-only DTO exclusively for the Admin event panel. Returns all data the admin needs in a single call. Contains:
+Filter logic:
+- `ALL` â†’ no role filter, all users with a rating
+- `CORE` â†’ `clubRole IN (CORE, ASSOCIATE_CORE, CONVENOR, DEPUTY_CONVENOR)`
+- `BATCH_REP` â†’ `clubRole = BATCH_REPRESENTATIVE`
+- `STUDENTS` â†’ `clubRole = STUDENT OR clubRole IS NULL`
 
-| Field | Type | Source on User entity |
-|---|---|---|
-| `id` | Long | `user.getId()` |
-| `name` | String | `user.getName()` |
-| `email` | String | `user.getEmail()` |
-| `phoneNumber` | String | `user.getPhoneNumber()` |
-| `avatarUrl` | String | `user.getAvatarUrl()` |
-| `codeforcesHandle` | String | `user.getCodeforcesHandle()` |
-| `cfRating` | Integer | `user.getRating()` |
-| `leetcodeHandle` | String | `user.getLeetcodeHandle()` |
-| `leetcodeRating` | Integer | `user.getLeetcodeRating()` |
-| `codechefUrl` | String | `user.getCodechefUrl()` |
-| `atcoderUrl` | String | `user.getAtcoderUrl()` |
-| `githubUrl` | String | `user.getGithubUrl()` |
-| `linkedinUrl` | String | `user.getLinkedinUrl()` |
+#### `LeaderboardResponseDto.java` [MODIFY]
+Add `clubRole` field (String) to the leaderboard row response so the frontend can display it as a badge next to the member's name.
 
-Has a static factory method `fromEntity(User user)` for clean mapping in the service layer.
+#### `LeaderboardEntryProjection.java` [MODIFY]
+Add `clubRole` to the projection interface used by the repository query.
+
+#### `LeaderboardController.java` [MODIFY]
+Update `GET /api/leaderboard` to accept `?platform=` and `?filter=` query params and pass them to the service.
 
 ---
 
-### 5.3 Update `UserResponseDto.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/dto/UserResponseDto.java`
-
-Add all 8 new profile fields. This DTO is returned by `GET /api/users/profile` and `PUT /api/users/profile`. Without this update, the frontend receives `null` for all new fields even after saving.
-
----
-
-### 5.4 Update `UserService.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/service/UserService.java`
-
-**Changes to `updateProfile(Long userId, UserProfileUpdateRequest request)`:**
-1. Map all new fields from the request onto the User entity.
-2. For `codeforcesHandle`: existing uniqueness check stays. If changed, `codeforcesSyncService.syncSingleUser(user)` is called (already working from Phase 1).
-3. For `leetcodeHandle`: new uniqueness check â€” if the handle is non-blank and already belongs to another user, throw `BadRequestException`. After saving, call `leetCodeSyncService.syncSingleUser(user)` for JIT sync.
-4. Save and return the updated `UserResponseDto`.
-
-**New method `lookupUserById(Long id)`:**
-- Load user by ID. If not found, throw `ResourceNotFoundException("User not found with id: " + id)`.
-- Return `UserLookupDto.fromEntity(user)`.
-
-**Inject:** `LeetCodeSyncService` (via constructor injection â€” add to `@RequiredArgsConstructor` field list).
-
----
-
-### 5.5 Update `UserRepository.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/user/repository/UserRepository.java`
-
-Add query method:
-- `List<User> findByLeetcodeHandleIsNotNull()` â€” used by the bulk LeetCode sync to iterate only users who have a LeetCode handle set.
-
-Also add:
-- `boolean existsByLeetcodeHandle(String handle)` â€” for the uniqueness check in `UserService.updateProfile`.
-
----
-
-### 5.6 Create LeetCode Sync Package
+### 6.3 LeetCode Sync Package [NEW]
 
 **Package:** `com.cpclub.backend.leetcode`
 
-#### `leetcode/dto/LeetCodeGraphQLResponse.java`
-A nested record structure that maps the JSON response from the LeetCode GraphQL API exactly.
+#### `LeetCodeGraphQLResponse.java`
+A nested record matching the LeetCode GraphQL API JSON shape:
+`{ data: { userContestRanking: { rating: Double } } }`
+All levels null-safe.
 
-The API response shape is:
-```
-{ "data": { "userContestRanking": { "rating": 1523.45 } } }
-```
-If the user has never participated in a contest, `userContestRanking` is `null`.
+#### `LeetCodeSyncService.java`
+**Injected:** `UserRepository`, `RestTemplate`, shared `RateLimiter` bean from `AppConfig`.
 
-The DTO has three nested records: outer `LeetCodeGraphQLResponse` containing `data`, which contains `userContestRanking`, which contains `rating` as a `Double`. Null-safe at every level.
+Methods:
+- `syncSingleUser(User)` â€” JIT sync on handle save. Guards: null handle â†’ skip. Acquires rate limiter permit. POSTs GraphQL query. Parses response. If `userContestRanking` is null (user never did a contest), sets rating to `0`. On any HTTP error: logs warning, does NOT throw â€” fail-silently so profile saving still works.
+- `syncAllUsers()` â€” bulk sync called by cron. Iterates all users with non-null `leetcodeHandle`. Same logic per user. Logs total updated count.
 
-#### `leetcode/service/LeetCodeSyncService.java`
-
-**Dependencies injected (constructor):** `UserRepository`, `RestTemplate`, `RateLimiter codeforcesRateLimiter` (the shared singleton bean from `AppConfig`).
-
-**Methods:**
-
-`syncSingleUser(User user)` â€” `@Transactional`
-- Guard: if `user.getLeetcodeHandle()` is null or blank, return immediately without any HTTP call.
-- Build GraphQL request body with the handle as the variable.
-- Acquire one permit from the shared `RateLimiter` â€” blocks until a permit is available. This ensures LeetCode calls and Codeforces calls share the 0.5 req/sec gate.
-- POST to `https://leetcode.com/graphql` with `Content-Type: application/json`.
-- Parse response via `LeetCodeGraphQLResponse`.
-- If `rating` is non-null: set `user.setLeetcodeRating((int) Math.round(rating))`, call `userRepository.save(user)`.
-- If any exception occurs: log a warning with handle and message. Do NOT rethrow. Fail silently so a LeetCode outage never breaks profile saving.
-
-`syncAllUsers()` â€” called by the cron
-- Fetch all users via `userRepository.findByLeetcodeHandleIsNotNull()`.
-- For each user, call the internal fetch logic (same as `syncSingleUser` but in a loop).
-- Log total updated count at the end.
+#### `CodeforcesSyncService.java` [MODIFY]
+After the existing `syncCodeforcesRatings()` cron method finishes, add a call to `leetCodeSyncService.syncAllUsers()`. Inject `LeetCodeSyncService` via constructor.
 
 ---
 
-### 5.7 Update `CodeforcesSyncService.java`
-
-**File:** `backend/src/main/java/com/cpclub/backend/codeforces/service/CodeforcesSyncService.java`
-
-The existing `@Scheduled(cron = "0 0 */6 * * *")` method `syncCodeforcesRatings()` currently only syncs Codeforces. After it finishes, add a call to `leetCodeSyncService.syncAllUsers()`.
-
-Inject `LeetCodeSyncService` via constructor injection.
-
----
-
-### 5.8 Create Event Package
+### 6.4 Event Package [NEW]
 
 **Package:** `com.cpclub.backend.event`
 
-#### `event/entity/Event.java`
-JPA entity for the `events` table. Fields mirror Migration V3 exactly. Uses `@CreationTimestamp` and `@UpdateTimestamp` for audit fields. `createdBy` is a `@ManyToOne(fetch = LAZY)` to `User`.
+#### Entities
+- `Event.java` â€” mirrors `events` table. Has `@Enumerated(EnumType.STRING) EventStatus status`. `createdBy` is `@ManyToOne(fetch=LAZY)` to User.
+- `EventAttendee.java` â€” mirrors `event_attendees`. Three `@ManyToOne` links: event, user (student), addedBy (admin). `@UniqueConstraint` on `(event_id, user_id)`.
+- `EventPhoto.java` â€” mirrors `event_photos`. `@ManyToOne` to Event. Fields: imageUrl, caption, uploadedBy, uploadedAt.
 
-#### `event/entity/EventAttendee.java`
-JPA entity for `event_attendees`. Three `@ManyToOne(fetch = LAZY)` relationships: to `Event` (event), `User` (student being added), `User` (admin who added). `@UniqueConstraint` on `(event_id, user_id)` mirroring the DB constraint.
+#### Repositories
+- `EventRepository` â€” `findByStatusOrderByEventDateAsc(EventStatus)`, `findAllByOrderByEventDateDesc()` (admin view), `findByStatusInOrderByEventDateDesc(List<EventStatus>)`.
+- `EventAttendeeRepository` â€” `findByEventIdOrderByAddedAtAsc(Long)`, `existsByEventIdAndUserId(Long, Long)`, `findByEventIdAndUserId(Long, Long)`.
+- `EventPhotoRepository` â€” `findByEventIdOrderByUploadedAtAsc(Long)`.
 
-#### `event/repository/EventRepository.java`
-Extends `JpaRepository<Event, Long>`. Query method:
-- `List<Event> findByIsActiveTrueOrderByEventDateAsc()` â€” public event listing
+#### DTOs
+- `EventCreateRequest` â€” `title (@NotBlank)`, `description`, `eventDate (@NotNull)`, `location (@NotBlank)`, `coverImageUrl`.
+- `EventResponseDto` â€” `id`, `title`, `description`, `eventDate`, `location`, `status`, `coverImageUrl`, `createdByName`, `createdAt`. Static `fromEntity(Event)`.
+- `EventDetailDto` â€” extends `EventResponseDto` and adds `List<EventPhotoDto>` photos and `Integer attendeeCount`. Used for the public event detail page.
+- `AddAttendeeRequest` â€” single `userId (@NotNull Long)`.
+- `EventAttendeeDto` â€” 14 fields: userId, name, email, phoneNumber, avatarUrl, codeforcesHandle, cfRating, leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl, linkedinUrl, addedAt, clubRole. Static `fromEntity(EventAttendee)`.
+- `EventPhotoDto` â€” `id`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity(EventPhoto)`.
+- `AddEventPhotoRequest` â€” `imageUrl (@NotBlank @Size(max=512))`, `caption`.
 
-#### `event/repository/EventAttendeeRepository.java`
-Extends `JpaRepository<EventAttendee, Long>`. Query methods:
-- `List<EventAttendee> findByEventIdOrderByAddedAtAsc(Long eventId)` â€” attendee list for a specific event
-- `boolean existsByEventIdAndUserId(Long eventId, Long userId)` â€” duplicate check
-- `Optional<EventAttendee> findByEventIdAndUserId(Long eventId, Long userId)` â€” for removal
+#### `EventService.java`
+Methods and their exact behavior:
 
-#### `event/dto/EventCreateRequest.java`
-Validated request body for create and update.
+`createEvent(EventCreateRequest, String adminEmail)` â†’ `EventResponseDto`
+- Loads admin by email. Creates Event with status=UPCOMING. Saves. Returns DTO.
 
-| Field | Validation |
-|---|---|
-| `title` | `@NotBlank @Size(max=255)` |
-| `description` | no validation, optional |
-| `eventDate` | `@NotNull @Future` â€” must be in the future |
-| `location` | `@NotBlank @Size(max=255)` |
+`listUpcomingEvents()` â†’ `List<EventResponseDto>`
+- Fetches events with `status = UPCOMING`, ordered by `eventDate ASC`.
 
-#### `event/dto/EventResponseDto.java`
-What the API returns for a single event. Fields: `id`, `title`, `description`, `eventDate`, `location`, `isActive`, `createdByName` (just the admin's name string, not the full User object), `createdAt`. Has a static `fromEntity(Event)` factory method.
+`listCompletedEvents()` â†’ `List<EventResponseDto>`
+- Fetches events with `status = COMPLETED`, ordered by `eventDate DESC`.
 
-#### `event/dto/AddAttendeeRequest.java`
-Tiny request body: `userId` (`@NotNull Long`). That's all.
+`getEventDetail(Long id)` â†’ `EventDetailDto`
+- Loads event (404 if not found). Loads its photos. Gets attendee count. Returns combined DTO.
 
-#### `event/dto/EventAttendeeDto.java`
-The full row shown in the admin attendee table. Fields:
+`updateEvent(Long id, EventCreateRequest)` â†’ `EventResponseDto`
+- Loads event. Throws 404 if not found. Updates fields. Saves. Returns DTO.
 
-| Field | Type | Where it comes from |
-|---|---|---|
-| `userId` | Long | `attendee.getUser().getId()` |
-| `name` | String | `attendee.getUser().getName()` |
-| `email` | String | `attendee.getUser().getEmail()` |
-| `phoneNumber` | String | `attendee.getUser().getPhoneNumber()` |
-| `avatarUrl` | String | `attendee.getUser().getAvatarUrl()` |
-| `codeforcesHandle` | String | from user |
-| `cfRating` | Integer | `user.getRating()` |
-| `leetcodeHandle` | String | from user |
-| `leetcodeRating` | Integer | from user |
-| `codechefUrl` | String | from user |
-| `atcoderUrl` | String | from user |
-| `githubUrl` | String | from user |
-| `linkedinUrl` | String | from user |
-| `addedAt` | LocalDateTime | `attendee.getAddedAt()` |
+`markEventCompleted(Long id)` â†’ `EventResponseDto`
+- Loads event. Sets `status = COMPLETED`. Saves. Returns DTO.
 
-Has a static `fromEntity(EventAttendee)` factory method. Eager-loads user via the entity relationship â€” no extra query.
-
-#### `event/service/EventService.java`
-**Dependencies injected:** `EventRepository`, `EventAttendeeRepository`, `UserRepository`.
-
-**Methods and their exact behavior:**
-
-`createEvent(EventCreateRequest req, String adminEmail)` â†’ `EventResponseDto`
-- Load admin user by email. Throw `ResourceNotFoundException` if not found.
-- Build and save `Event` entity. Return `EventResponseDto.fromEntity(saved)`.
-
-`listActiveEvents()` â†’ `List<EventResponseDto>`
-- Calls `eventRepository.findByIsActiveTrueOrderByEventDateAsc()`.
-- Maps each to `EventResponseDto`. Returns the list.
-
-`getEventById(Long id)` â†’ `EventResponseDto`
-- `eventRepository.findById(id).orElseThrow(() â†’ ResourceNotFoundException)`.
-- Returns `EventResponseDto.fromEntity(event)`.
-
-`updateEvent(Long id, EventCreateRequest req)` â†’ `EventResponseDto`
-- Load event. Throw `ResourceNotFoundException` if not found.
-- Update fields from request. Save. Return DTO.
-
-`deactivateEvent(Long id)`
-- Load event. Set `isActive = false`. Save. Do NOT delete â€” preserves attendee history.
+`cancelEvent(Long id)` â†’ `EventResponseDto`
+- Loads event. Sets `status = CANCELLED`. Saves. Returns DTO.
 
 `addAttendee(Long eventId, Long userId, String adminEmail)` â†’ `EventAttendeeDto`
-**This method has 4 guard clauses, in this exact order:**
-1. Load event by `eventId`. Throw `ResourceNotFoundException("Event not found")` if missing.
-2. Load user by `userId`. Throw `ResourceNotFoundException("Student not found with id: " + userId)` if missing.
-3. Check `user.getPhoneNumber()` is not null and not blank. Throw `BadRequestException("Student has not added a phone number to their profile. Ask them to update it first.")` if missing.
-4. Call `existsByEventIdAndUserId`. Throw `BadRequestException("This student is already registered for this event.")` if true.
-5. Load admin by `adminEmail`. Build and save `EventAttendee`. Return `EventAttendeeDto.fromEntity(saved)`.
+Guard clauses (in this exact order):
+1. Load event. Throw `ResourceNotFoundException` if missing.
+2. Check event status is `UPCOMING`. Throw `BadRequestException("Cannot add attendees to a completed or cancelled event.")` if not.
+3. Load user. Throw `ResourceNotFoundException("Student not found")` if missing.
+4. Check `user.phoneNumber` not null/blank. Throw `BadRequestException("Student has no phone number on their profile.")` if missing.
+5. Check `existsByEventIdAndUserId`. Throw `BadRequestException("Student is already registered.")` if true.
+6. Load admin. Save `EventAttendee`. Return DTO.
 
-`removeAttendee(Long eventId, Long userId)`
-- Find by `eventId` and `userId`. Throw `ResourceNotFoundException("Attendee not found")` if missing. Delete.
+`removeAttendee(Long eventId, Long userId)` â€” finds attendee, deletes. Throws 404 if not found.
 
-`getAttendees(Long eventId)` â†’ `List<EventAttendeeDto>`
-- Load event first (throws 404 if not found, prevents "silent empty list for wrong ID" bug).
-- Call `findByEventIdOrderByAddedAtAsc`. Map each to `EventAttendeeDto`. Return list.
+`getAttendees(Long eventId)` â†’ `List<EventAttendeeDto>` â€” loads event first (404 guard), then fetches attendees.
 
-#### `event/service/EventExportService.java`
-**Dependency:** Apache POI XSSF (added to `pom.xml`).
+`addEventPhoto(Long eventId, AddEventPhotoRequest, String adminEmail)` â†’ `EventPhotoDto`
+- Loads event. Creates `EventPhoto` with imageUrl, caption, uploadedBy admin. Saves. Returns DTO.
 
-Method: `exportToExcel(Long eventId, List<EventAttendeeDto> attendees)` â†’ `byte[]`
+`deleteEventPhoto(Long photoId)` â€” finds photo, deletes. Throws 404 if not found.
 
-**What it builds:**
-- Sheet name: `"Attendees"`
-- Row 0 (header): Bold, 14 columns: ID, Name, Email, Phone Number, Avatar URL, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef URL, AtCoder URL, GitHub, LinkedIn, Added At
-- Row 1+: One row per `EventAttendeeDto`, all fields in matching column order
-- All columns auto-sized after data is written
-- Writes to `ByteArrayOutputStream`, returns `byte[]`
-- If anything goes wrong during generation: throw `RuntimeException("Failed to generate Excel export")` â€” controller will return 500
+`getEventPhotos(Long eventId)` â†’ `List<EventPhotoDto>` â€” loads event (404 guard), fetches photos ordered by upload time.
 
-#### `event/controller/EventController.java`
-**Dependencies injected:** `EventService`, `EventExportService`.  
-**Base path:** `/api/events`
+#### `EventExportService.java`
+Uses Apache POI XSSF. Method: `exportToExcel(List<EventAttendeeDto>)` â†’ `byte[]`.
 
-All endpoints, with exact auth and response format:
+Excel columns (14): ID, Name, Email, Phone Number, Club Role, Avatar URL, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef URL, AtCoder URL, GitHub, LinkedIn, Added At.
+- Row 0: bold headers.
+- Row 1+: one row per attendee.
+- All columns auto-sized.
+- Returns `byte[]` from `ByteArrayOutputStream`.
 
-| Method | Path | Auth | Request Body | Response |
-|---|---|---|---|---|
-| `POST` | `/api/events` | `hasRole('ADMIN')` | `EventCreateRequest` | `201 Created` + `ApiResponse<EventResponseDto>` |
-| `GET` | `/api/events` | Public | â€” | `200 OK` + `ApiResponse<List<EventResponseDto>>` |
-| `GET` | `/api/events/{id}` | Public | â€” | `200 OK` + `ApiResponse<EventResponseDto>` |
-| `PUT` | `/api/events/{id}` | `hasRole('ADMIN')` | `EventCreateRequest` | `200 OK` + `ApiResponse<EventResponseDto>` |
-| `DELETE` | `/api/events/{id}` | `hasRole('ADMIN')` | â€” | `200 OK` + `ApiResponse<Void>` |
-| `POST` | `/api/events/{id}/attendees` | `hasRole('ADMIN')` | `AddAttendeeRequest` | `201 Created` + `ApiResponse<EventAttendeeDto>` |
-| `DELETE` | `/api/events/{id}/attendees/{uid}` | `hasRole('ADMIN')` | â€” | `200 OK` + `ApiResponse<Void>` |
-| `GET` | `/api/events/{id}/attendees` | `hasRole('ADMIN')` | â€” | `200 OK` + `ApiResponse<List<EventAttendeeDto>>` |
-| `GET` | `/api/events/{id}/attendees/export` | `hasRole('ADMIN')` | â€” | `200 OK` + `byte[]` with `Content-Disposition: attachment` header |
+#### `EventController.java`
+Base path: `/api/events`
 
-The Excel download endpoint sets two response headers:
-- `Content-Disposition: attachment; filename="attendees_<eventTitle>.xlsx"`
-- `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/events` | Admin | Create event |
+| GET | `/api/events/upcoming` | Public | List upcoming events |
+| GET | `/api/events/completed` | Public | List completed events |
+| GET | `/api/events` | Admin | List ALL events (admin view) |
+| GET | `/api/events/{id}` | Public | Single event detail with photos + attendee count |
+| PUT | `/api/events/{id}` | Admin | Update event |
+| PUT | `/api/events/{id}/complete` | Admin | Mark event as completed |
+| PUT | `/api/events/{id}/cancel` | Admin | Cancel event |
+| POST | `/api/events/{id}/attendees` | Admin | Add attendee `{ userId }` |
+| DELETE | `/api/events/{id}/attendees/{uid}` | Admin | Remove attendee |
+| GET | `/api/events/{id}/attendees` | Admin | Attendee list (JSON) |
+| GET | `/api/events/{id}/attendees/export` | Admin | Download `.xlsx` |
+| POST | `/api/events/{id}/photos` | Admin | Add photo `{ imageUrl, caption }` |
+| DELETE | `/api/events/photos/{photoId}` | Admin | Delete a photo |
+| GET | `/api/events/{id}/photos` | Public | Get all photos for an event |
 
 ---
 
-### 5.9 Create Snapshot Package
+### 6.5 Gallery Package [NEW]
+
+**Package:** `com.cpclub.backend.gallery`
+
+#### Entities
+- `MemberGalleryPhoto.java` â€” mirrors `member_gallery` table. Fields: batchYear (Integer), imageUrl, caption, uploadedBy (ManyToOne to User), uploadedAt.
+
+#### Repository
+- `MemberGalleryRepository` â€” `findByBatchYearOrderByUploadedAtAsc(Integer)`, `findDistinctBatchYearsOrderByDesc()` (returns `List<Integer>` of all unique years in the DB, for the frontend filter dropdown).
+
+#### DTOs
+- `MemberGalleryPhotoDto` â€” `id`, `batchYear`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity`.
+- `AddMemberPhotoRequest` â€” `batchYear (@NotNull @Min(2000) @Max(2100))`, `imageUrl (@NotBlank)`, `caption`.
+
+#### `MemberGalleryService.java`
+- `addPhoto(AddMemberPhotoRequest, String adminEmail)` â†’ `MemberGalleryPhotoDto`
+- `deletePhoto(Long id)` â€” 404 if not found
+- `getPhotosByBatch(Integer batchYear)` â†’ `List<MemberGalleryPhotoDto>`
+- `getAvailableBatchYears()` â†’ `List<Integer>` â€” for frontend dropdown
+
+#### `GalleryController.java`
+Base path: `/api/gallery/members`
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/gallery/members` | Admin | Upload a member gallery photo |
+| DELETE | `/api/gallery/members/{id}` | Admin | Delete a photo |
+| GET | `/api/gallery/members?batch={year}` | Public | Photos for a specific batch year |
+| GET | `/api/gallery/members/batches` | Public | List of all available batch years |
+
+---
+
+### 6.6 Snapshot Package [NEW]
 
 **Package:** `com.cpclub.backend.snapshot`
 
-#### `snapshot/entity/WeeklySnapshot.java`
-JPA entity for `weekly_snapshots`. Fields: id, user (ManyToOne to User), platform (String), rating (Integer), recordedAt (LocalDateTime with `@CreationTimestamp`).
+- `WeeklySnapshot.java` â€” JPA entity.
+- `WeeklySnapshotRepository.java` â€” `findByUserIdAndPlatformOrderByRecordedAtAsc(Long, String)`.
+- `SnapshotService.java` â€” `@Scheduled(cron = "0 0 0 * * MON")`. Records current CF and LeetCode ratings for ALL users who have them into `weekly_snapshots`. Does NOT re-fetch from APIs â€” snapshots the already-fresh DB values.
+- `SnapshotController.java` â€” `GET /api/snapshots/{userId}/codeforces` and `GET /api/snapshots/{userId}/leetcode`. Returns `List<{date, rating}>`. Auth: `isAuthenticated()`.
 
-#### `snapshot/repository/WeeklySnapshotRepository.java`
-Method: `List<WeeklySnapshot> findByUserIdAndPlatformOrderByRecordedAtAsc(Long userId, String platform)`
+---
 
-#### `snapshot/service/SnapshotService.java`
-**Scheduled:** `@Scheduled(cron = "0 0 0 * * MON")` â€” fires every Monday at midnight server time.
+### 6.7 `pom.xml` Update
+Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
-**Logic:**
-- Fetch all users via `userRepository.findAll()`.
-- For each user:
-  - If `user.getRating() != null`, save a `WeeklySnapshot` with platform `"CODEFORCES"` and that rating.
-  - If `user.getLeetcodeRating() != null`, save a `WeeklySnapshot` with platform `"LEETCODE"` and that rating.
-- Log count of snapshots written.
+---
 
-**Important:** This does NOT re-fetch ratings from Codeforces/LeetCode â€” it just snapshots whatever is already in the DB at that moment. The 6-hour cron keeps the DB fresh; the Monday snapshot job just records the week's state.
+## Section 7 â€” Stage 2A: Frontend UI/UX
+**Owner: Member 1**
+**PR: `phase2/frontend-ui`**
+**Estimated time: 3 days**
 
-#### `snapshot/controller/SnapshotController.java`
-**Base path:** `/api/snapshots`  
-**Auth:** Both endpoints require `isAuthenticated()`
+### Files & Responsibilities
 
-| Method | Path | Returns |
+| File | Action | What it does |
 |---|---|---|
-| `GET` | `/api/snapshots/{userId}/codeforces` | `List<{ date: LocalDateTime, rating: Integer }>` |
-| `GET` | `/api/snapshots/{userId}/leetcode` | `List<{ date: LocalDateTime, rating: Integer }>` |
-
-Returns a simple list of `{date, rating}` pairs. The frontend maps these to the recharts `data` prop directly.
-
----
-
-### 5.10 Update `pom.xml`
-
-Add one new dependency for Excel generation:
-- Group: `org.apache.poi`, Artifact: `poi-ooxml`, Version: `5.3.0`
-
----
-
-## Section 6 â€” Stage 2A: Frontend UI/UX
-**Owner: Member 1**  
-**PR: `phase2/frontend-ui`**  
-**Estimated time: 2â€“3 days**  
-**Depends on: Stage 0 merged (to know the data shapes)**
+| `components/site/event-card.tsx` | NEW | Card for a single event. Shows: cover image (if any), title, date formatted as "Sat 15 Nov Â· 3:00 PM", location, status badge (green=Upcoming, grey=Completed, red=Cancelled). Entire card is a `<Link href="/events/{id}">`. |
+| `components/site/event-photo-grid.tsx` | NEW | Responsive photo grid for event gallery. Props: `photos: EventPhotoDto[]`. Lightbox on click. Shows caption below each photo. |
+| `components/site/member-gallery-grid.tsx` | NEW | Same photo grid for batch photos. Props: `photos: MemberGalleryPhotoDto[]`. |
+| `components/ui/data-table.tsx` | NEW | Generic reusable table. Props: `columns`, `data`, `isLoading`. Shows skeleton on load, "No records" if empty. |
+| `components/ui/club-role-badge.tsx` | NEW | Small colored badge component for displaying club roles. Maps `clubRole` string to: Convenor=gold, Core=blue, Batch Rep=green, Student=grey, Ex-*=outline. |
+| `components/site/admin-tabs.tsx` | NEW | Tab nav shell with tabs: Members, Events, Galleries. |
+| `app/events/page.tsx` | MODIFY | Replace hardcoded placeholder. Server Component. Fetches `GET /api/events/upcoming`. Maps to `<EventCard>`. Shows "No upcoming events" if empty. |
+| `app/events/[id]/page.tsx` | NEW | Event detail page. Shows: cover image, title, date, location, description, photo gallery grid, attendee count. Fetches `GET /api/events/{id}`. |
+| `app/gallery/page.tsx` | NEW | Member gallery page. Shows batch year filter dropdown. Fetches `GET /api/gallery/members/batches` for years. Fetches photos by selected year. |
+| `app/(dashboard)/admin/page.tsx` | CREATE SHELL | Admin dashboard shell with the tab layout. M3 fills the data. |
 
 ---
+
+## Section 8 â€” Stage 2B: Frontend Auth & State
+**Owner: Member 2**
+**PR: `phase2/frontend-auth`**
+**Estimated time: 2 days**
 
 ### Files & Responsibilities
 
-#### `frontend/src/components/site/event-card.tsx` [NEW]
-Reusable card component for displaying a single event.
-
-**Props:** `id`, `title`, `description`, `eventDate`, `location`, `isActive`
-
-**Renders:**
-- Title in large bold text
-- Date formatted as `"Sat, 15 Nov 2025 Â· 3:00 PM"` using `date-fns format()`
-- Location with a map pin icon
-- Badge: green "Upcoming" if `eventDate` is in the future AND `isActive` is true; grey "Past" otherwise
-- The whole card is a `<Link href={/events/${id}}>` so clicking navigates to the event detail
-
-**Styling:** Follows existing glass-panel + rounded-panel design language from Phase 1.
-
-#### `frontend/src/components/ui/data-table.tsx` [NEW]
-Generic reusable table component used in Admin Members tab and Admin Event Attendees page.
-
-**Props:** `columns: ColumnDef[]`, `data: T[]`, `isLoading: boolean`, `emptyMessage?: string`
-
-**Behavior:**
-- When `isLoading` is true: renders a skeleton with 5 animated placeholder rows
-- When `data` is empty: renders `emptyMessage` (default: "No records found")
-- Renders responsive table with zebra-stripe rows
-- Columns are defined externally by the parent â€” the component is pure presentational
-
-#### `frontend/src/components/site/admin-tabs.tsx` [NEW]
-Tab navigation shell for the Admin Dashboard.
-
-**Props:** `activeTab: 'members' | 'events'`, `onTabChange: (tab) => void`
-
-Renders two tab buttons. Visual style: underline indicator on active tab. Does not fetch data â€” purely a nav component.
-
-#### `frontend/src/app/events/page.tsx` [MODIFY]
-Currently renders hardcoded placeholder content. Replace with:
-- Server Component (`async` function, no `"use client"`)
-- Fetch `GET /api/events` directly on the server using `fetch()` with `cache: 'no-store'` (always fresh)
-- Map response to `<EventCard>` components
-- If empty array: show "No upcoming events scheduled. Check back soon." message
-- Keep existing page title, eyebrow, and section layout from Phase 1
-
----
-
-## Section 7 â€” Stage 2B: Frontend Auth & State
-**Owner: Member 2**  
-**PR: `phase2/frontend-auth`**  
-**Estimated time: 2 days**  
-**Depends on: Stage 0 merged**
-
----
-
-### Files & Responsibilities
-
-#### `frontend/src/store/auth.ts` [MODIFY]
-The `User` interface currently has: `id`, `email`, `fullName`, `role`, `codeforcesHandle`.
-
-Add to the interface:
-- `leetcodeHandle: string | null`
-- `phoneNumber: string | null`
-- `avatarUrl: string | null`
-
-The `mapAuthResponseToUser()` function must also map these from the `AuthResponse` (but the login endpoint doesn't return them â€” that's fine. They default to `null` and are populated when `GET /api/users/profile` is called on the profile page).
-
-#### `frontend/src/types/api.ts` [MODIFY]
-Add new TypeScript types matching the backend DTOs:
-
-`Event` type: `id`, `title`, `description`, `eventDate`, `location`, `isActive`, `createdByName`, `createdAt`
-
-`EventAttendee` type: all 14 fields from `EventAttendeeDto`
-
-`UserLookup` type: all 13 fields from `UserLookupDto`
-
-Update the existing `Profile` type to add all 8 new user fields.
-
-#### `frontend/src/lib/services/events.ts` [NEW]
-All API calls for events and admin operations. Every function uses `apiClient` (Axios instance with auth interceptor).
-
-| Function | HTTP call | Auth needed |
+| File | Action | What it changes |
 |---|---|---|
-| `listEvents()` | `GET /api/events` | No |
-| `getEvent(id)` | `GET /api/events/{id}` | No |
-| `createEvent(data)` | `POST /api/events` | Yes (Admin) |
-| `updateEvent(id, data)` | `PUT /api/events/{id}` | Yes (Admin) |
-| `deactivateEvent(id)` | `DELETE /api/events/{id}` | Yes (Admin) |
-| `addAttendee(eventId, userId)` | `POST /api/events/{eventId}/attendees` | Yes (Admin) |
-| `removeAttendee(eventId, userId)` | `DELETE /api/events/{eventId}/attendees/{userId}` | Yes (Admin) |
-| `getAttendees(eventId)` | `GET /api/events/{eventId}/attendees` | Yes (Admin) |
-| `exportAttendees(eventId)` | `GET /api/events/{eventId}/attendees/export` â€” `responseType: 'blob'` | Yes (Admin) |
-| `lookupUser(id)` | `GET /api/users/{id}/lookup` | Yes (Admin) |
-
-For `exportAttendees`, the response type must be `'blob'` so Axios treats the binary response correctly.
-
-#### `frontend/src/lib/services/dashboard.ts` [MODIFY]
-The `mapUserToProfile()` function currently maps only the Phase 1 fields. Add mappings for all 8 new fields: `avatarUrl`, `phoneNumber`, `leetcodeHandle`, `leetcodeRating`, `codechefUrl`, `atcoderUrl`, `githubUrl`, `linkedinUrl`. Use `?? null` for fallback so missing fields default to `null` not `undefined`.
+| `store/auth.ts` | MODIFY | Add `clubRole: string \| null`, `batchYear: number \| null`, `leetcodeHandle: string \| null`, `phoneNumber: string \| null`, `avatarUrl: string \| null` to the `User` interface. |
+| `types/api.ts` | MODIFY | Add TypeScript types: `Event`, `EventDetail`, `EventAttendee`, `EventPhoto`, `UserLookup`, `MemberGalleryPhoto`. Update existing `Profile` type with all new fields. Add `ClubRole` string union type. |
+| `lib/services/events.ts` | NEW | All event API calls: listUpcoming, listCompleted, getAllAdmin, getEventDetail, createEvent, updateEvent, markCompleted, cancelEvent, addAttendee, removeAttendee, getAttendees, exportAttendees (responseType: blob), addEventPhoto, deleteEventPhoto, getEventPhotos, lookupUser. |
+| `lib/services/gallery.ts` | NEW | `addMemberPhoto(data)`, `deleteMemberPhoto(id)`, `getPhotosByBatch(year)`, `getAvailableBatchYears()`. |
+| `lib/services/dashboard.ts` | MODIFY | Update `mapUserToProfile()` to map all 8 new fields plus `clubRole` and `batchYear`. Use `?? null` fallback for all. |
+| `lib/services/leaderboard.ts` | MODIFY | Update the leaderboard API call to pass `?platform=` and `?filter=` params. Add `clubRole` to the leaderboard entry type. |
 
 ---
 
-## Section 8 â€” Stage 2C: Frontend Dashboards & Data
-**Owner: Member 3**  
-**PR: `phase2/frontend-dashboards`**  
-**Estimated time: 4â€“5 days**  
-**Depends on: Member 1 AND Member 2 PRs merged into `feature/phase-2` first**
-
----
+## Section 9 â€” Stage 2C: Frontend Dashboards & Data
+**Owner: Member 3**
+**PR: `phase2/frontend-dashboards`**
+**Depends on: M1 + M2 PRs merged**
+**Estimated time: 5 days**
 
 ### Files & Responsibilities
 
-#### `frontend/src/components/site/profile-dashboard.tsx` [MAJOR MODIFY]
+#### `components/site/profile-dashboard.tsx` [MAJOR MODIFY]
 
 **Change 1 â€” Avatar:**
-- If `profile.avatarUrl` is set: render `<Image src={profile.avatarUrl} .../>` with `rounded-full` and the CF rank border color.
-- If owner and no avatar: show the existing `<User>` icon placeholder PLUS a small "Upload photo" button beneath it.
-- Clicking "Upload photo": opens the Cloudinary Upload Widget (loaded via `<Script src="https://upload-widget.cloudinary.com/global/all.js" />`). On success callback, extract `result.info.secure_url` and call `dashboardService.updateProfile({ avatarUrl: secure_url })`. On success, call `loadProfile()` to refresh.
+If `profile.avatarUrl` exists â†’ render image with CF rank border. If owner and no avatar â†’ show placeholder icon + "Upload photo" button. Click opens Cloudinary Upload Widget (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`). On success â†’ `dashboardService.updateProfile({ avatarUrl: result.info.secure_url })` â†’ `loadProfile()`.
 
-**Change 2 â€” Platform links in header:**
-Below the CF handle line, add a horizontal row of icon links (only shown if the URL is set):
-- CodeChef icon â†’ `profile.codechefUrl`
-- AtCoder icon â†’ `profile.atcoderUrl`
-- GitHub icon â†’ `profile.githubUrl`
-- LinkedIn icon â†’ `profile.linkedinUrl`
+**Change 2 â€” Club Role & Batch Year badge:**
+Below the member's name in the profile header, show their `<ClubRoleBadge clubRole={profile.clubRole} />` (the M1 component). If no club role, show nothing.
 
-Each is an `<a href="..." target="_blank" rel="noopener noreferrer">` with the platform's icon from Lucide or a simple SVG.
+**Change 3 â€” Platform links in header:**
+Row of icon links below CF handle. Only rendered if the URL is set: CodeChef, AtCoder, GitHub, LinkedIn. Each is `<a href="..." target="_blank" rel="noopener noreferrer">`.
 
-**Change 3 â€” Edit Profile panel:**
-The existing inline CF handle edit form gets replaced by a full "Edit Profile" drawer/panel (visible to owner only). Fields:
-- Name (`text`, `required`)
-- Phone Number (`tel`, `required`) â€” shown masked as `â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢` to non-owners
-- Codeforces Handle (`text`)
-- LeetCode Handle (`text`)
-- CodeChef URL (`url`)
-- AtCoder URL (`url`)
-- GitHub URL (`url`)
-- LinkedIn URL (`url`)
+**Change 4 â€” Edit Profile panel:**
+Replace the inline CF handle edit form with a full "Edit Profile" panel (owner-only). Fields: Name (required), Phone Number (required â€” cannot save without it), Codeforces Handle, LeetCode Handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked (`â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢`) to visitors. On save: `PUT /api/users/profile`. On success: refresh. On error: show inline error.
 
-On "Save": call `PUT /api/users/profile`. On success: call `loadProfile()` to refresh. On error: show error message inline.
-
-**Change 4 â€” Rating Charts:**
-Replace the "Coming Soon" locked overlay on the rating chart section. Add two charts:
-- **CF Chart:** Fetch `GET /api/snapshots/{userId}/codeforces`. If fewer than 2 data points, show "Not enough data yet â€” chart appears after the first weekly snapshot is recorded." Otherwise render `<LineChart>` from `recharts` with date on X-axis, rating on Y-axis.
-- **LeetCode Chart:** Same pattern for `/api/snapshots/{userId}/leetcode`.
-
-Use `recharts` (already in `package.json`). Reuse the existing chart styling (`stroke="var(--primary)"`, `CartesianGrid strokeDasharray="3 3"` etc.) to match the Phase 1 CF rating history chart.
+**Change 5 â€” Rating charts:**
+Replace "Coming Soon" overlay with live charts using `recharts`. CF chart: `GET /api/snapshots/{userId}/codeforces`. LeetCode chart: `GET /api/snapshots/{userId}/leetcode`. If < 2 points: "Not enough data yet." Reuse Phase 1 chart styling.
 
 ---
 
-#### `frontend/src/app/(dashboard)/admin/page.tsx` [NEW]
-
-**Route guard:** At the top of the component, check `user?.role !== 'ROLE_ADMIN'`. If not admin, use `router.replace('/')` and return null. Do NOT rely only on the backend auth â€” protect the page client-side too.
+#### `app/(dashboard)/admin/page.tsx` [FILL IN]
 
 **Tab 1 â€” Members:**
-- On mount: fetch `GET /api/users/all`.
-- Renders `<DataTable>` (from M1) with these columns:
+Fetches `GET /api/users/all`. Renders `<DataTable>` with columns:
 
-| Column | Value | Action |
+| Column | Value | Actions |
 |---|---|---|
+| Avatar | small rounded image | â€” |
 | Name | `user.name` | â€” |
 | Email | `user.email` | â€” |
-| Phone | `user.phoneNumber ?? 'â€”'` | â€” |
-| CF Handle | `user.codeforcesHandle ?? 'â€”'` | â€” |
-| CF Rating | `user.rating ?? 'â€”'` | â€” |
-| LeetCode Handle | `user.leetcodeHandle ?? 'â€”'` | â€” |
-| LeetCode Rating | `user.leetcodeRating ?? 'â€”'` | â€” |
-| Role | badge: Admin / User | â€” |
-| Actions | "Promote" / "Demote" + "Delete" | See below |
+| Phone | `user.phoneNumber \|\| 'â€”'` | â€” |
+| CF Handle + Rating | â€” | â€” |
+| LeetCode Handle + Rating | â€” | â€” |
+| Club Role | `<ClubRoleBadge />` | "Change Role" dropdown |
+| Batch Year | `user.batchYear \|\| 'â€”'` | â€” |
+| Platform Role | Admin / User badge | "Promote" / "Demote" button |
+| Actions | â€” | "Delete" button with confirmation dialog |
 
-"Promote to Admin" button: calls `PUT /api/users/{id}/role` with `{ role: 'ROLE_ADMIN' }`. Refreshes list on success.
-"Demote to User" button: same but `ROLE_USER`.
-"Delete" button: shows a confirmation dialog. On confirm: calls `DELETE /api/users/{id}`. Refreshes list on success.
+"Change Club Role" â€” inline dropdown with all `ClubRole` values. On select: calls `PUT /api/users/{id}/club-role`. Refreshes table.
+"Promote/Demote" â€” calls `PUT /api/users/{id}/role`. Refreshes table.
+"Delete" â€” confirmation dialog. Calls `DELETE /api/users/{id}`. Refreshes table.
 
 **Tab 2 â€” Events:**
-- On mount: fetch `GET /api/events`.
-- Top: "Create New Event" form with fields: Title, Description, Date+Time, Location. Submit calls `POST /api/events`. Refreshes list on success.
-- Below: list of all events (active and inactive) as rows with: Title, Date, Location, Status badge (Active/Inactive), "Manage Attendees" link â†’ `/admin/events/{id}`, "Deactivate" button.
+- "Create New Event" form: Title (required), Description (optional), Date+Time (datetime-local input), Location (required), Cover Image (Cloudinary Upload Widget button â€” inserts URL into hidden field). Submit â†’ `POST /api/events`. Refreshes list.
+- Table of ALL events (admin view from `GET /api/events`). Columns: Title, Date, Location, Status badge, Cover Image thumbnail, Actions.
+- Per-event actions: "Edit" (inline form), "Mark Completed", "Cancel", "Manage Attendees" â†’ navigates to `/admin/events/{id}`.
+
+**Tab 3 â€” Galleries:**
+- **Member Gallery sub-tab:**
+  - Batch year input (number) + Cloudinary upload button + Caption field. Submit â†’ `POST /api/gallery/members`. Refreshes grid.
+  - Grid of uploaded photos, grouped by batch year. "Delete" button per photo.
+- **Event Galleries sub-tab:**
+  - Dropdown to select event. Once selected, shows existing photos for that event + upload form. Submit â†’ `POST /api/events/{id}/photos`. Delete per photo.
 
 ---
 
-#### `frontend/src/app/(dashboard)/admin/events/[id]/page.tsx` [NEW]
+#### `app/(dashboard)/admin/events/[id]/page.tsx` [NEW]
 
-Two-column layout (on desktop). Stacks vertically on mobile.
+Two-column layout (stacks on mobile):
 
-**Left column â€” Student Search Panel:**
-1. Text input: "Enter Student ID (e.g. 42)"
-2. "Search" button
-3. On search: call `eventsService.lookupUser(id)`. Show loading state on button.
-4. **Error states:**
-   - If input is empty or not a number: show inline validation error, don't call API.
-   - If API returns 404: show "No student found with this ID."
-   - If API returns 403: show "Access denied." (shouldn't happen, page is admin-only, but defensive)
-5. **Preview card (shown after successful search):**
-   - Avatar (or placeholder icon)
-   - Name, Email
-   - Phone number (or red warning "âš ï¸ No phone number â€” ask the student to update their profile")
-   - CF Handle + rating, LeetCode Handle + rating
-   - CodeChef, AtCoder, GitHub, LinkedIn icon links
-6. "Add to Event" button:
-   - Disabled if: no student loaded, or student has no phone number, or student is already in the attendee list
-   - If student already in list: show "Already added" chip instead
-   - On click: call `eventsService.addAttendee(eventId, userId)`. On success: refresh attendee list, clear the search panel. On error: show the error message from the backend response.
+**Left â€” Student Search Panel:**
+- Input: "Enter Student ID". Search button.
+- On search: `eventsService.lookupUser(id)`. Shows loading state.
+- Error states: non-numeric input â†’ inline validation. 404 â†’ "No student found with this ID." 
+- Preview card after successful search: avatar, name, email, phone (or red warning "âš ï¸ No phone â€” ask student to update profile"), CF + LeetCode data, club role badge, social links.
+- "Add to Event" button: disabled if no student loaded, no phone number, or already in attendee list. Shows "Already Added âœ“" chip if already registered.
+- On Add: `eventsService.addAttendee(eventId, userId)` â†’ show success toast â†’ clear search panel â†’ refresh attendee list.
 
-**Right column â€” Attendee List:**
-- Header row with event title, attendee count badge, and "Export to Excel" button.
-- "Export to Excel" click:
-  1. Call `eventsService.exportAttendees(eventId)` with `responseType: 'blob'`.
-  2. Create a temporary object URL: `URL.createObjectURL(new Blob([response.data]))`.
-  3. Create a temporary `<a>` tag, set `href` and `download="attendees_<eventTitle>.xlsx"`, click it programmatically.
-  4. Revoke the object URL.
-- Renders `<DataTable>` with these columns: Name, Email, Phone, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef, AtCoder, GitHub, LinkedIn, Added At, Remove.
-- "Remove" per row: confirmation dialog â†’ calls `eventsService.removeAttendee(eventId, userId)` â†’ refreshes list.
+**Right â€” Attendee Table:**
+- Header: event title, attendee count badge, "Export to Excel" button.
+- Excel export: `eventsService.exportAttendees(eventId)` (responseType: blob) â†’ `URL.createObjectURL(new Blob([res.data]))` â†’ programmatic `<a>` click â†’ `URL.revokeObjectURL()`.
+- `<DataTable>` with columns: Name, Email, Phone, Club Role, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef, AtCoder, GitHub, LinkedIn, Added At, Remove.
+- "Remove" per row: confirmation dialog â†’ `eventsService.removeAttendee(eventId, userId)` â†’ refresh.
 
 ---
 
-## Section 9 â€” Stage 3: Integration, Tests & Polish
-**Owner: Member 6**  
-**PR: `phase2/integration-and-tests`**  
+#### `app/(dashboard)/leaderboard/page.tsx` [MODIFY]
+
+Add two sets of filter controls above the leaderboard table:
+
+**Platform toggles:** "Codeforces | LeetCode" â€” pill buttons. Updates `platform` state and re-fetches.
+
+**Club filter toggles:** "All | Core | Batch Rep | Students" â€” these are the **existing UI filters** the teammate mentioned. Now they become data-driven (not just cosmetic). Updates `filter` state and re-fetches with `?filter=CORE` etc.
+
+In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` for each member.
+
+---
+
+## Section 10 â€” Stage 3: Integration, Tests & Polish
+**Owner: Member 6**
+**PR: `phase2/integration-and-tests`**
 **Estimated time: 2â€“3 days**
 
----
-
-### 9.1 Unit Tests to Write
+### Unit Tests
 
 #### `EventServiceTest.java`
+
 | Test | Scenario | Expected |
 |---|---|---|
-| `createEvent_success` | Valid request, admin exists | Event saved, returns EventResponseDto |
-| `addAttendee_success` | Valid userId, has phone, not duplicate | Attendee row created, returns EventAttendeeDto |
-| `addAttendee_missingPhone` | User exists but phoneNumber is null | Throws `BadRequestException` with phone message |
-| `addAttendee_duplicate` | Student already in event | Throws `BadRequestException` with duplicate message |
-| `addAttendee_userNotFound` | userId = 999 (doesn't exist) | Throws `ResourceNotFoundException` |
+| `createEvent_success` | Valid request, admin exists | Event saved, status=UPCOMING |
+| `addAttendee_success` | Valid userId, has phone, not duplicate | Attendee row created |
+| `addAttendee_noPhone` | User has null phoneNumber | `BadRequestException` |
+| `addAttendee_duplicate` | Student already registered | `BadRequestException` |
+| `addAttendee_userNotFound` | userId doesn't exist | `ResourceNotFoundException` |
+| `addAttendee_eventCompleted` | Event status is COMPLETED | `BadRequestException` |
 | `removeAttendee_success` | Attendee exists | Row deleted |
-| `removeAttendee_notFound` | Attendee doesn't exist | Throws `ResourceNotFoundException` |
-| `deactivateEvent_success` | Event exists | `isActive` set to false, not deleted |
-| `getAttendees_success` | Event with 3 attendees | Returns list of 3 EventAttendeeDtos |
+| `markCompleted_success` | Event found | status set to COMPLETED |
+| `addEventPhoto_success` | Valid eventId + url | Photo saved, DTO returned |
+| `deleteEventPhoto_notFound` | photoId doesn't exist | `ResourceNotFoundException` |
 
 #### `LeetCodeSyncServiceTest.java`
+
 | Test | Scenario | Expected |
 |---|---|---|
-| `syncSingleUser_success` | Mock HTTP returns rating 1523.45 | `user.leetcodeRating` set to 1523, saved |
-| `syncSingleUser_nullHandle` | User has no leetcodeHandle | No HTTP call made (verify with mock) |
-| `syncSingleUser_nullContestRanking` | API returns `userContestRanking: null` | Rating unchanged, no save |
-| `syncSingleUser_httpError` | Mock HTTP throws exception | No exception propagated, rating unchanged |
+| `sync_success` | Mock HTTP returns rating 1523.45 | Rating set to 1523, saved |
+| `sync_nullHandle` | User has no leetcodeHandle | Zero HTTP calls made |
+| `sync_noContest` | `userContestRanking` is null in response | Rating set to 0 |
+| `sync_httpError` | RestTemplate throws exception | No exception propagated, rating unchanged |
 
 #### `EventExportServiceTest.java`
+
 | Test | Scenario | Expected |
 |---|---|---|
-| `exportToExcel_notEmpty` | 2 attendees | byte[] length > 0 |
-| `exportToExcel_correctHeaders` | 1 attendee | Row 0, Cell 0 = "ID", Cell 1 = "Name", etc. |
-| `exportToExcel_dataRow` | 1 attendee with known fields | Row 1 values match attendee DTO fields |
+| `export_notEmpty` | 2 attendees | byte[] length > 0 |
+| `export_correctHeaders` | Any attendees | Row 0, Cell 0 = "ID", Cell 1 = "Name", etc. |
+| `export_clubRoleColumn` | Attendee has `clubRole = CORE` | Row 1, Club Role cell = "CORE" |
+
+#### `MemberGalleryServiceTest.java`
+
+| Test | Scenario | Expected |
+|---|---|---|
+| `addPhoto_success` | Valid batchYear + imageUrl | Photo saved, DTO returned |
+| `deletePhoto_notFound` | ID doesn't exist | `ResourceNotFoundException` |
+| `getByBatch_empty` | No photos for year 2020 | Empty list (not 404) |
+
+### Environment Variables for Render
+```
+CLOUDINARY_CLOUD_NAME=...          (backend, if needed)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME= (frontend Upload Widget)
+```
 
 ---
 
-### 9.2 Leaderboard Platform Toggle
-
-**Backend â€” update `LeaderboardService.java`:**
-Add `platform` parameter to the method that fetches leaderboard data. When `platform = "LEETCODE"`, sort by `leetcode_rating` descending. Default (Codeforces) sorts by `rating` descending. The `LeaderboardController` passes the `?platform=` query param from the request.
-
-**Frontend â€” update `leaderboard/page.tsx`:**
-Add a state variable `activePlatform` (default: `"CODEFORCES"`). Render two pill toggle buttons: "Codeforces | LeetCode". On click, update state and re-fetch leaderboard with `?platform=<activePlatform>`. Show the platform name in the leaderboard table header.
-
----
-
-### 9.3 Production Environment Variables
-
-Add to Render frontend service (environment variables):
-- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` â€” used by the Cloudinary Upload Widget JS SDK
-
-Note: Cloudinary API Key and Secret are **never sent to the frontend**. The Upload Widget uses unsigned presets or the cloud name only. The secret stays server-side (not needed for our use case since we're using unsigned uploads).
-
----
-
-## Section 10 â€” Full API Contract Reference
+## Section 11 â€” Full API Contract Reference
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/users` | Public | Member directory |
-| `GET` | `/api/users/{id}` | Public | Public user profile |
-| `GET` | `/api/users/{id}/lookup` | **Admin** | Full lookup for event panel |
-| `GET` | `/api/users/profile` | Auth | Own full profile |
-| `PUT` | `/api/users/profile` | Auth | Update own profile |
-| `PUT` | `/api/users/{id}/role` | **Admin** | Change role |
-| `DELETE` | `/api/users/{id}` | **Admin** | Delete user |
-| `POST` | `/api/events` | **Admin** | Create event |
-| `GET` | `/api/events` | Public | List active events |
-| `GET` | `/api/events/{id}` | Public | Single event |
-| `PUT` | `/api/events/{id}` | **Admin** | Update event |
-| `DELETE` | `/api/events/{id}` | **Admin** | Deactivate event |
-| `POST` | `/api/events/{id}/attendees` | **Admin** | Add attendee `{ userId }` |
-| `DELETE` | `/api/events/{id}/attendees/{uid}` | **Admin** | Remove attendee |
-| `GET` | `/api/events/{id}/attendees` | **Admin** | Attendee list (JSON) |
-| `GET` | `/api/events/{id}/attendees/export` | **Admin** | Download `.xlsx` |
-| `GET` | `/api/snapshots/{uid}/codeforces` | Auth | CF rating history |
-| `GET` | `/api/snapshots/{uid}/leetcode` | Auth | LeetCode rating history |
-| `GET` | `/api/leaderboard?platform=` | Public | Leaderboard (platform filter) |
+| GET | `/api/users` | Public | Member directory (paginated) |
+| GET | `/api/users/{id}` | Public | Public profile |
+| GET | `/api/users/{id}/lookup` | **Admin** | Full lookup for event panel |
+| GET | `/api/users/profile` | Auth | Own full profile |
+| PUT | `/api/users/profile` | Auth | Update own profile (all new fields) |
+| PUT | `/api/users/{id}/role` | **Admin** | Change platform role (ADMIN/USER) |
+| PUT | `/api/users/{id}/club-role` | **Admin** | Change club role (CORE, CONVENOR, etc.) |
+| DELETE | `/api/users/{id}` | **Admin** | Delete user |
+| POST | `/api/events` | **Admin** | Create event |
+| GET | `/api/events/upcoming` | Public | List upcoming events |
+| GET | `/api/events/completed` | Public | List completed events |
+| GET | `/api/events` | **Admin** | List ALL events (admin view) |
+| GET | `/api/events/{id}` | Public | Event detail + photos + attendee count |
+| PUT | `/api/events/{id}` | **Admin** | Update event |
+| PUT | `/api/events/{id}/complete` | **Admin** | Mark as completed |
+| PUT | `/api/events/{id}/cancel` | **Admin** | Cancel event |
+| POST | `/api/events/{id}/attendees` | **Admin** | Add attendee `{ userId }` |
+| DELETE | `/api/events/{id}/attendees/{uid}` | **Admin** | Remove attendee |
+| GET | `/api/events/{id}/attendees` | **Admin** | View attendee list (JSON) |
+| GET | `/api/events/{id}/attendees/export` | **Admin** | Download `.xlsx` |
+| POST | `/api/events/{id}/photos` | **Admin** | Upload event photo `{ imageUrl, caption }` |
+| DELETE | `/api/events/photos/{photoId}` | **Admin** | Delete event photo |
+| GET | `/api/events/{id}/photos` | Public | Event photo gallery |
+| POST | `/api/gallery/members` | **Admin** | Upload member gallery photo |
+| DELETE | `/api/gallery/members/{id}` | **Admin** | Delete member gallery photo |
+| GET | `/api/gallery/members?batch={year}` | Public | Photos by batch year |
+| GET | `/api/gallery/members/batches` | Public | Available batch years |
+| GET | `/api/snapshots/{uid}/codeforces` | Auth | CF rating history |
+| GET | `/api/snapshots/{uid}/leetcode` | Auth | LeetCode rating history |
+| GET | `/api/leaderboard?platform=&filter=` | Public | Leaderboard with platform + club filter |
 
 ---
 
-## Section 11 â€” 6-Member Summary
+## Section 12 â€” 6-Member Summary
 
 | Member | Role | Stage | Owns |
 |---|---|---|---|
-| **M6** | Team Lead + DevOps | 0 + 3 | All 4 Flyway migrations, `User.java` entity update, LeetCode cron wiring, weekly snapshot cron, all unit tests, Render env vars, all PR reviews, final `feature/phase-2 â†’ main` merge |
-| **M4** | Backend Security | 1A | `SecurityConfig.java` new route rules, `UserController` lookup endpoint |
-| **M5** | Backend Data + APIs | 1B | `UserProfileUpdateRequest` update, `UserLookupDto`, `UserResponseDto` update, `UserService` update, `UserRepository` update, entire `leetcode/` package, entire `event/` package (entity, repo, DTO, service, export service, controller), entire `snapshot/` package, `pom.xml` POI |
-| **M1** | Frontend UI/UX | 2A | `EventCard` component, `DataTable` component, `AdminTabs` component, Events page redesign, Admin page layout shell |
-| **M2** | Frontend Auth + State | 2B | `auth.ts` User type, `types/api.ts` new types, `events.ts` service file, `dashboard.ts` mapper update |
-| **M3** | Frontend Dashboards | 2C | Profile dashboard redesign (Cloudinary, platform links, edit panel, charts), Admin dashboard data (both tabs), Admin event attendee page (search panel + table + Excel download) |
+| **M6 (Lead)** | Foundation + DevOps | 0 + 3 | All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, LeetCode cron wiring, snapshot cron, all unit tests, Render env vars, PR reviews, final merge |
+| **M4** | Backend Security | 1A | `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint |
+| **M5** | Backend Data + APIs | 1B | `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (5 DTOs + 3 repos + 2 services + 1 controller), entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller), entire `snapshot/` package, `pom.xml` POI dep |
+| **M1** | Frontend UI/UX | 2A | `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
+| **M2** | Frontend State + Auth | 2B | `auth.ts` new User fields, `types/api.ts` 6 new types + ClubRole union, `events.ts` service (17 functions), `gallery.ts` service (4 functions), `dashboard.ts` mapper update, `leaderboard.ts` params update |
+| **M3** | Frontend Dashboards | 2C | Profile dashboard (Cloudinary avatar, club role badge, platform links, edit panel, rating charts), Admin dashboard all 3 tabs (Members with club role assignment, Events CRUD + gallery upload, Gallery management), Admin event attendee page (search + auto-fill + table + Excel download), Leaderboard platform + club filter toggles |
