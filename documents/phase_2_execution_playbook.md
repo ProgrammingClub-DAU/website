@@ -6,6 +6,204 @@
 
 ---
 
+## ðŸš€ How to Get Started â€” Starter Prompts for Every Member
+
+> [!IMPORTANT]
+> Copy your prompt below and paste it into your AI coding assistant **while your project folder is open**. It will read the codebase, understand the plan, and guide you step by step.
+
+---
+
+### ðŸ‘‘ Member 6 â€” Team Lead & DevOps
+**Branch:** `feature/M6-phase2-stage0`
+
+```
+I am Member 6 (Team Lead) on the CP Club Website project.
+I need to implement Stage 0 of Phase 2.
+
+Please do the following:
+1. Read the full Phase 2 plan at: documents/phase_2_execution_playbook.md
+2. Read the existing DB migration: backend/src/main/resources/db/migration/V1__init.sql
+3. Read the User entity: backend/src/main/java/com/cpclub/backend/user/entity/User.java
+
+Then implement in this exact order:
+- Create migration files V2 through V7 as specified in Section 4 of the plan
+- Create the ClubRole enum and EventStatus enum as Java enums
+- Update User.java with all 10 new fields
+- Create all new JPA entities: Event, EventAttendee, EventPhoto, MemberGalleryPhoto, WeeklySnapshot
+
+Rules:
+- All new DB columns must be nullable (backward compatible)
+- @Column names must exactly match SQL column names or ddl-auto: validate will fail on startup
+- Run ./mvnw.cmd clean test at the end and fix any failures before raising a PR
+```
+
+---
+
+### ðŸ›¡ï¸ Member 4 â€” Backend Security
+**Branch:** `feature/M4-phase2-security`
+
+```
+I am Member 4 (Backend Security Engineer) on the CP Club Website project.
+I need to implement Stage 1A of Phase 2.
+
+IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+
+Please do the following:
+1. Read the full Phase 2 plan at: documents/phase_2_execution_playbook.md â€” focus on Section 5
+2. Read SecurityConfig: backend/src/main/java/com/cpclub/backend/security/config/SecurityConfig.java
+3. Read UserController: backend/src/main/java/com/cpclub/backend/user/controller/UserController.java
+
+Then implement:
+1. Add 8 new security rules to SecurityConfig.java in the correct order (public GET rules before Admin wildcard rules â€” Spring Security evaluates top-to-bottom)
+2. Add GET /api/users/{id}/lookup to UserController with @PreAuthorize("hasRole('ADMIN')")
+3. Add PUT /api/users/{id}/club-role to UserController with @PreAuthorize("hasRole('ADMIN')")
+
+Run ./mvnw.cmd clean test and fix any failures before raising a PR into feature/phase-2.
+```
+
+---
+
+### ðŸ“¦ Member 5 â€” Backend Data & APIs
+**Branch:** `feature/M5-phase2-backend`
+
+```
+I am Member 5 (Backend Data & API Engineer) on the CP Club Website project.
+I need to implement Stage 1B of Phase 2. This is the largest backend task.
+
+IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+
+Please do the following:
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Sections 6.1 to 6.7
+2. Read these files for context:
+   - backend/src/main/java/com/cpclub/backend/user/dto/UserProfileUpdateRequest.java
+   - backend/src/main/java/com/cpclub/backend/user/service/UserService.java
+   - backend/src/main/java/com/cpclub/backend/user/dto/UserResponseDto.java
+   - backend/src/main/java/com/cpclub/backend/codeforces/service/CodeforcesSyncService.java
+   - backend/src/main/java/com/cpclub/backend/leaderboard/service/LeaderboardService.java
+   - backend/pom.xml
+
+Then implement in this order:
+1. Update UserProfileUpdateRequest, UserResponseDto â€” add all new fields
+2. Create UserLookupDto, UpdateClubRoleRequest â€” new DTOs
+3. Update UserService â€” 3 new methods (updateClubRole, lookupUserById, update updateProfile)
+4. Update UserRepository â€” 3 new query methods
+5. Update LeaderboardService â€” platform and clubRole filter support
+6. Create leetcode/ package â€” LeetCodeGraphQLResponse + LeetCodeSyncService
+7. Update CodeforcesSyncService â€” call LeetCode bulk sync after CF sync
+8. Create event/ package â€” entities, repos, all DTOs, EventService (with all guard clauses), EventExportService (Apache POI), EventController
+9. Create gallery/ package â€” MemberGalleryPhoto entity, repo, DTOs, service, GalleryController
+10. Create snapshot/ package â€” SnapshotService (weekly cron), SnapshotController
+11. Add Apache POI dependency to pom.xml
+
+Run ./mvnw.cmd clean test and fix all failures before raising a PR.
+```
+
+---
+
+### ðŸŽ¨ Member 1 â€” Frontend UI/UX
+**Branch:** `feature/M1-phase2-ui`
+
+```
+I am Member 1 (Frontend UI/UX Architect) on the CP Club Website project.
+I need to implement Stage 2A of Phase 2 â€” new UI components and page layouts.
+
+IMPORTANT: Stage 1 (M4 + M5 work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+
+Please do the following:
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 7
+2. Look at existing components for the design language: frontend/src/components/site/ and frontend/src/app/events/page.tsx
+
+Then create in this order:
+1. components/ui/club-role-badge.tsx â€” small colored badge (Convenor=gold, Core=blue, Batch Rep=green, Ex-*=grey outline)
+2. components/ui/data-table.tsx â€” generic table with loading skeleton and empty state
+3. components/site/event-card.tsx â€” event card with cover image, title, date, location, status badge. Full card is a Link.
+4. components/site/event-photo-grid.tsx â€” responsive photo grid with lightbox
+5. components/site/member-gallery-grid.tsx â€” same grid for batch member photos
+6. components/site/admin-tabs.tsx â€” tab nav with Members, Events, Galleries tabs
+7. Modify app/events/page.tsx â€” replace hardcoded placeholders with server-side fetch from GET /api/events/upcoming
+8. Create app/events/[id]/page.tsx â€” event detail page
+9. Create app/gallery/page.tsx â€” member gallery with batch year dropdown filter
+10. Create shell app/(dashboard)/admin/page.tsx â€” layout only, M3 fills data
+
+Match the dark-mode design: glass-panel, rounded-panel, Eyebrow, Section components.
+Run npm run build to verify zero TypeScript errors before raising a PR.
+```
+
+---
+
+### ðŸ§  Member 2 â€” Frontend Auth & State
+**Branch:** `feature/M2-phase2-auth`
+
+```
+I am Member 2 (Frontend Auth & Logic Engineer) on the CP Club Website project.
+I need to implement Stage 2B of Phase 2 â€” TypeScript types, store updates, and all API service files.
+
+IMPORTANT: Stage 1 must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+
+Please do the following:
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 8
+2. Read these files:
+   - frontend/src/store/auth.ts
+   - frontend/src/lib/services/dashboard.ts
+   - frontend/src/lib/axios.ts
+
+Then implement in this order:
+1. Update store/auth.ts â€” add clubRole, batchYear, leetcodeHandle, phoneNumber, avatarUrl to the User interface
+2. Update/create types/api.ts â€” add Event, EventDetail, EventAttendee, EventPhoto, UserLookup, MemberGalleryPhoto interfaces and ClubRole string union type
+3. Create lib/services/events.ts â€” 17 functions covering all event, attendee, photo, and user lookup API calls. The exportAttendees function must use responseType: 'blob'.
+4. Create lib/services/gallery.ts â€” 4 functions for member gallery
+5. Update lib/services/dashboard.ts â€” mapUserToProfile() must map all new fields using ?? null fallback
+6. Update lib/services/leaderboard.ts â€” pass ?platform= and ?filter= query params
+
+Run npm run build to verify zero TypeScript errors before raising a PR.
+```
+
+---
+
+### ðŸ“Š Member 3 â€” Frontend Dashboards & Data
+**Branch:** `feature/M3-phase2-dashboards`
+
+```
+I am Member 3 (Frontend Dashboards Engineer) on the CP Club Website project.
+I need to implement Stage 2C of Phase 2 â€” all dashboard pages and data-heavy features.
+
+IMPORTANT: Member 1 AND Member 2 PRs must both be merged into feature/phase-2 before I start. Branch from feature/phase-2 only after both are merged.
+
+Please do the following:
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 9
+2. Read these files for context:
+   - frontend/src/components/site/profile-dashboard.tsx
+   - frontend/src/app/(dashboard)/leaderboard/page.tsx
+   - frontend/src/app/(dashboard)/profile/page.tsx
+
+Then implement in this order:
+
+1. Rewrite profile-dashboard.tsx:
+   - Avatar: show Cloudinary image if avatarUrl exists. If owner: show Cloudinary Upload Widget button. On upload success auto-save the URL.
+   - Club role badge below member name using the ClubRoleBadge component from M1
+   - Platform icon links row: CodeChef, AtCoder, GitHub, LinkedIn
+   - Full "Edit Profile" panel (owner-only): name, phone (required), CF handle, LeetCode handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked to visitors.
+   - Two recharts LineCharts: CF rating history + LeetCode rating history from /api/snapshots
+
+2. Fill in app/(dashboard)/admin/page.tsx (3 tabs):
+   - Tab 1 Members: DataTable with all columns. Inline club role dropdown per row. Promote/Demote + Delete actions.
+   - Tab 2 Events: create form + event list with status actions + Manage Attendees link per event
+   - Tab 3 Galleries: member gallery upload (batchYear + Cloudinary widget + caption) + event gallery upload (select event + Cloudinary widget)
+
+3. Create app/(dashboard)/admin/events/[id]/page.tsx:
+   - Left panel: Student ID input â†’ Search â†’ preview card (show warning if no phone) â†’ Add to Event button
+   - Right panel: attendee DataTable + Export to Excel button (blob download)
+
+4. Update app/(dashboard)/leaderboard/page.tsx:
+   - Add platform pill toggles: Codeforces | LeetCode
+   - Add club filter pill toggles: All | Core | Batch Rep | Students
+   - Add Club Role column with ClubRoleBadge
+
+Run npm run build to verify zero TypeScript errors before raising a PR.
+```
+
+---
+
 ## Section 1 â€” Locked Decisions & Rationale
 
 | Decision | Choice | Why |
