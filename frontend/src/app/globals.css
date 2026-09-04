@@ -329,3 +329,44 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Page gutter — the single definition of how far content sits from the viewport
+   edge. Previously this was `mx-auto max-w-[1240px] px-6` copied into the navbar,
+   the footer twice, the Section primitive and the home page, so the five could
+   drift apart independently.
+
+   The cap grows on wide displays rather than staying fixed. At 1240px the old
+   value left 660px of empty space on either side of a 2560px screen — the content
+   occupied under half the display and read as a narrow column floating in the
+   middle. Below 1536px nothing changes, because the original width was already
+   correct at laptop sizes. */
+.container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 77.5rem; /* 1240px */
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 1536px) {
+  .container-page {
+    max-width: 97.5rem; /* 1560px */
+    padding-inline: 2.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .container-page {
+    max-width: 107.5rem; /* 1720px */
+    padding-inline: 3rem;
+  }
+}
+
+/* Only the widest displays get the largest cap. Jumping straight to this at
+   1920px left the content almost edge-to-edge and read as stretched, so the
+   growth is spread over three steps instead of one. */
+@media (min-width: 2400px) {
+  .container-page {
+    max-width: 120rem; /* 1920px */
+    padding-inline: 4rem;
+  }
+}
