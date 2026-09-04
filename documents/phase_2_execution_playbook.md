@@ -1,19 +1,19 @@
-﻿# Phase 2 â€” Senior Engineer Implementation Plan (v3 â€” Updated)
+# Phase 2 -- Senior Engineer Implementation Plan (v3 -- Updated)
 **Branch:** `feature/phase-2` (branched off `main` post Phase 1 merge)
-**Duration:** 3 sprints Â· ~3 weeks
+**Duration:** 3 sprints -- ~3 weeks
 **Team:** 6 members
-**Stack:** Spring Boot 4.1 Â· PostgreSQL Â· Next.js 15 Â· Cloudinary Â· Apache POI
+**Stack:** Spring Boot 4.1 -- PostgreSQL -- Next.js 15 -- Cloudinary -- Apache POI
 
 ---
 
-## ðŸš€ How to Get Started â€” Starter Prompts for Every Member
+## [START] How to Get Started -- Starter Prompts for Every Member
 
 > [!IMPORTANT]
 > Copy your prompt below and paste it into your AI coding assistant **while your project folder is open**. It will read the codebase, understand the plan, and guide you step by step.
 
 ---
 
-### ðŸ‘‘ Member 6 â€” Team Lead & DevOps
+### [M6] Member 6 -- Team Lead & DevOps
 **Branch:** `feature/M6-phase2-stage0`
 
 ```
@@ -39,7 +39,7 @@ Rules:
 
 ---
 
-### ðŸ›¡ï¸ Member 4 â€” Backend Security
+### [M4] Member 4 -- Backend Security
 **Branch:** `feature/M4-phase2-security`
 
 ```
@@ -49,12 +49,12 @@ I need to implement Stage 1A of Phase 2.
 IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
 
 Please do the following:
-1. Read the full Phase 2 plan at: documents/phase_2_execution_playbook.md â€” focus on Section 5
+1. Read the full Phase 2 plan at: documents/phase_2_execution_playbook.md -- focus on Section 5
 2. Read SecurityConfig: backend/src/main/java/com/cpclub/backend/security/config/SecurityConfig.java
 3. Read UserController: backend/src/main/java/com/cpclub/backend/user/controller/UserController.java
 
 Then implement:
-1. Add 8 new security rules to SecurityConfig.java in the correct order (public GET rules before Admin wildcard rules â€” Spring Security evaluates top-to-bottom)
+1. Add 8 new security rules to SecurityConfig.java in the correct order (public GET rules before Admin wildcard rules -- Spring Security evaluates top-to-bottom)
 2. Add GET /api/users/{id}/lookup to UserController with @PreAuthorize("hasRole('ADMIN')")
 3. Add PUT /api/users/{id}/club-role to UserController with @PreAuthorize("hasRole('ADMIN')")
 
@@ -63,7 +63,7 @@ Run ./mvnw.cmd clean test and fix any failures before raising a PR into feature/
 
 ---
 
-### ðŸ“¦ Member 5 â€” Backend Data & APIs
+### [M5] Member 5 -- Backend Data & APIs
 **Branch:** `feature/M5-phase2-backend`
 
 ```
@@ -73,7 +73,7 @@ I need to implement Stage 1B of Phase 2. This is the largest backend task.
 IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
 
 Please do the following:
-1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Sections 6.1 to 6.7
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Sections 6.1 to 6.7
 2. Read these files for context:
    - backend/src/main/java/com/cpclub/backend/user/dto/UserProfileUpdateRequest.java
    - backend/src/main/java/com/cpclub/backend/user/service/UserService.java
@@ -83,16 +83,16 @@ Please do the following:
    - backend/pom.xml
 
 Then implement in this order:
-1. Update UserProfileUpdateRequest, UserResponseDto â€” add all new fields
-2. Create UserLookupDto, UpdateClubRoleRequest â€” new DTOs
-3. Update UserService â€” 3 new methods (updateClubRole, lookupUserById, update updateProfile)
-4. Update UserRepository â€” 3 new query methods
-5. Update LeaderboardService â€” platform and clubRole filter support
-6. Create leetcode/ package â€” LeetCodeGraphQLResponse + LeetCodeSyncService
-7. Update CodeforcesSyncService â€” call LeetCode bulk sync after CF sync
-8. Create event/ package â€” entities, repos, all DTOs, EventService (with all guard clauses), EventExportService (Apache POI), EventController
-9. Create gallery/ package â€” MemberGalleryPhoto entity, repo, DTOs, service, GalleryController
-10. Create snapshot/ package â€” SnapshotService (weekly cron), SnapshotController
+1. Update UserProfileUpdateRequest, UserResponseDto -- add all new fields
+2. Create UserLookupDto, UpdateClubRoleRequest -- new DTOs
+3. Update UserService -- 3 new methods (updateClubRole, lookupUserById, update updateProfile)
+4. Update UserRepository -- 3 new query methods
+5. Update LeaderboardService -- platform and clubRole filter support
+6. Create leetcode/ package -- LeetCodeGraphQLResponse + LeetCodeSyncService
+7. Update CodeforcesSyncService -- call LeetCode bulk sync after CF sync
+8. Create event/ package -- entities, repos, all DTOs, EventService (with all guard clauses), EventExportService (Apache POI), EventController
+9. Create gallery/ package -- MemberGalleryPhoto entity, repo, DTOs, service, GalleryController
+10. Create snapshot/ package -- SnapshotService (weekly cron), SnapshotController
 11. Add Apache POI dependency to pom.xml
 
 Run ./mvnw.cmd clean test and fix all failures before raising a PR.
@@ -100,30 +100,30 @@ Run ./mvnw.cmd clean test and fix all failures before raising a PR.
 
 ---
 
-### ðŸŽ¨ Member 1 â€” Frontend UI/UX
+### [M1] Member 1 -- Frontend UI/UX
 **Branch:** `feature/M1-phase2-ui`
 
 ```
 I am Member 1 (Frontend UI/UX Architect) on the CP Club Website project.
-I need to implement Stage 2A of Phase 2 â€” new UI components and page layouts.
+I need to implement Stage 2A of Phase 2 -- new UI components and page layouts.
 
 IMPORTANT: Stage 1 (M4 + M5 work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
 
 Please do the following:
-1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 7
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 7
 2. Look at existing components for the design language: frontend/src/components/site/ and frontend/src/app/events/page.tsx
 
 Then create in this order:
-1. components/ui/club-role-badge.tsx â€” small colored badge (Convenor=gold, Core=blue, Batch Rep=green, Ex-*=grey outline)
-2. components/ui/data-table.tsx â€” generic table with loading skeleton and empty state
-3. components/site/event-card.tsx â€” event card with cover image, title, date, location, status badge. Full card is a Link.
-4. components/site/event-photo-grid.tsx â€” responsive photo grid with lightbox
-5. components/site/member-gallery-grid.tsx â€” same grid for batch member photos
-6. components/site/admin-tabs.tsx â€” tab nav with Members, Events, Galleries tabs
-7. Modify app/events/page.tsx â€” replace hardcoded placeholders with server-side fetch from GET /api/events/upcoming
-8. Create app/events/[id]/page.tsx â€” event detail page
-9. Create app/gallery/page.tsx â€” member gallery with batch year dropdown filter
-10. Create shell app/(dashboard)/admin/page.tsx â€” layout only, M3 fills data
+1. components/ui/club-role-badge.tsx -- small colored badge (Convenor=gold, Core=blue, Batch Rep=green, Ex-*=grey outline)
+2. components/ui/data-table.tsx -- generic table with loading skeleton and empty state
+3. components/site/event-card.tsx -- event card with cover image, title, date, location, status badge. Full card is a Link.
+4. components/site/event-photo-grid.tsx -- responsive photo grid with lightbox
+5. components/site/member-gallery-grid.tsx -- same grid for batch member photos
+6. components/site/admin-tabs.tsx -- tab nav with Members, Events, Galleries tabs
+7. Modify app/events/page.tsx -- replace hardcoded placeholders with server-side fetch from GET /api/events/upcoming
+8. Create app/events/[id]/page.tsx -- event detail page
+9. Create app/gallery/page.tsx -- member gallery with batch year dropdown filter
+10. Create shell app/(dashboard)/admin/page.tsx -- layout only, M3 fills data
 
 Match the dark-mode design: glass-panel, rounded-panel, Eyebrow, Section components.
 Run npm run build to verify zero TypeScript errors before raising a PR.
@@ -131,46 +131,46 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 
 ---
 
-### ðŸ§  Member 2 â€” Frontend Auth & State
+### [M2] Member 2 -- Frontend Auth & State
 **Branch:** `feature/M2-phase2-auth`
 
 ```
 I am Member 2 (Frontend Auth & Logic Engineer) on the CP Club Website project.
-I need to implement Stage 2B of Phase 2 â€” TypeScript types, store updates, and all API service files.
+I need to implement Stage 2B of Phase 2 -- TypeScript types, store updates, and all API service files.
 
 IMPORTANT: Stage 1 must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
 
 Please do the following:
-1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 8
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 8
 2. Read these files:
    - frontend/src/store/auth.ts
    - frontend/src/lib/services/dashboard.ts
    - frontend/src/lib/axios.ts
 
 Then implement in this order:
-1. Update store/auth.ts â€” add clubRole, batchYear, leetcodeHandle, phoneNumber, avatarUrl to the User interface
-2. Update/create types/api.ts â€” add Event, EventDetail, EventAttendee, EventPhoto, UserLookup, MemberGalleryPhoto interfaces and ClubRole string union type
-3. Create lib/services/events.ts â€” 17 functions covering all event, attendee, photo, and user lookup API calls. The exportAttendees function must use responseType: 'blob'.
-4. Create lib/services/gallery.ts â€” 4 functions for member gallery
-5. Update lib/services/dashboard.ts â€” mapUserToProfile() must map all new fields using ?? null fallback
-6. Update lib/services/leaderboard.ts â€” pass ?platform= and ?filter= query params
+1. Update store/auth.ts -- add clubRole, batchYear, leetcodeHandle, phoneNumber, avatarUrl to the User interface
+2. Update/create types/api.ts -- add Event, EventDetail, EventAttendee, EventPhoto, UserLookup, MemberGalleryPhoto interfaces and ClubRole string union type
+3. Create lib/services/events.ts -- 17 functions covering all event, attendee, photo, and user lookup API calls. The exportAttendees function must use responseType: 'blob'.
+4. Create lib/services/gallery.ts -- 4 functions for member gallery
+5. Update lib/services/dashboard.ts -- mapUserToProfile() must map all new fields using ?? null fallback
+6. Update lib/services/leaderboard.ts -- pass ?platform= and ?filter= query params
 
 Run npm run build to verify zero TypeScript errors before raising a PR.
 ```
 
 ---
 
-### ðŸ“Š Member 3 â€” Frontend Dashboards & Data
+### [M3] Member 3 -- Frontend Dashboards & Data
 **Branch:** `feature/M3-phase2-dashboards`
 
 ```
 I am Member 3 (Frontend Dashboards Engineer) on the CP Club Website project.
-I need to implement Stage 2C of Phase 2 â€” all dashboard pages and data-heavy features.
+I need to implement Stage 2C of Phase 2 -- all dashboard pages and data-heavy features.
 
 IMPORTANT: Member 1 AND Member 2 PRs must both be merged into feature/phase-2 before I start. Branch from feature/phase-2 only after both are merged.
 
 Please do the following:
-1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md â€” focus on Section 9
+1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 9
 2. Read these files for context:
    - frontend/src/components/site/profile-dashboard.tsx
    - frontend/src/app/(dashboard)/leaderboard/page.tsx
@@ -191,7 +191,7 @@ Then implement in this order:
    - Tab 3 Galleries: member gallery upload (batchYear + Cloudinary widget + caption) + event gallery upload (select event + Cloudinary widget)
 
 3. Create app/(dashboard)/admin/events/[id]/page.tsx:
-   - Left panel: Student ID input â†’ Search â†’ preview card (show warning if no phone) â†’ Add to Event button
+   - Left panel: Student ID input -> Search -> preview card (show warning if no phone) -> Add to Event button
    - Right panel: attendee DataTable + Export to Excel button (blob download)
 
 4. Update app/(dashboard)/leaderboard/page.tsx:
@@ -204,7 +204,7 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 
 ---
 
-## Section 1 â€” Locked Decisions & Rationale
+## Section 1 -- Locked Decisions & Rationale
 
 | Decision | Choice | Why |
 |---|---|---|
@@ -215,51 +215,51 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 | Event attendance | **Admin-only.** Admin searches by User ID; details auto-fill from DB. | Official record, not self-controlled. |
 | Excel export | **Apache POI XSSF.** Server-side `.xlsx` streamed as binary. | Universal format for club admins. |
 | Soft delete for events | Events are **deactivated**, never hard deleted. | Preserves attendance + gallery history. |
-| `clubRole` vs `role` | **Two separate fields.** `role` = platform permission (Admin/User). `clubRole` = club position (Core, Convenor, etc.). | Conflating them causes security issues â€” a Batch Rep should not have admin API access. |
+| `clubRole` vs `role` | **Two separate fields.** `role` = platform permission (Admin/User). `clubRole` = club position (Core, Convenor, etc.). | Conflating them causes security issues -- a Batch Rep should not have admin API access. |
 | Gallery storage | **Cloudinary.** Admin uploads image via Upload Widget; URL stored in DB. | Consistent with avatar approach. No binary in DB. |
 
 ---
 
-## Section 2 â€” New Features Added in This Version
+## Section 2 -- New Features Added in This Version
 
 The following features are **new additions** on top of the original Phase 2 scope:
 
-1. **Club Role System** â€” `clubRole` enum column on `users`. Admin can assign any member a club position. Leaderboard filters (All, Core, Batch Rep, Students) become data-driven.
-2. **Admin Event Management** â€” Admin creates, edits, and publishes upcoming events directly from the website (no hardcoding).
-3. **Event Photo Gallery** â€” Admin uploads event photos (past events) to Cloudinary; displayed in a public gallery per event.
-4. **Club Member Photo Gallery (Batch-wise)** â€” Admin uploads group/batch photos; displayed publicly, filterable by batch year.
-5. **Completed Events** â€” Past events shown publicly with date, description, location, and their photo gallery.
+1. **Club Role System** -- `clubRole` enum column on `users`. Admin can assign any member a club position. Leaderboard filters (All, Core, Batch Rep, Students) become data-driven.
+2. **Admin Event Management** -- Admin creates, edits, and publishes upcoming events directly from the website (no hardcoding).
+3. **Event Photo Gallery** -- Admin uploads event photos (past events) to Cloudinary; displayed in a public gallery per event.
+4. **Club Member Photo Gallery (Batch-wise)** -- Admin uploads group/batch photos; displayed publicly, filterable by batch year.
+5. **Completed Events** -- Past events shown publicly with date, description, location, and their photo gallery.
 
 ---
 
-## Section 3 â€” Implementation Stages & Dependencies
+## Section 3 -- Implementation Stages & Dependencies
 
 ```
-STAGE 0 â”€â”€â”€ DB Migrations + Entity Layer
-              Owner: M6 Â· PR: phase2/stage-0
+STAGE 0 --- DB Migrations + Entity Layer
+              Owner: M6 -- PR: phase2/stage-0
               Must merge before ANY other branch starts.
-                    â”‚
-        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-        â–¼                       â–¼
-STAGE 1A â”€ Backend Security   STAGE 1B â”€ Backend Data & APIs
+                    |
+        +-----------+-----------+
+        v                       v
+STAGE 1A - Backend Security   STAGE 1B - Backend Data & APIs
   Owner: M4                     Owner: M5
   PR: phase2/backend-security   PR: phase2/backend-data
   Runs parallel with M5         Runs parallel with M4
-        â”‚                               â”‚
-        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                    â–¼
+        |                               |
+        +-----------+-------------------+
+                    v
      Both Stage 1 PRs merged into feature/phase-2
-                    â”‚
-        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-        â–¼           â–¼           â–¼
+                    |
+        +-----------+-----------+
+        v           v           v
 STAGE 2A         STAGE 2B    STAGE 2C
 Frontend UI      Auth/State  Dashboards
 Owner: M1        Owner: M2   Owner: M3
                              (depends on M1 + M2 first)
-        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                    â–¼
-STAGE 3 â”€â”€â”€ Integration, Tests, Polish, Deploy
-              Owner: M6 Â· PR: phase2/integration
+        +-----------+-----------+
+                    v
+STAGE 3 --- Integration, Tests, Polish, Deploy
+              Owner: M6 -- PR: phase2/integration
 ```
 
 > [!IMPORTANT]
@@ -267,7 +267,7 @@ STAGE 3 â”€â”€â”€ Integration, Tests, Polish, Deploy
 
 ---
 
-## Section 4 â€” Stage 0: Database Migrations & Entity Layer
+## Section 4 -- Stage 0: Database Migrations & Entity Layer
 **Owner: Member 6 (Team Lead)**
 **PR: `phase2/stage-0-migrations`**
 **Estimated time: 2 days**
@@ -275,7 +275,7 @@ STAGE 3 â”€â”€â”€ Integration, Tests, Polish, Deploy
 
 ---
 
-### 4.1 Migration V2 â€” Extend `users` Table
+### 4.1 Migration V2 -- Extend `users` Table
 
 **File:** `V2__extend_user_profile.sql`
 
@@ -292,7 +292,7 @@ Add the following **nullable** columns to `users`:
 | `github_url` | VARCHAR(512) | nullable | Social link |
 | `linkedin_url` | VARCHAR(512) | nullable | Social link |
 | `club_role` | VARCHAR(50) | nullable, CHECK constraint | Club position (see enum below) |
-| `batch_year` | INTEGER | nullable | e.g. 2023, 2024 â€” used for batch gallery filtering |
+| `batch_year` | INTEGER | nullable | e.g. 2023, 2024 -- used for batch gallery filtering |
 
 **`club_role` allowed values (CHECK constraint):**
 `CONVENOR`, `DEPUTY_CONVENOR`, `CORE`, `ASSOCIATE_CORE`, `BATCH_REPRESENTATIVE`, `EX_PC_MEMBER`, `EX_CORE`, `EX_CDC`, `STUDENT`
@@ -302,11 +302,11 @@ Add the following **nullable** columns to `users`:
 
 **Indexes to add:**
 - `CREATE INDEX idx_leetcode_handle ON users(leetcode_handle)`
-- `CREATE INDEX idx_club_role ON users(club_role)` â€” for leaderboard filter queries
+- `CREATE INDEX idx_club_role ON users(club_role)` -- for leaderboard filter queries
 
 ---
 
-### 4.2 Migration V3 â€” Create `events` Table
+### 4.2 Migration V3 -- Create `events` Table
 
 **File:** `V3__create_events.sql`
 
@@ -319,7 +319,7 @@ Add the following **nullable** columns to `users`:
 | `location` | VARCHAR(255) | NOT NULL | Physical or online |
 | `status` | VARCHAR(20) | NOT NULL DEFAULT 'UPCOMING' | `UPCOMING`, `COMPLETED`, `CANCELLED` |
 | `cover_image_url` | VARCHAR(512) | nullable | Cloudinary URL for event banner |
-| `created_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who created it |
+| `created_by` | BIGINT | FK -> users.id NOT NULL | Admin who created it |
 | `created_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | Audit |
 | `updated_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | Audit |
 
@@ -328,16 +328,16 @@ Add the following **nullable** columns to `users`:
 
 ---
 
-### 4.3 Migration V4 â€” Create `event_attendees` Table
+### 4.3 Migration V4 -- Create `event_attendees` Table
 
 **File:** `V4__create_event_attendees.sql`
 
 | Column | Type | Constraint | Purpose |
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | |
-| `event_id` | BIGINT | FK â†’ events.id ON DELETE CASCADE, NOT NULL | |
-| `user_id` | BIGINT | FK â†’ users.id ON DELETE CASCADE, NOT NULL | |
-| `added_by` | BIGINT | FK â†’ users.id NOT NULL | Which admin added the student |
+| `event_id` | BIGINT | FK -> events.id ON DELETE CASCADE, NOT NULL | |
+| `user_id` | BIGINT | FK -> users.id ON DELETE CASCADE, NOT NULL | |
+| `added_by` | BIGINT | FK -> users.id NOT NULL | Which admin added the student |
 | `added_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
 | **UNIQUE(event_id, user_id)** | | DB-level constraint | Prevents double-attendance |
 
@@ -345,24 +345,24 @@ Add the following **nullable** columns to `users`:
 
 ---
 
-### 4.4 Migration V5 â€” Create `event_photos` Table
+### 4.4 Migration V5 -- Create `event_photos` Table
 
 **File:** `V5__create_event_photos.sql`
 
 | Column | Type | Constraint | Purpose |
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | |
-| `event_id` | BIGINT | FK â†’ events.id ON DELETE CASCADE, NOT NULL | Which event this photo belongs to |
+| `event_id` | BIGINT | FK -> events.id ON DELETE CASCADE, NOT NULL | Which event this photo belongs to |
 | `image_url` | VARCHAR(512) | NOT NULL | Cloudinary secure URL |
 | `caption` | VARCHAR(255) | nullable | Optional photo caption |
-| `uploaded_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who uploaded |
+| `uploaded_by` | BIGINT | FK -> users.id NOT NULL | Admin who uploaded |
 | `uploaded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
 
 **Index:** on `event_id` for fast gallery load.
 
 ---
 
-### 4.5 Migration V6 â€” Create `member_gallery` Table
+### 4.5 Migration V6 -- Create `member_gallery` Table
 
 **File:** `V6__create_member_gallery.sql`
 
@@ -374,21 +374,21 @@ For batch-wise group photos of club members, separate from individual avatars.
 | `batch_year` | INTEGER | NOT NULL | e.g. 2023, 2024 |
 | `image_url` | VARCHAR(512) | NOT NULL | Cloudinary URL |
 | `caption` | VARCHAR(255) | nullable | e.g. "Batch 2023 - Inauguration Day" |
-| `uploaded_by` | BIGINT | FK â†’ users.id NOT NULL | Admin who uploaded |
+| `uploaded_by` | BIGINT | FK -> users.id NOT NULL | Admin who uploaded |
 | `uploaded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
 
 **Index:** on `batch_year` for fast batch-filter queries.
 
 ---
 
-### 4.6 Migration V7 â€” Create `weekly_snapshots` Table
+### 4.6 Migration V7 -- Create `weekly_snapshots` Table
 
 **File:** `V7__create_weekly_snapshots.sql`
 
 | Column | Type | Constraint | Purpose |
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | |
-| `user_id` | BIGINT | FK â†’ users.id ON DELETE CASCADE, NOT NULL | |
+| `user_id` | BIGINT | FK -> users.id ON DELETE CASCADE, NOT NULL | |
 | `platform` | VARCHAR(20) | NOT NULL CHECK IN ('CODEFORCES','LEETCODE') | |
 | `rating` | INTEGER | NOT NULL | |
 | `recorded_at` | TIMESTAMP(6) | NOT NULL DEFAULT NOW() | |
@@ -413,10 +413,10 @@ For batch-wise group photos of club members, separate from individual avatars.
 
 ---
 
-## Section 5 â€” Stage 1A: Backend Security
+## Section 5 -- Stage 1A: Backend Security
 **Owner: Member 4**
 **PR: `phase2/backend-security`**
-**Estimated time: 1â€“2 days**
+**Estimated time: 1-2 days**
 **Depends on: Stage 0 merged**
 
 ### Files & What Changes
@@ -426,26 +426,26 @@ Add the following rules **before** `anyRequest().authenticated()`, in this exact
 
 | Rule | Path Pattern | Auth Required |
 |---|---|---|
-| Public â€” list & view events | `GET /api/events`, `GET /api/events/{id}` | None |
-| Public â€” event gallery | `GET /api/events/{id}/photos` | None |
-| Public â€” member gallery | `GET /api/gallery/members` | None |
-| Admin â€” all other event ops | `/api/events/**` | `hasRole('ADMIN')` |
-| Admin â€” gallery upload | `/api/gallery/**` | `hasRole('ADMIN')` |
-| Admin â€” user lookup for event | `GET /api/users/{id}/lookup` | `hasRole('ADMIN')` |
-| Admin â€” assign club role | `PUT /api/users/{id}/club-role` | `hasRole('ADMIN')` |
-| Authenticated â€” snapshots | `GET /api/snapshots/**` | `isAuthenticated()` |
+| Public -- list & view events | `GET /api/events`, `GET /api/events/{id}` | None |
+| Public -- event gallery | `GET /api/events/{id}/photos` | None |
+| Public -- member gallery | `GET /api/gallery/members` | None |
+| Admin -- all other event ops | `/api/events/**` | `hasRole('ADMIN')` |
+| Admin -- gallery upload | `/api/gallery/**` | `hasRole('ADMIN')` |
+| Admin -- user lookup for event | `GET /api/users/{id}/lookup` | `hasRole('ADMIN')` |
+| Admin -- assign club role | `PUT /api/users/{id}/club-role` | `hasRole('ADMIN')` |
+| Authenticated -- snapshots | `GET /api/snapshots/**` | `isAuthenticated()` |
 
 #### `UserController.java`
 Add two new endpoints:
-1. `GET /api/users/{id}/lookup` â€” `@PreAuthorize("hasRole('ADMIN')")` â€” returns `UserLookupDto`. Calls `userService.lookupUserById(id)`.
-2. `PUT /api/users/{id}/club-role` â€” `@PreAuthorize("hasRole('ADMIN')")` â€” body: `{ clubRole: "CORE" }`. Returns updated `UserResponseDto`. Calls `userService.updateClubRole(id, request)`.
+1. `GET /api/users/{id}/lookup` -- `@PreAuthorize("hasRole('ADMIN')")` -- returns `UserLookupDto`. Calls `userService.lookupUserById(id)`.
+2. `PUT /api/users/{id}/club-role` -- `@PreAuthorize("hasRole('ADMIN')")` -- body: `{ clubRole: "CORE" }`. Returns updated `UserResponseDto`. Calls `userService.updateClubRole(id, request)`.
 
 ---
 
-## Section 6 â€” Stage 1B: Backend Data & APIs
+## Section 6 -- Stage 1B: Backend Data & APIs
 **Owner: Member 5**
 **PR: `phase2/backend-data`**
-**Estimated time: 6â€“7 days**
+**Estimated time: 6-7 days**
 **Depends on: Stage 0 merged**
 **This is the largest single task in Phase 2.**
 
@@ -480,15 +480,15 @@ Has static `fromEntity(User)` factory.
 Extend with all new fields: `avatarUrl`, `phoneNumber`, `leetcodeHandle`, `leetcodeRating`, `codechefUrl`, `atcoderUrl`, `githubUrl`, `linkedinUrl`, `clubRole`, `batchYear`.
 
 #### `UserService.java` [MODIFY]
-- `updateProfile()` â€” persist all new fields. If `leetcodeHandle` changed â†’ call `leetCodeSyncService.syncSingleUser()`. If `codeforcesHandle` changed â†’ call `codeforcesSyncService.syncSingleUser()`.
-- `updateClubRole(Long userId, UpdateClubRoleRequest req)` â†’ loads user, sets `clubRole`, saves, returns `UserResponseDto`.
-- `lookupUserById(Long id)` â†’ loads user, returns `UserLookupDto.fromEntity(user)`. Throws `ResourceNotFoundException` if missing.
+- `updateProfile()` -- persist all new fields. If `leetcodeHandle` changed -> call `leetCodeSyncService.syncSingleUser()`. If `codeforcesHandle` changed -> call `codeforcesSyncService.syncSingleUser()`.
+- `updateClubRole(Long userId, UpdateClubRoleRequest req)` -> loads user, sets `clubRole`, saves, returns `UserResponseDto`.
+- `lookupUserById(Long id)` -> loads user, returns `UserLookupDto.fromEntity(user)`. Throws `ResourceNotFoundException` if missing.
 
 #### `UserRepository.java` [MODIFY]
 Add:
-- `List<User> findByLeetcodeHandleIsNotNull()` â€” for bulk LeetCode sync
-- `boolean existsByLeetcodeHandle(String handle)` â€” for uniqueness check
-- `List<User> findByClubRoleIn(List<ClubRole> roles)` â€” for leaderboard filtering
+- `List<User> findByLeetcodeHandleIsNotNull()` -- for bulk LeetCode sync
+- `boolean existsByLeetcodeHandle(String handle)` -- for uniqueness check
+- `List<User> findByClubRoleIn(List<ClubRole> roles)` -- for leaderboard filtering
 
 ---
 
@@ -496,14 +496,14 @@ Add:
 
 #### `LeaderboardService.java` [MODIFY]
 The existing leaderboard currently sorts by rating. Extend it to accept two query params:
-- `platform` â€” `CODEFORCES` (default) or `LEETCODE`
-- `filter` â€” `ALL` (default), `CORE`, `BATCH_REP`, `STUDENTS`
+- `platform` -- `CODEFORCES` (default) or `LEETCODE`
+- `filter` -- `ALL` (default), `CORE`, `BATCH_REP`, `STUDENTS`
 
 Filter logic:
-- `ALL` â†’ no role filter, all users with a rating
-- `CORE` â†’ `clubRole IN (CORE, ASSOCIATE_CORE, CONVENOR, DEPUTY_CONVENOR)`
-- `BATCH_REP` â†’ `clubRole = BATCH_REPRESENTATIVE`
-- `STUDENTS` â†’ `clubRole = STUDENT OR clubRole IS NULL`
+- `ALL` -> no role filter, all users with a rating
+- `CORE` -> `clubRole IN (CORE, ASSOCIATE_CORE, CONVENOR, DEPUTY_CONVENOR)`
+- `BATCH_REP` -> `clubRole = BATCH_REPRESENTATIVE`
+- `STUDENTS` -> `clubRole = STUDENT OR clubRole IS NULL`
 
 #### `LeaderboardResponseDto.java` [MODIFY]
 Add `clubRole` field (String) to the leaderboard row response so the frontend can display it as a badge next to the member's name.
@@ -529,8 +529,8 @@ All levels null-safe.
 **Injected:** `UserRepository`, `RestTemplate`, shared `RateLimiter` bean from `AppConfig`.
 
 Methods:
-- `syncSingleUser(User)` â€” JIT sync on handle save. Guards: null handle â†’ skip. Acquires rate limiter permit. POSTs GraphQL query. Parses response. If `userContestRanking` is null (user never did a contest), sets rating to `0`. On any HTTP error: logs warning, does NOT throw â€” fail-silently so profile saving still works.
-- `syncAllUsers()` â€” bulk sync called by cron. Iterates all users with non-null `leetcodeHandle`. Same logic per user. Logs total updated count.
+- `syncSingleUser(User)` -- JIT sync on handle save. Guards: null handle -> skip. Acquires rate limiter permit. POSTs GraphQL query. Parses response. If `userContestRanking` is null (user never did a contest), sets rating to `0`. On any HTTP error: logs warning, does NOT throw -- fail-silently so profile saving still works.
+- `syncAllUsers()` -- bulk sync called by cron. Iterates all users with non-null `leetcodeHandle`. Same logic per user. Logs total updated count.
 
 #### `CodeforcesSyncService.java` [MODIFY]
 After the existing `syncCodeforcesRatings()` cron method finishes, add a call to `leetCodeSyncService.syncAllUsers()`. Inject `LeetCodeSyncService` via constructor.
@@ -542,49 +542,49 @@ After the existing `syncCodeforcesRatings()` cron method finishes, add a call to
 **Package:** `com.cpclub.backend.event`
 
 #### Entities
-- `Event.java` â€” mirrors `events` table. Has `@Enumerated(EnumType.STRING) EventStatus status`. `createdBy` is `@ManyToOne(fetch=LAZY)` to User.
-- `EventAttendee.java` â€” mirrors `event_attendees`. Three `@ManyToOne` links: event, user (student), addedBy (admin). `@UniqueConstraint` on `(event_id, user_id)`.
-- `EventPhoto.java` â€” mirrors `event_photos`. `@ManyToOne` to Event. Fields: imageUrl, caption, uploadedBy, uploadedAt.
+- `Event.java` -- mirrors `events` table. Has `@Enumerated(EnumType.STRING) EventStatus status`. `createdBy` is `@ManyToOne(fetch=LAZY)` to User.
+- `EventAttendee.java` -- mirrors `event_attendees`. Three `@ManyToOne` links: event, user (student), addedBy (admin). `@UniqueConstraint` on `(event_id, user_id)`.
+- `EventPhoto.java` -- mirrors `event_photos`. `@ManyToOne` to Event. Fields: imageUrl, caption, uploadedBy, uploadedAt.
 
 #### Repositories
-- `EventRepository` â€” `findByStatusOrderByEventDateAsc(EventStatus)`, `findAllByOrderByEventDateDesc()` (admin view), `findByStatusInOrderByEventDateDesc(List<EventStatus>)`.
-- `EventAttendeeRepository` â€” `findByEventIdOrderByAddedAtAsc(Long)`, `existsByEventIdAndUserId(Long, Long)`, `findByEventIdAndUserId(Long, Long)`.
-- `EventPhotoRepository` â€” `findByEventIdOrderByUploadedAtAsc(Long)`.
+- `EventRepository` -- `findByStatusOrderByEventDateAsc(EventStatus)`, `findAllByOrderByEventDateDesc()` (admin view), `findByStatusInOrderByEventDateDesc(List<EventStatus>)`.
+- `EventAttendeeRepository` -- `findByEventIdOrderByAddedAtAsc(Long)`, `existsByEventIdAndUserId(Long, Long)`, `findByEventIdAndUserId(Long, Long)`.
+- `EventPhotoRepository` -- `findByEventIdOrderByUploadedAtAsc(Long)`.
 
 #### DTOs
-- `EventCreateRequest` â€” `title (@NotBlank)`, `description`, `eventDate (@NotNull)`, `location (@NotBlank)`, `coverImageUrl`.
-- `EventResponseDto` â€” `id`, `title`, `description`, `eventDate`, `location`, `status`, `coverImageUrl`, `createdByName`, `createdAt`. Static `fromEntity(Event)`.
-- `EventDetailDto` â€” extends `EventResponseDto` and adds `List<EventPhotoDto>` photos and `Integer attendeeCount`. Used for the public event detail page.
-- `AddAttendeeRequest` â€” single `userId (@NotNull Long)`.
-- `EventAttendeeDto` â€” 14 fields: userId, name, email, phoneNumber, avatarUrl, codeforcesHandle, cfRating, leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl, linkedinUrl, addedAt, clubRole. Static `fromEntity(EventAttendee)`.
-- `EventPhotoDto` â€” `id`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity(EventPhoto)`.
-- `AddEventPhotoRequest` â€” `imageUrl (@NotBlank @Size(max=512))`, `caption`.
+- `EventCreateRequest` -- `title (@NotBlank)`, `description`, `eventDate (@NotNull)`, `location (@NotBlank)`, `coverImageUrl`.
+- `EventResponseDto` -- `id`, `title`, `description`, `eventDate`, `location`, `status`, `coverImageUrl`, `createdByName`, `createdAt`. Static `fromEntity(Event)`.
+- `EventDetailDto` -- extends `EventResponseDto` and adds `List<EventPhotoDto>` photos and `Integer attendeeCount`. Used for the public event detail page.
+- `AddAttendeeRequest` -- single `userId (@NotNull Long)`.
+- `EventAttendeeDto` -- 14 fields: userId, name, email, phoneNumber, avatarUrl, codeforcesHandle, cfRating, leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl, linkedinUrl, addedAt, clubRole. Static `fromEntity(EventAttendee)`.
+- `EventPhotoDto` -- `id`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity(EventPhoto)`.
+- `AddEventPhotoRequest` -- `imageUrl (@NotBlank @Size(max=512))`, `caption`.
 
 #### `EventService.java`
 Methods and their exact behavior:
 
-`createEvent(EventCreateRequest, String adminEmail)` â†’ `EventResponseDto`
+`createEvent(EventCreateRequest, String adminEmail)` -> `EventResponseDto`
 - Loads admin by email. Creates Event with status=UPCOMING. Saves. Returns DTO.
 
-`listUpcomingEvents()` â†’ `List<EventResponseDto>`
+`listUpcomingEvents()` -> `List<EventResponseDto>`
 - Fetches events with `status = UPCOMING`, ordered by `eventDate ASC`.
 
-`listCompletedEvents()` â†’ `List<EventResponseDto>`
+`listCompletedEvents()` -> `List<EventResponseDto>`
 - Fetches events with `status = COMPLETED`, ordered by `eventDate DESC`.
 
-`getEventDetail(Long id)` â†’ `EventDetailDto`
+`getEventDetail(Long id)` -> `EventDetailDto`
 - Loads event (404 if not found). Loads its photos. Gets attendee count. Returns combined DTO.
 
-`updateEvent(Long id, EventCreateRequest)` â†’ `EventResponseDto`
+`updateEvent(Long id, EventCreateRequest)` -> `EventResponseDto`
 - Loads event. Throws 404 if not found. Updates fields. Saves. Returns DTO.
 
-`markEventCompleted(Long id)` â†’ `EventResponseDto`
+`markEventCompleted(Long id)` -> `EventResponseDto`
 - Loads event. Sets `status = COMPLETED`. Saves. Returns DTO.
 
-`cancelEvent(Long id)` â†’ `EventResponseDto`
+`cancelEvent(Long id)` -> `EventResponseDto`
 - Loads event. Sets `status = CANCELLED`. Saves. Returns DTO.
 
-`addAttendee(Long eventId, Long userId, String adminEmail)` â†’ `EventAttendeeDto`
+`addAttendee(Long eventId, Long userId, String adminEmail)` -> `EventAttendeeDto`
 Guard clauses (in this exact order):
 1. Load event. Throw `ResourceNotFoundException` if missing.
 2. Check event status is `UPCOMING`. Throw `BadRequestException("Cannot add attendees to a completed or cancelled event.")` if not.
@@ -593,19 +593,19 @@ Guard clauses (in this exact order):
 5. Check `existsByEventIdAndUserId`. Throw `BadRequestException("Student is already registered.")` if true.
 6. Load admin. Save `EventAttendee`. Return DTO.
 
-`removeAttendee(Long eventId, Long userId)` â€” finds attendee, deletes. Throws 404 if not found.
+`removeAttendee(Long eventId, Long userId)` -- finds attendee, deletes. Throws 404 if not found.
 
-`getAttendees(Long eventId)` â†’ `List<EventAttendeeDto>` â€” loads event first (404 guard), then fetches attendees.
+`getAttendees(Long eventId)` -> `List<EventAttendeeDto>` -- loads event first (404 guard), then fetches attendees.
 
-`addEventPhoto(Long eventId, AddEventPhotoRequest, String adminEmail)` â†’ `EventPhotoDto`
+`addEventPhoto(Long eventId, AddEventPhotoRequest, String adminEmail)` -> `EventPhotoDto`
 - Loads event. Creates `EventPhoto` with imageUrl, caption, uploadedBy admin. Saves. Returns DTO.
 
-`deleteEventPhoto(Long photoId)` â€” finds photo, deletes. Throws 404 if not found.
+`deleteEventPhoto(Long photoId)` -- finds photo, deletes. Throws 404 if not found.
 
-`getEventPhotos(Long eventId)` â†’ `List<EventPhotoDto>` â€” loads event (404 guard), fetches photos ordered by upload time.
+`getEventPhotos(Long eventId)` -> `List<EventPhotoDto>` -- loads event (404 guard), fetches photos ordered by upload time.
 
 #### `EventExportService.java`
-Uses Apache POI XSSF. Method: `exportToExcel(List<EventAttendeeDto>)` â†’ `byte[]`.
+Uses Apache POI XSSF. Method: `exportToExcel(List<EventAttendeeDto>)` -> `byte[]`.
 
 Excel columns (14): ID, Name, Email, Phone Number, Club Role, Avatar URL, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef URL, AtCoder URL, GitHub, LinkedIn, Added At.
 - Row 0: bold headers.
@@ -641,20 +641,20 @@ Base path: `/api/events`
 **Package:** `com.cpclub.backend.gallery`
 
 #### Entities
-- `MemberGalleryPhoto.java` â€” mirrors `member_gallery` table. Fields: batchYear (Integer), imageUrl, caption, uploadedBy (ManyToOne to User), uploadedAt.
+- `MemberGalleryPhoto.java` -- mirrors `member_gallery` table. Fields: batchYear (Integer), imageUrl, caption, uploadedBy (ManyToOne to User), uploadedAt.
 
 #### Repository
-- `MemberGalleryRepository` â€” `findByBatchYearOrderByUploadedAtAsc(Integer)`, `findDistinctBatchYearsOrderByDesc()` (returns `List<Integer>` of all unique years in the DB, for the frontend filter dropdown).
+- `MemberGalleryRepository` -- `findByBatchYearOrderByUploadedAtAsc(Integer)`, `findDistinctBatchYearsOrderByDesc()` (returns `List<Integer>` of all unique years in the DB, for the frontend filter dropdown).
 
 #### DTOs
-- `MemberGalleryPhotoDto` â€” `id`, `batchYear`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity`.
-- `AddMemberPhotoRequest` â€” `batchYear (@NotNull @Min(2000) @Max(2100))`, `imageUrl (@NotBlank)`, `caption`.
+- `MemberGalleryPhotoDto` -- `id`, `batchYear`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity`.
+- `AddMemberPhotoRequest` -- `batchYear (@NotNull @Min(2000) @Max(2100))`, `imageUrl (@NotBlank)`, `caption`.
 
 #### `MemberGalleryService.java`
-- `addPhoto(AddMemberPhotoRequest, String adminEmail)` â†’ `MemberGalleryPhotoDto`
-- `deletePhoto(Long id)` â€” 404 if not found
-- `getPhotosByBatch(Integer batchYear)` â†’ `List<MemberGalleryPhotoDto>`
-- `getAvailableBatchYears()` â†’ `List<Integer>` â€” for frontend dropdown
+- `addPhoto(AddMemberPhotoRequest, String adminEmail)` -> `MemberGalleryPhotoDto`
+- `deletePhoto(Long id)` -- 404 if not found
+- `getPhotosByBatch(Integer batchYear)` -> `List<MemberGalleryPhotoDto>`
+- `getAvailableBatchYears()` -> `List<Integer>` -- for frontend dropdown
 
 #### `GalleryController.java`
 Base path: `/api/gallery/members`
@@ -672,10 +672,10 @@ Base path: `/api/gallery/members`
 
 **Package:** `com.cpclub.backend.snapshot`
 
-- `WeeklySnapshot.java` â€” JPA entity.
-- `WeeklySnapshotRepository.java` â€” `findByUserIdAndPlatformOrderByRecordedAtAsc(Long, String)`.
-- `SnapshotService.java` â€” `@Scheduled(cron = "0 0 0 * * MON")`. Records current CF and LeetCode ratings for ALL users who have them into `weekly_snapshots`. Does NOT re-fetch from APIs â€” snapshots the already-fresh DB values.
-- `SnapshotController.java` â€” `GET /api/snapshots/{userId}/codeforces` and `GET /api/snapshots/{userId}/leetcode`. Returns `List<{date, rating}>`. Auth: `isAuthenticated()`.
+- `WeeklySnapshot.java` -- JPA entity.
+- `WeeklySnapshotRepository.java` -- `findByUserIdAndPlatformOrderByRecordedAtAsc(Long, String)`.
+- `SnapshotService.java` -- `@Scheduled(cron = "0 0 0 * * MON")`. Records current CF and LeetCode ratings for ALL users who have them into `weekly_snapshots`. Does NOT re-fetch from APIs -- snapshots the already-fresh DB values.
+- `SnapshotController.java` -- `GET /api/snapshots/{userId}/codeforces` and `GET /api/snapshots/{userId}/leetcode`. Returns `List<{date, rating}>`. Auth: `isAuthenticated()`.
 
 ---
 
@@ -684,7 +684,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 7 â€” Stage 2A: Frontend UI/UX
+## Section 7 -- Stage 2A: Frontend UI/UX
 **Owner: Member 1**
 **PR: `phase2/frontend-ui`**
 **Estimated time: 3 days**
@@ -693,7 +693,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 | File | Action | What it does |
 |---|---|---|
-| `components/site/event-card.tsx` | NEW | Card for a single event. Shows: cover image (if any), title, date formatted as "Sat 15 Nov Â· 3:00 PM", location, status badge (green=Upcoming, grey=Completed, red=Cancelled). Entire card is a `<Link href="/events/{id}">`. |
+| `components/site/event-card.tsx` | NEW | Card for a single event. Shows: cover image (if any), title, date formatted as "Sat 15 Nov -- 3:00 PM", location, status badge (green=Upcoming, grey=Completed, red=Cancelled). Entire card is a `<Link href="/events/{id}">`. |
 | `components/site/event-photo-grid.tsx` | NEW | Responsive photo grid for event gallery. Props: `photos: EventPhotoDto[]`. Lightbox on click. Shows caption below each photo. |
 | `components/site/member-gallery-grid.tsx` | NEW | Same photo grid for batch photos. Props: `photos: MemberGalleryPhotoDto[]`. |
 | `components/ui/data-table.tsx` | NEW | Generic reusable table. Props: `columns`, `data`, `isLoading`. Shows skeleton on load, "No records" if empty. |
@@ -706,7 +706,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 8 â€” Stage 2B: Frontend Auth & State
+## Section 8 -- Stage 2B: Frontend Auth & State
 **Owner: Member 2**
 **PR: `phase2/frontend-auth`**
 **Estimated time: 2 days**
@@ -724,7 +724,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 9 â€” Stage 2C: Frontend Dashboards & Data
+## Section 9 -- Stage 2C: Frontend Dashboards & Data
 **Owner: Member 3**
 **PR: `phase2/frontend-dashboards`**
 **Depends on: M1 + M2 PRs merged**
@@ -734,56 +734,56 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 #### `components/site/profile-dashboard.tsx` [MAJOR MODIFY]
 
-**Change 1 â€” Avatar:**
-If `profile.avatarUrl` exists â†’ render image with CF rank border. If owner and no avatar â†’ show placeholder icon + "Upload photo" button. Click opens Cloudinary Upload Widget (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`). On success â†’ `dashboardService.updateProfile({ avatarUrl: result.info.secure_url })` â†’ `loadProfile()`.
+**Change 1 -- Avatar:**
+If `profile.avatarUrl` exists -> render image with CF rank border. If owner and no avatar -> show placeholder icon + "Upload photo" button. Click opens Cloudinary Upload Widget (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`). On success -> `dashboardService.updateProfile({ avatarUrl: result.info.secure_url })` -> `loadProfile()`.
 
-**Change 2 â€” Club Role & Batch Year badge:**
+**Change 2 -- Club Role & Batch Year badge:**
 Below the member's name in the profile header, show their `<ClubRoleBadge clubRole={profile.clubRole} />` (the M1 component). If no club role, show nothing.
 
-**Change 3 â€” Platform links in header:**
+**Change 3 -- Platform links in header:**
 Row of icon links below CF handle. Only rendered if the URL is set: CodeChef, AtCoder, GitHub, LinkedIn. Each is `<a href="..." target="_blank" rel="noopener noreferrer">`.
 
-**Change 4 â€” Edit Profile panel:**
-Replace the inline CF handle edit form with a full "Edit Profile" panel (owner-only). Fields: Name (required), Phone Number (required â€” cannot save without it), Codeforces Handle, LeetCode Handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked (`â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢`) to visitors. On save: `PUT /api/users/profile`. On success: refresh. On error: show inline error.
+**Change 4 -- Edit Profile panel:**
+Replace the inline CF handle edit form with a full "Edit Profile" panel (owner-only). Fields: Name (required), Phone Number (required -- cannot save without it), Codeforces Handle, LeetCode Handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked (`--------`) to visitors. On save: `PUT /api/users/profile`. On success: refresh. On error: show inline error.
 
-**Change 5 â€” Rating charts:**
+**Change 5 -- Rating charts:**
 Replace "Coming Soon" overlay with live charts using `recharts`. CF chart: `GET /api/snapshots/{userId}/codeforces`. LeetCode chart: `GET /api/snapshots/{userId}/leetcode`. If < 2 points: "Not enough data yet." Reuse Phase 1 chart styling.
 
 ---
 
 #### `app/(dashboard)/admin/page.tsx` [FILL IN]
 
-**Tab 1 â€” Members:**
+**Tab 1 -- Members:**
 Fetches `GET /api/users/all`. Renders `<DataTable>` with columns:
 
 | Column | Value | Actions |
 |---|---|---|
-| Avatar | small rounded image | â€” |
-| Name | `user.name` | â€” |
-| Email | `user.email` | â€” |
-| Phone | `user.phoneNumber \|\| 'â€”'` | â€” |
-| CF Handle + Rating | â€” | â€” |
-| LeetCode Handle + Rating | â€” | â€” |
+| Avatar | small rounded image | -- |
+| Name | `user.name` | -- |
+| Email | `user.email` | -- |
+| Phone | `user.phoneNumber \|\| '--'` | -- |
+| CF Handle + Rating | -- | -- |
+| LeetCode Handle + Rating | -- | -- |
 | Club Role | `<ClubRoleBadge />` | "Change Role" dropdown |
-| Batch Year | `user.batchYear \|\| 'â€”'` | â€” |
+| Batch Year | `user.batchYear \|\| '--'` | -- |
 | Platform Role | Admin / User badge | "Promote" / "Demote" button |
-| Actions | â€” | "Delete" button with confirmation dialog |
+| Actions | -- | "Delete" button with confirmation dialog |
 
-"Change Club Role" â€” inline dropdown with all `ClubRole` values. On select: calls `PUT /api/users/{id}/club-role`. Refreshes table.
-"Promote/Demote" â€” calls `PUT /api/users/{id}/role`. Refreshes table.
-"Delete" â€” confirmation dialog. Calls `DELETE /api/users/{id}`. Refreshes table.
+"Change Club Role" -- inline dropdown with all `ClubRole` values. On select: calls `PUT /api/users/{id}/club-role`. Refreshes table.
+"Promote/Demote" -- calls `PUT /api/users/{id}/role`. Refreshes table.
+"Delete" -- confirmation dialog. Calls `DELETE /api/users/{id}`. Refreshes table.
 
-**Tab 2 â€” Events:**
-- "Create New Event" form: Title (required), Description (optional), Date+Time (datetime-local input), Location (required), Cover Image (Cloudinary Upload Widget button â€” inserts URL into hidden field). Submit â†’ `POST /api/events`. Refreshes list.
+**Tab 2 -- Events:**
+- "Create New Event" form: Title (required), Description (optional), Date+Time (datetime-local input), Location (required), Cover Image (Cloudinary Upload Widget button -- inserts URL into hidden field). Submit -> `POST /api/events`. Refreshes list.
 - Table of ALL events (admin view from `GET /api/events`). Columns: Title, Date, Location, Status badge, Cover Image thumbnail, Actions.
-- Per-event actions: "Edit" (inline form), "Mark Completed", "Cancel", "Manage Attendees" â†’ navigates to `/admin/events/{id}`.
+- Per-event actions: "Edit" (inline form), "Mark Completed", "Cancel", "Manage Attendees" -> navigates to `/admin/events/{id}`.
 
-**Tab 3 â€” Galleries:**
+**Tab 3 -- Galleries:**
 - **Member Gallery sub-tab:**
-  - Batch year input (number) + Cloudinary upload button + Caption field. Submit â†’ `POST /api/gallery/members`. Refreshes grid.
+  - Batch year input (number) + Cloudinary upload button + Caption field. Submit -> `POST /api/gallery/members`. Refreshes grid.
   - Grid of uploaded photos, grouped by batch year. "Delete" button per photo.
 - **Event Galleries sub-tab:**
-  - Dropdown to select event. Once selected, shows existing photos for that event + upload form. Submit â†’ `POST /api/events/{id}/photos`. Delete per photo.
+  - Dropdown to select event. Once selected, shows existing photos for that event + upload form. Submit -> `POST /api/events/{id}/photos`. Delete per photo.
 
 ---
 
@@ -791,19 +791,19 @@ Fetches `GET /api/users/all`. Renders `<DataTable>` with columns:
 
 Two-column layout (stacks on mobile):
 
-**Left â€” Student Search Panel:**
+**Left -- Student Search Panel:**
 - Input: "Enter Student ID". Search button.
 - On search: `eventsService.lookupUser(id)`. Shows loading state.
-- Error states: non-numeric input â†’ inline validation. 404 â†’ "No student found with this ID." 
-- Preview card after successful search: avatar, name, email, phone (or red warning "âš ï¸ No phone â€” ask student to update profile"), CF + LeetCode data, club role badge, social links.
-- "Add to Event" button: disabled if no student loaded, no phone number, or already in attendee list. Shows "Already Added âœ“" chip if already registered.
-- On Add: `eventsService.addAttendee(eventId, userId)` â†’ show success toast â†’ clear search panel â†’ refresh attendee list.
+- Error states: non-numeric input -> inline validation. 404 -> "No student found with this ID." 
+- Preview card after successful search: avatar, name, email, phone (or red warning "[WARN] No phone -- ask student to update profile"), CF + LeetCode data, club role badge, social links.
+- "Add to Event" button: disabled if no student loaded, no phone number, or already in attendee list. Shows "Already Added [DONE]" chip if already registered.
+- On Add: `eventsService.addAttendee(eventId, userId)` -> show success toast -> clear search panel -> refresh attendee list.
 
-**Right â€” Attendee Table:**
+**Right -- Attendee Table:**
 - Header: event title, attendee count badge, "Export to Excel" button.
-- Excel export: `eventsService.exportAttendees(eventId)` (responseType: blob) â†’ `URL.createObjectURL(new Blob([res.data]))` â†’ programmatic `<a>` click â†’ `URL.revokeObjectURL()`.
+- Excel export: `eventsService.exportAttendees(eventId)` (responseType: blob) -> `URL.createObjectURL(new Blob([res.data]))` -> programmatic `<a>` click -> `URL.revokeObjectURL()`.
 - `<DataTable>` with columns: Name, Email, Phone, Club Role, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef, AtCoder, GitHub, LinkedIn, Added At, Remove.
-- "Remove" per row: confirmation dialog â†’ `eventsService.removeAttendee(eventId, userId)` â†’ refresh.
+- "Remove" per row: confirmation dialog -> `eventsService.removeAttendee(eventId, userId)` -> refresh.
 
 ---
 
@@ -811,18 +811,18 @@ Two-column layout (stacks on mobile):
 
 Add two sets of filter controls above the leaderboard table:
 
-**Platform toggles:** "Codeforces | LeetCode" â€” pill buttons. Updates `platform` state and re-fetches.
+**Platform toggles:** "Codeforces | LeetCode" -- pill buttons. Updates `platform` state and re-fetches.
 
-**Club filter toggles:** "All | Core | Batch Rep | Students" â€” these are the **existing UI filters** the teammate mentioned. Now they become data-driven (not just cosmetic). Updates `filter` state and re-fetches with `?filter=CORE` etc.
+**Club filter toggles:** "All | Core | Batch Rep | Students" -- these are the **existing UI filters** the teammate mentioned. Now they become data-driven (not just cosmetic). Updates `filter` state and re-fetches with `?filter=CORE` etc.
 
 In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` for each member.
 
 ---
 
-## Section 10 â€” Stage 3: Integration, Tests & Polish
+## Section 10 -- Stage 3: Integration, Tests & Polish
 **Owner: Member 6**
 **PR: `phase2/integration-and-tests`**
-**Estimated time: 2â€“3 days**
+**Estimated time: 2-3 days**
 
 ### Unit Tests
 
@@ -874,7 +874,7 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME= (frontend Upload Widget)
 
 ---
 
-## Section 11 â€” Full API Contract Reference
+## Section 11 -- Full API Contract Reference
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -911,7 +911,7 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME= (frontend Upload Widget)
 
 ---
 
-## Section 12 â€” 6-Member Summary
+## Section 12 -- 6-Member Summary
 
 | Member | Role | Stage | Owns |
 |---|---|---|---|
