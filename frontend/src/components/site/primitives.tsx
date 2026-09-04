@@ -105,7 +105,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cn("mx-auto max-w-[1240px] px-6", className)}>
+    <section className={cn("container-page", className)}>
       {children}
     </section>
   );
