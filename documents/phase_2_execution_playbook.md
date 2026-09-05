@@ -37,6 +37,18 @@ Rules:
 - Run ./mvnw.cmd clean test at the end and fix any failures before raising a PR
 ```
 
+> [!NOTE]
+> **Stage 0 is complete** and merged into `feature/phase-2` (PR #50). It also
+> carried a fix worth knowing about: Flyway had never actually run in this repo.
+> Boot 4 moved `FlywayAutoConfiguration` into a separate
+> `org.springframework.boot:spring-boot-flyway` module that was never declared,
+> so `flyway-core` sat inert. Everyone must run `./mvnw clean install` after
+> pulling, and recreate any local database built before the migrations
+> (`docker compose down -v && docker compose up -d`).
+
+**M6 also owns the `snapshot/` package in Stage 1** (Section 6.6), moved off M5
+to shorten the critical path. It has no dependency on any other member's work.
+
 ---
 
 ### [M4] Member 4 -- Backend Security
@@ -57,6 +69,14 @@ Then implement:
 1. Add 8 new security rules to SecurityConfig.java in the correct order (public GET rules before Admin wildcard rules -- Spring Security evaluates top-to-bottom)
 2. Add GET /api/users/{id}/lookup to UserController with @PreAuthorize("hasRole('ADMIN')")
 3. Add PUT /api/users/{id}/club-role to UserController with @PreAuthorize("hasRole('ADMIN')")
+
+Then, in the same branch, implement the gallery package described in Section 6.5:
+4. Create gallery/ package -- MemberGalleryRepository, MemberGalleryPhotoDto,
+   AddMemberPhotoRequest, MemberGalleryService, GalleryController
+   (the MemberGalleryPhoto entity already exists from Stage 0)
+
+The gallery package has no dependency on M5's work, so it can be built in
+parallel with Stage 1B without coordination.
 
 Run ./mvnw.cmd clean test and fix any failures before raising a PR into feature/phase-2.
 ```
@@ -90,10 +110,16 @@ Then implement in this order:
 5. Update LeaderboardService -- platform and clubRole filter support
 6. Create leetcode/ package -- LeetCodeGraphQLResponse + LeetCodeSyncService
 7. Update CodeforcesSyncService -- call LeetCode bulk sync after CF sync
-8. Create event/ package -- entities, repos, all DTOs, EventService (with all guard clauses), EventExportService (Apache POI), EventController
-9. Create gallery/ package -- MemberGalleryPhoto entity, repo, DTOs, service, GalleryController
-10. Create snapshot/ package -- SnapshotService (weekly cron), SnapshotController
-11. Add Apache POI dependency to pom.xml
+8. Create event/ package -- repos, all DTOs, EventService (with all guard clauses), EventExportService (Apache POI), EventController
+   (the Event, EventAttendee and EventPhoto entities already exist from Stage 0)
+9. Add Apache POI dependency to pom.xml
+
+NOT yours -- reassigned to balance the critical path:
+- gallery/ package  -> M4, alongside Stage 1A security
+- snapshot/ package -> M6
+
+You DO still own leetcode/, because your UserService.updateProfile() and
+CodeforcesSyncService both call into it.
 
 Run ./mvnw.cmd clean test and fix all failures before raising a PR.
 ```
@@ -211,7 +237,7 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 | CodeChef / AtCoder sync | **No sync. Link only.** | No stable public API. Scraping breaks on DOM changes. |
 | LeetCode sync | **Full GraphQL API sync.** JIT on handle save + every 6h cron. | Reliable public endpoint. |
 | Avatar | **Cloudinary Upload Widget.** URL saved to DB. | Eliminates binary blobs in PostgreSQL. |
-| Phone number | **Mandatory on user profile.** | Required before admin can add a student to an event. |
+| Phone number | **Requested, not enforced.** UI marks it required; the backend warns but never blocks an event add. | Enforcing it blocked every pre-Phase-2 member (all have `phone_number = NULL`) from being marked present, and only the member themselves can fix it. Attendance is the official record; a sparse phone column is the lesser cost. |
 | Event attendance | **Admin-only.** Admin searches by User ID; details auto-fill from DB. | Official record, not self-controlled. |
 | Excel export | **Apache POI XSSF.** Server-side `.xlsx` streamed as binary. | Universal format for club admins. |
 | Soft delete for events | Events are **deactivated**, never hard deleted. | Preserves attendance + gallery history. |
@@ -235,20 +261,22 @@ The following features are **new additions** on top of the original Phase 2 scop
 ## Section 3 -- Implementation Stages & Dependencies
 
 ```
-STAGE 0 --- DB Migrations + Entity Layer
+STAGE 0 --- DB Migrations + Entity Layer            [DONE - PR #50]
               Owner: M6 -- PR: phase2/stage-0
               Must merge before ANY other branch starts.
                     |
-        +-----------+-----------+
-        v                       v
-STAGE 1A - Backend Security   STAGE 1B - Backend Data & APIs
-  Owner: M4                     Owner: M5
-  PR: phase2/backend-security   PR: phase2/backend-data
-  Runs parallel with M5         Runs parallel with M4
-        |                               |
-        +-----------+-------------------+
+        +-----------+-----------+-----------------+
+        v                       v                 v
+STAGE 1A - Security+Gallery  STAGE 1B - Data   STAGE 1C - Snapshots
+  Owner: M4                    Owner: M5         Owner: M6
+  PR: phase2/backend-security  PR: phase2/       PR: phase2/snapshots
+                                  backend-data
+  ~3-4 days                    ~4-5 days         ~1 day
+  All three run in parallel. None of them calls into another.
+        |                       |                 |
+        +-----------+-----------+-----------------+
                     v
-     Both Stage 1 PRs merged into feature/phase-2
+     All Stage 1 PRs merged into feature/phase-2
                     |
         +-----------+-----------+
         v           v           v
@@ -413,11 +441,17 @@ For batch-wise group photos of club members, separate from individual avatars.
 
 ---
 
-## Section 5 -- Stage 1A: Backend Security
+## Section 5 -- Stage 1A: Backend Security + Gallery
 **Owner: Member 4**
 **PR: `phase2/backend-security`**
-**Estimated time: 1-2 days**
+**Estimated time: 3-4 days**
 **Depends on: Stage 0 merged**
+
+> [!NOTE]
+> M4 also owns the `gallery/` package (Section 6.5), moved off M5. Security work
+> was 1-2 days against M5's 6-7, leaving M4 idle for most of Stage 1 while the
+> critical path waited on a single person. Gallery has no dependency on M5's
+> work, so it can be built in the same branch without coordination.
 
 ### Files & What Changes
 
@@ -445,9 +479,18 @@ Add two new endpoints:
 ## Section 6 -- Stage 1B: Backend Data & APIs
 **Owner: Member 5**
 **PR: `phase2/backend-data`**
-**Estimated time: 6-7 days**
+**Estimated time: 4-5 days** (was 6-7 before gallery and snapshot were reassigned)
 **Depends on: Stage 0 merged**
-**This is the largest single task in Phase 2.**
+**This is still the largest single task in Phase 2.**
+
+> [!IMPORTANT]
+> Two packages below are no longer M5's:
+> - **6.5 `gallery/` -> M4**, built alongside Stage 1A security
+> - **6.6 `snapshot/` -> M6**
+>
+> M5 keeps `leetcode/` (6.3), because `UserService.updateProfile()` and
+> `CodeforcesSyncService` both call into it -- splitting it would have blocked
+> M5 on another member's class.
 
 ---
 
@@ -556,7 +599,8 @@ After the existing `syncCodeforcesRatings()` cron method finishes, add a call to
 - `EventResponseDto` -- `id`, `title`, `description`, `eventDate`, `location`, `status`, `coverImageUrl`, `createdByName`, `createdAt`. Static `fromEntity(Event)`.
 - `EventDetailDto` -- extends `EventResponseDto` and adds `List<EventPhotoDto>` photos and `Integer attendeeCount`. Used for the public event detail page.
 - `AddAttendeeRequest` -- single `userId (@NotNull Long)`.
-- `EventAttendeeDto` -- 14 fields: userId, name, email, phoneNumber, avatarUrl, codeforcesHandle, cfRating, leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl, linkedinUrl, addedAt, clubRole. Static `fromEntity(EventAttendee)`.
+- `EventAttendeeDto` -- 16 fields: userId, name, email, phoneNumber, hasPhone, avatarUrl, codeforcesHandle, cfRating, leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl, linkedinUrl, addedAt, clubRole. Static `fromEntity(EventAttendee)`.
+  `hasPhone` is a boolean derived from `phoneNumber` being non-null and non-blank; it drives the missing-phone warning in the admin attendee table (see the note under `addAttendee`). The v3 plan said "14 fields" but listed 15; the correct count with `hasPhone` is 16.
 - `EventPhotoDto` -- `id`, `imageUrl`, `caption`, `uploadedAt`. Static `fromEntity(EventPhoto)`.
 - `AddEventPhotoRequest` -- `imageUrl (@NotBlank @Size(max=512))`, `caption`.
 
@@ -589,9 +633,27 @@ Guard clauses (in this exact order):
 1. Load event. Throw `ResourceNotFoundException` if missing.
 2. Check event status is `UPCOMING`. Throw `BadRequestException("Cannot add attendees to a completed or cancelled event.")` if not.
 3. Load user. Throw `ResourceNotFoundException("Student not found")` if missing.
-4. Check `user.phoneNumber` not null/blank. Throw `BadRequestException("Student has no phone number on their profile.")` if missing.
+4. **Do NOT block on a missing phone number.** Set `hasPhone = false` on the
+   returned DTO when `user.phoneNumber` is null or blank, and let the add
+   proceed. See the note below.
 5. Check `existsByEventIdAndUserId`. Throw `BadRequestException("Student is already registered.")` if true.
 6. Load admin. Save `EventAttendee`. Return DTO.
+
+> [!IMPORTANT]
+> **Guard 4 was a hard `BadRequestException` in v3 and has been downgraded.**
+>
+> Every user created before Phase 2 has `phone_number = NULL` -- V2 added the
+> column as nullable with no backfill. A hard block meant that on the first day
+> this feature shipped, an admin standing at an event could add *nobody*, and
+> could not fix it either: `PUT /api/users/profile` is self-only, so only the
+> member can set their own phone.
+>
+> Attendance is the official club record. Losing it because someone had not
+> filled in a phone number is a worse outcome than a sparse phone column.
+>
+> This also resolves a contradiction in v3: M3's admin panel was already
+> specified to "show warning if no phone" and then offer an Add button, which
+> only makes sense if the add is permitted.
 
 `removeAttendee(Long eventId, Long userId)` -- finds attendee, deletes. Throws 404 if not found.
 
@@ -607,7 +669,7 @@ Guard clauses (in this exact order):
 #### `EventExportService.java`
 Uses Apache POI XSSF. Method: `exportToExcel(List<EventAttendeeDto>)` -> `byte[]`.
 
-Excel columns (14): ID, Name, Email, Phone Number, Club Role, Avatar URL, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef URL, AtCoder URL, GitHub, LinkedIn, Added At.
+Excel columns (15 -- the v3 plan said 14 but listed 15; `EventExportServiceTest` asserts on these headers, so the count matters): ID, Name, Email, Phone Number, Club Role, Avatar URL, CF Handle, CF Rating, LeetCode Handle, LeetCode Rating, CodeChef URL, AtCoder URL, GitHub, LinkedIn, Added At.
 - Row 0: bold headers.
 - Row 1+: one row per attendee.
 - All columns auto-sized.
@@ -636,9 +698,11 @@ Base path: `/api/events`
 
 ---
 
-### 6.5 Gallery Package [NEW]
+### 6.5 Gallery Package [NEW] -- OWNER: M4 (not M5)
 
 **Package:** `com.cpclub.backend.gallery`
+**Built in M4's `feature/M4-phase2-security` branch, alongside Stage 1A.**
+The `MemberGalleryPhoto` entity already exists from Stage 0.
 
 #### Entities
 - `MemberGalleryPhoto.java` -- mirrors `member_gallery` table. Fields: batchYear (Integer), imageUrl, caption, uploadedBy (ManyToOne to User), uploadedAt.
@@ -668,9 +732,13 @@ Base path: `/api/gallery/members`
 
 ---
 
-### 6.6 Snapshot Package [NEW]
+### 6.6 Snapshot Package [NEW] -- OWNER: M6 (not M5)
 
 **Package:** `com.cpclub.backend.snapshot`
+**Built in M6's own branch, in parallel with Stage 1.**
+The `WeeklySnapshot` entity already exists from Stage 0. This package reads the
+`users` table and writes `weekly_snapshots`; nothing in M4's or M5's work calls
+into it, so it can land in any order.
 
 - `WeeklySnapshot.java` -- JPA entity.
 - `WeeklySnapshotRepository.java` -- `findByUserIdAndPlatformOrderByRecordedAtAsc(Long, String)`.
@@ -796,7 +864,11 @@ Two-column layout (stacks on mobile):
 - On search: `eventsService.lookupUser(id)`. Shows loading state.
 - Error states: non-numeric input -> inline validation. 404 -> "No student found with this ID." 
 - Preview card after successful search: avatar, name, email, phone (or red warning "[WARN] No phone -- ask student to update profile"), CF + LeetCode data, club role badge, social links.
-- "Add to Event" button: disabled if no student loaded, no phone number, or already in attendee list. Shows "Already Added [DONE]" chip if already registered.
+- "Add to Event" button: disabled if no student loaded, or already in attendee list. Shows "Already Added [DONE]" chip if already registered.
+  **A missing phone number must NOT disable this button** -- show the red warning
+  on the preview card and let the admin proceed. See the note under `addAttendee`
+  in Section 6.4: blocking here would make the feature unusable for every member
+  who joined before Phase 2, and the admin cannot fix another member's profile.
 - On Add: `eventsService.addAttendee(eventId, userId)` -> show success toast -> clear search panel -> refresh attendee list.
 
 **Right -- Attendee Table:**
@@ -866,11 +938,37 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 | `deletePhoto_notFound` | ID doesn't exist | `ResourceNotFoundException` |
 | `getByBatch_empty` | No photos for year 2020 | Empty list (not 404) |
 
-### Environment Variables for Render
+### Environment Variables
+
+**Frontend only (Vercel).** Both are documented in `frontend/.env.example`:
 ```
-CLOUDINARY_CLOUD_NAME=...          (backend, if needed)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME= (frontend Upload Widget)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=stdcydx1
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=cpclub_unsigned
 ```
+These are `NEXT_PUBLIC_*`, so they are baked in at build time -- adding them to
+Vercel does nothing until the site is redeployed.
+
+**Nothing goes on Render.** The browser uploads straight to Cloudinary via the
+Upload Widget and the backend only ever stores the returned URL string, so the
+backend needs no Cloudinary credentials. The v3 plan listed a backend
+`CLOUDINARY_CLOUD_NAME` "if needed"; it is not needed, and
+`backend/.env.example` documents only variables the application actually reads.
+
+### Carried-over follow-ups
+
+1. **Add Testcontainers.** `src/test/resources/application-test.yml` runs H2 with
+   `ddl-auto: create-drop` and Flyway **disabled**, so CI cannot detect a
+   migration that has drifted from the entities -- a green suite proves nothing
+   about the schema. Stage 0 was verified by booting against real PostgreSQL by
+   hand; that should not stay a manual step.
+2. **Harden the Cloudinary upload preset.** `cpclub_unsigned` is correctly set to
+   Unsigned with folder `cpclub`, but `Allowed formats` and `Max file size` were
+   not set. Verified consequence: a `.txt` file uploads successfully through
+   `/raw/upload` using the public preset name. Set `Allowed formats` to
+   `jpg,png,webp` and `Max file size` to `5000000` in the Cloudinary console.
+3. **Backfill phone numbers.** Soft campaign, since the hard block was removed
+   (Section 1). Size it with:
+   `SELECT COUNT(*) AS total, COUNT(phone_number) AS have_phone FROM users;`
 
 ---
 
@@ -915,9 +1013,9 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME= (frontend Upload Widget)
 
 | Member | Role | Stage | Owns |
 |---|---|---|---|
-| **M6 (Lead)** | Foundation + DevOps | 0 + 3 | All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, LeetCode cron wiring, snapshot cron, all unit tests, Render env vars, PR reviews, final merge |
-| **M4** | Backend Security | 1A | `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint |
-| **M5** | Backend Data + APIs | 1B | `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (5 DTOs + 3 repos + 2 services + 1 controller), entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller), entire `snapshot/` package, `pom.xml` POI dep |
+| **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[Stage 1]** entire `snapshot/` package. **[Stage 3]** all unit tests, Render env vars, PR reviews, final merge |
+| **M4** | Backend Security + Gallery | 1A | `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint, entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller) |
+| **M5** | Backend Data + APIs | 1B | `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (7 DTOs + 3 repos + 2 services + 1 controller), `pom.xml` POI dep |
 | **M1** | Frontend UI/UX | 2A | `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
 | **M2** | Frontend State + Auth | 2B | `auth.ts` new User fields, `types/api.ts` 6 new types + ClubRole union, `events.ts` service (17 functions), `gallery.ts` service (4 functions), `dashboard.ts` mapper update, `leaderboard.ts` params update |
 | **M3** | Frontend Dashboards | 2C | Profile dashboard (Cloudinary avatar, club role badge, platform links, edit panel, rating charts), Admin dashboard all 3 tabs (Members with club role assignment, Events CRUD + gallery upload, Gallery management), Admin event attendee page (search + auto-fill + table + Excel download), Leaderboard platform + club filter toggles |
