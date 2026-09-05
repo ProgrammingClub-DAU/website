@@ -85,6 +85,19 @@
 			alter anything, so without a migration tool the first schema change after
 			launch fails the deploy with no forward path.
 		-->
+		<!--
+			Boot 4 split each technology's auto-configuration into its own module.
+			FlywayAutoConfiguration used to ship inside spring-boot-autoconfigure;
+			in 4.x it lives here. Without this module flyway-core sits on the
+			classpath and is never invoked: no migration runs, no
+			flyway_schema_history table is created, and `spring.flyway.enabled: true`
+			is silently ignored. Removing it does not fail the build; it fails the
+			next deploy, when ddl-auto: validate finds a table no migration created.
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
