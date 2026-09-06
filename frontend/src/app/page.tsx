@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import BorderGlow from "@/components/site/border-glow";
+import { ClubWordmark } from "@/components/site/club-wordmark";
 import { HeroDotField } from "@/components/site/hero-dot-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/components/site/primitives";
 import { CF_RANKS } from "@/lib/cf-ranks";
 import { howItWorks, stats } from "@/lib/content/home";
+import { site } from "@/lib/site";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
 
@@ -232,6 +234,10 @@ export default function HomePage() {
         style={{ background: "var(--band)" }}
       >
         <div className="container-page py-20">
+          {/* A wordmark, not a heading: the component carries the text for a
+              screen reader and the card's own h2 below is untouched. */}
+          <ClubWordmark text={site.name} />
+
           <BorderGlow
             className="mx-auto max-w-[680px]"
             contentClassName="px-8 py-14 text-center"
