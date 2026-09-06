@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import BorderGlow from "@/components/site/border-glow";
+import { HeroDotField } from "@/components/site/hero-dot-field";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -69,29 +70,36 @@ const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
 export default function HomePage() {
   return (
     <>
-      {/* Centred since the hero lost its right-hand panel. Left-aligned text with
-          nothing beside it left the whole right half of a wide screen empty and
-          read as a layout fault rather than a choice. */}
-      <Section className="py-20 text-center md:py-28">
-        <div className="mx-auto max-w-[54ch]">
-          <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
-          <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
-            A home for problem solvers at DAU.
-          </h1>
-          <p className="mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
-            Weekly contests, editorials, and a leaderboard synced from Codeforces — for
-            everyone from first-time solvers to ICPC regionalists.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button asChild className="h-10 rounded-full px-5.5">
-              <Link href="/register">Join the Club</Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
-              <Link href="/events">See our events</Link>
-            </Button>
+      {/* The dot field is full-bleed, so it hangs off this wrapper rather than
+          off the Section, which is width-capped by container-page. `isolate`
+          keeps its negative z-index inside this subtree. */}
+      <div className="relative isolate overflow-hidden">
+        <HeroDotField />
+
+        {/* Centred since the hero lost its right-hand panel. Left-aligned text
+            with nothing beside it left the whole right half of a wide screen
+            empty and read as a layout fault rather than a choice. */}
+        <Section className="py-20 text-center md:py-28">
+          <div className="mx-auto max-w-[54ch]">
+            <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
+            <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
+              A home for problem solvers at DAU.
+            </h1>
+            <p className="mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
+              Weekly contests, editorials, and a leaderboard synced from Codeforces — for
+              everyone from first-time solvers to ICPC regionalists.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Button asChild className="h-10 rounded-full px-5.5">
+                <Link href="/register">Join the Club</Link>
+              </Button>
+              <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
+                <Link href="/events">See our events</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </Section>
+        </Section>
+      </div>
 
       {/* Every figure here is a placeholder — confirm against club records before launch. */}
       <Section>

@@ -184,6 +184,15 @@
   --glow-strength: 0.5;
   --glow-fill-strength: 0.3;
 
+  /* The hero dot field. These are literal colours rather than references to the
+     rank tokens because they are read with getComputedStyle and handed to a
+     canvas gradient, and a canvas has no CSS cascade to resolve var() against.
+     They are --cf-specialist and --cf-candidate at reduced alpha; if those move,
+     these move with them by hand. */
+  --dot-field-from: rgb(0 134 139 / 0.85);
+  --dot-field-to: rgb(147 51 196 / 0.7);
+  --dot-field-glow: rgb(94 106 210 / 0.22);
+
   --card: #fbfbfc;
   --card-foreground: #08090a;
   --popover: #ffffff;
@@ -262,6 +271,10 @@
   --glow-outer-blend: plus-lighter;
   --glow-strength: 1;
   --glow-fill-strength: 1;
+
+  --dot-field-from: rgb(0 194 199 / 0.8);
+  --dot-field-to: rgb(192 102 224 / 0.7);
+  --dot-field-glow: rgb(94 106 210 / 0.4);
 
   --card: #111113;
   --card-foreground: #f7f8f8;
@@ -419,6 +432,18 @@
      it — so the blur silently did nothing. Tailwind's build prefixes from the
      browserslist targets; hand-written prefixes are what broke it. */
   backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* Keeps the hero's dot field off the hero's copy. Two layers intersected: the
+   first fades the lattice out towards the edges of the block so it has no hard
+   boundary, the second knocks a hole in the middle where the heading and the
+   paragraph sit. With only the first, the lattice runs straight through the
+   text and costs it contrast. */
+@utility hero-field-mask {
+  mask-image:
+    radial-gradient(130% 110% at 50% 18%, #000 35%, transparent 85%),
+    radial-gradient(46% 58% at 50% 50%, transparent 18%, #000 88%);
+  mask-composite: intersect;
 }
 
 /* Frosted control — the button counterpart to .glass-panel.
