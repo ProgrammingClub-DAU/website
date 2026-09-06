@@ -3,31 +3,25 @@
 /**
  * Profile Dashboard Page
  *
- * This is a client component because it uses interactive libraries (recharts, react-activity-calendar).
+ * This is a client component because it uses interactive libraries
+ * (react-activity-calendar) and a hand-built SVG rating graph.
  * It receives data from a server-side wrapper and renders:
  * - Profile header with avatar, name (colored by CF rank), club role, and key stats
  * - Club Activity & Event Performance (stats summary, achievements, event list with filters)
  * - GitHub-style activity heat map (green dots for DSA practice days)
- * - Contest rating graph over time (recharts line chart)
+ * - Contest rating graph over time (RatingGraph, plain SVG)
  * - Platform-wise breakdown of problems solved
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+
+import { RatingGraph } from "@/components/site/rating-graph";
 import { dashboardService } from "@/lib/services/dashboard";
 import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
 import type { Profile, EventParticipation, ClubEventType } from "@/types/api";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import dynamic from "next/dynamic";
 const ActivityCalendar = dynamic(
   () => import("react-activity-calendar").then((mod) => mod.ActivityCalendar),
@@ -56,17 +50,6 @@ import {
 import Image from "next/image";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
-
-// ── Rank color helper for rating values (Codeforces thresholds) ──
-function ratingToRankName(rating: number): string {
-  if (rating >= 2400) return "Grandmaster";
-  if (rating >= 2100) return "Master";
-  if (rating >= 1900) return "Candidate Master";
-  if (rating >= 1600) return "Expert";
-  if (rating >= 1400) return "Specialist";
-  if (rating >= 1200) return "Pupil";
-  return "Newbie";
-}
 
 // ── Event type icon and color (used in Phase 2 event section) ──
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -537,54 +520,7 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
         </CardHeader>
         <CardContent>
           {cfHistory.length > 0 ? (
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cfHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
-                    tickFormatter={(v: string) => {
-                      const d = new Date(v);
-                      return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-                    }}
-                  />
-                  <YAxis
-                    domain={["dataMin - 100", "dataMax + 100"]}
-                    tick={{ fontSize: 11, fill: "var(--fg-muted)" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--surface-2)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                    labelFormatter={(label: unknown) => {
-                      if (!label) return "";
-                      const d = new Date(label as string | number);
-                      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-                    }}
-                    formatter={(value: unknown, _name: unknown, props: { payload?: { contestName?: string } }) => {
-                      if (value == null) return ["", ""];
-                      const contestName = props.payload?.contestName ?? "";
-                      return [
-                        `${value} (${ratingToRankName(Number(value))})`,
-                        contestName,
-                      ];
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rating"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: "var(--primary)" }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <RatingGraph data={cfHistory} />
           ) : (
             <div className="flex h-[300px] flex-col items-center justify-center text-sm text-fg-muted gap-2">
               <Trophy className="size-8 opacity-20" />

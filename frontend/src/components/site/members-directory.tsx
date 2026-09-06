@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, ArrowRight, Users, GraduationCap } from "lucide-react";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Input } from "@/components/ui/input";
 import { RankDot } from "@/components/site/primitives";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
@@ -224,7 +225,10 @@ export function MembersDirectory({ members }: { members: Member[] }) {
       )}
 
       {/* ── Bottom CTA ── */}
-      <div className="mt-16 rounded-panel border border-border bg-gradient-to-r from-surface-2 via-surface-3 to-surface-2 p-8 text-center">
+      {/* The page's one full-width panel, so it gets the same glow the other
+          four do. Not the member cards: there are dozens, and each BorderGlow
+          is a pointer-tracked component with three extra layers. */}
+      <BorderGlow className="mt-16" contentClassName="p-8 text-center">
         <h3 className="font-mono text-xs font-bold tracking-[0.14em] text-primary uppercase">
           WANT TO BE PART OF IT?
         </h3>
@@ -243,7 +247,7 @@ export function MembersDirectory({ members }: { members: Member[] }) {
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
-      </div>
+      </BorderGlow>
     </div>
   );
 }

@@ -16,18 +16,6 @@ export const heroRows: {
 
 export const sparkline = [7, 10, 6, 12, 9, 14, 11, 16, 12, 18, 13, 15, 17, 18];
 
-/**
- * Real figures about a real club, so nothing here may be invented: a visitor
- * reads these as fact. Replace each with a number confirmed against club
- * records before launch.
- */
-export const stats = [
-  { value: "[TBC]", label: "Active members" },
-  { value: "[TBC]", label: "Problems solved" },
-  { value: "[TBC]", label: "Contests run" },
-  { value: "[TBC]", label: "ICPC teams sent" },
-];
-
 export const howItWorks = [
   {
     n: "01",

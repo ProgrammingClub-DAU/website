@@ -2,7 +2,7 @@
 // Public route remains /profile.
 
 import type { Metadata } from "next";
-import { Eyebrow, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import ProfileDashboard from "@/components/site/profile-dashboard";
 
 export const metadata: Metadata = {
@@ -21,12 +21,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const resolvedParams = await params;
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <div>
           <Eyebrow>Profile</Eyebrow>
-          <h1 className="mt-6 text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+          <PageTitle>
             Dashboard
-          </h1>
+          </PageTitle>
         </div>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           Your competitive programming journey at a glance.
