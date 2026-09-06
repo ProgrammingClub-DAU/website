@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Eyebrow, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { HallOfFameTimeline } from "@/components/site/hall-of-fame-timeline";
 import { hallOfFame } from "@/lib/content/hall-of-fame";
 
@@ -17,9 +17,9 @@ export default function HallOfFamePage() {
     <>
       <Section className="pt-16 pb-10 md:pt-24">
         <Eyebrow>Hall of fame</Eyebrow>
-        <h1 className="mt-6 max-w-[20ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+        <PageTitle className="max-w-[20ch]">
           Results, year by year.
-        </h1>
+        </PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           ICPC standings, contest wins, and alumni the club keeps a record of. Every entry
           below is a placeholder until it is confirmed against club records.

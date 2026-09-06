@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
-import { Footer } from "@/components/site/footer";
+import { FooterSlot } from "@/components/site/footer-slot";
 import { site } from "@/lib/site";
 
 const geistSans = Geist({
@@ -64,10 +64,22 @@ export default function RootLayout({
             Skip to content
           </a>
           <Navbar />
-          <main id="main" className="flex-1">
+          {/* overflow-x: clip because BorderGlow's outer glow is drawn outside
+              the card it belongs to — inset: -40px — so on a narrow viewport it
+              reached past the page gutter and gave the document 15px of
+              horizontal scroll.
+
+              `clip` rather than `hidden`: hidden would make this a scroll
+              container, and it is an ancestor of the sticky navbar's scrollport.
+              And here rather than on html or body, because Chromium's viewport
+              propagation rules mean neither of those actually clips. The
+              vertical axis stays visible, so the glow still bleeds above and
+              below the card, and main is viewport-width, so on wide screens the
+              glow still reaches into the gutters. */}
+          <main id="main" className="flex-1 overflow-x-clip">
             {children}
           </main>
-          <Footer />
+          <FooterSlot />
         </ThemeProvider>
       </body>
     </html>

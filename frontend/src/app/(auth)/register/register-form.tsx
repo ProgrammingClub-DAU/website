@@ -12,7 +12,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
-import { Button } from "@/components/ui/button";
+import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
+import StarBorder from "@/components/site/star-border";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
@@ -74,7 +75,20 @@ export default function RegisterForm() {
   return (
     <div className="grid min-h-[calc(100vh-3.5rem)] w-full lg:grid-cols-2">
       {/* Left Column: Branding and Ranks (hidden on mobile) */}
-      <div className="hidden flex-col justify-between p-12 lg:p-16 border-r border-hairline bg-surface-3/30 lg:flex select-none">
+      <div className="relative isolate hidden flex-col justify-between overflow-hidden border-r border-hairline bg-surface-3/30 p-12 select-none lg:flex lg:p-16">
+        {/* The panel already ends on a row of rank-coloured dots; the field
+            behind it is the same idea at the scale of the whole panel. It costs
+            nothing on mobile: the panel is display:none there, so the canvas
+            measures zero and the observer keeps its loop stopped. */}
+        <DotFieldBackdrop
+          className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(120%_90%_at_15%_35%,#000_25%,transparent_80%)]"
+          dotRadius={2.6}
+          dotSpacing={20}
+          cursorRadius={280}
+          bulgeStrength={38}
+          glowRadius={170}
+        />
+
         {/* No wordmark here: the global navbar already renders one directly above
             this panel, so repeating it showed "Programming Club @ DAU" twice on
             the same screen, at two different left offsets. The spacer keeps the
@@ -213,13 +227,14 @@ export default function RegisterForm() {
               </div>
             )}
 
-            <Button
+            <StarBorder
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-10 font-mono text-xs tracking-wider uppercase bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg mt-2"
+              className="mt-2 w-full disabled:opacity-60"
+              innerClassName="h-10 w-full rounded-lg font-mono text-xs tracking-wider uppercase flex items-center justify-center"
             >
               {isSubmitting ? "Creating Account..." : "Create Account"}
-            </Button>
+            </StarBorder>
           </form>
 
           <p className="text-center font-mono text-xs text-fg-muted">

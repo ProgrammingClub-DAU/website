@@ -15,7 +15,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
-import { navItems, site } from "@/lib/site";
+import { GitHubMark } from "@/components/site/github-mark";
+import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
@@ -91,6 +92,25 @@ export function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <div className="hidden items-center gap-0.5 lg:flex">
+            {utilityLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label={item.label}
+                title={item.label}
+                className="rounded-control p-2 text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+              >
+                {/* The mark carries no accessible name of its own — aria-hidden
+                    inside — so the link's aria-label is what a screen reader
+                    announces. */}
+                <GitHubMark className="size-[18px]" />
+              </a>
+            ))}
+          </div>
+
           <ThemeToggle />
 
           {/* Desktop auth controls: swap Login/Join for user name + Logout */}
@@ -117,8 +137,8 @@ export function Navbar() {
               <>
                 <Button
                   asChild
-                  variant="ghost"
-                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                  variant="outline"
+                  className="h-8 rounded-full px-3.5 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
                 >
                   <Link href="/login">Login</Link>
                 </Button>
@@ -171,6 +191,22 @@ export function Navbar() {
                     >
                       {item.label}
                     </Link>
+                  </SheetClose>
+                ))}
+                {utilityLinks.map((item) => (
+                  <SheetClose asChild key={item.href}>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex items-center gap-2.5 rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] text-fg-muted uppercase transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                    >
+                      {/* The label stays here. In a menu list an icon on its own
+                          is harder to scan than the word, so the mark sits beside
+                          it rather than replacing it as on desktop. */}
+                      <GitHubMark className="size-4 shrink-0" />
+                      {item.label}
+                    </a>
                   </SheetClose>
                 ))}
               </div>

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
+  PageTitle,
   RankDot,
   Section,
   SectionHeader,
@@ -22,9 +24,9 @@ export default function AboutPage() {
     <>
       <Section className="pt-16 pb-16 md:pt-24">
         <Eyebrow>About</Eyebrow>
-        <h1 className="mt-6 max-w-[22ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+        <PageTitle className="max-w-[22ch]">
           A student club built around practice, not prestige.
-        </h1>
+        </PageTitle>
         <p className="mt-6 max-w-[56ch] text-base leading-6 text-fg-muted text-pretty">
           {site.fullName} is run by students at {site.university}. We meet to solve
           problems, run contests, and help each other get measurably better at algorithmic
@@ -243,7 +245,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-22">
-        <div className="glass-panel grid gap-8 rounded-panel p-10 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-10 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
               How to join
@@ -271,7 +273,7 @@ export default function AboutPage() {
               </li>
             ))}
           </ol>
-        </div>
+        </BorderGlow>
       </Section>
     </>
   );
