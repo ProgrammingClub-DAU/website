@@ -174,6 +174,16 @@
   --glass-quiet-hover: rgb(9 10 12 / 0.06);
   --glow-control: 0 8px 24px -10px rgb(94 106 210 / 0.6);
 
+  /* BorderGlow's theme switch. Upstream branched on a JS luminance test that
+     only parses hex, so a token always fell through to its dark path. These
+     three are the whole of what that branch decided. On white, an indigo halo
+     at full strength reads as a solid block, hence the damping; and the blend
+     modes that make a glow sit on a dark surface only smear it on a light one. */
+  --glow-fill-blend: normal;
+  --glow-outer-blend: normal;
+  --glow-strength: 0.5;
+  --glow-fill-strength: 0.3;
+
   --card: #fbfbfc;
   --card-foreground: #08090a;
   --popover: #ffffff;
@@ -247,6 +257,11 @@
   --glass-quiet: rgb(255 255 255 / 0.055);
   --glass-quiet-hover: rgb(255 255 255 / 0.1);
   --glow-control: 0 8px 28px -10px rgb(94 106 210 / 0.85);
+
+  --glow-fill-blend: soft-light;
+  --glow-outer-blend: plus-lighter;
+  --glow-strength: 1;
+  --glow-fill-strength: 1;
 
   --card: #111113;
   --card-foreground: #f7f8f8;

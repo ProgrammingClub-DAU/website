@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -244,7 +245,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-22">
-        <div className="glass-panel grid gap-8 rounded-panel p-10 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-10 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
               How to join
@@ -272,7 +273,7 @@ export default function AboutPage() {
               </li>
             ))}
           </ol>
-        </div>
+        </BorderGlow>
       </Section>
     </>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { EventsTimeline } from "@/components/site/events-timeline";
@@ -27,7 +28,7 @@ export default function EventsPage() {
       </Section>
 
       <Section className="pb-14">
-        <div className="glass-panel grid gap-8 rounded-panel p-8 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-8 md:grid-cols-2 md:items-center">
           <div>
             <div className="flex items-center gap-2">
               <span
@@ -67,7 +68,7 @@ export default function EventsPage() {
               </div>
             ))}
           </dl>
-        </div>
+        </BorderGlow>
       </Section>
 
       <Section className="pb-10">

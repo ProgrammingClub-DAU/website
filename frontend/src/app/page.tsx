@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -223,7 +224,10 @@ export default function HomePage() {
         style={{ background: "var(--band)" }}
       >
         <div className="container-page py-20">
-          <div className="glass-panel mx-auto max-w-[680px] rounded-panel px-8 py-14 text-center">
+          <BorderGlow
+            className="mx-auto max-w-[680px]"
+            contentClassName="px-8 py-14 text-center"
+          >
             <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold tracking-[-0.02em]">
               Ready to compete?
             </h2>
@@ -234,7 +238,7 @@ export default function HomePage() {
             <Button asChild className="mt-8 h-10 rounded-full px-6">
               <Link href="/register">Join the Club</Link>
             </Button>
-          </div>
+          </BorderGlow>
         </div>
       </section>
     </>

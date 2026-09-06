@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, SampleBadge, Section } from "@/components/site/primitives";
 import { BlogList } from "@/components/site/blog-list";
@@ -28,7 +29,10 @@ export default function BlogPage() {
       </Section>
 
       <Section className="pb-10">
-        <article className="glass-panel grid gap-8 rounded-panel p-9 md:grid-cols-2 md:items-center">
+        {/* The article element stays: BorderGlow renders a div, and the
+            featured post is a self-contained piece of content. */}
+        <article>
+          <BorderGlow contentClassName="grid gap-8 p-9 md:grid-cols-2 md:items-center">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">
@@ -66,6 +70,7 @@ export default function BlogPage() {
               <span className="text-fg-subtle">{"// O(n) time, O(1) extra space"}</span>
             </code>
           </pre>
+          </BorderGlow>
         </article>
       </Section>
 
