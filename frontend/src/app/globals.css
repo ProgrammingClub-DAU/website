@@ -192,7 +192,12 @@
      Stops are exposed separately because JS consumers (React Bits components
      take a colours array) need the list, while CSS consumers want the finished
      gradient. */
-  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate), var(--cf-master);
+  /* Cyan, blue, purple — the cool half of the rating ladder. The warm end
+     (--cf-master orange, --cf-grandmaster red) is deliberately left out: nothing
+     else on the site is warm, and against the indigo --primary the orange read as
+     a separate decoration rather than the same identity. These three sit either
+     side of --primary, so headings and buttons look like one family. */
+  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate);
   --club-gradient: linear-gradient(100deg, var(--club-gradient-stops));
 
   --nav-bg: rgb(255 255 255 / 0.78);
@@ -255,7 +260,12 @@
      Stops are exposed separately because JS consumers (React Bits components
      take a colours array) need the list, while CSS consumers want the finished
      gradient. */
-  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate), var(--cf-master);
+  /* Cyan, blue, purple — the cool half of the rating ladder. The warm end
+     (--cf-master orange, --cf-grandmaster red) is deliberately left out: nothing
+     else on the site is warm, and against the indigo --primary the orange read as
+     a separate decoration rather than the same identity. These three sit either
+     side of --primary, so headings and buttons look like one family. */
+  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate);
   --club-gradient: linear-gradient(100deg, var(--club-gradient-stops));
 
   --nav-bg: rgb(8 9 10 / 0.72);

@@ -29,7 +29,6 @@ const CLUB_STOPS = [
   'var(--cf-specialist)',
   'var(--cf-expert)',
   'var(--cf-candidate)',
-  'var(--cf-master)',
 ];
 
 function gradientImageStyle(colors: string[], direction: Direction) {
