@@ -194,6 +194,14 @@
      and the hero's muted paragraph measured 1.06:1 against it. */
   --aurora-strength: 0.5;
 
+  /* The lattice that sits over Aurora. Literal colours rather than references
+     to the rank tokens: they are read with getComputedStyle and handed to a
+     canvas gradient, and a canvas has no CSS cascade to resolve var() against.
+     They are --cf-specialist and --cf-candidate at reduced alpha. */
+  --dot-field-from: rgb(0 134 139 / 0.7);
+  --dot-field-to: rgb(147 51 196 / 0.55);
+  --dot-field-glow: rgb(94 106 210 / 0.22);
+
   --card: #fbfbfc;
   --card-foreground: #08090a;
   --popover: #ffffff;
@@ -277,6 +285,10 @@
 
 
   --aurora-strength: 0.7;
+
+  --dot-field-from: rgb(0 194 199 / 0.6);
+  --dot-field-to: rgb(192 102 224 / 0.5);
+  --dot-field-glow: rgb(94 106 210 / 0.4);
 
   --card: #111113;
   --card-foreground: #f7f8f8;
@@ -434,6 +446,21 @@
      it — so the blur silently did nothing. Tailwind's build prefixes from the
      browserslist targets; hand-written prefixes are what broke it. */
   backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* Keeps the drifting particles off the hero's copy. Two layers intersected: the
+   first fades them out towards the edges of the block so there is no hard
+   boundary, the second knocks a hole in the middle where the heading and the
+   paragraph sit.
+
+   The hole is the contrast fix, not a style choice: with only the first layer
+   the particles drift straight across the paragraph and it measured 4.07:1 in
+   dark and 4.46:1 in light, against a 4.5:1 floor. */
+@utility hero-field-mask {
+  mask-image:
+    radial-gradient(130% 110% at 50% 18%, #000 35%, transparent 85%),
+    radial-gradient(74% 84% at 50% 48%, transparent 54%, #000 97%);
+  mask-composite: intersect;
 }
 
 /* Keeps Aurora off the hero's copy.

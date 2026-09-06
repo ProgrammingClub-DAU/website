@@ -11,6 +11,7 @@ import {
 import BorderGlow from "@/components/site/border-glow";
 import { ClubWordmark } from "@/components/site/club-wordmark";
 import { AuroraBackdrop } from "@/components/site/aurora-backdrop";
+import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -77,6 +78,10 @@ export default function HomePage() {
           negative z-index inside this subtree. */}
       <div className="relative isolate overflow-hidden">
         <AuroraBackdrop className="hero-aurora-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] opacity-[var(--aurora-strength)]" />
+
+        {/* Dust drifting over the wash. Aurora moves slowly underneath; these
+            move independently on top, in the rank ladder's own colours. */}
+        <ParticlesBackdrop className="hero-field-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px]" />
 
         {/* Centred since the hero lost its right-hand panel. Left-aligned text
             with nothing beside it left the whole right half of a wide screen
