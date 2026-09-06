@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
-import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
+import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
 import StarBorder from "@/components/site/star-border";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,18 +72,11 @@ export default function LoginForm() {
     <div className="grid min-h-[calc(100vh-3.5rem)] w-full lg:grid-cols-2">
       {/* Left Column: Branding and Ranks (hidden on mobile) */}
       <div className="relative isolate hidden flex-col justify-between overflow-hidden border-r border-hairline bg-surface-3/30 p-12 select-none lg:flex lg:p-16">
-        {/* The panel already ends on a row of rank-coloured dots; the field
-            behind it is the same idea at the scale of the whole panel. It costs
-            nothing on mobile: the panel is display:none there, so the canvas
-            measures zero and the observer keeps its loop stopped. */}
-        <DotFieldBackdrop
-          className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(120%_90%_at_15%_35%,#000_25%,transparent_80%)]"
-          dotRadius={2.6}
-          dotSpacing={20}
-          cursorRadius={280}
-          bulgeStrength={38}
-          glowRadius={170}
-        />
+        {/* The panel already ends on a row of rank-coloured dots; the particles
+            are the same colours at the scale of the whole panel. It costs
+            nothing on mobile: the panel is display:none there, so the observer
+            never starts the loop and no WebGL context is opened. */}
+        <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(125%_95%_at_20%_40%,#000_30%,transparent_85%)]" />
 
         {/* No wordmark here: the global navbar already renders one directly above
             this panel, so repeating it showed "Programming Club @ DAU" twice on

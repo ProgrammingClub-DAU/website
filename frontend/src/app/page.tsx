@@ -10,7 +10,7 @@ import {
 
 import BorderGlow from "@/components/site/border-glow";
 import { ClubWordmark } from "@/components/site/club-wordmark";
-import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
+import { AuroraBackdrop } from "@/components/site/aurora-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -72,11 +72,11 @@ const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
 export default function HomePage() {
   return (
     <>
-      {/* The dot field is full-bleed, so it hangs off this wrapper rather than
-          off the Section, which is width-capped by container-page. `isolate`
-          keeps its negative z-index inside this subtree. */}
+      {/* Aurora is full-bleed, so it hangs off this wrapper rather than off the
+          Section, which is width-capped by container-page. `isolate` keeps its
+          negative z-index inside this subtree. */}
       <div className="relative isolate overflow-hidden">
-        <DotFieldBackdrop className="hero-field-mask pointer-events-none absolute inset-0 -z-10" />
+        <AuroraBackdrop className="hero-aurora-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] opacity-[var(--aurora-strength)]" />
 
         {/* Centred since the hero lost its right-hand panel. Left-aligned text
             with nothing beside it left the whole right half of a wide screen
