@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { CF_RANKS, rankColor, type CfRankKey } from "@/lib/cf-ranks";
 import { cn } from "@/lib/utils";
+import GradientText from "@/components/site/gradient-text";
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -125,5 +126,26 @@ export function EmptyState({ title, hint }: { title: string; hint: string }) {
       <p className="text-[17px] font-semibold">{title}</p>
       <p className="mt-2 text-[15px] text-fg-muted">{hint}</p>
     </div>
+  );
+}
+
+/**
+ * The heading every content page opens with.
+ *
+ * Eight pages repeated the same class string and would otherwise each need the
+ * gradient applied by hand. Keeping it here means the treatment is one decision,
+ * and the element stays a real `h1` — the gradient is applied to the text inside
+ * it, never by replacing the heading.
+ */
+export function PageTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <h1
+      className={cn(
+        "mt-6 text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance",
+        className
+      )}
+    >
+      <GradientText>{children}</GradientText>
+    </h1>
   );
 }

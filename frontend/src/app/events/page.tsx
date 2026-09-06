@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Eyebrow, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { EventsTimeline } from "@/components/site/events-timeline";
 import { events, nextEventMeta } from "@/lib/content/events";
 
@@ -17,9 +17,9 @@ export default function EventsPage() {
     <>
       <Section className="pt-16 pb-10 md:pt-24">
         <Eyebrow>Events</Eyebrow>
-        <h1 className="mt-6 max-w-[20ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+        <PageTitle className="max-w-[20ch]">
           What we run, and when.
-        </h1>
+        </PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           Contests, workshops, and ICPC sessions the club has held, plus what is coming
           next. Event details below are placeholders until confirmed from club records.

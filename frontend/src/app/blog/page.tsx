@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Eyebrow, SampleBadge, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, SampleBadge, Section } from "@/components/site/primitives";
 import { BlogList } from "@/components/site/blog-list";
 import { featuredPost, posts } from "@/lib/content/blog";
 
@@ -19,9 +19,9 @@ export default function BlogPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>Blog</Eyebrow>
-            <h1 className="mt-6 max-w-[20ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+            <PageTitle className="max-w-[20ch]">
               Editorials and write-ups.
-            </h1>
+            </PageTitle>
           </div>
           <SampleBadge>Sample content</SampleBadge>
         </div>
