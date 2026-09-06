@@ -14,9 +14,15 @@ COUNT_FRAMES = """(() => {
   window.requestAnimationFrame = (cb) => { window.__frames++; return raf(cb); };
 })()"""
 
-PAINTED_PIXELS = """(selector) => {
-  const canvases = [...document.querySelectorAll('canvas')];
-  const c = selector === 'last' ? canvases[canvases.length - 1] : canvases[0];
+# Only the 2D canvases can be read back this way. A WebGL context created
+# without preserveDrawingBuffer is cleared after each composite, so getImageData
+# on it returns nothing regardless of what is on screen — Aurora's and
+# Particles' output is checked by screenshot elsewhere, not here.
+PAINTED_PIXELS = """() => {
+  const c = [...document.querySelectorAll('canvas')].find(el => {
+    try { return !(el.getContext('webgl') || el.getContext('webgl2')); }
+    catch (e) { return true; }
+  });
   if (!c) return null;
   const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   let painted = 0;
@@ -25,48 +31,71 @@ PAINTED_PIXELS = """(selector) => {
 }"""
 
 
-def test_backdrops_are_canvas_2d_not_webgl():
-    """The no-WebGL constraint: Aurora and Particles were replaced for this."""
+def test_webgl_context_budget_per_page():
+    """A counted budget, not a ban on a second context.
+
+    Browsers cap how many contexts are alive at once and silently discard the
+    oldest when the cap is passed, which shows up as an unrelated component
+    going blank. Two on the home page — Aurora's wash and the particles drifting
+    over it — is comfortably inside every current browser's budget; Chrome
+    allows sixteen. What matters is that the number is deliberate, so it is
+    asserted per route rather than left to drift upwards.
+    """
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 1440, "height": 900})
-        for route in ("/", "/login", "/register"):
+        for route, expected in (("/", 2), ("/login", 1), ("/register", 1),
+                                ("/about", 0), ("/gallery", 0), ("/hall-of-fame", 0)):
             pg.goto(f"http://localhost:3000{route}", wait_until="networkidle")
-            pg.wait_for_timeout(600)
+            pg.wait_for_timeout(900)
             contexts = pg.evaluate("""() => [...document.querySelectorAll('canvas')].filter(c => {
                 try { return !!(c.getContext('webgl') || c.getContext('webgl2')); }
                 catch (e) { return false; }
             }).length""")
-            assert contexts == 0, f"{route}: {contexts} WebGL contexts, expected none"
+            assert contexts == expected, f"{route}: {contexts} WebGL contexts, expected {expected}"
         b.close()
 
 
 def test_reduced_motion_stops_the_loop_but_keeps_the_image():
     """prefers-reduced-motion clamps CSS durations and does nothing to rAF.
 
-    Both components had to be changed to stop scheduling frames. Upstream
-    ParticleText re-scheduled unconditionally; upstream DotField had no check at
-    all. The second half matters as much as the first: stopping the loop before
-    anything is drawn leaves an empty canvas, which reads as a failed page.
+    Every vendored component had to be changed to stop scheduling frames:
+    upstream ParticleText re-scheduled unconditionally, and neither Aurora nor
+    Particles checked at all. The second half matters as much as the first —
+    stopping the loop before anything is drawn leaves an empty canvas, which
+    reads as a page that failed to load rather than as a still image.
     """
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
         pg.add_init_script(COUNT_FRAMES)
         pg.goto("http://localhost:3000/", wait_until="networkidle")
+
+        # Measured at the top of the page, where Aurora is on screen. Measuring
+        # only after scrolling down would let the off-screen guard hide a broken
+        # reduced-motion guard — which is exactly what this test did at first,
+        # and it passed against a deliberately broken Aurora.
+        pg.wait_for_timeout(1200)
+        before = pg.evaluate("window.__frames")
+        pg.wait_for_timeout(1500)
+        after = pg.evaluate("window.__frames")
+        assert after == before, (
+            f"{after - before} frames scheduled under reduced motion with the hero in view"
+        )
+
         pg.locator("canvas").last.scroll_into_view_if_needed()
         # Long enough for the wordmark's gather to finish; the loop may run
         # during it, and is only required to stop once it is settled.
         pg.wait_for_timeout(2500)
-
         before = pg.evaluate("window.__frames")
         pg.wait_for_timeout(1500)
         after = pg.evaluate("window.__frames")
-        assert after == before, f"{after - before} frames scheduled under reduced motion"
+        assert after == before, (
+            f"{after - before} frames scheduled under reduced motion with the wordmark in view"
+        )
 
-        for which in ("first", "last"):
-            painted = pg.evaluate(PAINTED_PIXELS, which)
-            assert painted and painted > 1000, f"{which} canvas is blank: {painted} pixels"
+        painted = pg.evaluate(PAINTED_PIXELS)
+        assert painted and painted > 1000, f"the wordmark canvas is blank: {painted} pixels"
         b.close()
 
 
@@ -109,17 +138,37 @@ def test_backdrops_stop_while_off_screen():
         b.close()
 
 
-def test_auth_backdrop_costs_nothing_on_mobile():
-    """The panel is display:none below lg, so its canvas must never start."""
+def test_auth_backdrop_on_mobile_is_one_context_and_respects_reduced_motion():
+    """The backdrop is full-bleed now, so it runs at every width.
+
+    It used to sit in a panel that was display:none below lg, which made it free
+    on a phone for nothing. That guarantee is gone, so what is left has to hold
+    instead: exactly one WebGL context, and a loop that still stops for
+    prefers-reduced-motion at mobile width — where the battery cost of a
+    full-screen render loop actually matters.
+    """
     with sync_playwright() as p:
         b = p.chromium.launch()
+
         pg = b.new_page(viewport={"width": 420, "height": 800})
+        pg.goto("http://localhost:3000/login", wait_until="networkidle")
+        pg.wait_for_timeout(1200)
+        contexts = pg.evaluate("""() => [...document.querySelectorAll('canvas')].filter(c => {
+            try { return !!(c.getContext('webgl') || c.getContext('webgl2')); }
+            catch (e) { return false; }
+        }).length""")
+        assert contexts == 1, f"{contexts} WebGL contexts at 420px, expected 1"
+        pg.close()
+
+        pg = b.new_page(viewport={"width": 420, "height": 800}, reduced_motion="reduce")
         pg.add_init_script(COUNT_FRAMES)
         pg.goto("http://localhost:3000/login", wait_until="networkidle")
-        pg.wait_for_timeout(1000)
+        pg.wait_for_timeout(1200)
         before = pg.evaluate("window.__frames")
         pg.wait_for_timeout(1200)
-        assert pg.evaluate("window.__frames") == before, "drawing behind a display:none panel"
+        after = pg.evaluate("window.__frames")
+        assert after == before, f"{after - before} frames scheduled under reduced motion at 420px"
+        pg.close()
         b.close()
 
 
@@ -184,5 +233,40 @@ def test_glass_buttons_carry_the_club_gradient_edge():
                 assert entry["backdrop"].startswith("blur("), (
                     f"{theme}: backdrop-filter is {entry['backdrop']!r}, blur is gone"
                 )
+            pg.close()
+        b.close()
+
+
+def test_aurora_still_paints_under_reduced_motion():
+    """A stopped loop that never drew would pass the frame count and leave a blank hero.
+
+    Checked without reading pixels: the hero is captured as-is and again with
+    the Aurora layer hidden. Identical bytes mean it was contributing nothing.
+    """
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        for theme in ("dark", "light"):
+            pg = b.new_page(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+            pg.goto("http://localhost:3000/")
+            pg.evaluate("(t) => localStorage.setItem('theme', t)", theme)
+            pg.reload(wait_until="networkidle")
+            pg.wait_for_timeout(1500)
+
+            band = {"x": 0, "y": 56, "width": 1440, "height": 260}
+            with_aurora = pg.screenshot(clip=band)
+
+            hidden = pg.evaluate("""() => {
+                const el = document.querySelector('main canvas')?.closest('[aria-hidden]');
+                if (!el) return false;
+                el.style.display = 'none';
+                return true;
+            }""")
+            assert hidden, f"{theme}: could not find the Aurora layer to hide"
+            pg.wait_for_timeout(300)
+            without_aurora = pg.screenshot(clip=band)
+
+            assert with_aurora != without_aurora, (
+                f"{theme}: the hero looks the same with Aurora hidden, so it drew nothing"
+            )
             pg.close()
         b.close()

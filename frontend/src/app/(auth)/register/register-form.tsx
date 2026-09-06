@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
-import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
+import { AuthBackdrop } from "@/components/site/auth-backdrop";
 import StarBorder from "@/components/site/star-border";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,58 +73,34 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="grid min-h-[calc(100vh-3.5rem)] w-full lg:grid-cols-2">
-      {/* Left Column: Branding and Ranks (hidden on mobile) */}
-      <div className="relative isolate hidden flex-col justify-between overflow-hidden border-r border-hairline bg-surface-3/30 p-12 select-none lg:flex lg:p-16">
-        {/* The panel already ends on a row of rank-coloured dots; the field
-            behind it is the same idea at the scale of the whole panel. It costs
-            nothing on mobile: the panel is display:none there, so the canvas
-            measures zero and the observer keeps its loop stopped. */}
-        <DotFieldBackdrop
-          className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(120%_90%_at_15%_35%,#000_25%,transparent_80%)]"
-          dotRadius={2.6}
-          dotSpacing={20}
-          cursorRadius={280}
-          bulgeStrength={38}
-          glowRadius={170}
-        />
+    <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-14">
+      {/* Covers the whole page. An earlier version cleared a large ellipse
+          through the middle, which left the top of the page looking empty — the
+          form sits on its own glass panel, so it does not need the backdrop
+          held off it. What is left is a gentle relief directly behind the
+          column, enough to keep the headline off the busiest pixels. */}
+      <AuthBackdrop className="absolute inset-0 -z-10 [mask-image:radial-gradient(60%_46%_at_50%_46%,rgb(0_0_0/0.35),#000_72%)]" />
 
-        {/* No wordmark here: the global navbar already renders one directly above
-            this panel, so repeating it showed "Programming Club @ DAU" twice on
-            the same screen, at two different left offsets. The spacer keeps the
-            three-part justify-between layout intact. */}
-        <div aria-hidden="true" />
-
-        {/* Hero headline */}
-        <div className="space-y-4">
-          <p className="font-mono text-xs text-primary uppercase tracking-[0.15em] font-semibold">
+      <div className="w-full max-w-md">
+        {/* Was the left panel's branding. It keeps the page's h1 — dropping the
+            panel outright would have left an auth page whose only heading was
+            the form's h2. */}
+        {/* The headline is the only text sitting on the raw backdrop — the form
+            below has its own glass panel. It carries a halo on the glyphs rather
+            than a pool of page colour behind the block: the pool read as a
+            cloud with an edge, while a text-shadow follows the letters and lets
+            the field keep flowing right up to them. See .text-halo. */}
+        <div className="space-y-3 text-center">
+          <p className="text-halo font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground leading-[1.1] text-balance">
-            Solve. Rank up.<br />Climb the board.
+          <h1 className="text-halo text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-semibold tracking-tight text-balance text-foreground">
+            Solve. Rank up. Climb the board.
           </h1>
         </div>
 
-        {/* Indicators */}
-        <div className="space-y-3">
-          <p className="font-mono text-[10px] text-fg-subtle tracking-[0.1em] uppercase">
-            RANK TRACK
-          </p>
-          <div className="flex gap-2.5">
-            {/* Rank colors from globals.css variables */}
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-newbie)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-pupil)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-specialist)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-expert)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-candidate)" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column: Interactive Form */}
-      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-background">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2">
+        <div className="glass-panel mt-8 rounded-panel p-6 sm:p-8">
+          <div className="space-y-2 text-center">
             <p className="font-mono text-xs text-primary uppercase tracking-[0.12em] font-semibold">
               REGISTER
             </p>
@@ -229,6 +205,8 @@ export default function RegisterForm() {
 
             <StarBorder
               type="submit"
+              backgroundColor="var(--primary)"
+              textColor="var(--primary-foreground)"
               disabled={isSubmitting}
               className="mt-2 w-full disabled:opacity-60"
               innerClassName="h-10 w-full rounded-lg font-mono text-xs tracking-wider uppercase flex items-center justify-center"
@@ -246,6 +224,20 @@ export default function RegisterForm() {
               Login
             </Link>
           </p>
+        </div>
+
+        {/* The rank ladder the particles are drawn from. */}
+        <div className="mt-8 flex flex-col items-center gap-2.5" aria-hidden>
+          <p className="font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+            RANK TRACK
+          </p>
+          <div className="flex gap-2.5">
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-newbie)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-pupil)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-specialist)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-expert)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-candidate)" }} />
+          </div>
         </div>
       </div>
     </div>

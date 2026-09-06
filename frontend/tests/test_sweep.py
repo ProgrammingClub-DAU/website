@@ -27,8 +27,15 @@ def test_no_errors_or_overflow_in_either_theme():
                     })""")
                     if m["s"] - m["c"] > 1:
                         problems.append(f"{theme} {width}px {route}: overflows by {m['s'] - m['c']}px")
-                    if m["webgl"] > 1:
-                        problems.append(f"{theme} {width}px {route}: {m['webgl']} WebGL contexts, max 1")
+                    # A per-route budget rather than a flat cap: the home page
+                    # runs Aurora and the particles drifting over it. The point
+                    # is that the number stays deliberate — test_canvas_backdrops
+                    # asserts the exact count per route.
+                    budget = 2 if route == "/" else 1
+                    if m["webgl"] > budget:
+                        problems.append(
+                            f"{theme} {width}px {route}: {m['webgl']} WebGL contexts, max {budget}"
+                        )
                 if errors:
                     problems.append(f"{theme} {width}px: page errors {errors[:2]}")
                 pg.close()

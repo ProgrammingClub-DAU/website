@@ -25,9 +25,13 @@ const StarBorder = <T extends React.ElementType = 'button'>({
   // local: thicker by default. At 1px the sweep is barely visible against the
   // button fill; 2px reads without turning into a frame.
   thickness = 2,
-  backgroundColor = 'var(--primary)',
-  textColor = 'var(--primary-foreground)',
-  borderColor = 'transparent',
+  // local: no defaults. An inline style always beats a class, so a caller
+  // wanting the surface to come from `innerClassName` — the glass utility, say —
+  // could not have one: the inline background would win. Undefined now means
+  // "the class owns it".
+  backgroundColor,
+  textColor,
+  borderColor,
   innerClassName = '',
   children,
   ...rest
@@ -64,8 +68,12 @@ const StarBorder = <T extends React.ElementType = 'button'>({
         }}
       ></div>
       <div
-        className={`relative z-1 border text-center ${innerClassName || "text-[16px] py-[16px] px-[26px] rounded-[20px]"}`}
-        style={{ background: backgroundColor, color: textColor, borderColor }}
+        className={`relative z-1 text-center ${innerClassName || "border text-[16px] py-[16px] px-[26px] rounded-[20px]"}`}
+        style={{
+          ...(backgroundColor ? { background: backgroundColor } : null),
+          ...(textColor ? { color: textColor } : null),
+          ...(borderColor ? { borderColor } : null)
+        }}
       >
         {children}
       </div>

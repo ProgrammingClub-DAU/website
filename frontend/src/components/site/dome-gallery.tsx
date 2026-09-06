@@ -14,7 +14,17 @@ type CssVars = CSSProperties & Record<`--${string}`, string | number>;
 
 type ImageItem =
   | string
-  | { src: string; alt?: string; title?: string; date?: string; venue?: string };
+  // local: `placeholder` added. These files may not exist yet, and without a
+  // fallback every missing one renders as the browser's broken-image icon —
+  // which makes a wall of different photos look like a wall of identical bugs.
+  | {
+      src: string;
+      alt?: string;
+      title?: string;
+      date?: string;
+      venue?: string;
+      placeholder?: string;
+    };
 
 type DomeGalleryProps = {
   images?: ImageItem[];
@@ -42,6 +52,8 @@ type ItemDef = {
   title?: string;
   date?: string;
   venue?: string;
+  /** local: shown when `src` fails to load. See the ImageItem note above. */
+  placeholder?: string;
   x: number;
   y: number;
   sizeX: number;
@@ -127,7 +139,8 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
       alt: image.alt || '',
       title: image.title,
       date: image.date,
-      venue: image.venue
+      venue: image.venue,
+      placeholder: image.placeholder
     };
   });
 
@@ -152,7 +165,12 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
     alt: usedImages[i].alt,
     title: usedImages[i].title,
     date: usedImages[i].date,
-    venue: usedImages[i].venue
+    venue: usedImages[i].venue,
+    // local: this map is the one place every field has to be repeated, so a new
+    // one added to ImageItem and to the normalizer still arrives as undefined
+    // if it is missed here — which is how the placeholder reached the tiles as
+    // nothing the first time.
+    placeholder: usedImages[i].placeholder
   }));
 }
 
@@ -649,6 +667,12 @@ export default function DomeGallery({
     const rawSrc = parent.dataset.src || (el.querySelector('img') as HTMLImageElement)?.src || '';
     const rawAlt = parent.dataset.alt || (el.querySelector('img') as HTMLImageElement)?.alt || '';
     const img = document.createElement('img');
+    // local: the opened photo needs the same fallback as the tile behind it,
+    // or clicking a placeholder tile enlarges a broken image.
+    const rawPlaceholder = parent.dataset.placeholder || '';
+    img.onerror = () => {
+      if (rawPlaceholder && img.src !== rawPlaceholder) img.src = rawPlaceholder;
+    };
     img.src = rawSrc;
     img.alt = rawAlt;
     img.style.cssText = `width:100%; height:100%; object-fit:cover; filter:${grayscale ? 'grayscale(1)' : 'none'};`;
@@ -892,6 +916,7 @@ export default function DomeGallery({
                   className="sphere-item absolute m-auto"
                   data-src={it.src}
                   data-alt={it.alt}
+                  data-placeholder={it.placeholder}
                   data-title={it.title}
                   data-date={it.date}
                   data-venue={it.venue}
@@ -941,13 +966,21 @@ export default function DomeGallery({
                   >
                     {/* local: a plain img on purpose. These files may be absent
                         until club photos are collected, and next/image needs
-                        intrinsic dimensions plus a configured loader; a missing
-                        source here degrades to an empty tile instead of erroring. */}
+                        intrinsic dimensions plus a configured loader. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={it.src}
                       draggable={false}
                       alt={it.alt}
+                      /* local: swap in the album's own placeholder when the file
+                         is missing. The guard matters — pointing src at
+                         something that also fails would loop onError forever. */
+                      onError={event => {
+                        const img = event.currentTarget;
+                        if (it.placeholder && img.src !== it.placeholder) {
+                          img.src = it.placeholder;
+                        }
+                      }}
                       className="w-full h-full object-cover pointer-events-none"
                       style={{
                         backfaceVisibility: 'hidden',

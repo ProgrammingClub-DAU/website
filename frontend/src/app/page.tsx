@@ -10,7 +10,8 @@ import {
 
 import BorderGlow from "@/components/site/border-glow";
 import { ClubWordmark } from "@/components/site/club-wordmark";
-import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
+import { AuroraBackdrop } from "@/components/site/aurora-backdrop";
+import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -19,7 +20,7 @@ import {
   SectionHeader,
 } from "@/components/site/primitives";
 import { CF_RANKS } from "@/lib/cf-ranks";
-import { howItWorks, stats } from "@/lib/content/home";
+import { howItWorks } from "@/lib/content/home";
 import { site } from "@/lib/site";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
@@ -72,22 +73,28 @@ const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
 export default function HomePage() {
   return (
     <>
-      {/* The dot field is full-bleed, so it hangs off this wrapper rather than
-          off the Section, which is width-capped by container-page. `isolate`
-          keeps its negative z-index inside this subtree. */}
+      {/* Aurora is full-bleed, so it hangs off this wrapper rather than off the
+          Section, which is width-capped by container-page. `isolate` keeps its
+          negative z-index inside this subtree. */}
       <div className="relative isolate overflow-hidden">
-        <DotFieldBackdrop className="hero-field-mask pointer-events-none absolute inset-0 -z-10" />
+        <AuroraBackdrop className="hero-aurora-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] opacity-[var(--aurora-strength)]" />
+
+        {/* Dust drifting over the wash. Aurora moves slowly underneath; these
+            move independently on top, in the rank ladder's own colours. */}
+        <ParticlesBackdrop className="hero-field-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px]" />
 
         {/* Centred since the hero lost its right-hand panel. Left-aligned text
             with nothing beside it left the whole right half of a wide screen
             empty and read as a layout fault rather than a choice. */}
-        <Section className="py-20 text-center md:py-28">
+        <Section className="pt-12 pb-20 text-center md:pt-16 md:pb-28">
+          {/* The backdrops run through this block rather than around it, so
+              the text carries its own legibility. See .text-halo. */}
           <div className="mx-auto max-w-[54ch]">
-            <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
-            <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
+            <Eyebrow className="text-halo animate-rise">Competitive programming club</Eyebrow>
+            <h1 className="text-halo mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
               A home for problem solvers at DAU.
             </h1>
-            <p className="mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
+            <p className="text-halo mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
               Weekly contests, editorials, and a leaderboard synced from Codeforces — for
               everyone from first-time solvers to ICPC regionalists.
             </p>
@@ -102,23 +109,6 @@ export default function HomePage() {
           </div>
         </Section>
       </div>
-
-      {/* Every figure here is a placeholder — confirm against club records before launch. */}
-      <Section>
-        <dl className="grid grid-cols-2 border-y border-hairline lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="py-8 pr-6">
-              {/* Term before definition: a screen reader pairs them in source order. */}
-              <dt className="font-mono text-xs tracking-[0.1em] text-fg-muted uppercase">
-                {stat.label}
-              </dt>
-              <dd className="mt-2.5 text-[2rem] font-semibold tracking-[-0.02em]">
-                {stat.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Section>
 
       <Section className="py-16">
         <SectionHeader eyebrow="What the club runs" title="Everything in one place." />
