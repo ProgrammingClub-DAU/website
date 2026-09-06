@@ -137,8 +137,8 @@ export function Navbar() {
               <>
                 <Button
                   asChild
-                  variant="ghost"
-                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                  variant="outline"
+                  className="h-8 rounded-full px-3.5 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
                 >
                   <Link href="/login">Login</Link>
                 </Button>

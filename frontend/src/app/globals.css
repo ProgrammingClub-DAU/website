@@ -163,6 +163,17 @@
      glass panel disappear while the other three sides were drawn. */
   --glass-hi: rgb(9 10 12 / 0.07);
 
+  /* Glass controls. The fill is the only part that changes between the primary
+     and the quiet button, so it is a token per role rather than a variant's
+     hard-coded colour. The CTA fill is a tint of --primary, which keeps the
+     button reading as the primary action now that it is no longer a solid
+     indigo block. */
+  --glass-cta: rgb(94 106 210 / 0.16);
+  --glass-cta-hover: rgb(94 106 210 / 0.24);
+  --glass-quiet: rgb(9 10 12 / 0.03);
+  --glass-quiet-hover: rgb(9 10 12 / 0.06);
+  --glow-control: 0 8px 24px -10px rgb(94 106 210 / 0.6);
+
   --card: #fbfbfc;
   --card-foreground: #08090a;
   --popover: #ffffff;
@@ -230,6 +241,12 @@
 
   --glass: rgb(255 255 255 / 0.055);
   --glass-hi: rgb(255 255 255 / 0.14);
+
+  --glass-cta: rgb(94 106 210 / 0.26);
+  --glass-cta-hover: rgb(94 106 210 / 0.38);
+  --glass-quiet: rgb(255 255 255 / 0.055);
+  --glass-quiet-hover: rgb(255 255 255 / 0.1);
+  --glow-control: 0 8px 28px -10px rgb(94 106 210 / 0.85);
 
   --card: #111113;
   --card-foreground: #f7f8f8;
@@ -381,8 +398,57 @@
   border: 1px solid var(--border);
   border-top-color: var(--glass-hi);
   box-shadow: var(--shadow-panel-color);
+  /* Standard property only. Writing the -webkit- alias beside it made Lightning
+     CSS collapse the pair down to the prefixed declaration alone, and Chromium
+     dropped -webkit-backdrop-filter years ago — CSS.supports() returns false for
+     it — so the blur silently did nothing. Tailwind's build prefixes from the
+     browserslist targets; hand-written prefixes are what broke it. */
   backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* Frosted control — the button counterpart to .glass-panel.
+
+   The club-gradient edge is drawn by a masked ::before rather than by a
+   `border-box` background layer, for two reasons. A background-image cannot be
+   transitioned, so the hover state would snap; and the ring has to sit inside a
+   `rounded-full` pill, which `border-radius: inherit` on a pseudo-element gives
+   for free at any size. Callers keep passing a single element, so `asChild`
+   links and every existing call site work unchanged.
+
+   Only the fill is per-variant, set through --glass-fill. */
+@utility glass-control {
+  --glass-fill: var(--glass-quiet);
+
+  position: relative;
+  background-color: var(--glass-fill);
+  backdrop-filter: blur(14px) saturate(1.4);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    /* The padding is the ring's thickness: the mask keeps the padding box out,
+       leaving exactly this much of the gradient visible around the edge. */
+    padding: 1px;
+    background: var(--club-gradient);
+    opacity: 0.5;
+    transition: opacity 150ms ease;
+    pointer-events: none;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

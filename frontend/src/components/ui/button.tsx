@@ -9,9 +9,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // Glass, not a solid fill. The club gradient runs the edge of both
+        // variants, so a button is recognisably the same identity as a heading;
+        // the fill is what separates the primary action from the quiet one.
+        //
+        // Text stays --foreground rather than --primary-foreground: white on a
+        // 13%-opacity tint over a white page is unreadable, and --foreground
+        // clears AA against either theme's background.
+        default:
+          "glass-control [--glass-fill:var(--glass-cta)] text-foreground hover:[--glass-fill:var(--glass-cta-hover)] hover:shadow-[var(--glow-control)]",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "glass-control [--glass-fill:var(--glass-quiet)] hover:[--glass-fill:var(--glass-quiet-hover)] hover:text-foreground aria-expanded:[--glass-fill:var(--glass-quiet-hover)] aria-expanded:text-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
