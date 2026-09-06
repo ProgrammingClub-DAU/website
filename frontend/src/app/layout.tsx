@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
-import { Footer } from "@/components/site/footer";
+import { FooterSlot } from "@/components/site/footer-slot";
 import { site } from "@/lib/site";
 
 const geistSans = Geist({
@@ -67,7 +67,7 @@ export default function RootLayout({
           <main id="main" className="flex-1">
             {children}
           </main>
-          <Footer />
+          <FooterSlot />
         </ThemeProvider>
       </body>
     </html>
