@@ -72,16 +72,20 @@ export function AuthBackdrop({ className }: { className: string }) {
     // be touched. It sits behind the form, so it only receives the events the
     // column above it does not.
     <div aria-hidden className={className}>
+      {/* The light theme is tuned harder. The same field that reads as texture
+          on a near-black page all but disappears on a white one: a mid-blue at
+          low density over white is close to invisible, so it gets more pixels,
+          denser, with less of the edge faded away. */}
       <PixelBlast
         key={theme.light ? "light" : "dark"}
         variant="square"
         color={theme.color}
-        pixelSize={4}
-        patternScale={2.4}
-        patternDensity={1.05}
+        pixelSize={theme.light ? 5 : 4}
+        patternScale={theme.light ? 2.1 : 2.4}
+        patternDensity={theme.light ? 1.5 : 1.05}
         pixelSizeJitter={0.4}
         speed={0.45}
-        edgeFade={0.35}
+        edgeFade={theme.light ? 0.1 : 0.16}
         enableRipples
         rippleSpeed={0.35}
         rippleThickness={0.11}

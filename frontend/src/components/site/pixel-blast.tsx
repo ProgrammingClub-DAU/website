@@ -520,8 +520,13 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         const h = container.clientHeight || 1;
         renderer.setSize(w, h, false);
         uniforms.uResolution.value.set(renderer.domElement.width, renderer.domElement.height);
-        if (threeRef.current?.composer)
-          threeRef.current.composer.setSize(renderer.domElement.width, renderer.domElement.height);
+        // local: CSS pixels, not device pixels. EffectComposer.setSize applies
+        // the renderer's pixel ratio itself, so handing it the already-scaled
+        // drawing-buffer size squares the ratio: at devicePixelRatio 2 the
+        // render targets came out four times the area they should be, and only
+        // the top strip of the effect landed on screen. Everything below that
+        // was empty, which read as the effect covering part of the page.
+        if (threeRef.current?.composer) threeRef.current.composer.setSize(w, h);
         uniforms.uPixelSize.value = pixelSize * renderer.getPixelRatio();
       };
       setSize();
@@ -578,7 +583,8 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         }
         composer.addPass(noisePass);
       }
-      if (composer) composer.setSize(renderer.domElement.width, renderer.domElement.height);
+      // local: CSS pixels here too — see the note in setSize above.
+      if (composer) composer.setSize(container.clientWidth || 1, container.clientHeight || 1);
       const mapToPixels = (e: PointerEvent) => {
         const rect = renderer.domElement.getBoundingClientRect();
         const scaleX = renderer.domElement.width / rect.width;

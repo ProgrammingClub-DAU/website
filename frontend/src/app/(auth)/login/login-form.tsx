@@ -70,16 +70,28 @@ export default function LoginForm() {
 
   return (
     <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-14">
-      {/* Full-bleed, and the mask thins it through the middle so the centred
-          column sits on the page's own background rather than on the grid. The
-          density stays at the edges, where it reads as atmosphere. */}
-      <AuthBackdrop className="absolute inset-0 -z-10 [mask-image:radial-gradient(78%_70%_at_50%_50%,transparent_14%,#000_84%)]" />
+      {/* Covers the whole page. An earlier version cleared a large ellipse
+          through the middle, which left the top of the page looking empty — the
+          form sits on its own glass panel, so it does not need the backdrop
+          held off it. What is left is a gentle relief directly behind the
+          column, enough to keep the headline off the busiest pixels. */}
+      <AuthBackdrop className="absolute inset-0 -z-10 [mask-image:radial-gradient(60%_46%_at_50%_46%,rgb(0_0_0/0.35),#000_72%)]" />
 
       <div className="w-full max-w-md">
         {/* Was the left panel's branding. It keeps the page's h1 — dropping the
             panel outright would have left an auth page whose only heading was
             the form's h2. */}
-        <div className="space-y-3 text-center">
+        {/* The headline is the only text sitting on the raw backdrop — the form
+            below has its own glass panel. Rather than punch a hole in the
+            background, which left the top of the page looking empty, it gets a
+            local scrim: the page colour at full strength directly behind the
+            words, fading to nothing well before the block's edge. Without it
+            the field's brightest pixels land under white text at 1.9:1. */}
+        <div className="relative space-y-3 text-center">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-x-16 -inset-y-12 -z-10 bg-[radial-gradient(farthest-side_at_50%_50%,var(--background)_62%,transparent_100%)]"
+          />
           <p className="font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
           </p>

@@ -192,7 +192,7 @@
   /* Aurora is far more aggressive on a white page than a black one: the same
      wash that reads as atmosphere in the dark theme is a saturated block here,
      and the hero's muted paragraph measured 1.06:1 against it. */
-  --aurora-strength: 0.24;
+  --aurora-strength: 0.5;
 
   --card: #fbfbfc;
   --card-foreground: #08090a;
@@ -449,7 +449,7 @@
 @utility hero-aurora-mask {
   mask-image:
     linear-gradient(to bottom, #000 0%, #000 22%, transparent 88%),
-    radial-gradient(68% 76% at 50% 48%, transparent 42%, #000 97%);
+    radial-gradient(72% 82% at 50% 48%, transparent 54%, #000 98%);
   mask-composite: intersect;
 }
 
