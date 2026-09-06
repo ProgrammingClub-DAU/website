@@ -176,3 +176,45 @@ palette is derived rather than chosen.
 
 **Vendored drift.** Copied components do not receive upstream fixes. Local edits
 are marked so a future re-diff is mechanical.
+
+## Amendment: no WebGL
+
+*Recorded after Phase 2 and Phase 3 were built. The design above is left as it
+was approved; this is what changed and why.*
+
+The instruction after this spec was approved was to stay off WebGL. That rules
+out both components the spec placed: Aurora behind the home hero and Particles
+behind the auth panel, each of which pulls in `ogl`.
+
+Both slots use React Bits' **DotField** instead — Canvas 2D, no dependency, and
+it takes `gradientFrom` / `gradientTo` / `glowColor`, so it consumes the club
+gradient the same way. The one-WebGL-context-per-page rule is now trivially
+satisfied: there are none, and a test asserts it.
+
+Two consequences worth recording.
+
+**The guardrails had to be built, not inherited.** Upstream DotField has no
+reduced-motion check and no off-screen pause at all. Upstream ParticleText
+honours reduced motion for the particles — it snaps them and disables the drift
+and the repel — but re-schedules its animation frame unconditionally, so it
+redraws an identical image for the life of the page. Both are fixed locally.
+
+**Colours cannot be tokens.** A canvas has no CSS cascade, so `var(--token)`
+reaches `createLinearGradient()` as an unparseable string. The callers read the
+tokens with `getComputedStyle` and re-read them on a `MutationObserver` when the
+theme provider swaps the class on `<html>`. ParticleText additionally parses its
+colours with a 6-digit-hex regex and falls back silently on anything else.
+
+Also changed from the design above:
+
+- The club gradient is three stops, not four. `--cf-master` was dropped: orange
+  against the indigo `--primary` read as a separate decoration rather than the
+  same identity. The gradient now stays in the cool half of the ladder, which
+  is the half `--primary` sits in.
+- BorderGlow went on the four full-width panels — the home CTA, About's "How to
+  join", the featured event and the featured post — rather than the Hall of Fame
+  and Events timeline cards. Those cards are still candidates.
+- Buttons were not in the original placement table. Both `Button` variants now
+  carry the same gradient edge, which is what ties a button to a heading.
+- Counter on the stat tiles remains unbuilt, for the reason already given under
+  Out of scope: the tiles read `[TBC]`.
