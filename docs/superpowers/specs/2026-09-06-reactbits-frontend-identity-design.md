@@ -177,27 +177,37 @@ palette is derived rather than chosen.
 **Vendored drift.** Copied components do not receive upstream fixes. Local edits
 are marked so a future re-diff is mechanical.
 
-## Amendment: no WebGL
+## Amendment: WebGL deferred, then built
 
 *Recorded after Phase 2 and Phase 3 were built. The design above is left as it
 was approved; this is what changed and why.*
 
-The instruction after this spec was approved was to stay off WebGL. That rules
-out both components the spec placed: Aurora behind the home hero and Particles
-behind the auth panel, each of which pulls in `ogl`.
+WebGL was deferred to the end of the identity work rather than ruled out — an
+earlier revision of this section said otherwise and was wrong. Aurora and
+Particles are now in the slots the table above gives them, and `ogl` is a
+dependency. What follows describes the interim, which is still worth keeping:
+it is why the guardrails exist and what the substitutes taught.
 
-Both slots use React Bits' **DotField** instead — Canvas 2D, no dependency, and
-it takes `gradientFrom` / `gradientTo` / `glowColor`, so it consumes the club
-gradient the same way. The one-WebGL-context-per-page rule is now trivially
-satisfied: there are none, and a test asserts it.
+In the interim both slots used React Bits' **DotField** — Canvas 2D, no
+dependency. It has since been removed; nothing references it.
+
+The one-WebGL-context-per-page rule is now load-bearing rather than trivial, and
+a test asserts it directly: one context on the home page, one on each auth page,
+and zero everywhere else.
 
 Two consequences worth recording.
 
-**The guardrails had to be built, not inherited.** Upstream DotField has no
-reduced-motion check and no off-screen pause at all. Upstream ParticleText
-honours reduced motion for the particles — it snaps them and disables the drift
-and the repel — but re-schedules its animation frame unconditionally, so it
-redraws an identical image for the life of the page. Both are fixed locally.
+**The guardrails had to be built, not inherited — by every one of them.**
+Upstream Aurora, Particles and DotField have no reduced-motion check and no
+off-screen pause at all. Upstream ParticleText honours reduced motion for the
+particles — it snaps them and disables the drift and the repel — but
+re-schedules its animation frame unconditionally, so it redraws an identical
+image for the life of the page. All are fixed locally.
+
+Upstream Particles additionally leaks its WebGL context on unmount, and neither
+WebGL component survives a browser without it: the constructor throws, and an
+unhandled throw in a client component takes the page it decorates to an error
+boundary. Both now fail quietly.
 
 **Colours cannot be tokens.** A canvas has no CSS cascade, so `var(--token)`
 reaches `createLinearGradient()` as an unparseable string. The callers read the
@@ -218,3 +228,14 @@ Also changed from the design above:
   carry the same gradient edge, which is what ties a button to a heading.
 - Counter on the stat tiles remains unbuilt, for the reason already given under
   Out of scope: the tiles read `[TBC]`.
+
+**Aurora fails WCAG AA behind the hero copy at full strength**, which the design
+above did not anticipate. Measured with the copy hidden: the heading reached
+4.22:1 in the light theme and the muted paragraph 1.06:1, against a 4.5:1 floor.
+`--fg-muted` is 4.99:1 on plain white to begin with, so any tint spends its whole
+margin. A mask that clears the copy plus a per-theme strength token brings all
+four measurements above the floor while leaving the wash clearly visible.
+
+Anything placed behind text from here needs the same measurement. It is not
+visible by eye in the dark theme, which is where this kind of background is
+usually judged.
