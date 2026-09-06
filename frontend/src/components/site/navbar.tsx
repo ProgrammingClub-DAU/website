@@ -15,7 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
-import { navItems, site } from "@/lib/site";
+import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
@@ -91,6 +91,20 @@ export function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <div className="hidden items-center gap-0.5 lg:flex">
+            {utilityLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="rounded-control px-2.5 py-2 font-mono text-[13px] tracking-[0.06em] uppercase whitespace-nowrap text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+
           <ThemeToggle />
 
           {/* Desktop auth controls: swap Login/Join for user name + Logout */}
@@ -171,6 +185,18 @@ export function Navbar() {
                     >
                       {item.label}
                     </Link>
+                  </SheetClose>
+                ))}
+                {utilityLinks.map((item) => (
+                  <SheetClose asChild key={item.href}>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] text-fg-muted uppercase transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                    >
+                      {item.label}
+                    </a>
                   </SheetClose>
                 ))}
               </div>
