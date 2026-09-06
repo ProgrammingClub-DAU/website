@@ -6,6 +6,8 @@
 
 **Architecture:** One CSS custom property, `--club-gradient-stops`, defined per theme in `globals.css` from the existing `--cf-*` rank tokens. A vendored, locally-adapted React Bits `GradientText` reads those stops. A new `PageTitle` primitive wraps the repeated `<h1>` markup so the treatment is applied once rather than in thirteen places.
 
+**Prerequisite:** the dev server must be running (`cd frontend && npm run dev`) — every test drives `http://localhost:3000`.
+
 **Tech Stack:** Next.js 16 App Router, React 19, Tailwind CSS v4 (CSS-first `@theme`), TypeScript, `motion` (new), Playwright for verification.
 
 Phase 1 of the design in `docs/superpowers/specs/2026-09-06-reactbits-frontend-identity-design.md`. Phases 2 (Aurora, ParticleText, Counter) and 3 (Particles, BorderGlow) get their own plans once this lands.
@@ -33,7 +35,7 @@ Phase 1 of the design in `docs/superpowers/specs/2026-09-06-reactbits-frontend-i
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/identity.spec.py`:
+Create `frontend/tests/test_identity.py`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -72,7 +74,7 @@ def test_club_gradient_defined_in_both_themes():
 
 Start the dev server first: `cd frontend && npm run dev`
 
-Run: `cd frontend && python -m pytest tests/identity.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_identity.py -v`
 Expected: FAIL — `dark: --club-gradient-stops is empty`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -99,13 +101,13 @@ theme's rank colours.
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd frontend && python -m pytest tests/identity.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_identity.py -v`
 Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/src/app/globals.css frontend/tests/identity.spec.py
+git add frontend/src/app/globals.css frontend/tests/test_identity.py
 git commit -m "feat(identity): derive the club gradient from the rating ladder"
 ```
 
@@ -116,7 +118,7 @@ git commit -m "feat(identity): derive the club gradient from the rating ladder"
 **Files:**
 - Create: `frontend/src/components/site/gradient-text.tsx`
 - Modify: `frontend/package.json` (adds `motion`)
-- Test: `frontend/tests/gradient_text.spec.py`
+- Test: `frontend/tests/test_gradient_text.py`
 
 **Interfaces:**
 - Consumes: `--club-gradient-stops` from Task 1.
@@ -131,7 +133,7 @@ fit-content, and puts a pointer cursor on non-interactive text. A `<div>` inside
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/gradient_text.spec.py`:
+Create `frontend/tests/test_gradient_text.py`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -182,7 +184,7 @@ def test_gradient_heading_is_inline_visible_and_motion_aware():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd frontend && python -m pytest tests/gradient_text.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_gradient_text.py -v`
 Expected: FAIL — `no [data-gradient-text] inside an h1`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -351,7 +353,7 @@ Expected: no type errors; build succeeds
 
 ```bash
 git add frontend/src/components/site/gradient-text.tsx frontend/src/app/globals.css \
-        frontend/package.json frontend/package-lock.json frontend/tests/gradient_text.spec.py
+        frontend/package.json frontend/package-lock.json frontend/tests/test_gradient_text.py
 git commit -m "feat(identity): vendor GradientText, adapted for headings"
 ```
 
@@ -362,7 +364,7 @@ git commit -m "feat(identity): vendor GradientText, adapted for headings"
 **Files:**
 - Modify: `frontend/src/components/site/primitives.tsx`
 - Modify: `frontend/src/app/about/page.tsx:25`, `blog/page.tsx:22`, `events/page.tsx:20`, `gallery/page.tsx:18`, `hall-of-fame/page.tsx:20`, `(dashboard)/leaderboard/page.tsx:32`, `(dashboard)/members/page.tsx:36`, `(dashboard)/profile/[id]/page.tsx:27`
-- Test: `frontend/tests/gradient_text.spec.py` (from Task 2), `frontend/tests/headings.spec.py`
+- Test: `frontend/tests/test_gradient_text.py` (from Task 2), `frontend/tests/test_headings.py`
 
 **Interfaces:**
 - Consumes: `GradientText` from Task 2.
@@ -378,7 +380,7 @@ Phase 2's subject; error states should not be decorative.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/headings.spec.py`:
+Create `frontend/tests/test_headings.py`:
 
 ```python
 import pytest
@@ -414,7 +416,7 @@ def test_every_page_has_exactly_one_gradient_h1():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd frontend && python -m pytest tests/headings.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_headings.py -v`
 Expected: FAIL — `/about: h1 has no gradient text`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -474,7 +476,7 @@ uses `mt-4` rather than `mt-6`; pass `className="mt-4"` there.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd frontend && python -m pytest tests/headings.spec.py tests/gradient_text.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_headings.py tests/test_gradient_text.py -v`
 Expected: PASS (both files)
 
 Run: `cd frontend && npm run build`
@@ -483,7 +485,7 @@ Expected: build succeeds
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/src/components/site/primitives.tsx frontend/src/app frontend/tests/headings.spec.py
+git add frontend/src/components/site/primitives.tsx frontend/src/app frontend/tests/test_headings.py
 git commit -m "feat(identity): apply the club gradient to page headings"
 ```
 
@@ -494,7 +496,7 @@ git commit -m "feat(identity): apply the club gradient to page headings"
 **Files:**
 - Modify: `frontend/src/lib/site.ts`
 - Modify: `frontend/src/components/site/navbar.tsx`
-- Test: `frontend/tests/nav_links.spec.py`
+- Test: `frontend/tests/test_nav_links.py`
 
 **Interfaces:**
 - Consumes: the existing `site` object in `frontend/src/lib/site.ts`.
@@ -505,7 +507,7 @@ the GitHub organisation and to joining; removing it first would break both.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/nav_links.spec.py`:
+Create `frontend/tests/test_nav_links.py`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -533,7 +535,7 @@ def test_joining_links_reachable_from_every_page():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd frontend && python -m pytest tests/nav_links.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_nav_links.py -v`
 Expected: FAIL — `/: no GitHub link in the header`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -591,13 +593,13 @@ link classes rather than the desktop ones.
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd frontend && python -m pytest tests/nav_links.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_nav_links.py -v`
 Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/src/lib/site.ts frontend/src/components/site/navbar.tsx frontend/tests/nav_links.spec.py
+git add frontend/src/lib/site.ts frontend/src/components/site/navbar.tsx frontend/tests/test_nav_links.py
 git commit -m "feat(nav): move the GitHub and joining links into the navbar"
 ```
 
@@ -608,7 +610,7 @@ git commit -m "feat(nav): move the GitHub and joining links into the navbar"
 **Files:**
 - Modify: `frontend/src/app/layout.tsx:70`
 - Create: `frontend/src/components/site/footer-slot.tsx`
-- Test: `frontend/tests/footer.spec.py`
+- Test: `frontend/tests/test_footer.py`
 
 **Interfaces:**
 - Consumes: the existing `Footer` component.
@@ -620,7 +622,7 @@ that decision in one place rather than moving the footer into every page.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/footer.spec.py`:
+Create `frontend/tests/test_footer.py`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -642,7 +644,7 @@ def test_footer_renders_on_home_only():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd frontend && python -m pytest tests/footer.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_footer.py -v`
 Expected: FAIL — `/about: expected 0 footer(s), found 1`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -686,7 +688,7 @@ and replace `<Footer />` on line 70 with:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd frontend && python -m pytest tests/footer.spec.py tests/nav_links.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_footer.py tests/test_nav_links.py -v`
 Expected: PASS (both — the nav links must still be reachable)
 
 Run: `cd frontend && npm run build`
@@ -695,7 +697,7 @@ Expected: build succeeds
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/src/app/layout.tsx frontend/src/components/site/footer-slot.tsx frontend/tests/footer.spec.py
+git add frontend/src/app/layout.tsx frontend/src/components/site/footer-slot.tsx frontend/tests/test_footer.py
 git commit -m "feat(layout): render the footer on the home page only"
 ```
 
@@ -704,7 +706,7 @@ git commit -m "feat(layout): render the footer on the home page only"
 ### Task 6: Full-site verification sweep
 
 **Files:**
-- Create: `frontend/tests/sweep.spec.py`
+- Create: `frontend/tests/test_sweep.py`
 
 **Interfaces:**
 - Consumes: everything from Tasks 1–5.
@@ -712,7 +714,7 @@ git commit -m "feat(layout): render the footer on the home page only"
 
 - [ ] **Step 1: Write the failing test**
 
-Create `frontend/tests/sweep.spec.py`:
+Create `frontend/tests/test_sweep.py`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -755,7 +757,7 @@ def test_no_errors_or_overflow_in_either_theme():
 
 - [ ] **Step 2: Run the sweep**
 
-Run: `cd frontend && python -m pytest tests/sweep.spec.py -v`
+Run: `cd frontend && python -m pytest tests/test_sweep.py -v`
 Expected: PASS. If it fails, fix the reported route before continuing — do not
 adjust the assertion.
 
@@ -772,7 +774,7 @@ request body. `motion` is the only dependency added in this phase.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add frontend/tests/sweep.spec.py
+git add frontend/tests/test_sweep.py
 git commit -m "test: full-site sweep for the identity foundation"
 ```
 
