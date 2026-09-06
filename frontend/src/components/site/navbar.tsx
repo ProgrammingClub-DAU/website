@@ -15,6 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
+import { GitHubMark } from "@/components/site/github-mark";
 import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
@@ -98,9 +99,14 @@ export function Navbar() {
                 href={item.href}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="rounded-control px-2.5 py-2 font-mono text-[13px] tracking-[0.06em] uppercase whitespace-nowrap text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                aria-label={item.label}
+                title={item.label}
+                className="rounded-control p-2 text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
               >
-                {item.label}
+                {/* The mark carries no accessible name of its own — aria-hidden
+                    inside — so the link's aria-label is what a screen reader
+                    announces. */}
+                <GitHubMark className="size-[18px]" />
               </a>
             ))}
           </div>
@@ -193,8 +199,12 @@ export function Navbar() {
                       href={item.href}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] text-fg-muted uppercase transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                      className="flex items-center gap-2.5 rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] text-fg-muted uppercase transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                     >
+                      {/* The label stays here. In a menu list an icon on its own
+                          is harder to scan than the word, so the mark sits beside
+                          it rather than replacing it as on desktop. */}
+                      <GitHubMark className="size-4 shrink-0" />
                       {item.label}
                     </a>
                   </SheetClose>
