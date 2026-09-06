@@ -147,7 +147,13 @@
   --border: rgb(9 10 12 / 0.12);
   --input: rgb(9 10 12 / 0.12);
 
-  --fg-muted: #6b7075;
+  /* Darkened from #6b7075, which measured 4.99:1 on white — under a hundredth
+     above the 4.5:1 floor. That left no headroom at all for muted text sitting
+     on anything but flat background, and the hero's paragraph now sits on a
+     moving one: a single particle bleeding through the halo took it below the
+     floor, and no halo can do better than the text colour's own ceiling. At
+     #5c6167 it is 6.4:1, so there is room to spend. */
+  --fg-muted: #5c6167;
   --fg-subtle: #5f646b;
 
   --primary: #5e6ad2;
@@ -192,7 +198,7 @@
   /* Aurora is far more aggressive on a white page than a black one: the same
      wash that reads as atmosphere in the dark theme is a saturated block here,
      and the hero's muted paragraph measured 1.06:1 against it. */
-  --aurora-strength: 0.5;
+  --aurora-strength: 0.42;
 
   /* The lattice that sits over Aurora. Literal colours rather than references
      to the rank tokens: they are read with getComputedStyle and handed to a
@@ -457,27 +463,60 @@
    the particles drift straight across the paragraph and it measured 4.07:1 in
    dark and 4.46:1 in light, against a 4.5:1 floor. */
 @utility hero-field-mask {
+  /* Edges softened, and the particles thinned — not cleared — where the copy
+     sits. Aurora's wash is left fully open, because a slow gradient behind text
+     costs little contrast; these are small bright dots, and a dot landing
+     against mid-grey text is what actually breaks it.
+
+     The centre stop is a partial alpha rather than `transparent`, so this reads
+     as fewer particles rather than as a hole with an edge. An earlier version
+     cleared the middle outright and looked like the animation had stopped. */
   mask-image:
-    radial-gradient(130% 110% at 50% 18%, #000 35%, transparent 85%),
-    radial-gradient(74% 84% at 50% 48%, transparent 54%, #000 97%);
+    radial-gradient(130% 115% at 50% 20%, #000 45%, transparent 92%),
+    radial-gradient(60% 64% at 50% 46%, rgb(0 0 0 / 0.1) 32%, #000 90%);
   mask-composite: intersect;
 }
 
-/* Keeps Aurora off the hero's copy.
+/* Aurora's own mask: a fade down the page.
 
-   This is a contrast requirement, not a preference. Measured against the wash
-   at full strength, the hero's heading came out at 4.22:1 in the light theme
-   and the muted paragraph at 1.06:1, against a 4.5:1 floor.
-
-   Two layers intersected, as with the dot field below: the first keeps the wash
-   in a band under the navbar and fades it down the page, the second clears an
-   ellipse where the heading and paragraph sit. What survives is the top band
-   and the left and right margins, which is where it was doing the work anyway. */
+   Keeping the hero's text legible is a contrast requirement rather than a
+   preference — against the unmasked wash the heading measured 4.22:1 in the
+   light theme and the muted paragraph 1.06:1, against a 4.5:1 floor. That is
+   what .hero-copy-scrim below is for. Clearing a hole in the background was the
+   first attempt and the wrong one: it protected the text by stopping the
+   animation across the middle of the hero. */
 @utility hero-aurora-mask {
-  mask-image:
-    linear-gradient(to bottom, #000 0%, #000 22%, transparent 88%),
-    radial-gradient(72% 82% at 50% 48%, transparent 54%, #000 98%);
-  mask-composite: intersect;
+  /* A fade down the page, and nothing else. The ellipse this used to intersect
+     cleared the middle of the hero, which is where the wash is supposed to be
+     moving — it read as the animation being blocked rather than as a mask. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 30%, transparent 92%);
+}
+
+/* Legibility for text sitting directly on a moving backdrop.
+
+   A halo on the glyphs rather than a panel behind the block. Two earlier
+   attempts both showed as a shape: a hole cut in the backdrop's mask stopped
+   the animation across the middle of the hero, and a radial pool of page colour
+   read as a cloud with an edge. A text-shadow has no edge of its own — it
+   follows the letters, so the backdrop keeps flowing right up to them.
+
+   Three stacked shadows: a tight one to lift the glyph off whatever is directly
+   behind it, and two wider ones to fade the surrounding pixels toward the page
+   colour. */
+@utility text-halo {
+  text-shadow:
+    /* The near pair is listed twice on purpose: stacking the same shadow
+       compounds its alpha, which is what makes the few pixels immediately
+       beside a glyph opaque. One pass at 6px left a bright particle touching
+       the paragraph at 1.48:1 — small muted text has almost no headroom, being
+       4.99:1 on plain white before anything is drawn behind it. */
+    0 0 4px var(--background),
+    0 0 4px var(--background),
+    0 0 4px var(--background),
+    0 0 10px var(--background),
+    0 0 10px var(--background),
+    0 0 20px var(--background),
+    0 0 34px var(--background);
 }
 
 /* Frosted control — the button counterpart to .glass-panel.

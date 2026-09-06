@@ -87,12 +87,14 @@ export default function HomePage() {
             with nothing beside it left the whole right half of a wide screen
             empty and read as a layout fault rather than a choice. */}
         <Section className="pt-12 pb-20 text-center md:pt-16 md:pb-28">
+          {/* The backdrops run through this block rather than around it, so
+              the text carries its own legibility. See .text-halo. */}
           <div className="mx-auto max-w-[54ch]">
-            <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
-            <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
+            <Eyebrow className="text-halo animate-rise">Competitive programming club</Eyebrow>
+            <h1 className="text-halo mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
               A home for problem solvers at DAU.
             </h1>
-            <p className="mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
+            <p className="text-halo mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
               Weekly contests, editorials, and a leaderboard synced from Codeforces — for
               everyone from first-time solvers to ICPC regionalists.
             </p>

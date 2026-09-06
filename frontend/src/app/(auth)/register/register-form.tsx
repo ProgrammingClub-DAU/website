@@ -86,20 +86,15 @@ export default function RegisterForm() {
             panel outright would have left an auth page whose only heading was
             the form's h2. */}
         {/* The headline is the only text sitting on the raw backdrop — the form
-            below has its own glass panel. Rather than punch a hole in the
-            background, which left the top of the page looking empty, it gets a
-            local scrim: the page colour at full strength directly behind the
-            words, fading to nothing well before the block's edge. Without it
-            the field's brightest pixels land under white text at 1.9:1. */}
-        <div className="relative space-y-3 text-center">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -inset-x-16 -inset-y-12 -z-10 bg-[radial-gradient(farthest-side_at_50%_50%,var(--background)_62%,transparent_100%)]"
-          />
-          <p className="font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
+            below has its own glass panel. It carries a halo on the glyphs rather
+            than a pool of page colour behind the block: the pool read as a
+            cloud with an edge, while a text-shadow follows the letters and lets
+            the field keep flowing right up to them. See .text-halo. */}
+        <div className="space-y-3 text-center">
+          <p className="text-halo font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
           </p>
-          <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-semibold tracking-tight text-balance text-foreground">
+          <h1 className="text-halo text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-semibold tracking-tight text-balance text-foreground">
             Solve. Rank up. Climb the board.
           </h1>
         </div>
