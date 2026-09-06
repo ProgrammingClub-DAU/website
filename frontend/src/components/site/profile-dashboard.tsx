@@ -51,17 +51,6 @@ import Image from "next/image";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
-// ── Rank color helper for rating values (Codeforces thresholds) ──
-function ratingToRankName(rating: number): string {
-  if (rating >= 2400) return "Grandmaster";
-  if (rating >= 2100) return "Master";
-  if (rating >= 1900) return "Candidate Master";
-  if (rating >= 1600) return "Expert";
-  if (rating >= 1400) return "Specialist";
-  if (rating >= 1200) return "Pupil";
-  return "Newbie";
-}
-
 // ── Event type icon and color (used in Phase 2 event section) ──
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getEventTypeIcon(type: ClubEventType) {

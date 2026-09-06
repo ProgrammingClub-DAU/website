@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { CF_RANKS, type CfRankKey } from "@/lib/cf-ranks";
+import { CF_RANKS, ratingToRank } from "@/lib/cf-ranks";
 import { cn } from "@/lib/utils";
 
 export type RatingPoint = {
@@ -30,19 +30,8 @@ const PADDING = { top: 18, right: 16, bottom: 26, left: 44 };
 const HEIGHT = 300;
 const GRID_LINES = 5;
 
-function rankOf(rating: number): CfRankKey {
-  if (rating >= 3000) return "grandmaster";
-  if (rating >= 2400) return "grandmaster";
-  if (rating >= 2100) return "master";
-  if (rating >= 1900) return "candidate";
-  if (rating >= 1600) return "expert";
-  if (rating >= 1400) return "specialist";
-  if (rating >= 1200) return "pupil";
-  return "newbie";
-}
-
 function rankName(rating: number): string {
-  return CF_RANKS.find((r) => r.key === rankOf(rating))?.name ?? "Unrated";
+  return CF_RANKS.find((r) => r.key === ratingToRank(rating))?.name ?? "Unrated";
 }
 
 /**
@@ -150,14 +139,15 @@ export function RatingGraph({
     const rMin = Math.min(...ratings) - 100;
     const rMax = Math.max(...ratings) + 100;
 
-    // A single contest, or several on one day, would divide by zero — centre instead.
+    // A single contest, or several on one day, would make every timestamp equal
+    // and divide by zero — centre horizontally instead. The rating axis has no
+    // equivalent case: it is always padded by ±100 above, so spanR is never zero.
     const spanT = tMax - tMin;
     const spanR = rMax - rMin;
 
     const x = (t: number) =>
       PADDING.left + (spanT === 0 ? innerW / 2 : ((t - tMin) / spanT) * innerW);
-    const y = (r: number) =>
-      PADDING.top + (spanR === 0 ? innerH / 2 : innerH - ((r - rMin) / spanR) * innerH);
+    const y = (r: number) => PADDING.top + innerH - ((r - rMin) / spanR) * innerH;
 
     const points = sorted.map((d, i) => ({
       x: x(times[i]),
@@ -223,7 +213,7 @@ export function RatingGraph({
         <svg
           width={width}
           height={HEIGHT}
-          role="img"
+          role="group"
           tabIndex={0}
           aria-label={`Contest rating history: ${sorted.length} contests, from ${first.rating} to ${latest.rating}, ${delta >= 0 ? "up" : "down"} ${Math.abs(delta)} points. Use the arrow keys to read each contest.`}
           onPointerMove={handleMove}
@@ -279,7 +269,7 @@ export function RatingGraph({
               cx={p.x}
               cy={p.y}
               r={active === i ? 6.5 : 4.5}
-              fill={`var(--cf-${rankOf(p.rating)})`}
+              fill={`var(--cf-${ratingToRank(p.rating)})`}
               stroke="var(--background)"
               strokeWidth={2}
             />
@@ -304,7 +294,7 @@ export function RatingGraph({
           </p>
           <p className="mt-0.5 text-sm font-semibold">
             {activePoint.rating}{" "}
-            <span style={{ color: `var(--cf-${rankOf(activePoint.rating)})` }}>
+            <span style={{ color: `var(--cf-${ratingToRank(activePoint.rating)})` }}>
               {rankName(activePoint.rating)}
             </span>
           </p>
