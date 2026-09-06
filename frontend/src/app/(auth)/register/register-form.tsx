@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
-import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
+import { AuthBackdrop } from "@/components/site/auth-backdrop";
 import StarBorder from "@/components/site/star-border";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,11 +74,10 @@ export default function RegisterForm() {
 
   return (
     <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-14">
-      {/* Full-bleed now, rather than confined to a left-hand panel. The mask
-          thins the field through the middle so the centred column sits on the
-          page's own background rather than on the particles, and the density
-          stays at the edges where it reads as atmosphere. */}
-      <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(72%_64%_at_50%_50%,transparent_10%,#000_76%)]" />
+      {/* Full-bleed, and the mask thins it through the middle so the centred
+          column sits on the page's own background rather than on the grid. The
+          density stays at the edges, where it reads as atmosphere. */}
+      <AuthBackdrop className="absolute inset-0 -z-10 [mask-image:radial-gradient(78%_70%_at_50%_50%,transparent_14%,#000_84%)]" />
 
       <div className="w-full max-w-md">
         {/* Was the left panel's branding. It keeps the page's h1 — dropping the

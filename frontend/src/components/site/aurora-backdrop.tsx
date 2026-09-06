@@ -70,9 +70,9 @@ export function AuroraBackdrop({ className }: { className: string }) {
         key={theme.light ? "light" : "dark"}
         colorStops={theme.stops}
         lightMode={theme.light}
-        amplitude={0.9}
-        blend={0.6}
-        speed={0.7}
+        amplitude={1.15}
+        blend={0.62}
+        speed={1.2}
       />
     </div>
   );
