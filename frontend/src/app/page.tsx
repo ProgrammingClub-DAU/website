@@ -12,109 +12,13 @@ import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
   RankDot,
-  RankLegend,
-  SampleBadge,
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
 import { CF_RANKS } from "@/lib/cf-ranks";
-import { heroRows, howItWorks, sparkline, stats } from "@/lib/content/home";
+import { howItWorks, stats } from "@/lib/content/home";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
-
-function HeroPanel() {
-  return (
-    <div className="relative flex flex-col gap-4">
-      <div
-        className="pointer-events-none absolute -inset-x-5 -inset-y-10 bg-[radial-gradient(60%_55%_at_60%_40%,var(--primary-soft),transparent_70%)]"
-        aria-hidden
-      />
-
-      <div className="glass-panel relative overflow-hidden rounded-panel">
-        <div className="flex items-center justify-between gap-4 border-b border-hairline px-4 py-3.5">
-          <span className="font-mono text-[13px] tracking-[0.1em] text-fg-muted uppercase">
-            Club rating
-          </span>
-          <SampleBadge />
-        </div>
-
-        <ul>
-          {heroRows.map((row) => (
-            <li
-              key={row.handle}
-              className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 transition-colors hover:bg-surface-2"
-            >
-              <span className="w-[18px] font-mono text-xs text-fg-subtle">{row.rank}</span>
-              <RankDot rank={row.cf} />
-              <span className="min-w-0 flex-1 truncate font-mono text-[13px]">{row.handle}</span>
-              <span className="w-11 text-right font-mono text-xs text-fg-muted">{row.delta}</span>
-              <span className="w-12 text-right font-mono text-sm">{row.rating}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <span className="font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
-            Synced from Codeforces
-          </span>
-          <span className="flex h-[18px] items-end gap-[3px]" aria-hidden>
-            {sparkline.map((h, i) => (
-              <span
-                key={i}
-                className="w-1 rounded-sm bg-hairline-strong"
-                style={{ height: h }}
-              />
-            ))}
-          </span>
-        </div>
-      </div>
-
-      <div className="relative grid gap-4 sm:grid-cols-2">
-        <div className="glass-panel rounded-panel p-4.5 transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
-              Next round
-            </span>
-            <span
-              className="size-1.5 animate-pulse-ring rounded-full bg-cf-pupil"
-              aria-hidden
-            />
-          </div>
-          <p className="mt-3.5 text-[15px] font-semibold tracking-tight">
-            [PLACEHOLDER] Weekly Round
-          </p>
-          <p className="mt-1.5 font-mono text-xs text-fg-muted">
-            [PLACEHOLDER] Day · 21:00 IST
-          </p>
-        </div>
-
-        <div className="glass-panel rounded-panel p-4.5 transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
-              Problem of the day
-            </span>
-            <span className="font-mono text-[11px] text-cf-expert">1600</span>
-          </div>
-          <p className="mt-3.5 text-[15px] font-semibold tracking-tight">
-            [PLACEHOLDER] Problem title
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {["dp", "greedy"].map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-fg-muted"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <RankLegend className="relative mt-1" />
-    </div>
-  );
-}
 
 type Feature = {
   icon: LucideIcon;
@@ -164,8 +68,8 @@ const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
 export default function HomePage() {
   return (
     <>
-      <Section className="grid gap-14 py-16 md:grid-cols-2 md:items-center md:py-24">
-        <div>
+      <Section className="py-16 md:py-24">
+        <div className="max-w-[54ch]">
           <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
           <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
             A home for problem solvers at DAU.
@@ -183,8 +87,6 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
-
-        <HeroPanel />
       </Section>
 
       {/* Every figure here is a placeholder — confirm against club records before launch. */}
