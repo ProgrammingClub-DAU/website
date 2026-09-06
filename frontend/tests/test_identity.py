@@ -23,8 +23,19 @@ def test_club_gradient_defined_in_both_themes():
     for name, tok in (("dark", dark), ("light", light)):
         assert tok["stops"], f"{name}: --club-gradient-stops is empty"
         assert tok["gradient"].startswith("linear-gradient"), f"{name}: {tok['gradient']!r}"
-        # Four stops, so three commas separating them.
-        assert tok["stops"].count(",") == 3, f"{name}: expected 4 stops, got {tok['stops']!r}"
+        # Three stops, so two commas separating them. It was four: the fourth
+        # was --cf-master, and orange against the indigo --primary read as a
+        # separate decoration rather than the same identity.
+        assert tok["stops"].count(",") == 2, f"{name}: expected 3 stops, got {tok['stops']!r}"
+
+    # The point of dropping that stop was to keep the gradient in the cool half
+    # of the ladder, which is the half --primary sits in. Assert the outcome,
+    # not just the count: a warm stop creeping back in is the regression.
+    for name, tok in (("dark", dark), ("light", light)):
+        for warm in ("#d97706", "#ff9f45", "#dc2626", "#ff4d4d"):
+            assert warm not in tok["stops"].lower(), (
+                f"{name}: warm stop {warm} is back in --club-gradient-stops"
+            )
 
     # The ladder colours differ per theme, so the gradient must differ too.
     assert dark["stops"] != light["stops"], "gradient does not follow the theme"
