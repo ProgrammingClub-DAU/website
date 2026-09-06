@@ -1,16 +1,21 @@
 "use client";
 
 /**
- * Hosts the React Bits dot field behind the home hero.
+ * Hosts the React Bits dot field as a background, for the home hero and the
+ * auth panel.
  *
  * Kept separate from the vendored component so that file stays close to its
  * upstream source and is easy to re-diff. Everything specific to this site —
  * sizing, theming, loading strategy — lives here, as with the dome gallery.
  *
- * The spec called for Aurora in this slot. Aurora is WebGL and pulls in `ogl`;
- * this is Canvas 2D and pulls in nothing, which is the constraint that came
- * after the spec was written. It does the same job: a moving field the hero
- * text sits on, drawn in the club gradient's colours.
+ * The spec called for Aurora behind the hero and Particles behind the auth
+ * panel. Both are WebGL and pull in `ogl`, and the instruction after the spec
+ * was written was to stay off WebGL. This is Canvas 2D and pulls in nothing,
+ * and it does both jobs: a moving field, drawn in the club gradient's colours,
+ * that text sits on.
+ *
+ * Callers supply the mask and the tuning; only the palette and the loading
+ * strategy are shared, and those are the parts worth having in one place.
  */
 
 import dynamic from "next/dynamic";
@@ -34,12 +39,29 @@ const COLOR_TOKENS = ["--dot-field-from", "--dot-field-to", "--dot-field-glow"] 
 
 type Palette = [from: string, to: string, glow: string];
 
+type DotFieldBackdropProps = {
+  /** Positioning and the mask that fades the field into the page. */
+  className: string;
+  dotRadius?: number;
+  dotSpacing?: number;
+  cursorRadius?: number;
+  bulgeStrength?: number;
+  glowRadius?: number;
+};
+
 function readPalette(): Palette {
   const styles = getComputedStyle(document.documentElement);
   return COLOR_TOKENS.map((token) => styles.getPropertyValue(token).trim()) as Palette;
 }
 
-export function HeroDotField() {
+export function DotFieldBackdrop({
+  className,
+  dotRadius = 3,
+  dotSpacing = 26,
+  cursorRadius = 340,
+  bulgeStrength = 44,
+  glowRadius = 200,
+}: DotFieldBackdropProps) {
   const [palette, setPalette] = useState<Palette | null>(null);
 
   useEffect(() => {
@@ -63,16 +85,13 @@ export function HeroDotField() {
   const [gradientFrom, gradientTo, glowColor] = palette;
 
   return (
-    <div
-      aria-hidden
-      className="hero-field-mask pointer-events-none absolute inset-0 -z-10"
-    >
+    <div aria-hidden className={className}>
       <DotField
-        dotRadius={3}
-        dotSpacing={26}
-        cursorRadius={340}
-        bulgeStrength={44}
-        glowRadius={200}
+        dotRadius={dotRadius}
+        dotSpacing={dotSpacing}
+        cursorRadius={cursorRadius}
+        bulgeStrength={bulgeStrength}
+        glowRadius={glowRadius}
         gradientFrom={gradientFrom}
         gradientTo={gradientTo}
         glowColor={glowColor}

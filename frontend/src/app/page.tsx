@@ -10,7 +10,7 @@ import {
 
 import BorderGlow from "@/components/site/border-glow";
 import { ClubWordmark } from "@/components/site/club-wordmark";
-import { HeroDotField } from "@/components/site/hero-dot-field";
+import { DotFieldBackdrop } from "@/components/site/dot-field-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
@@ -76,7 +76,7 @@ export default function HomePage() {
           off the Section, which is width-capped by container-page. `isolate`
           keeps its negative z-index inside this subtree. */}
       <div className="relative isolate overflow-hidden">
-        <HeroDotField />
+        <DotFieldBackdrop className="hero-field-mask pointer-events-none absolute inset-0 -z-10" />
 
         {/* Centred since the hero lost its right-hand panel. Left-aligned text
             with nothing beside it left the whole right half of a wide screen
