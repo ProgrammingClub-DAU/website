@@ -1,17 +1,22 @@
 "use client";
 
 /**
- * Hosts the React Bits ripple grid behind the auth pages.
+ * Hosts the React Bits pixel blast behind the auth pages.
  *
  * Kept separate from the vendored component so that file stays close to its
  * upstream source and is easy to re-diff. Everything specific to this site —
  * colour, tuning, loading strategy — lives here.
  *
- * Chosen over Particles, which the spec named, for two reasons. It reacts to
- * the pointer rather than only drifting: the grid ripples away from the cursor,
- * so the page responds to being touched. And a lattice is closer to what this
- * club is about than a starfield — the page already ends on a row of
- * rank-coloured dots, and a grid is the same idea at the scale of the viewport.
+ * A field of pixels that ripples where the pointer goes and bursts where it
+ * clicks. Pixels are the right register for a programming club, and it is the
+ * most interactive of the options: the ripple grid it replaced only bent around
+ * the cursor, and Particles before that only drifted.
+ *
+ * It is the one thing on the site with a dependency cost worth stating: three
+ * and postprocessing, about 210 kB gzipped. It is dynamically imported and
+ * reached only from /login and /register, so no other route pays for it, and it
+ * is cached after the first visit. The ripple grid remains the free alternative
+ * — it uses ogl, which Aurora already brings in.
  *
  * It holds a WebGL context, so the spec's rule applies: at most one per page,
  * and never two. This has the auth pages; Aurora has the home page.
@@ -25,7 +30,7 @@ import { useEffect, useState } from "react";
  * shaders on mount, none of which the server can do — and on an auth page the
  * form is the part worth showing first.
  */
-const RippleGrid = dynamic(() => import("@/components/site/ripple-grid"), {
+const PixelBlast = dynamic(() => import("@/components/site/pixel-blast"), {
   ssr: false,
 });
 
@@ -36,8 +41,8 @@ function readTheme(): Theme {
   return {
     // One colour, not a gradient, so it is the middle of the club gradient —
     // the stop that sits closest to --primary. Read off the document rather
-    // than passed as var(--token): the component parses it to a vec3, with no
-    // CSS cascade to resolve a custom property against.
+    // than passed as var(--token): it goes to THREE.Color, which has no CSS
+    // cascade to resolve a custom property against.
     color: getComputedStyle(root).getPropertyValue("--cf-expert").trim(),
     light: !root.classList.contains("dark"),
   };
@@ -67,19 +72,24 @@ export function AuthBackdrop({ className }: { className: string }) {
     // be touched. It sits behind the form, so it only receives the events the
     // column above it does not.
     <div aria-hidden className={className}>
-      <RippleGrid
+      <PixelBlast
         key={theme.light ? "light" : "dark"}
-        gridColor={theme.color}
-        lightMode={theme.light}
-        opacity={0.6}
-        gridSize={11}
-        gridThickness={13}
-        rippleIntensity={0.06}
-        glowIntensity={0.12}
-        fadeDistance={1.6}
-        vignetteStrength={2.2}
-        mouseInteraction
-        mouseInteractionRadius={1.2}
+        variant="square"
+        color={theme.color}
+        pixelSize={4}
+        patternScale={2.4}
+        patternDensity={1.05}
+        pixelSizeJitter={0.4}
+        speed={0.45}
+        edgeFade={0.35}
+        enableRipples
+        rippleSpeed={0.35}
+        rippleThickness={0.11}
+        rippleIntensityScale={1.4}
+        liquid
+        liquidStrength={0.09}
+        liquidRadius={1.1}
+        transparent
       />
     </div>
   );
