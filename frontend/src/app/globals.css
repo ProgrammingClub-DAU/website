@@ -157,7 +157,11 @@
   --ring: #5e6ad2;
 
   --glass: rgb(94 106 210 / 0.07);
-  --glass-hi: rgb(255 255 255 / 1);
+  /* Top edge of a glass panel, one shade softer than --border so the panel reads
+     as catching light from above. It must stay visible: opaque white here is the
+     same colour as the light page background, which made the top border of every
+     glass panel disappear while the other three sides were drawn. */
+  --glass-hi: rgb(9 10 12 / 0.07);
 
   --card: #fbfbfc;
   --card-foreground: #08090a;
