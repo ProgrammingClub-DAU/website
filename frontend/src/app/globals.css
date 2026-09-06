@@ -151,6 +151,18 @@
   --cf-master: #d97706;
   --cf-grandmaster: #dc2626;
 
+  /* The club gradient is the Codeforces rating ladder, not a palette picked for
+     looking nice: cyan through blue and purple to orange is the progression
+     members are actually climbing. Defined once so every gradient on the site —
+     headings, backgrounds, card glows — is the same idea, and retuning the
+     identity is a one-line change.
+
+     Stops are exposed separately because JS consumers (React Bits components
+     take a colours array) need the list, while CSS consumers want the finished
+     gradient. */
+  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate), var(--cf-master);
+  --club-gradient: linear-gradient(100deg, var(--club-gradient-stops));
+
   --nav-bg: rgb(255 255 255 / 0.78);
   --band: linear-gradient(180deg, #f6f7f8, #ffffff);
   --shadow-panel-color: 0 20px 50px -24px rgb(9 10 12 / 0.18);
@@ -201,6 +213,18 @@
   --cf-candidate: #c066e0;
   --cf-master: #ff9f45;
   --cf-grandmaster: #ff4d4d;
+
+  /* The club gradient is the Codeforces rating ladder, not a palette picked for
+     looking nice: cyan through blue and purple to orange is the progression
+     members are actually climbing. Defined once so every gradient on the site —
+     headings, backgrounds, card glows — is the same idea, and retuning the
+     identity is a one-line change.
+
+     Stops are exposed separately because JS consumers (React Bits components
+     take a colours array) need the list, while CSS consumers want the finished
+     gradient. */
+  --club-gradient-stops: var(--cf-specialist), var(--cf-expert), var(--cf-candidate), var(--cf-master);
+  --club-gradient: linear-gradient(100deg, var(--club-gradient-stops));
 
   --nav-bg: rgb(8 9 10 / 0.72);
   --band: linear-gradient(180deg, #0b0c0e, #08090a);
