@@ -394,3 +394,16 @@
     padding-inline: 4rem;
   }
 }
+
+/* Restores a visible colour where background-clip: text is unsupported. The
+   @supports block only applies the transparent fill when clipping works, so a
+   failure leaves readable text instead of nothing. */
+[data-gradient-text] {
+  color: var(--gradient-text-fallback, var(--foreground));
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  [data-gradient-text] {
+    color: transparent;
+  }
+}
