@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function HallOfFamePage() {
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <Eyebrow>Hall of fame</Eyebrow>
         <PageTitle className="max-w-[20ch]">
           Results, year by year.

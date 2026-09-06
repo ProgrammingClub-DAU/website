@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Section className="pt-16 pb-16 md:pt-24">
+      <Section className="pt-10 pb-16 md:pt-14">
         <Eyebrow>About</Eyebrow>
         <PageTitle className="max-w-[22ch]">
           A student club built around practice, not prestige.

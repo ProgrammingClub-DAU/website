@@ -19,7 +19,7 @@ import {
   SectionHeader,
 } from "@/components/site/primitives";
 import { CF_RANKS } from "@/lib/cf-ranks";
-import { howItWorks, stats } from "@/lib/content/home";
+import { howItWorks } from "@/lib/content/home";
 import { site } from "@/lib/site";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
@@ -81,7 +81,7 @@ export default function HomePage() {
         {/* Centred since the hero lost its right-hand panel. Left-aligned text
             with nothing beside it left the whole right half of a wide screen
             empty and read as a layout fault rather than a choice. */}
-        <Section className="py-20 text-center md:py-28">
+        <Section className="pt-12 pb-20 text-center md:pt-16 md:pb-28">
           <div className="mx-auto max-w-[54ch]">
             <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
             <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
@@ -102,23 +102,6 @@ export default function HomePage() {
           </div>
         </Section>
       </div>
-
-      {/* Every figure here is a placeholder — confirm against club records before launch. */}
-      <Section>
-        <dl className="grid grid-cols-2 border-y border-hairline lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="py-8 pr-6">
-              {/* Term before definition: a screen reader pairs them in source order. */}
-              <dt className="font-mono text-xs tracking-[0.1em] text-fg-muted uppercase">
-                {stat.label}
-              </dt>
-              <dd className="mt-2.5 text-[2rem] font-semibold tracking-[-0.02em]">
-                {stat.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Section>
 
       <Section className="py-16">
         <SectionHeader eyebrow="What the club runs" title="Everything in one place." />

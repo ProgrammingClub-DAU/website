@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import StarBorder from "@/components/site/star-border";
 import {
   Sheet,
   SheetClose,
@@ -19,6 +20,13 @@ import { GitHubMark } from "@/components/site/github-mark";
 import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
+
+/** Shared by the four star-bordered auth links, so the two pairs cannot drift. */
+const NAV_STAR_INNER =
+  "glass-control inline-flex h-8 items-center justify-center rounded-full font-mono text-[13px] tracking-[0.06em] whitespace-nowrap uppercase";
+
+const SHEET_STAR_INNER =
+  "glass-control flex h-10 w-full items-center justify-center rounded-full text-sm font-medium";
 
 function Wordmark({ className }: { className?: string }) {
   return (
@@ -135,19 +143,30 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-8 rounded-full px-3.5 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                {/* The sweep runs behind a translucent surface rather than a
+                    solid one, so it reads through the glass instead of only
+                    around it. StarBorder sets no background of its own now, so
+                    the fill comes from the same tokens every other button uses. */}
+                <StarBorder
+                  as={Link}
+                  href="/login"
+                  color="var(--cf-specialist)"
+                  speed="7s"
+                  className="rounded-full!"
+                  innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-quiet)] px-3.5 text-fg-muted"}
                 >
-                  <Link href="/login">Login</Link>
-                </Button>
-                <Button
-                  asChild
-                  className="h-8 rounded-full px-4 font-mono text-[13px] tracking-[0.06em] uppercase inline-flex"
+                  Login
+                </StarBorder>
+                <StarBorder
+                  as={Link}
+                  href="/register"
+                  color="var(--cf-candidate)"
+                  speed="6s"
+                  className="rounded-full!"
+                  innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-cta)] px-4 text-foreground"}
                 >
-                  <Link href="/register">Join</Link>
-                </Button>
+                  Join
+                </StarBorder>
               </>
             )}
           </div>
@@ -239,14 +258,28 @@ export function Navbar() {
                 ) : (
                   <>
                     <SheetClose asChild>
-                      <Button asChild variant="outline" className="h-10 rounded-full">
-                        <Link href="/login">Login</Link>
-                      </Button>
+                      <StarBorder
+                        as={Link}
+                        href="/login"
+                        color="var(--cf-specialist)"
+                        speed="7s"
+                        className="w-full rounded-full!"
+                        innerClassName={SHEET_STAR_INNER + " [--glass-fill:var(--glass-quiet)] text-fg-muted"}
+                      >
+                        Login
+                      </StarBorder>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Button asChild className="h-10 rounded-full">
-                        <Link href="/register">Join the Club</Link>
-                      </Button>
+                      <StarBorder
+                        as={Link}
+                        href="/register"
+                        color="var(--cf-candidate)"
+                        speed="6s"
+                        className="w-full rounded-full!"
+                        innerClassName={SHEET_STAR_INNER + " [--glass-fill:var(--glass-cta)] text-foreground"}
+                      >
+                        Join the Club
+                      </StarBorder>
                     </SheetClose>
                   </>
                 )}

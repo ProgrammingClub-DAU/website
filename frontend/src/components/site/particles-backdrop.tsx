@@ -73,10 +73,10 @@ export function ParticlesBackdrop({ className }: { className: string }) {
       <Particles
         key={palette.join()}
         particleColors={palette}
-        particleCount={190}
+        particleCount={260}
         particleSpread={16}
         speed={0.08}
-        particleBaseSize={70}
+        particleBaseSize={95}
         sizeRandomness={0.8}
         alphaParticles
         moveParticlesOnHover

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>Blog</Eyebrow>

@@ -26,7 +26,7 @@ export default async function LeaderboardPage() {
 
   return (
     <>
-      <Section className="pt-16 pb-8 md:pt-24">
+      <Section className="pt-10 pb-8 md:pt-14">
         <div>
           <Eyebrow>Leaderboard</Eyebrow>
           <PageTitle className="mt-4">

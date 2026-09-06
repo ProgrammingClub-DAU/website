@@ -173,6 +173,10 @@
   --glass-quiet: rgb(9 10 12 / 0.03);
   --glass-quiet-hover: rgb(9 10 12 / 0.06);
   --glow-control: 0 8px 24px -10px rgb(94 106 210 / 0.6);
+  /* The two lines that make a translucent surface read as glass rather than as
+     a flat tint: a lit top edge, and a shadow that lifts it off the page. */
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 0.75);
+  --glass-lift: 0 4px 14px -6px rgb(9 10 12 / 0.28);
 
   /* BorderGlow's theme switch. Upstream branched on a JS luminance test that
      only parses hex, so a token always fell through to its dark path. These
@@ -263,6 +267,8 @@
   --glass-quiet: rgb(255 255 255 / 0.055);
   --glass-quiet-hover: rgb(255 255 255 / 0.1);
   --glow-control: 0 8px 28px -10px rgb(94 106 210 / 0.85);
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  --glass-lift: 0 6px 18px -8px rgb(0 0 0 / 0.7);
 
   --glow-fill-blend: soft-light;
   --glow-outer-blend: plus-lighter;
@@ -462,7 +468,11 @@
 
   position: relative;
   background-color: var(--glass-fill);
-  backdrop-filter: blur(14px) saturate(1.4);
+  /* Heavier blur and a real saturation lift, which is what separates frosted
+     glass from a translucent rectangle: colours behind it bloom through rather
+     than merely showing through dimmed. */
+  backdrop-filter: blur(20px) saturate(1.9);
+  box-shadow: var(--glass-sheen), var(--glass-lift);
 
   &::before {
     content: "";

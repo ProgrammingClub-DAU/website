@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function GalleryPage() {
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <Eyebrow>Gallery</Eyebrow>
         <PageTitle className="max-w-[20ch]">
           Where we were.

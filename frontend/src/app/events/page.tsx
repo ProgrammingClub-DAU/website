@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function EventsPage() {
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <Eyebrow>Events</Eyebrow>
         <PageTitle className="max-w-[20ch]">
           What we run, and when.

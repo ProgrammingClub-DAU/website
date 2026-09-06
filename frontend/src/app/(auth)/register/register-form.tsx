@@ -78,7 +78,7 @@ export default function RegisterForm() {
           thins the field through the middle so the centred column sits on the
           page's own background rather than on the particles, and the density
           stays at the edges where it reads as atmosphere. */}
-      <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(70%_62%_at_50%_50%,transparent_18%,#000_82%)]" />
+      <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(72%_64%_at_50%_50%,transparent_10%,#000_76%)]" />
 
       <div className="w-full max-w-md">
         {/* Was the left panel's branding. It keeps the page's h1 — dropping the
@@ -199,6 +199,8 @@ export default function RegisterForm() {
 
             <StarBorder
               type="submit"
+              backgroundColor="var(--primary)"
+              textColor="var(--primary-foreground)"
               disabled={isSubmitting}
               className="mt-2 w-full disabled:opacity-60"
               innerClassName="h-10 w-full rounded-lg font-mono text-xs tracking-wider uppercase flex items-center justify-center"

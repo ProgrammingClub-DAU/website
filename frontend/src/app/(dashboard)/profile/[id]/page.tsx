@@ -21,7 +21,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const resolvedParams = await params;
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <div>
           <Eyebrow>Profile</Eyebrow>
           <PageTitle>
