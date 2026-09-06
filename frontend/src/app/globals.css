@@ -60,6 +60,12 @@
 
   --animate-rise: rise 0.6s ease both;
   --animate-pulse-ring: pulse-ring 2.4s ease-in-out infinite;
+  /* StarBorder ships its keyframes as a Tailwind v3 `tailwind.config.js` snippet.
+     This project is v4 CSS-first with no config file, so they are registered here
+     instead. Being CSS animations rather than requestAnimationFrame, the
+     prefers-reduced-motion block at the end of this file already stops them. */
+  --animate-star-movement-bottom: star-movement-bottom linear infinite alternate;
+  --animate-star-movement-top: star-movement-top linear infinite alternate;
 
   @keyframes rise {
     from {
@@ -71,6 +77,28 @@
       transform: none;
     }
   }
+  @keyframes star-movement-bottom {
+    0% {
+      transform: translate(0%, 0%);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-100%, 0%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes star-movement-top {
+    0% {
+      transform: translate(0%, 0%);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(100%, 0%);
+      opacity: 0;
+    }
+  }
+
   @keyframes pulse-ring {
     0%,
     100% {

@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
-import { Button } from "@/components/ui/button";
+import StarBorder from "@/components/site/star-border";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
@@ -213,13 +213,14 @@ export default function RegisterForm() {
               </div>
             )}
 
-            <Button
+            <StarBorder
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-10 font-mono text-xs tracking-wider uppercase bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg mt-2"
+              className="mt-2 w-full disabled:opacity-60"
+              innerClassName="h-10 w-full rounded-lg font-mono text-xs tracking-wider uppercase flex items-center justify-center"
             >
               {isSubmitting ? "Creating Account..." : "Create Account"}
-            </Button>
+            </StarBorder>
           </form>
 
           <p className="text-center font-mono text-xs text-fg-muted">
