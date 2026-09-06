@@ -37,3 +37,6 @@ Thumbs.db
 # and the security audit documents findings, affected files and attack paths.
 # The reports still exist locally in documents/audits/ — they are simply not shared.
 /documents/audits/
+
+# Python test cache
+__pycache__/
