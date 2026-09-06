@@ -8,8 +8,9 @@
  * colours, tuning, loading strategy — lives here.
  *
  * This is the spec's original choice for the slot, and its reasoning holds: the
- * panel already ends on a row of rank-coloured dots, so particles in the same
- * colours finish an idea the page starts.
+ * page ends on a row of rank-coloured dots, so particles in the same colours
+ * finish an idea it already starts. It covers the whole viewport rather than a
+ * single panel, so the count and the spread are both higher than they were.
  *
  * It holds a WebGL context, so the spec's rule applies: at most one per page,
  * and never two. Particles has the auth pages; Aurora has the home page.
@@ -72,8 +73,8 @@ export function ParticlesBackdrop({ className }: { className: string }) {
       <Particles
         key={palette.join()}
         particleColors={palette}
-        particleCount={140}
-        particleSpread={12}
+        particleCount={190}
+        particleSpread={16}
         speed={0.08}
         particleBaseSize={70}
         sizeRandomness={0.8}

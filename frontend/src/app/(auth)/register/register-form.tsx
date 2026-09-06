@@ -73,51 +73,28 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="grid min-h-[calc(100vh-3.5rem)] w-full lg:grid-cols-2">
-      {/* Left Column: Branding and Ranks (hidden on mobile) */}
-      <div className="relative isolate hidden flex-col justify-between overflow-hidden border-r border-hairline bg-surface-3/30 p-12 select-none lg:flex lg:p-16">
-        {/* The panel already ends on a row of rank-coloured dots; the particles
-            are the same colours at the scale of the whole panel. It costs
-            nothing on mobile: the panel is display:none there, so the observer
-            never starts the loop and no WebGL context is opened. */}
-        <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(125%_95%_at_20%_40%,#000_30%,transparent_85%)]" />
+    <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-14">
+      {/* Full-bleed now, rather than confined to a left-hand panel. The mask
+          thins the field through the middle so the centred column sits on the
+          page's own background rather than on the particles, and the density
+          stays at the edges where it reads as atmosphere. */}
+      <ParticlesBackdrop className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(70%_62%_at_50%_50%,transparent_18%,#000_82%)]" />
 
-        {/* No wordmark here: the global navbar already renders one directly above
-            this panel, so repeating it showed "Programming Club @ DAU" twice on
-            the same screen, at two different left offsets. The spacer keeps the
-            three-part justify-between layout intact. */}
-        <div aria-hidden="true" />
-
-        {/* Hero headline */}
-        <div className="space-y-4">
-          <p className="font-mono text-xs text-primary uppercase tracking-[0.15em] font-semibold">
+      <div className="w-full max-w-md">
+        {/* Was the left panel's branding. It keeps the page's h1 — dropping the
+            panel outright would have left an auth page whose only heading was
+            the form's h2. */}
+        <div className="space-y-3 text-center">
+          <p className="font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground leading-[1.1] text-balance">
-            Solve. Rank up.<br />Climb the board.
+          <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-semibold tracking-tight text-balance text-foreground">
+            Solve. Rank up. Climb the board.
           </h1>
         </div>
 
-        {/* Indicators */}
-        <div className="space-y-3">
-          <p className="font-mono text-[10px] text-fg-subtle tracking-[0.1em] uppercase">
-            RANK TRACK
-          </p>
-          <div className="flex gap-2.5">
-            {/* Rank colors from globals.css variables */}
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-newbie)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-pupil)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-specialist)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-expert)" }} />
-            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-candidate)" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column: Interactive Form */}
-      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-background">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2">
+        <div className="glass-panel mt-8 rounded-panel p-6 sm:p-8">
+          <div className="space-y-2 text-center">
             <p className="font-mono text-xs text-primary uppercase tracking-[0.12em] font-semibold">
               REGISTER
             </p>
@@ -239,6 +216,20 @@ export default function RegisterForm() {
               Login
             </Link>
           </p>
+        </div>
+
+        {/* The rank ladder the particles are drawn from. */}
+        <div className="mt-8 flex flex-col items-center gap-2.5" aria-hidden>
+          <p className="font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+            RANK TRACK
+          </p>
+          <div className="flex gap-2.5">
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-newbie)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-pupil)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-specialist)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-expert)" }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--cf-candidate)" }} />
+          </div>
         </div>
       </div>
     </div>

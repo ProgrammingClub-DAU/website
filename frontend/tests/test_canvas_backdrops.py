@@ -136,22 +136,37 @@ def test_backdrops_stop_while_off_screen():
         b.close()
 
 
-def test_auth_backdrop_costs_nothing_on_mobile():
-    """The panel is display:none below lg, so its loop must never start.
+def test_auth_backdrop_on_mobile_is_one_context_and_respects_reduced_motion():
+    """The backdrop is full-bleed now, so it runs at every width.
 
-    This matters more with Particles than it did with the Canvas 2D field it
-    replaced: a WebGL context opened behind a hidden panel is one of a small,
-    browser-capped budget, spent on something nobody can see.
+    It used to sit in a panel that was display:none below lg, which made it free
+    on a phone for nothing. That guarantee is gone, so what is left has to hold
+    instead: exactly one WebGL context, and a loop that still stops for
+    prefers-reduced-motion at mobile width — where the battery cost of a
+    full-screen render loop actually matters.
     """
     with sync_playwright() as p:
         b = p.chromium.launch()
+
         pg = b.new_page(viewport={"width": 420, "height": 800})
+        pg.goto("http://localhost:3000/login", wait_until="networkidle")
+        pg.wait_for_timeout(1200)
+        contexts = pg.evaluate("""() => [...document.querySelectorAll('canvas')].filter(c => {
+            try { return !!(c.getContext('webgl') || c.getContext('webgl2')); }
+            catch (e) { return false; }
+        }).length""")
+        assert contexts == 1, f"{contexts} WebGL contexts at 420px, expected 1"
+        pg.close()
+
+        pg = b.new_page(viewport={"width": 420, "height": 800}, reduced_motion="reduce")
         pg.add_init_script(COUNT_FRAMES)
         pg.goto("http://localhost:3000/login", wait_until="networkidle")
-        pg.wait_for_timeout(1000)
+        pg.wait_for_timeout(1200)
         before = pg.evaluate("window.__frames")
         pg.wait_for_timeout(1200)
-        assert pg.evaluate("window.__frames") == before, "drawing behind a display:none panel"
+        after = pg.evaluate("window.__frames")
+        assert after == before, f"{after - before} frames scheduled under reduced motion at 420px"
+        pg.close()
         b.close()
 
 
