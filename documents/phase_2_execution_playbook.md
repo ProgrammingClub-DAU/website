@@ -1,5 +1,5 @@
 # Phase 2 -- Senior Engineer Implementation Plan (v3 -- Updated)
-**Branch:** `feature/phase-2` (branched off `main` post Phase 1 merge)
+**Branch model:** every member branches from `main` and raises PRs into `main`, merged one at a time by M6.
 **Duration:** 3 sprints -- ~3 weeks
 **Team:** 6 members
 **Stack:** Spring Boot 4.1 -- PostgreSQL -- Next.js 15 -- Cloudinary -- Apache POI
@@ -38,7 +38,7 @@ Rules:
 ```
 
 > [!NOTE]
-> **Stage 0 is complete** and merged into `feature/phase-2` (PR #50). It also
+> **Stage 0 is complete** and merged into `main` (PR #50). It also
 > carried a fix worth knowing about: Flyway had never actually run in this repo.
 > Boot 4 moved `FlywayAutoConfiguration` into a separate
 > `org.springframework.boot:spring-boot-flyway` module that was never declared,
@@ -46,8 +46,9 @@ Rules:
 > pulling, and recreate any local database built before the migrations
 > (`docker compose down -v && docker compose up -d`).
 
-**M6 also owns the `snapshot/` package in Stage 1** (Section 6.6), moved off M5
-to shorten the critical path. It has no dependency on any other member's work.
+**M6 also owned the `snapshot/` package in Stage 1** (Section 6.6), moved off M5
+to shorten the critical path. **Stage 1C is complete** — repository, DTO,
+service with the Monday cron, controller, and 7 unit tests, merged via PR #62.
 
 ---
 
@@ -58,7 +59,7 @@ to shorten the critical path. It has no dependency on any other member's work.
 I am Member 4 (Backend Security Engineer) on the CP Club Website project.
 I need to implement Stage 1A of Phase 2.
 
-IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+IMPORTANT: Stage 0 (M6's work) must be merged into main before I start. Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan at: documents/phase_2_execution_playbook.md -- focus on Section 5
@@ -78,7 +79,7 @@ Then, in the same branch, implement the gallery package described in Section 6.5
 The gallery package has no dependency on M5's work, so it can be built in
 parallel with Stage 1B without coordination.
 
-Run ./mvnw.cmd clean test and fix any failures before raising a PR into feature/phase-2.
+Run ./mvnw.cmd clean test and fix any failures before raising a PR into main.
 ```
 
 ---
@@ -90,7 +91,7 @@ Run ./mvnw.cmd clean test and fix any failures before raising a PR into feature/
 I am Member 5 (Backend Data & API Engineer) on the CP Club Website project.
 I need to implement Stage 1B of Phase 2. This is the largest backend task.
 
-IMPORTANT: Stage 0 (M6's work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+IMPORTANT: Stage 0 (M6's work) must be merged into main before I start. Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Sections 6.1 to 6.7
@@ -133,7 +134,7 @@ Run ./mvnw.cmd clean test and fix all failures before raising a PR.
 I am Member 1 (Frontend UI/UX Architect) on the CP Club Website project.
 I need to implement Stage 2A of Phase 2 -- new UI components and page layouts.
 
-IMPORTANT: Stage 1 (M4 + M5 work) must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+IMPORTANT: Stage 1 (M4 + M5 work) must be merged into main before I start. Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 7
@@ -164,7 +165,7 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 I am Member 2 (Frontend Auth & Logic Engineer) on the CP Club Website project.
 I need to implement Stage 2B of Phase 2 -- TypeScript types, store updates, and all API service files.
 
-IMPORTANT: Stage 1 must be merged into feature/phase-2 before I start. Branch from feature/phase-2.
+IMPORTANT: Stage 1 must be merged into main before I start. Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 8
@@ -193,7 +194,7 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 I am Member 3 (Frontend Dashboards Engineer) on the CP Club Website project.
 I need to implement Stage 2C of Phase 2 -- all dashboard pages and data-heavy features.
 
-IMPORTANT: Member 1 AND Member 2 PRs must both be merged into feature/phase-2 before I start. Branch from feature/phase-2 only after both are merged.
+IMPORTANT: Member 1 AND Member 2 PRs must both be merged into main before I start. Branch from main only after both are merged.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 9
@@ -276,7 +277,7 @@ STAGE 1A - Security+Gallery  STAGE 1B - Data   STAGE 1C - Snapshots
         |                       |                 |
         +-----------+-----------+-----------------+
                     v
-     All Stage 1 PRs merged into feature/phase-2
+     All Stage 1 PRs merged into main
                     |
         +-----------+-----------+
         v           v           v
@@ -291,7 +292,26 @@ STAGE 3 --- Integration, Tests, Polish, Deploy
 ```
 
 > [!IMPORTANT]
-> Every member branches off `feature/phase-2`, **not off `main`**. PRs go back into `feature/phase-2`. Only when all Phase 2 work is done does `feature/phase-2` merge into `main` via one final PR reviewed by M6.
+> Every member branches off `main` and raises their PR back into `main`. M6
+> reviews and merges them one at a time. There is no long-lived integration
+> branch.
+>
+> **This replaces the `feature/phase-2` model the v3 plan described.** That
+> branch existed, carried Stage 0 and Stage 1C, and has been merged into `main`
+> and deleted. Two reasons for the change:
+>
+> 1. **CI only runs on `main`.** Both workflows in `.github/workflows/` are
+>    configured with `branches: [ main ]`, so a PR into `feature/phase-2` ran no
+>    backend tests and no frontend build — verified on PR #62, which got only
+>    Vercel checks. Six people merging for three weeks with no automated
+>    verification was the larger risk by far.
+> 2. It matches how the team already works, so nobody branches from the wrong
+>    place by habit.
+>
+> The trade-off accepted: `main` carries backend endpoints before the frontend
+> wires them up. That is safe here — unreferenced endpoints are unreachable from
+> the UI, and every Phase 2 migration column is nullable, so the schema stays
+> backward compatible with whatever is currently deployed.
 
 ---
 
