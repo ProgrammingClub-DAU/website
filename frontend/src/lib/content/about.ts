@@ -67,6 +67,41 @@ export const whatWeDo = [
   },
 ];
 
+/**
+ * The platforms the club practises on.
+ *
+ * `syncs` is a factual claim about this site, not a ranking. Codeforces and
+ * LeetCode expose stable public APIs, so their ratings are pulled into the
+ * leaderboard automatically. CodeChef and AtCoder do not, so those are stored as
+ * links only — a locked decision in Section 1 of the Phase 2 plan, taken because
+ * scraping either one breaks whenever their markup changes.
+ *
+ * Saying so plainly is the point of the flag: a member who links a CodeChef
+ * profile should not be left wondering why their rating never appears.
+ */
+export const platforms = [
+  {
+    id: "codeforces" as const,
+    body: "Our main contest platform. Ratings sync into the club leaderboard automatically, every six hours.",
+    syncs: true,
+  },
+  {
+    id: "leetcode" as const,
+    body: "Interview-style practice and weekly contests. Contest ratings sync to your profile when you link a handle.",
+    syncs: true,
+  },
+  {
+    id: "codechef" as const,
+    body: "Long and short format rounds, with a gentle on-ramp for beginners. Link your profile from your dashboard.",
+    syncs: false,
+  },
+  {
+    id: "atcoder" as const,
+    body: "Clean, carefully tested problems. The weekend Beginner Contests are a good first contest for anyone.",
+    syncs: false,
+  },
+];
+
 export const faq = [
   {
     q: "Do I need contest experience to join?",

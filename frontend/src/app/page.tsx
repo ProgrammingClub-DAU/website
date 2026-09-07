@@ -19,6 +19,7 @@ import {
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
+import { PlatformMark } from "@/components/site/platform-mark";
 import { CF_RANKS } from "@/lib/cf-ranks";
 import { howItWorks } from "@/lib/content/home";
 import { site } from "@/lib/site";
@@ -187,6 +188,23 @@ export default function HomePage() {
               <p className="mt-2 text-[15px] leading-[1.45] text-fg-muted text-pretty">
                 {step.body}
               </p>
+              {/*
+                Only step 02 names platforms, so only step 02 shows their marks.
+                They sit inline under the copy rather than in a section of their
+                own: four logos in a row with no surrounding purpose reads as a
+                sponsor strip, whereas here they simply show which handles the
+                sentence above is talking about.
+
+                aria-hidden, because the step body already lists all four by
+                name — the marks repeat that visually for someone scanning.
+              */}
+              {step.platforms ? (
+                <span className="mt-3.5 flex items-center gap-3 text-fg-subtle" aria-hidden>
+                  {step.platforms.map((id) => (
+                    <PlatformMark key={id} platform={id} className="size-4" />
+                  ))}
+                </span>
+              ) : null}
             </li>
           ))}
         </ol>
