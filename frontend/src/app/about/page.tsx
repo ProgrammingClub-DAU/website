@@ -189,13 +189,19 @@ export default function AboutPage() {
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {platforms.map((platform) => (
-            // BorderGlow carries the colour, the mark carries the meaning. The
-            // glow is decorative, so it can take a hue that would be unreadable
-            // as text; the mark stays on theme tokens and only picks the accent
-            // up on hover, where it has the label beside it for context.
+            // Each card carries its own hue at rest, not only under the cursor.
+            // `colors` drives the mesh fill, whose mask is mostly static, so a
+            // single-hue trio tints the card persistently — no `animated` sweep,
+            // which would have meant four rAF chains per card running forever
+            // for something purely decorative.
             <BorderGlow
               key={platform.id}
               glowColor={PLATFORM_ACCENT[platform.id]}
+              colors={[
+                PLATFORM_ACCENT[platform.id],
+                PLATFORM_ACCENT[platform.id],
+                PLATFORM_ACCENT[platform.id],
+              ]}
               contentClassName="p-0"
             >
               <a
@@ -211,9 +217,15 @@ export default function AboutPage() {
                     beside it, so labelling the icon too would have screen
                     readers announce the same word twice for one link.
                   */}
+                  {/*
+                    Coloured at rest rather than on hover. The accents are theme
+                    tokens defined for both light and dark, so they hold their
+                    contrast standing still — the earlier muted-until-hover
+                    treatment was restraint, not a legibility requirement.
+                  */}
                   <PlatformMark
                     platform={platform.id}
-                    className="size-6 shrink-0 text-fg-muted transition-colors duration-300 group-hover:text-[var(--accent)]"
+                    className="size-6 shrink-0 text-[var(--accent)] transition-transform duration-300 group-hover:scale-110"
                   />
                   <span className="text-base font-semibold tracking-tight">
                     {PLATFORM_LABEL[platform.id]}
