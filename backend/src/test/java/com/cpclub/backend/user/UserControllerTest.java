@@ -70,8 +70,8 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/all - Should return list of all users")
     void shouldGetAllUsers() throws Exception {
-        UserResponseDto u1 = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
-        UserResponseDto u2 = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_ADMIN, LocalDateTime.now(), LocalDateTime.now());
+        UserResponseDto u1 = userDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER);
+        UserResponseDto u2 = userDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_ADMIN);
 
         when(userService.getAllUsers()).thenReturn(List.of(u1, u2));
 
@@ -129,8 +129,8 @@ class UserControllerTest {
     void shouldUpdateCodeforcesHandle() throws Exception {
         authenticateAs("alice@example.com", "ROLE_USER");
 
-        UserResponseDto caller = new UserResponseDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
-        UserResponseDto updatedUser = new UserResponseDto(1L, "Alice", "alice@example.com", "new_cf_handle", 1600, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
+        UserResponseDto caller = userDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER);
+        UserResponseDto updatedUser = userDto(1L, "Alice", "alice@example.com", "new_cf_handle", 1600, Role.ROLE_USER);
 
         when(userService.getUserByEmail("alice@example.com")).thenReturn(caller);
         when(userService.updateCodeforcesHandle(eq(1L), any(UpdateHandleRequest.class))).thenReturn(updatedUser);
@@ -149,7 +149,7 @@ class UserControllerTest {
         // Bob (id=2) tries to update Alice's (id=1) handle — must be rejected.
         authenticateAs("bob@example.com", "ROLE_USER");
 
-        UserResponseDto bob = new UserResponseDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
+        UserResponseDto bob = userDto(2L, "Bob", "bob@example.com", "bob_cf", 1800, Role.ROLE_USER);
         when(userService.getUserByEmail("bob@example.com")).thenReturn(bob);
 
         mockMvc.perform(put("/api/users/1/handle")
@@ -168,5 +168,30 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Validation failed")));
+    }
+
+    /**
+     * Builds a {@link UserResponseDto} carrying only the fields these tests assert
+     * on, leaving the Phase 2 profile fields null.
+     *
+     * <p>The record has eighteen components. Constructing it inline made every
+     * test that touched it a wall of nulls, and adding a field meant editing five
+     * call sites that did not care about it.</p>
+     */
+    private UserResponseDto userDto(Long id, String name, String email,
+                                    String codeforcesHandle, Integer rating, Role role) {
+        return new UserResponseDto(
+                id, name, email,
+                null,               // avatarUrl
+                null,               // phoneNumber
+                codeforcesHandle, rating,
+                null, null,         // leetcodeHandle, leetcodeRating
+                null, null,         // codechefUrl, atcoderUrl
+                null, null,         // githubUrl, linkedinUrl
+                null,               // clubRole
+                null,               // batchYear
+                role,
+                LocalDateTime.now(), LocalDateTime.now()
+        );
     }
 }

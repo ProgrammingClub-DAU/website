@@ -4,14 +4,17 @@ import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.dto.PublicUserResponseDto;
+import com.cpclub.backend.user.dto.UpdateClubRoleRequest;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UpdateRoleRequest;
+import com.cpclub.backend.user.dto.UserLookupDto;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
+import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,6 +37,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CodeforcesSyncService codeforcesSyncService;
+    private final LeetCodeSyncService leetCodeSyncService;
 
     /**
      * Resolves a user profile by database primary key.
@@ -196,11 +200,25 @@ public class UserService {
 
     /**
      * Updates full user profile details.
-     * Checks Codeforces handle uniqueness constraints if updated.
+     *
+     * <p>Both competitive-programming handles are unique columns, so each is
+     * checked against the rest of the membership before being written. The
+     * comparison excludes the member's own current handle, so re-saving an
+     * unchanged profile is not rejected as a duplicate of itself.</p>
+     *
+     * <p>An external sync runs only when the handle it belongs to actually
+     * changed. Syncing unconditionally meant every profile save — a name edit, a
+     * new LinkedIn URL — spent a permit on the shared rate limiter that the
+     * scheduled jobs also queue behind.</p>
+     *
+     * <p>The link-only fields are stored as given. CodeChef and AtCoder publish no
+     * stable API to verify them against, so validation stops at the length limit
+     * the column enforces.</p>
      *
      * @param userId user ID to modify
-     * @param request update details containing name and handle
+     * @param request new profile values
      * @return updated user details DTO
+     * @throws BadRequestException if either handle belongs to another member
      */
     @Transactional
     public UserResponseDto updateProfile(Long userId, UserProfileUpdateRequest request) {
@@ -208,18 +226,103 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         user.setName(request.name());
+        user.setPhoneNumber(trimToNull(request.phoneNumber()));
+        user.setCodechefUrl(trimToNull(request.codechefUrl()));
+        user.setAtcoderUrl(trimToNull(request.atcoderUrl()));
+        user.setGithubUrl(trimToNull(request.githubUrl()));
+        user.setLinkedinUrl(trimToNull(request.linkedinUrl()));
+        user.setAvatarUrl(trimToNull(request.avatarUrl()));
+
+        boolean codeforcesChanged = false;
         if (request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank()) {
             String handle = request.codeforcesHandle().trim();
             if (userRepository.existsByCodeforcesHandle(handle) &&
                 !handle.equalsIgnoreCase(user.getCodeforcesHandle())) {
                 throw new BadRequestException("Codeforces handle '" + handle + "' is already in use!");
             }
+            codeforcesChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
             user.setCodeforcesHandle(handle);
         }
 
+        boolean leetcodeChanged = false;
+        if (request.leetcodeHandle() != null && !request.leetcodeHandle().isBlank()) {
+            String handle = request.leetcodeHandle().trim();
+            if (Boolean.TRUE.equals(userRepository.existsByLeetcodeHandle(handle)) &&
+                !handle.equalsIgnoreCase(user.getLeetcodeHandle())) {
+                throw new BadRequestException("LeetCode handle '" + handle + "' is already in use!");
+            }
+            leetcodeChanged = !handle.equalsIgnoreCase(user.getLeetcodeHandle());
+            user.setLeetcodeHandle(handle);
+        }
+
         User saved = userRepository.save(user);
-        codeforcesSyncService.syncSingleUser(saved);
+
+        if (codeforcesChanged) {
+            codeforcesSyncService.syncSingleUser(saved);
+        }
+        if (leetcodeChanged) {
+            leetCodeSyncService.syncSingleUser(saved);
+        }
         return UserResponseDto.fromEntity(saved);
+    }
+
+    /**
+     * Normalizes an optional free-text field.
+     *
+     * <p>An empty string and a null both mean "not supplied" to the client, but
+     * only one of them means it in the database: storing the empty string in a
+     * nullable column makes "cleared" indistinguishable from "set to nothing" for
+     * every later reader, and in a unique column two blanks collide.</p>
+     *
+     * @param value raw client value
+     * @return trimmed value, or null when absent or blank
+     */
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Assigns a member's position in the club.
+     *
+     * <p>Changes the title only. API authorization lives on {@code Role} and is
+     * changed by {@link #updateUserRole}: making someone Convenor here does not
+     * make them an admin.</p>
+     *
+     * @param userId user ID to modify
+     * @param request the position to assign
+     * @return updated user details DTO
+     * @throws ResourceNotFoundException if the user does not exist
+     */
+    @Transactional
+    public UserResponseDto updateClubRole(Long userId, UpdateClubRoleRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setClubRole(request.clubRole());
+        User saved = userRepository.save(user);
+        log.info("Updated club role for user id {} to {}", userId, request.clubRole());
+        return UserResponseDto.fromEntity(saved);
+    }
+
+    /**
+     * Full member record for the admin event-attendance panel.
+     *
+     * <p>Returns {@link UserLookupDto}, which carries the member's phone number,
+     * so every caller must be admin-gated.</p>
+     *
+     * @param id user ID
+     * @return full admin-facing member record
+     * @throws ResourceNotFoundException if the user does not exist
+     */
+    @Transactional(readOnly = true)
+    public UserLookupDto lookupUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return UserLookupDto.fromEntity(user);
     }
 
     /**
