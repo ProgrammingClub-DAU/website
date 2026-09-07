@@ -23,6 +23,27 @@ export const PLATFORM_HEX: Record<PlatformId, string> = {
   atcoder: "#222222",
 };
 
+/**
+ * Accent hue per platform, as theme tokens rather than fixed colours.
+ *
+ * These are *not* the official brand colours, deliberately. Two of the four do
+ * not survive this site's dark ground at all — CodeChef's #5B4638 and AtCoder's
+ * black — so a literal brand palette would render two of the cards mute and the
+ * other two vivid. The rank tokens below are already defined separately for
+ * light and dark in globals.css, so they stay legible either way, and each is
+ * picked to echo its platform where a hue exists to echo: Codeforces blue,
+ * LeetCode orange, CodeChef warm, AtCoder its own teal.
+ *
+ * Used for decorative glow and hover accents only. Never for text a reader must
+ * be able to make out on its own.
+ */
+export const PLATFORM_ACCENT: Record<PlatformId, string> = {
+  codeforces: "var(--cf-expert)",
+  leetcode: "var(--cf-master)",
+  codechef: "var(--cf-grandmaster)",
+  atcoder: "var(--cf-specialist)",
+};
+
 /** Display names, so callers never hand-type and mis-case them. */
 export const PLATFORM_LABEL: Record<PlatformId, string> = {
   codeforces: "Codeforces",
