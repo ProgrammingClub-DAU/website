@@ -24,7 +24,7 @@ import { useAuthStore } from "@/store/auth";
 
 /** Shared by the four star-bordered auth links, so the two pairs cannot drift. */
 const NAV_STAR_INNER =
-  "glass-control inline-flex h-8 items-center justify-center rounded-full font-mono text-[13px] tracking-[0.06em] whitespace-nowrap uppercase";
+  "glass-control inline-flex h-8 items-center justify-center rounded-full text-xs font-medium tracking-wide whitespace-nowrap";
 
 const SHEET_STAR_INNER =
   "glass-control flex h-10 w-full items-center justify-center rounded-full text-sm font-medium";
@@ -34,34 +34,22 @@ function Wordmark({ className }: { className?: string }) {
     <Link
       href="/"
       className={cn(
-        "flex items-center gap-2.5 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap",
+        "flex items-center gap-2.5 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap transition-opacity hover:opacity-90",
         "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         className
       )}
     >
-      {/*
-        The club mark, cropped to the CP monogram. The full badge carries
-        "PROGRAMMING CLUB" and the university name around its rim, and at 26px
-        that ring collapses into an illegible smudge — so the wordmark beside it
-        does that job instead.
-
-        alt="" on purpose: the text below already names the club, and a filled
-        alt would make screen readers announce it twice for one link.
-
-        Explicit width/height and a fixed box reserve the space before the image
-        loads, so the navbar cannot shift.
-      */}
       <Image
         src="/logo-mark.png"
         alt=""
-        width={26}
-        height={26}
+        width={28}
+        height={28}
         priority
-        className="size-[26px] shrink-0 rounded-full"
+        className="size-7 shrink-0 rounded-full ring-1 ring-border/40"
       />
-      <span className="flex items-baseline gap-2">
-        <span>{site.name}</span>
-        <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
+      <span className="flex items-baseline gap-1.5">
+        <span className="font-semibold text-foreground tracking-tight">{site.name}</span>
+        <span className="rounded-md border border-hairline bg-surface-2/80 px-1.5 py-0.5 font-mono text-[11px] font-medium text-fg-muted">
           {site.suffix}
         </span>
       </span>
@@ -92,38 +80,38 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b backdrop-blur-xl",
-        scrolled ? "border-border" : "border-hairline"
+        "sticky top-0 z-50 border-b backdrop-blur-md transition-colors duration-200",
+        scrolled
+          ? "border-border bg-background/85 shadow-xs"
+          : "border-hairline bg-background/60"
       )}
       style={{ backgroundColor: "var(--nav-bg)" }}
     >
-      <nav className="container-page flex min-h-14 items-center gap-4 py-2">
+      <nav className="container-page flex h-16 items-center justify-between gap-4">
         <Wordmark />
 
         {/* Desktop navigation. Below lg the links move into the sheet. */}
-        <div className="hidden flex-1 items-center gap-0.5 lg:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
-                "relative rounded-control px-2.5 py-2 font-mono text-[13px] tracking-[0.06em] uppercase whitespace-nowrap transition-colors",
-                "hover:bg-surface-2 hover:text-foreground",
+                "rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors whitespace-nowrap",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-                isActive(item.href) ? "text-foreground" : "text-fg-muted"
+                isActive(item.href)
+                  ? "bg-surface-2 text-foreground font-semibold shadow-xs"
+                  : "text-fg-muted hover:bg-surface-2/60 hover:text-foreground"
               )}
             >
               {item.label}
-              {isActive(item.href) && (
-                <span className="absolute inset-x-2.5 bottom-0.5 h-px bg-foreground" />
-              )}
             </Link>
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <div className="hidden items-center gap-0.5 lg:flex">
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-1 lg:flex">
             {utilityLinks.map((item) => (
               <a
                 key={item.href}
@@ -132,11 +120,8 @@ export function Navbar() {
                 rel="noreferrer noopener"
                 aria-label={item.label}
                 title={item.label}
-                className="rounded-control p-2 text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                className="inline-flex size-8 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
               >
-                {/* The mark carries no accessible name of its own — aria-hidden
-                    inside — so the link's aria-label is what a screen reader
-                    announces. */}
                 <GitHubMark className="size-[18px]" />
               </a>
             ))}
@@ -150,33 +135,36 @@ export function Navbar() {
               <div className="h-8 w-24 animate-pulse rounded-full bg-surface-2" />
             ) : isAuthenticated ? (
               <>
-                <Link href={`/profile/${user?.id}`} className="font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase hover:text-foreground hover:underline transition-colors">
-                  {user?.fullName}
+                <Link
+                  href={`/profile/${user?.id}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-3 py-1 text-xs font-medium text-foreground transition-all hover:border-border hover:bg-surface-2"
+                >
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary">
+                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                  </span>
+                  <span className="max-w-[130px] truncate">{user?.fullName || "Profile"}</span>
                 </Link>
                 <Button
                   variant="ghost"
+                  size="sm"
                   onClick={() => {
                     logout();
                     router.push("/login");
                   }}
-                  className="h-8 rounded-full px-3 font-mono text-[13px] tracking-[0.06em] text-fg-muted uppercase inline-flex"
+                  className="h-8 rounded-full px-2.5 text-xs font-medium text-fg-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   Logout
                 </Button>
               </>
             ) : (
               <>
-                {/* The sweep runs behind a translucent surface rather than a
-                    solid one, so it reads through the glass instead of only
-                    around it. StarBorder sets no background of its own now, so
-                    the fill comes from the same tokens every other button uses. */}
                 <StarBorder
                   as={Link}
                   href="/login"
                   color="var(--cf-specialist)"
                   speed="7s"
                   className="rounded-full!"
-                  innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-quiet)] px-3.5 text-fg-muted"}
+                  innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-quiet)] px-3.5 text-fg-muted hover:text-foreground"}
                 >
                   Login
                 </StarBorder>
@@ -224,10 +212,10 @@ export function Navbar() {
                       href={item.href}
                       aria-current={isActive(item.href) ? "page" : undefined}
                       className={cn(
-                        "rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] uppercase transition-colors",
+                        "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                         "hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                         isActive(item.href)
-                          ? "bg-surface-2 text-foreground"
+                          ? "bg-surface-2 text-foreground font-semibold"
                           : "text-fg-muted"
                       )}
                     >
@@ -241,11 +229,8 @@ export function Navbar() {
                       href={item.href}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="flex items-center gap-2.5 rounded-control px-3 py-3 font-mono text-sm tracking-[0.06em] text-fg-muted uppercase transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                     >
-                      {/* The label stays here. In a menu list an icon on its own
-                          is harder to scan than the word, so the mark sits beside
-                          it rather than replacing it as on desktop. */}
                       <GitHubMark className="size-4 shrink-0" />
                       {item.label}
                     </a>
@@ -262,13 +247,21 @@ export function Navbar() {
                   </div>
                 ) : isAuthenticated ? (
                   <>
-                    <Link href={`/profile/${user?.id}`} className="px-3 py-2 text-center font-mono text-xs tracking-[0.06em] text-fg-muted uppercase hover:text-foreground hover:underline transition-colors block">
-                      {user?.fullName}
-                    </Link>
+                    <SheetClose asChild>
+                      <Link
+                        href={`/profile/${user?.id}`}
+                        className="flex items-center justify-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-2"
+                      >
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary">
+                          {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                        </span>
+                        <span>{user?.fullName}</span>
+                      </Link>
+                    </SheetClose>
                     <SheetClose asChild>
                       <Button
                         variant="outline"
-                        className="h-10 rounded-full"
+                        className="h-10 rounded-full text-sm font-medium"
                         onClick={() => {
                           logout();
                           router.push("/login");

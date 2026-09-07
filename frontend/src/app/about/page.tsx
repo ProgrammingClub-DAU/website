@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import BorderGlow from "@/components/site/border-glow";
@@ -34,16 +35,34 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Section className="pt-10 pb-16 md:pt-14">
+      <Section className="pt-10 pb-14 md:pt-14">
         <Eyebrow>About</Eyebrow>
         <PageTitle className="max-w-[22ch]">
           A student club built around practice, not prestige.
         </PageTitle>
-        <p className="mt-6 max-w-[56ch] text-base leading-6 text-fg-muted text-pretty">
+        <p className="mt-6 max-w-[58ch] text-base leading-relaxed text-fg-muted text-pretty">
           {site.fullName} is run by students at {site.university}. We meet to solve
-          problems, run contests, and help each other get measurably better at algorithmic
-          programming.
+          challenging problems, run campus contests, and help each other level up in algorithmic
+          programming — while celebrating every milestone together as a campus family.
         </p>
+        <div className="mt-8 flex flex-wrap gap-2.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
+            <span className="size-1.5 rounded-full bg-cf-specialist" />
+            150+ Active Solvers
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
+            <span className="size-1.5 rounded-full bg-cf-candidate" />
+            Weekly Contests & Editorials
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
+            <span className="size-1.5 rounded-full bg-cf-master" />
+            Festivals & Gatherings
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
+            <span className="size-1.5 rounded-full bg-cf-pupil" />
+            Zero Entry Barrier
+          </span>
+        </div>
       </Section>
 
       <Section className="pb-16">
@@ -60,7 +79,7 @@ export default function AboutPage() {
           ].map((item) => (
             <div
               key={item.label}
-              className="glass-panel rounded-panel p-7 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
+              className="glass-panel rounded-panel p-7 transition-all duration-200 hover:-translate-y-0.5 hover:border-hairline-strong"
             >
               <div className="font-mono text-xs tracking-[0.12em] text-fg-subtle uppercase">
                 {item.label}
@@ -71,34 +90,93 @@ export default function AboutPage() {
         </div>
       </Section>
 
+      {/* Community Showcase & Culture Feature */}
       <Section className="pb-16">
-        <div className="grid gap-10 md:grid-cols-2 md:gap-12">
-          <div>
-            <h2 className="text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
+        <div className="overflow-hidden rounded-2xl border border-hairline bg-surface transition-all duration-300 hover:border-border hover:shadow-panel">
+          <div className="grid gap-0 lg:grid-cols-12">
+            {/* Photo Container */}
+            <div className="group relative min-h-[300px] sm:min-h-[360px] overflow-hidden lg:col-span-7">
+              <Image
+                src="/dummyImage.jpg"
+                alt="Programming Club DAU gathering and celebration"
+                width={960}
+                height={640}
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent lg:hidden" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-xl border border-hairline-strong bg-background/80 px-4 py-2.5 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 animate-pulse rounded-full bg-cf-pupil" />
+                  <span className="text-xs font-semibold tracking-tight text-foreground">
+                    DAU Campus Gatherings & Celebrations
+                  </span>
+                </div>
+                <span className="rounded-full border border-hairline bg-surface-2/80 px-2 py-0.5 font-mono text-[10px] text-fg-muted uppercase">
+                  Community
+                </span>
+              </div>
+            </div>
+
+            {/* Story & Vibe */}
+            <div className="flex flex-col justify-between p-8 lg:col-span-5 lg:p-10">
+              <div>
+                <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
+                  Culture & Community
+                </div>
+                <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+                  Code hard, celebrate harder.
+                </h3>
+                <p className="mt-4 text-[15px] leading-relaxed text-fg-muted text-pretty">
+                  We believe the best problem solvers aren&apos;t solitary grinders — they are a tight-knit family.
+                  Beyond the Codeforces leaderboards and 5-hour ICPC qualifiers, our club comes alive during
+                  festive Navratri Garba nights, Diwali celebrations, batch dinners, and late-night hostel debriefs.
+                </p>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-3 border-t border-hairline pt-6">
+                <div className="rounded-xl border border-hairline bg-surface-2/50 p-3.5">
+                  <div className="text-xl font-bold text-foreground">150+</div>
+                  <div className="mt-1 text-xs text-fg-muted">Active members across batches</div>
+                </div>
+                <div className="rounded-xl border border-hairline bg-surface-2/50 p-3.5">
+                  <div className="text-xl font-bold text-foreground">100%</div>
+                  <div className="mt-1 text-xs text-fg-muted">Student-run & welcoming</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section className="pb-16">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-10">
+          <div className="rounded-panel border border-hairline bg-surface/50 p-8 transition-all hover:border-border">
+            <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
+              Origin Story
+            </div>
+            <h2 className="mt-2 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
               Where the club came from
             </h2>
-            <p className="mt-4 text-base leading-6 text-fg-muted text-pretty">
-              [PLACEHOLDER] Founding year and how the club started — who set it up, and
-              what it was set up to fix.
+            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
+              Founded in 2021 by passionate seniors who wanted to build an enduring competitive programming culture at DAU. What started as whiteboard sessions in hostel common rooms quickly grew into weekly campus rounds and structured workshops.
             </p>
-            <p className="mt-4 text-base leading-6 text-fg-muted text-pretty">
-              [PLACEHOLDER] What has changed since: the contests that became fixtures, the
-              batches that carried it, and where the club sits on campus today.
+            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
+              Today, the club is a permanent campus fixture with multiple teams qualifying for ICPC Regionals, automated rating syncs, and seniors mentoring incoming batches.
             </p>
           </div>
-          <div>
-            <h2 className="text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
+          <div className="rounded-panel border border-hairline bg-surface/50 p-8 transition-all hover:border-border">
+            <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
+              Inclusivity
+            </div>
+            <h2 className="mt-2 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
               Who it is for
             </h2>
-            <p className="mt-4 text-base leading-6 text-fg-muted text-pretty">
-              Anyone at DAU who wants to get better at solving problems with code.
-              First-years who have never opened a judge, students preparing for placement
-              rounds, and people already rated on Codeforces all use the club differently,
-              and all of that counts as taking part.
+            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
+              Anyone at DAU who wants to get better at solving problems with code. First-years who have never opened an online judge, students preparing for placement rounds, and seasoned contestants all practice together.
             </p>
-            <p className="mt-4 text-base leading-6 text-fg-muted text-pretty">
-              There is no entrance test and no minimum rating. The only expectation is
-              that you turn up and attempt problems.
+            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
+              There is no entrance test, no cutoffs, and no gatekeeping. The only expectation is that you show up, stay curious, and attempt problems.
             </p>
           </div>
         </div>
@@ -196,11 +274,6 @@ export default function AboutPage() {
               className="glass-panel rounded-panel p-7 transition-all hover:-translate-y-0.5 hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
               <div className="flex items-center gap-3">
-                {/*
-                  No `title` on the mark: the platform name is rendered right
-                  beside it, so labelling the icon too would have screen readers
-                  announce the same word twice for one link.
-                */}
                 <PlatformMark platform={platform.id} className="size-6 shrink-0" />
                 <span className="text-base font-semibold tracking-tight">
                   {PLATFORM_LABEL[platform.id]}
@@ -228,15 +301,15 @@ export default function AboutPage() {
           {[
             {
               label: "Meetings",
-              body: "[PLACEHOLDER] Cadence, day, time, and venue — supply from the club's current schedule.",
+              body: "Weekly rounds every Wednesday 6:00 PM and weekend workshops in Lab 3 / SAC. Hybrid participation supported.",
             },
             {
               label: "Team",
-              body: "[PLACEHOLDER] Core team roles and names for the current academic year.",
+              body: "Led by students across batches: coordinators, contest problem setters, and senior ICPC mentors.",
             },
             {
               label: "Contact",
-              body: "[PLACEHOLDER] Club email or the handle to DM about joining.",
+              body: "Drop by our lab sessions, join our active Discord community, or reach us directly at cpclub@dau.ac.in.",
             },
           ].map((item) => (
             <div

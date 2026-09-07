@@ -383,7 +383,7 @@ export function TimelineEntry({
         />
       </div>
 
-      <div className="max-w-[54rem] pt-8 pb-6">{children}</div>
+      <div className="max-w-[64rem] pt-8 pb-6">{children}</div>
     </li>
   );
 }
