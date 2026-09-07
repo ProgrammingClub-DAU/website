@@ -209,40 +209,76 @@ export default function AboutPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ "--accent": PLATFORM_ACCENT[platform.id] } as React.CSSProperties}
-                className="group block rounded-panel p-7 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                className="group block rounded-panel p-8 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-4">
                   {/*
+                    The mark gets a tinted tile of its own rather than sitting
+                    inline at text size. At 24px beside a heading it read as
+                    punctuation; at 30px on a 60px plate it becomes the thing
+                    the eye lands on, which is what earns the section a look.
+
+                    color-mix against the accent token keeps the tint and ring
+                    derived from one value, so a change to PLATFORM_ACCENT
+                    carries through the plate, the ring, and the glow together.
+
                     No `title` on the mark: the platform name is rendered right
                     beside it, so labelling the icon too would have screen
                     readers announce the same word twice for one link.
                   */}
-                  {/*
-                    Coloured at rest rather than on hover. The accents are theme
-                    tokens defined for both light and dark, so they hold their
-                    contrast standing still — the earlier muted-until-hover
-                    treatment was restraint, not a legibility requirement.
-                  */}
-                  <PlatformMark
-                    platform={platform.id}
-                    className="size-6 shrink-0 text-[var(--accent)] transition-transform duration-300 group-hover:scale-110"
-                  />
-                  <span className="text-base font-semibold tracking-tight">
-                    {PLATFORM_LABEL[platform.id]}
-                  </span>
                   <span
-                    className={
-                      platform.syncs
-                        ? "ml-auto rounded-full border border-hairline-strong px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] uppercase"
-                        : "ml-auto rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
-                    }
+                    className="grid size-15 shrink-0 place-items-center rounded-2xl ring-1 transition-all duration-300 group-hover:scale-105"
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--accent) 14%, transparent)",
+                      boxShadow:
+                        "0 0 28px color-mix(in srgb, var(--accent) 22%, transparent)",
+                      "--tw-ring-color":
+                        "color-mix(in srgb, var(--accent) 30%, transparent)",
+                    } as React.CSSProperties}
                   >
-                    {platform.syncs ? "Rating synced" : "Link only"}
+                    <PlatformMark
+                      platform={platform.id}
+                      className="size-[30px] text-[var(--accent)]"
+                    />
                   </span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span className="text-lg font-semibold tracking-tight">
+                        {PLATFORM_LABEL[platform.id]}
+                      </span>
+                      {/*
+                        The synced badge borrows the accent; "link only" stays
+                        deliberately grey. The two states should not read as
+                        equal — one is a live feature of this site, the other is
+                        a plain outbound link.
+                      */}
+                      <span
+                        className={
+                          platform.syncs
+                            ? "rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--accent)] uppercase ring-1"
+                            : "rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
+                        }
+                        style={
+                          platform.syncs
+                            ? ({
+                                background:
+                                  "color-mix(in srgb, var(--accent) 12%, transparent)",
+                                "--tw-ring-color":
+                                  "color-mix(in srgb, var(--accent) 35%, transparent)",
+                              } as React.CSSProperties)
+                            : undefined
+                        }
+                      >
+                        {platform.syncs ? "Rating synced" : "Link only"}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-fg-muted text-pretty">
+                      {platform.body}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-fg-muted text-pretty">
-                  {platform.body}
-                </p>
               </a>
             </BorderGlow>
           ))}
