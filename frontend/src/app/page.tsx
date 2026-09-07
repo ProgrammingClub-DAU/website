@@ -8,113 +8,23 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import BorderGlow from "@/components/site/border-glow";
+import { ClubWordmark } from "@/components/site/club-wordmark";
+import { AuroraBackdrop } from "@/components/site/aurora-backdrop";
+import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
   RankDot,
-  RankLegend,
-  SampleBadge,
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
+import { PlatformMark } from "@/components/site/platform-mark";
 import { CF_RANKS } from "@/lib/cf-ranks";
-import { heroRows, howItWorks, sparkline, stats } from "@/lib/content/home";
+import { howItWorks } from "@/lib/content/home";
+import { site } from "@/lib/site";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
-
-function HeroPanel() {
-  return (
-    <div className="relative flex flex-col gap-4">
-      <div
-        className="pointer-events-none absolute -inset-x-5 -inset-y-10 bg-[radial-gradient(60%_55%_at_60%_40%,var(--primary-soft),transparent_70%)]"
-        aria-hidden
-      />
-
-      <div className="glass-panel relative overflow-hidden rounded-panel">
-        <div className="flex items-center justify-between gap-4 border-b border-hairline px-4 py-3.5">
-          <span className="font-mono text-[13px] tracking-[0.1em] text-fg-muted uppercase">
-            Club rating
-          </span>
-          <SampleBadge />
-        </div>
-
-        <ul>
-          {heroRows.map((row) => (
-            <li
-              key={row.handle}
-              className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 transition-colors hover:bg-surface-2"
-            >
-              <span className="w-[18px] font-mono text-xs text-fg-subtle">{row.rank}</span>
-              <RankDot rank={row.cf} />
-              <span className="min-w-0 flex-1 truncate font-mono text-[13px]">{row.handle}</span>
-              <span className="w-11 text-right font-mono text-xs text-fg-muted">{row.delta}</span>
-              <span className="w-12 text-right font-mono text-sm">{row.rating}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <span className="font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
-            Synced from Codeforces
-          </span>
-          <span className="flex h-[18px] items-end gap-[3px]" aria-hidden>
-            {sparkline.map((h, i) => (
-              <span
-                key={i}
-                className="w-1 rounded-sm bg-hairline-strong"
-                style={{ height: h }}
-              />
-            ))}
-          </span>
-        </div>
-      </div>
-
-      <div className="relative grid gap-4 sm:grid-cols-2">
-        <div className="glass-panel rounded-panel p-4.5 transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
-              Next round
-            </span>
-            <span
-              className="size-1.5 animate-pulse-ring rounded-full bg-cf-pupil"
-              aria-hidden
-            />
-          </div>
-          <p className="mt-3.5 text-[15px] font-semibold tracking-tight">
-            [PLACEHOLDER] Weekly Round
-          </p>
-          <p className="mt-1.5 font-mono text-xs text-fg-muted">
-            [PLACEHOLDER] Day · 21:00 IST
-          </p>
-        </div>
-
-        <div className="glass-panel rounded-panel p-4.5 transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
-              Problem of the day
-            </span>
-            <span className="font-mono text-[11px] text-cf-expert">1600</span>
-          </div>
-          <p className="mt-3.5 text-[15px] font-semibold tracking-tight">
-            [PLACEHOLDER] Problem title
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {["dp", "greedy"].map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-fg-muted"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <RankLegend className="relative mt-1" />
-    </div>
-  );
-}
 
 type Feature = {
   icon: LucideIcon;
@@ -164,45 +74,42 @@ const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
 export default function HomePage() {
   return (
     <>
-      <Section className="grid gap-14 py-16 md:grid-cols-2 md:items-center md:py-24">
-        <div>
-          <Eyebrow className="animate-rise">Competitive programming club</Eyebrow>
-          <h1 className="mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
-            A home for problem solvers at DAU.
-          </h1>
-          <p className="mt-6 max-w-[44ch] text-base leading-6 text-fg-muted text-pretty">
-            Weekly contests, editorials, and a leaderboard synced from Codeforces — for
-            everyone from first-time solvers to ICPC regionalists.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild className="h-10 rounded-full px-5.5">
-              <Link href="/register">Join the Club</Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
-              <Link href="/events">See our events</Link>
-            </Button>
-          </div>
-        </div>
+      {/* Aurora is full-bleed, so it hangs off this wrapper rather than off the
+          Section, which is width-capped by container-page. `isolate` keeps its
+          negative z-index inside this subtree. */}
+      <div className="relative isolate overflow-hidden">
+        <AuroraBackdrop className="hero-aurora-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] opacity-[var(--aurora-strength)]" />
 
-        <HeroPanel />
-      </Section>
+        {/* Dust drifting over the wash. Aurora moves slowly underneath; these
+            move independently on top, in the rank ladder's own colours. */}
+        <ParticlesBackdrop className="hero-field-mask pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px]" />
 
-      {/* Every figure here is a placeholder — confirm against club records before launch. */}
-      <Section>
-        <dl className="grid grid-cols-2 border-y border-hairline lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="py-8 pr-6">
-              {/* Term before definition: a screen reader pairs them in source order. */}
-              <dt className="font-mono text-xs tracking-[0.1em] text-fg-muted uppercase">
-                {stat.label}
-              </dt>
-              <dd className="mt-2.5 text-[2rem] font-semibold tracking-[-0.02em]">
-                {stat.value}
-              </dd>
+        {/* Centred since the hero lost its right-hand panel. Left-aligned text
+            with nothing beside it left the whole right half of a wide screen
+            empty and read as a layout fault rather than a choice. */}
+        <Section className="pt-12 pb-20 text-center md:pt-16 md:pb-28">
+          {/* The backdrops run through this block rather than around it, so
+              the text carries its own legibility. See .text-halo. */}
+          <div className="mx-auto max-w-[54ch]">
+            <Eyebrow className="text-halo animate-rise">Competitive programming club</Eyebrow>
+            <h1 className="text-halo mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
+              A home for problem solvers at DAU.
+            </h1>
+            <p className="text-halo mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
+              Weekly contests, editorials, and a leaderboard synced from Codeforces — for
+              everyone from first-time solvers to ICPC regionalists.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Button asChild className="h-10 rounded-full px-5.5">
+                <Link href="/register">Join the Club</Link>
+              </Button>
+              <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
+                <Link href="/events">See our events</Link>
+              </Button>
             </div>
-          ))}
-        </dl>
-      </Section>
+          </div>
+        </Section>
+      </div>
 
       <Section className="py-16">
         <SectionHeader eyebrow="What the club runs" title="Everything in one place." />
@@ -281,6 +188,23 @@ export default function HomePage() {
               <p className="mt-2 text-[15px] leading-[1.45] text-fg-muted text-pretty">
                 {step.body}
               </p>
+              {/*
+                Only step 02 names platforms, so only step 02 shows their marks.
+                They sit inline under the copy rather than in a section of their
+                own: four logos in a row with no surrounding purpose reads as a
+                sponsor strip, whereas here they simply show which handles the
+                sentence above is talking about.
+
+                aria-hidden, because the step body already lists all four by
+                name — the marks repeat that visually for someone scanning.
+              */}
+              {step.platforms ? (
+                <span className="mt-3.5 flex items-center gap-3 text-fg-subtle" aria-hidden>
+                  {step.platforms.map((id) => (
+                    <PlatformMark key={id} platform={id} className="size-4" />
+                  ))}
+                </span>
+              ) : null}
             </li>
           ))}
         </ol>
@@ -318,7 +242,14 @@ export default function HomePage() {
         style={{ background: "var(--band)" }}
       >
         <div className="container-page py-20">
-          <div className="glass-panel mx-auto max-w-[680px] rounded-panel px-8 py-14 text-center">
+          {/* A wordmark, not a heading: the component carries the text for a
+              screen reader and the card's own h2 below is untouched. */}
+          <ClubWordmark text={site.name} />
+
+          <BorderGlow
+            className="mx-auto max-w-[680px]"
+            contentClassName="px-8 py-14 text-center"
+          >
             <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold tracking-[-0.02em]">
               Ready to compete?
             </h2>
@@ -329,7 +260,7 @@ export default function HomePage() {
             <Button asChild className="mt-8 h-10 rounded-full px-6">
               <Link href="/register">Join the Club</Link>
             </Button>
-          </div>
+          </BorderGlow>
         </div>
       </section>
     </>

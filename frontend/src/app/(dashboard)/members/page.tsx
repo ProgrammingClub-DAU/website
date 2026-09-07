@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 
-import { Eyebrow, Section, SectionHeader } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
 import { MembersPageCta } from "@/components/site/members-page-cta";
 import { credits } from "@/lib/content/members";
@@ -29,13 +29,13 @@ export default async function MembersPage() {
 
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>Community Directory</Eyebrow>
-            <h1 className="mt-6 text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+            <PageTitle>
               OUR COMMUNITY.
-            </h1>
+            </PageTitle>
           </div>
         </div>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">

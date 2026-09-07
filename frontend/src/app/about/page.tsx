@@ -1,14 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
+  PageTitle,
   RankDot,
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
-import { calendar, faq, joinSteps, organisation, whatWeDo } from "@/lib/content/about";
+import {
+  PlatformMark,
+  PLATFORM_LABEL,
+  PLATFORM_URL,
+} from "@/components/site/platform-mark";
+import {
+  calendar,
+  faq,
+  joinSteps,
+  organisation,
+  platforms,
+  whatWeDo,
+} from "@/lib/content/about";
 import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
 import { site } from "@/lib/site";
 
@@ -20,11 +34,11 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Section className="pt-16 pb-16 md:pt-24">
+      <Section className="pt-10 pb-16 md:pt-14">
         <Eyebrow>About</Eyebrow>
-        <h1 className="mt-6 max-w-[22ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+        <PageTitle className="max-w-[22ch]">
           A student club built around practice, not prestige.
-        </h1>
+        </PageTitle>
         <p className="mt-6 max-w-[56ch] text-base leading-6 text-fg-muted text-pretty">
           {site.fullName} is run by students at {site.university}. We meet to solve
           problems, run contests, and help each other get measurably better at algorithmic
@@ -164,6 +178,52 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-16">
+        <SectionHeader
+          eyebrow="Where we compete"
+          title="Four platforms, one leaderboard."
+        />
+        <p className="mt-5 max-w-[58ch] text-base leading-6 text-fg-muted text-pretty">
+          Members practise wherever they like. These are the four we organise around,
+          and the two we can track automatically.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {platforms.map((platform) => (
+            <a
+              key={platform.id}
+              href={PLATFORM_URL[platform.id]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-panel rounded-panel p-7 transition-all hover:-translate-y-0.5 hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            >
+              <div className="flex items-center gap-3">
+                {/*
+                  No `title` on the mark: the platform name is rendered right
+                  beside it, so labelling the icon too would have screen readers
+                  announce the same word twice for one link.
+                */}
+                <PlatformMark platform={platform.id} className="size-6 shrink-0" />
+                <span className="text-base font-semibold tracking-tight">
+                  {PLATFORM_LABEL[platform.id]}
+                </span>
+                <span
+                  className={
+                    platform.syncs
+                      ? "ml-auto rounded-full border border-hairline-strong px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] uppercase"
+                      : "ml-auto rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
+                  }
+                >
+                  {platform.syncs ? "Rating synced" : "Link only"}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-fg-muted text-pretty">
+                {platform.body}
+              </p>
+            </a>
+          ))}
+        </div>
+      </Section>
+
+      <Section className="pb-16">
         <div className="grid gap-4 md:grid-cols-3">
           {[
             {
@@ -243,7 +303,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-22">
-        <div className="glass-panel grid gap-8 rounded-panel p-10 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-10 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
               How to join
@@ -271,7 +331,7 @@ export default function AboutPage() {
               </li>
             ))}
           </ol>
-        </div>
+        </BorderGlow>
       </Section>
     </>
   );

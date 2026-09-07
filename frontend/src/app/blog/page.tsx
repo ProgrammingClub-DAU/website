@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
-import { Eyebrow, SampleBadge, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, SampleBadge, Section } from "@/components/site/primitives";
 import { BlogList } from "@/components/site/blog-list";
 import { featuredPost, posts } from "@/lib/content/blog";
 
@@ -15,20 +16,23 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <>
-      <Section className="pt-16 pb-10 md:pt-24">
+      <Section className="pt-10 pb-10 md:pt-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>Blog</Eyebrow>
-            <h1 className="mt-6 max-w-[20ch] text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance">
+            <PageTitle className="max-w-[20ch]">
               Editorials and write-ups.
-            </h1>
+            </PageTitle>
           </div>
           <SampleBadge>Sample content</SampleBadge>
         </div>
       </Section>
 
       <Section className="pb-10">
-        <article className="glass-panel grid gap-8 rounded-panel p-9 md:grid-cols-2 md:items-center">
+        {/* The article element stays: BorderGlow renders a div, and the
+            featured post is a self-contained piece of content. */}
+        <article>
+          <BorderGlow contentClassName="grid gap-8 p-9 md:grid-cols-2 md:items-center">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">
@@ -66,6 +70,7 @@ export default function BlogPage() {
               <span className="text-fg-subtle">{"// O(n) time, O(1) extra space"}</span>
             </code>
           </pre>
+          </BorderGlow>
         </article>
       </Section>
 

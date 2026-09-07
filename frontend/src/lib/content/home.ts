@@ -1,3 +1,4 @@
+import type { PlatformId } from "@/components/site/platform-mark";
 import type { CfRankKey } from "@/lib/cf-ranks";
 
 /** Fake-but-plausible sample rows for the hero panel. NOT real member data. */
@@ -17,18 +18,16 @@ export const heroRows: {
 export const sparkline = [7, 10, 6, 12, 9, 14, 11, 16, 12, 18, 13, 15, 17, 18];
 
 /**
- * Real figures about a real club, so nothing here may be invented: a visitor
- * reads these as fact. Replace each with a number confirmed against club
- * records before launch.
+ * `platforms` is optional and set on step 02 alone. Annotated explicitly rather
+ * than inferred: with mixed shapes TypeScript widens the array to a union and
+ * `step.platforms` then fails to compile on the steps that omit it.
  */
-export const stats = [
-  { value: "[TBC]", label: "Active members" },
-  { value: "[TBC]", label: "Problems solved" },
-  { value: "[TBC]", label: "Contests run" },
-  { value: "[TBC]", label: "ICPC teams sent" },
-];
-
-export const howItWorks = [
+export const howItWorks: {
+  n: string;
+  title: string;
+  body: string;
+  platforms?: readonly PlatformId[];
+}[] = [
   {
     n: "01",
     title: "Register",
@@ -38,6 +37,8 @@ export const howItWorks = [
     n: "02",
     title: "Link your handles",
     body: "Add Codeforces, CodeChef, LeetCode, or AtCoder to your profile.",
+    // Rendered as marks beneath the copy. Order matches the sentence above.
+    platforms: ["codeforces", "codechef", "leetcode", "atcoder"] as const,
   },
   {
     n: "03",
