@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,14 +34,36 @@ function Wordmark({ className }: { className?: string }) {
     <Link
       href="/"
       className={cn(
-        "flex items-baseline gap-2 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap",
+        "flex items-center gap-2.5 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap",
         "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         className
       )}
     >
-      <span>{site.name}</span>
-      <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
-        {site.suffix}
+      {/*
+        The club mark, cropped to the CP monogram. The full badge carries
+        "PROGRAMMING CLUB" and the university name around its rim, and at 26px
+        that ring collapses into an illegible smudge — so the wordmark beside it
+        does that job instead.
+
+        alt="" on purpose: the text below already names the club, and a filled
+        alt would make screen readers announce it twice for one link.
+
+        Explicit width/height and a fixed box reserve the space before the image
+        loads, so the navbar cannot shift.
+      */}
+      <Image
+        src="/logo-mark.png"
+        alt=""
+        width={26}
+        height={26}
+        priority
+        className="size-[26px] shrink-0 rounded-full"
+      />
+      <span className="flex items-baseline gap-2">
+        <span>{site.name}</span>
+        <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
+          {site.suffix}
+        </span>
       </span>
     </Link>
   );
