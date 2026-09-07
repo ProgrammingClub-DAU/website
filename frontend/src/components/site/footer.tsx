@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { site } from "@/lib/site";
@@ -32,10 +33,27 @@ export function Footer() {
     <footer className="border-t border-hairline">
       <div className="container-page grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold tracking-tight">{site.name}</span>
-            <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
-              {site.suffix}
+          <div className="flex items-center gap-2.5">
+            {/*
+              Larger than the navbar mark (32px vs 26px): the footer is the one
+              place the identity gets to sit still rather than compete with
+              navigation. Still the monogram crop, not the full badge — the rim
+              text is unreadable below roughly 100px.
+
+              alt="" because the club name sits immediately beside it.
+            */}
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={32}
+              height={32}
+              className="size-8 shrink-0 rounded-full"
+            />
+            <span className="flex items-baseline gap-2">
+              <span className="text-sm font-semibold tracking-tight">{site.name}</span>
+              <span className="font-mono text-xs font-medium tracking-wide text-fg-muted">
+                {site.suffix}
+              </span>
             </span>
           </div>
           <p className="mt-3.5 max-w-[32ch] text-sm leading-relaxed text-fg-subtle">
