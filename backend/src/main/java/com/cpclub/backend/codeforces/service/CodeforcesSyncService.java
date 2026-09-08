@@ -78,7 +78,7 @@ public class CodeforcesSyncService {
         }
 
         List<String> handles = usersWithHandle.stream()
-                .map(User::getCodeforcesHandle)
+                .map(user -> user.getCodeforcesHandle())
                 .filter(Objects::nonNull)
                 .filter(h -> !h.isBlank())
                 .toList();

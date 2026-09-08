@@ -7,7 +7,6 @@ import com.cpclub.backend.auth.dto.RegisterRequest;
 import com.cpclub.backend.auth.service.AuthService;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.GlobalExceptionHandler;
-import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -13,6 +13,7 @@ import {
 } from "@/components/site/primitives";
 import {
   PlatformMark,
+  PLATFORM_ACCENT,
   PLATFORM_LABEL,
   PLATFORM_URL,
 } from "@/components/site/platform-mark";
@@ -266,32 +267,50 @@ export default function AboutPage() {
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {platforms.map((platform) => (
-            <a
+            // BorderGlow carries the colour, the mark carries the meaning. The
+            // glow is decorative, so it can take a hue that would be unreadable
+            // as text; the mark stays on theme tokens and only picks the accent
+            // up on hover, where it has the label beside it for context.
+            <BorderGlow
               key={platform.id}
-              href={PLATFORM_URL[platform.id]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-panel rounded-panel p-7 transition-all hover:-translate-y-0.5 hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              glowColor={PLATFORM_ACCENT[platform.id]}
+              contentClassName="p-0"
             >
-              <div className="flex items-center gap-3">
-                <PlatformMark platform={platform.id} className="size-6 shrink-0" />
-                <span className="text-base font-semibold tracking-tight">
-                  {PLATFORM_LABEL[platform.id]}
-                </span>
-                <span
-                  className={
-                    platform.syncs
-                      ? "ml-auto rounded-full border border-hairline-strong px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] uppercase"
-                      : "ml-auto rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
-                  }
-                >
-                  {platform.syncs ? "Rating synced" : "Link only"}
-                </span>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-fg-muted text-pretty">
-                {platform.body}
-              </p>
-            </a>
+              <a
+                href={PLATFORM_URL[platform.id]}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ "--accent": PLATFORM_ACCENT[platform.id] } as React.CSSProperties}
+                className="group block rounded-panel p-7 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              >
+                <div className="flex items-center gap-3">
+                  {/*
+                    No `title` on the mark: the platform name is rendered right
+                    beside it, so labelling the icon too would have screen
+                    readers announce the same word twice for one link.
+                  */}
+                  <PlatformMark
+                    platform={platform.id}
+                    className="size-6 shrink-0 text-fg-muted transition-colors duration-300 group-hover:text-[var(--accent)]"
+                  />
+                  <span className="text-base font-semibold tracking-tight">
+                    {PLATFORM_LABEL[platform.id]}
+                  </span>
+                  <span
+                    className={
+                      platform.syncs
+                        ? "ml-auto rounded-full border border-hairline-strong px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] uppercase"
+                        : "ml-auto rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
+                    }
+                  >
+                    {platform.syncs ? "Rating synced" : "Link only"}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-fg-muted text-pretty">
+                  {platform.body}
+                </p>
+              </a>
+            </BorderGlow>
           ))}
         </div>
       </Section>

@@ -101,7 +101,7 @@ public class JwtUtils {
                         .orElse("ROLE_USER"))
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
+                .signWith(key())
                 .compact();
     }
 
@@ -120,7 +120,7 @@ public class JwtUtils {
                 .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
+                .signWith(key())
                 .compact();
     }
 
