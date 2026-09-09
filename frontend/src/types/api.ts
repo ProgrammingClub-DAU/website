@@ -45,12 +45,17 @@ export interface PlatformStats {
 export type ClubEventType = "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
 
 export type ClubRole =
-  | "Convenor"
-  | "Deputy Convenor"
-  | "Core Member"
-  | "Associate Core Member"
-  | "Batch Representative"
-  | "Club Participant";
+  | "CONVENOR"
+  | "DEPUTY_CONVENOR"
+  | "CORE"
+  | "ASSOCIATE_CORE"
+  | "BATCH_REPRESENTATIVE"
+  | "EX_PC_MEMBER"
+  | "EX_CORE"
+  | "EX_CDC"
+  | "STUDENT";
+
+export type EventStatus = "UPCOMING" | "COMPLETED" | "CANCELLED";
 
 export interface EventParticipation {
   eventId: string;
@@ -67,13 +72,21 @@ export interface Profile {
   id: number;
   name: string;
   email: string;
-  codeforcesHandle: string;
-  rating: number;
+  codeforcesHandle: string | null;
+  rating: number | null;
   role: string;
   createdAt: string;
   avatarUrl: string | null;
-  maxRating: number;
-  clubRole: ClubRole;
+  phoneNumber: string | null;
+  leetcodeHandle: string | null;
+  leetcodeRating: number | null;
+  codechefUrl: string | null;
+  atcoderUrl: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  clubRole: ClubRole | null;
+  batchYear: number | null;
+  maxRating: number | null;
   eventParticipations: EventParticipation[];
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
@@ -89,8 +102,77 @@ export interface LeaderboardEntry {
   rating: number | null;
   rank: number;         // backend-computed rank (1-based)
   tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"
-  clubRole?: ClubRole;
+  clubRole?: ClubRole | null;
   solvedCount?: number;
   yearlyActivityCount?: number;
   avatarUrl?: string | null;
+}
+
+export interface Event {
+  id: number;
+  title: string;
+  description: string | null;
+  eventDate: string;
+  location: string;
+  status: EventStatus;
+  coverImageUrl: string | null;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface EventDetail extends Event {
+  photos: EventPhoto[];
+  attendeeCount: number;
+}
+
+export interface EventPhoto {
+  id: number;
+  imageUrl: string;
+  caption: string | null;
+  uploadedAt: string;
+}
+
+export interface EventAttendee {
+  userId: number;
+  name: string;
+  email: string;
+  phoneNumber: string | null;
+  hasPhone: boolean;
+  avatarUrl: string | null;
+  codeforcesHandle: string | null;
+  cfRating: number | null;
+  leetcodeHandle: string | null;
+  leetcodeRating: number | null;
+  codechefUrl: string | null;
+  atcoderUrl: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  addedAt: string;
+  clubRole: ClubRole | null;
+}
+
+export interface UserLookup {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string | null;
+  avatarUrl: string | null;
+  codeforcesHandle: string | null;
+  cfRating: number | null;
+  leetcodeHandle: string | null;
+  leetcodeRating: number | null;
+  codechefUrl: string | null;
+  atcoderUrl: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  clubRole: ClubRole | null;
+  batchYear: number | null;
+}
+
+export interface MemberGalleryPhoto {
+  id: number;
+  batchYear: number;
+  imageUrl: string;
+  caption: string | null;
+  uploadedAt: string;
 }
