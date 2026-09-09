@@ -6,6 +6,17 @@ export type HofEntry = {
   people: string;
   note: string;
   cf: CfRankKey;
+  /**
+   * Path under /public to a photograph of this specific achievement.
+   *
+   * Optional, and currently unset on every entry, so no polaroid renders. The
+   * timeline previously showed one shared placeholder image on all of them,
+   * captioned "Event photo for {title}" — which claimed to be a photo of each
+   * distinct event while being the same graphic every time. Better to show
+   * nothing until real photographs exist; set this on an entry and its polaroid
+   * appears on its own.
+   */
+  photo?: string;
 };
 
 export type HofYear = {

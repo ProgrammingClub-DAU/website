@@ -6,7 +6,6 @@ import com.cpclub.backend.blog.dto.BlogUpdateRequest;
 import com.cpclub.backend.blog.entity.BlogPost;
 import com.cpclub.backend.blog.repository.BlogRepository;
 import com.cpclub.backend.common.dto.PagedResponse;
-import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

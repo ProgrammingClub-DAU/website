@@ -2,22 +2,22 @@ export const organisation = [
   {
     role: "Core team",
     color: "var(--cf-grandmaster)",
-    body: "[PLACEHOLDER] Names and terms. Runs the club: calendar, announcements, and the contests.",
+    body: "Elected student coordinators who guide the club's contests, workshops, cultural celebrations, and campus initiatives.",
   },
   {
     role: "Problem setters",
     color: "var(--cf-master)",
-    body: "Members who write and test problems for club rounds, usually two per round.",
+    body: "Members who write and test original problems for club rounds, curating challenges across all difficulty tiers.",
   },
   {
     role: "Web team",
     color: "var(--cf-expert)",
-    body: "Maintains this site, the leaderboard sync, and member profiles.",
+    body: "Maintains this platform, automated Codeforces sync, leaderboards, and member profiles.",
   },
   {
     role: "Mentors",
     color: "var(--cf-pupil)",
-    body: "Seniors and alumni who take beginner sessions and review solutions on request.",
+    body: "Seniors and ICPC regionalists who host doubt-solving sessions, editorial reviews, and 1-on-1 guidance.",
   },
 ];
 
@@ -117,7 +117,7 @@ export const faq = [
   },
   {
     q: "How much time does it take?",
-    a: "[PLACEHOLDER] State the realistic weekly commitment — round length plus optional practice.",
+    a: "Around 2 to 3 hours weekly for the contest and post-round editorial discussion. All other practice and workshops are completely self-paced.",
   },
 ];
 

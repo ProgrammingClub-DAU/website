@@ -56,7 +56,7 @@ class LeaderboardRankingIntegrationTest {
         List<LeaderboardResponseDto> entries = page(0, 10);
 
         assertEquals(List.of(1, 2, 3), ranks(entries));
-        assertEquals(List.of(1800, 1700, 1600), entries.stream().map(LeaderboardResponseDto::rating).toList());
+        assertEquals(List.of(1800, 1700, 1600), entries.stream().map(entry -> entry.rating()).toList());
     }
 
     @Test
@@ -155,6 +155,6 @@ class LeaderboardRankingIntegrationTest {
     }
 
     private List<Integer> ranks(List<LeaderboardResponseDto> entries) {
-        return entries.stream().map(LeaderboardResponseDto::rank).toList();
+        return entries.stream().map(entry -> entry.rank()).toList();
     }
 }

@@ -10,7 +10,6 @@ import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserLookupDto;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
-import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;

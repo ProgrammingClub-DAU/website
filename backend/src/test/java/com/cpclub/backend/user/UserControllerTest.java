@@ -6,7 +6,6 @@ import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.controller.UserController;
 import com.cpclub.backend.user.dto.PublicUserResponseDto;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
-import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.service.UserService;
