@@ -66,7 +66,7 @@ class LeaderboardServiceTest {
     void getLeaderboard_returnsEmptyPageWhenNoMembersExist() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        when(repository.findLeaderboardPage(any()))
+        when(repository.findFilteredLeaderboardPage(any(), any(), any()))
                 .thenReturn(Page.empty(PageRequest.of(0, 20)));
 
         PagedResponse<LeaderboardResponseDto> response = service.getLeaderboard(0, 20);
@@ -81,7 +81,7 @@ class LeaderboardServiceTest {
     void getLeaderboard_mapsProjectionOntoResponse() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        when(repository.findLeaderboardPage(any())).thenReturn(new PageImpl<>(
+        when(repository.findFilteredLeaderboardPage(any(), any(), any())).thenReturn(new PageImpl<>(
                 List.of(row(7L, "Ada", "ada_cf", 1650, 4L)),
                 PageRequest.of(0, 20), 1));
 
@@ -100,7 +100,7 @@ class LeaderboardServiceTest {
     void getLeaderboard_toleratesUnratedMemberWithoutHandle() {
         UserRepository repository = mock(UserRepository.class);
         LeaderboardService service = new LeaderboardService(repository);
-        when(repository.findLeaderboardPage(any())).thenReturn(new PageImpl<>(
+        when(repository.findFilteredLeaderboardPage(any(), any(), any())).thenReturn(new PageImpl<>(
                 List.of(row(9L, "Newcomer", null, null, 12L)),
                 PageRequest.of(0, 20), 1));
 
@@ -112,12 +112,23 @@ class LeaderboardServiceTest {
         assertEquals("Unrated", entry.tier());
     }
 
-    /** Builds a stub projection; Spring supplies the real implementation at runtime. */
+    /** Builds a stub projection with no club role recorded. */
     private LeaderboardEntryProjection row(Long id, String name, String handle, Integer rating, Long placement) {
+        return row(id, name, handle, rating, placement, null);
+    }
+
+    /** Builds a stub projection; Spring supplies the real implementation at runtime. */
+    private LeaderboardEntryProjection row(Long id, String name, String handle, Integer rating,
+                                           Long placement, String clubRole) {
         return new LeaderboardEntryProjection() {
             @Override
             public Long getId() {
                 return id;
+            }
+
+            @Override
+            public String getClubrole() {
+                return clubRole;
             }
 
             @Override

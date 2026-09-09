@@ -4,6 +4,7 @@ import com.cpclub.backend.codeforces.dto.CodeforcesResponse;
 import com.cpclub.backend.codeforces.dto.CodeforcesUserDto;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import com.cpclub.backend.user.entity.User;
+import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.google.common.util.concurrent.RateLimiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,13 @@ public class CodeforcesSyncServiceTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    /**
+     * Chained off the end of the scheduled sync. Without a mock here the field
+     * is null under @InjectMocks and every test in this class fails on the call.
+     */
+    @Mock
+    private LeetCodeSyncService leetCodeSyncService;
 
     @InjectMocks
     private CodeforcesSyncService codeforcesSyncService;
@@ -167,5 +175,31 @@ public class CodeforcesSyncServiceTest {
         codeforcesSyncService.syncCodeforcesRatings();
 
         verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    @DisplayName("The LeetCode bulk sync is chained off the end of the Codeforces run")
+    void syncCodeforcesRatings_ChainsLeetCodeSync() {
+        when(userRepository.findByCodeforcesHandleIsNotNull()).thenReturn(List.of(tourist));
+        when(restTemplate.getForObject(API + "tourist", CodeforcesResponse.class))
+                .thenReturn(ok(cfUser("tourist", 3100)));
+
+        codeforcesSyncService.syncCodeforcesRatings();
+
+        verify(leetCodeSyncService).syncAllUsers();
+    }
+
+    @Test
+    @DisplayName("LeetCode still syncs when no member has linked a Codeforces handle")
+    void syncCodeforcesRatings_ChainsLeetCodeSyncEvenWhenNoCodeforcesHandles() {
+        // The Codeforces half returns early here. Before the method was split,
+        // that early return skipped the LeetCode sync entirely — a club where
+        // nobody used Codeforces would never have had a LeetCode rating refreshed.
+        when(userRepository.findByCodeforcesHandleIsNotNull()).thenReturn(List.of());
+
+        codeforcesSyncService.syncCodeforcesRatings();
+
+        verify(restTemplate, never()).getForObject(anyString(), eq(CodeforcesResponse.class));
+        verify(leetCodeSyncService).syncAllUsers();
     }
 }
