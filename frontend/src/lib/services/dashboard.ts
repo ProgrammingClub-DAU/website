@@ -43,6 +43,7 @@ function mapUserToLeaderboard(user: any): LeaderboardEntry {
     rating: user.rating,
     rank: user.rank,
     tier: user.tier,
+    clubRole: user.clubRole ?? null,
   };
 }
 
