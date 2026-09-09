@@ -1,6 +1,7 @@
 import apiClient from "@/lib/axios";
+import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "@/store/auth";
-import type { Event, EventAttendee, EventDetail, UserLookup } from "@/types/api";
+import type { Event, EventAttendee, EventDetail, EventPhoto, UserLookup } from "@/types/api";
 
 export interface EventRequest {
   title: string;
@@ -8,6 +9,11 @@ export interface EventRequest {
   eventDate: string;
   location: string;
   coverImageUrl: string | null;
+}
+
+export interface EventPhotoRequest {
+  imageUrl: string;
+  caption: string | null;
 }
 
 export const eventsService = {
@@ -69,6 +75,31 @@ export const eventsService = {
   getAttendees: async (eventId: number): Promise<EventAttendee[]> => {
     const response = await apiClient.get<ApiResponse<EventAttendee[]>>(
       `/api/events/${eventId}/attendees`
+    );
+    return response.data.data;
+  },
+
+  exportAttendees: (eventId: number): Promise<AxiosResponse<Blob>> =>
+    apiClient.get<Blob>(`/api/events/${eventId}/attendees/export`, {
+      responseType: "blob",
+    }),
+
+  addEventPhoto: async (eventId: number, data: EventPhotoRequest): Promise<EventPhoto> => {
+    const response = await apiClient.post<ApiResponse<EventPhoto>>(
+      `/api/events/${eventId}/photos`,
+      data
+    );
+    return response.data.data;
+  },
+
+  deleteEventPhoto: async (photoId: number): Promise<void> => {
+    const response = await apiClient.delete<ApiResponse<void>>(`/api/events/photos/${photoId}`);
+    return response.data.data;
+  },
+
+  getEventPhotos: async (eventId: number): Promise<EventPhoto[]> => {
+    const response = await apiClient.get<ApiResponse<EventPhoto[]>>(
+      `/api/events/${eventId}/photos`
     );
     return response.data.data;
   },
