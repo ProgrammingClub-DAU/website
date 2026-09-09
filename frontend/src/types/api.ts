@@ -102,11 +102,15 @@ export interface LeaderboardEntry {
   rating: number | null;
   rank: number;         // backend-computed rank (1-based)
   tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"
-  clubRole?: ClubRole | null;
+  clubRole: ClubRole | null;
   solvedCount?: number;
   yearlyActivityCount?: number;
   avatarUrl?: string | null;
 }
+
+export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";
+
+export type LeaderboardFilter = "ALL" | "CORE" | "BATCH_REP" | "STUDENTS";
 
 export interface Event {
   id: number;
