@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,13 @@ public class CodeforcesSyncService {
     private final RestTemplate restTemplate;
 
     /**
+     * Chained off the end of this job rather than carrying its own schedule.
+     * Both syncs queue behind the same rate limiter, so separate cron
+     * expressions would only have them block each other.
+     */
+    private final LeetCodeSyncService leetCodeSyncService;
+
+    /**
      * Application-wide gate on outbound Codeforces calls.
      * Injected from {@link com.cpclub.backend.common.config.AppConfig}.
      */
@@ -69,6 +77,25 @@ public class CodeforcesSyncService {
     @Scheduled(cron = "${cpclub.codeforces.sync-cron:0 0 */6 * * *}")
     @Transactional
     public void syncCodeforcesRatings() {
+        syncCodeforcesHandles();
+
+        // Chained here rather than given its own @Scheduled. Both syncs draw on
+        // the same rate limiter, so two cron expressions would mostly have the
+        // second job waiting on the first.
+        //
+        // Outside syncCodeforcesHandles() on purpose: that method returns early
+        // when no member has linked a Codeforces handle, and LeetCode ratings
+        // still need refreshing in a club where nobody has.
+        leetCodeSyncService.syncAllUsers();
+    }
+
+    /**
+     * The Codeforces half of the scheduled refresh.
+     *
+     * <p>Split out so its early return cannot skip the LeetCode sync that follows
+     * it.</p>
+     */
+    private void syncCodeforcesHandles() {
         log.info("Starting scheduled Codeforces rating synchronization job...");
 
         List<User> usersWithHandle = userRepository.findByCodeforcesHandleIsNotNull();

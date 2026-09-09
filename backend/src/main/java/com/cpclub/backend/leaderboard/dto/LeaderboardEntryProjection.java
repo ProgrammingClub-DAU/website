@@ -35,4 +35,14 @@ public interface LeaderboardEntryProjection {
      * @return absolute rank, where tied ratings share a value
      */
     Long getPlacement();
+
+    /**
+     * The member's club position, as the raw enum name, or null when unassigned.
+     *
+     * <p>Named {@code clubrole} rather than {@code clubRole} because the column
+     * alias has to be a single lowercase word for Spring Data to bind a native
+     * query onto an interface projection. An alias of {@code club_role} or
+     * {@code clubRole} binds to nothing and the getter silently returns null.</p>
+     */
+    String getClubrole();
 }

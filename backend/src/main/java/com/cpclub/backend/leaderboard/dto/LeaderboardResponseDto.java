@@ -12,7 +12,8 @@ public record LeaderboardResponseDto(
         String name,
         String codeforcesHandle,
         Integer rating,
-        String tier
+        String tier,
+        String clubRole
 ) {
     /**
      * Resolves the official Codeforces rating tier based on rating thresholds.
@@ -48,7 +49,8 @@ public record LeaderboardResponseDto(
                 user.getName(),
                 user.getCodeforcesHandle(),
                 user.getRating(),
-                calculateTier(user.getRating())
+                calculateTier(user.getRating()),
+                user.getClubRole() != null ? user.getClubRole().name() : null
         );
     }
 
@@ -68,7 +70,8 @@ public record LeaderboardResponseDto(
                 row.getName(),
                 row.getHandle(),
                 row.getRating(),
-                calculateTier(row.getRating())
+                calculateTier(row.getRating()),
+                row.getClubrole()
         );
     }
 }

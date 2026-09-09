@@ -57,14 +57,21 @@ public class UserController {
     }
 
     /**
-     * Retrieves list of all users without pagination. Restricted to authenticated users
-     * to prevent anonymous enumeration of the full user list and email addresses.
+     * Retrieves list of all users without pagination. Restricted to admins.
+     *
+     * <p>Was {@code isAuthenticated()}, which was enough when this returned names,
+     * emails and ratings. Phase 2 added {@code phoneNumber} to
+     * {@link UserResponseDto} so a member can see and edit their own contact
+     * number, and that turned this unpaginated dump into every member's phone
+     * number available to anyone who could log in. Nothing in the frontend calls
+     * it, so narrowing it costs nothing; the paginated public directory is
+     * {@code GET /api/users}, which returns {@link PublicUserResponseDto}.</p>
      *
      * @return list of all users
      */
     @GetMapping("/all")
-    @Operation(summary = "Get all users (unpaginated, authenticated only)")
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get all users (unpaginated, admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
         List<UserResponseDto> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users, "Fetched all users successfully"));

@@ -11,6 +11,7 @@ import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.user.service.UserService;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
+import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,14 @@ class UserServiceTest {
     private UserRepository userRepository;
     private UserService userService;
     private CodeforcesSyncService codeforcesSyncService;
+    private LeetCodeSyncService leetCodeSyncService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         codeforcesSyncService = mock(CodeforcesSyncService.class);
-        userService = new UserService(userRepository, codeforcesSyncService);
+        leetCodeSyncService = mock(LeetCodeSyncService.class);
+        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService);
     }
 
     @Test
@@ -118,7 +121,7 @@ class UserServiceTest {
         when(userRepository.existsByCodeforcesHandle("new_handle")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
-        UserProfileUpdateRequest request = new UserProfileUpdateRequest("New Name", "new_handle");
+        UserProfileUpdateRequest request = profileUpdate("New Name", "new_handle", null);
         UserResponseDto result = userService.updateProfile(1L, request);
 
         assertEquals("New Name", result.name());
@@ -146,5 +149,24 @@ class UserServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
         verify(userRepository, never()).deleteById(any());
+    }
+
+    /**
+     * Builds a {@link UserProfileUpdateRequest} with only the fields under test set.
+     *
+     * <p>The record has nine components, most of them optional profile links these
+     * tests do not exercise.</p>
+     */
+    private UserProfileUpdateRequest profileUpdate(String name, String codeforcesHandle,
+                                                   String leetcodeHandle) {
+        return new UserProfileUpdateRequest(
+                name,
+                null,               // phoneNumber
+                codeforcesHandle,
+                leetcodeHandle,
+                null, null,         // codechefUrl, atcoderUrl
+                null, null,         // githubUrl, linkedinUrl
+                null                // avatarUrl
+        );
     }
 }
