@@ -134,6 +134,20 @@
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!--
+		  Apache POI, for the event attendance export.
+
+		  poi-ooxml rather than plain poi: the club needs .xlsx, and the base
+		  artifact only writes the legacy .xls format. It pulls in poi and the OOXML
+		  schemas transitively, which is most of its weight.
+		-->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.3.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
