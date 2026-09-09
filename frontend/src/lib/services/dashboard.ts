@@ -1,5 +1,6 @@
 import apiClient from "@/lib/axios";
 import { Member, Profile, LeaderboardEntry } from "@/types/api";
+import type { ApiResponse } from "@/store/auth";
 import { ratingToRank } from "@/lib/cf-ranks";
 import { members as mockMembers } from "@/lib/content/members";
 import { mockLeaderboardEntries, getMockProfile } from "@/lib/content/mock-dashboards";
@@ -45,8 +46,39 @@ function mapUserToLeaderboard(user: any): LeaderboardEntry {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapUserToProfile(user: any): Profile {
+interface UserProfileResponse {
+  id: number;
+  name: string;
+  email: string;
+  codeforcesHandle: string | null;
+  rating: number | null;
+  role: string;
+  createdAt: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  leetcodeHandle?: string | null;
+  leetcodeRating?: number | null;
+  codechefUrl?: string | null;
+  atcoderUrl?: string | null;
+  githubUrl?: string | null;
+  linkedinUrl?: string | null;
+  clubRole?: Profile["clubRole"];
+  batchYear?: number | null;
+}
+
+export interface ProfileUpdateRequest {
+  name: string;
+  phoneNumber?: string | null;
+  codeforcesHandle?: string | null;
+  leetcodeHandle?: string | null;
+  codechefUrl?: string | null;
+  atcoderUrl?: string | null;
+  githubUrl?: string | null;
+  linkedinUrl?: string | null;
+  avatarUrl?: string | null;
+}
+
+function mapUserToProfile(user: UserProfileResponse): Profile {
   return {
     id: user.id,
     name: user.name,
@@ -55,9 +87,17 @@ function mapUserToProfile(user: any): Profile {
     rating: user.rating,
     role: user.role,
     createdAt: user.createdAt,
-    avatarUrl: null,
+    avatarUrl: user.avatarUrl ?? null,
+    phoneNumber: user.phoneNumber ?? null,
+    leetcodeHandle: user.leetcodeHandle ?? null,
+    leetcodeRating: user.leetcodeRating ?? null,
+    codechefUrl: user.codechefUrl ?? null,
+    atcoderUrl: user.atcoderUrl ?? null,
+    githubUrl: user.githubUrl ?? null,
+    linkedinUrl: user.linkedinUrl ?? null,
+    clubRole: user.clubRole ?? null,
+    batchYear: user.batchYear ?? null,
     maxRating: user.rating,
-    clubRole: "Club Participant",
     eventParticipations: [], // Phase 2
     platformStats: [], // Phase 2
     ratingHistory: [], // Live fetch
@@ -111,5 +151,13 @@ export const dashboardService = {
   updateCodeforcesHandle: async (userId: string, handle: string): Promise<Profile> => {
     const response = await apiClient.put(`/api/users/${userId}/handle`, { handle });
     return mapUserToProfile(response.data?.data || response.data);
+  },
+
+  updateProfile: async (data: ProfileUpdateRequest): Promise<Profile> => {
+    const response = await apiClient.put<ApiResponse<UserProfileResponse>>(
+      "/api/users/profile",
+      data
+    );
+    return mapUserToProfile(response.data.data);
   }
 };
