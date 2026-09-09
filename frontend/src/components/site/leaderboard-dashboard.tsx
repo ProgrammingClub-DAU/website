@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { rankColor, ratingToRank, CF_RANKS, type CfRankKey } from "@/lib/cf-ranks";
+import { getClubRoleLabel } from "@/lib/club-roles";
 import type { LeaderboardEntry } from "@/types/api";
 import { Search, Flame, Users, Code2, Trophy, User } from "lucide-react";
 import Image from "next/image";
@@ -46,21 +47,21 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
       if (!matchesSearch) return false;
 
       // Role check
-      const role = e.clubRole ?? "Club Participant";
+      const role = e.clubRole;
       if (roleFilter === "All") return true;
       if (roleFilter === "Core") {
         return (
-          role === "Convenor" ||
-          role === "Deputy Convenor" ||
-          role === "Core Member" ||
-          role === "Associate Core Member"
+          role === "CONVENOR" ||
+          role === "DEPUTY_CONVENOR" ||
+          role === "CORE" ||
+          role === "ASSOCIATE_CORE"
         );
       }
       if (roleFilter === "Batch Rep") {
-        return role === "Batch Representative";
+        return role === "BATCH_REPRESENTATIVE";
       }
       if (roleFilter === "Students") {
-        return role === "Club Participant" || !e.clubRole;
+        return role === "STUDENT" || role === null;
       }
 
       return true;
@@ -233,9 +234,9 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                           >
                             {entry.codeforcesHandle}
                           </span>
-                          {entry.clubRole && entry.clubRole !== "Club Participant" && (
+                          {entry.clubRole && entry.clubRole !== "STUDENT" && (
                             <span className="rounded-full border border-border bg-background px-1.5 py-0.2 text-[9px] text-fg-muted">
-                              {entry.clubRole}
+                              {getClubRoleLabel(entry.clubRole)}
                             </span>
                           )}
                         </div>

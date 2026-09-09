@@ -10,6 +10,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type { ClubRole } from "@/types/api";
 
 export interface User {
   id: number; // Persisted unique user identifier on the backend
@@ -17,6 +18,11 @@ export interface User {
   fullName: string;
   role: string;
   codeforcesHandle: string | null; // Optional synced Codeforces profile handle
+  clubRole: ClubRole | null;
+  batchYear: number | null;
+  leetcodeHandle: string | null;
+  phoneNumber: string | null;
+  avatarUrl: string | null;
 }
 
 // Standard API response envelope matching com.cpclub.backend.common.dto.ApiResponse
@@ -48,6 +54,11 @@ export function mapAuthResponseToUser(authData: AuthResponse): User {
     fullName: authData.name,
     role: authData.role,
     codeforcesHandle: authData.codeforcesHandle,
+    clubRole: null,
+    batchYear: null,
+    leetcodeHandle: null,
+    phoneNumber: null,
+    avatarUrl: null,
   };
 }
 
@@ -87,6 +98,24 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "cpclub-auth",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as AuthState;
+
+        return {
+          ...state,
+          user: state.user
+          ? {
+              ...state.user,
+              clubRole: state.user.clubRole ?? null,
+              batchYear: state.user.batchYear ?? null,
+              leetcodeHandle: state.user.leetcodeHandle ?? null,
+              phoneNumber: state.user.phoneNumber ?? null,
+              avatarUrl: state.user.avatarUrl ?? null,
+            }
+          : null,
+        };
+      },
     }
   )
 );

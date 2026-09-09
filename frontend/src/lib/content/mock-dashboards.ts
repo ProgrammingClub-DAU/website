@@ -1,16 +1,16 @@
 import type { LeaderboardEntry, Profile } from "@/types/api";
 
 export const mockLeaderboardEntries: LeaderboardEntry[] = [
-  { id: 1, name: "Sumeet Verma", codeforcesHandle: "Sumeet.Verma", rating: 2502, rank: 1, tier: "Grandmaster", clubRole: "Convenor", solvedCount: 1289, yearlyActivityCount: 42, avatarUrl: null },
-  { id: 2, name: "Preet Sheth", codeforcesHandle: "Preet Sheth", rating: 2210, rank: 2, tier: "Master", clubRole: "Core Member", solvedCount: 1042, yearlyActivityCount: 38, avatarUrl: null },
-  { id: 3, name: "Jalp Patel", codeforcesHandle: "Jalp Patel", rating: 1990, rank: 3, tier: "Candidate Master", clubRole: "Core Member", solvedCount: 915, yearlyActivityCount: 29, avatarUrl: null },
-  { id: 4, name: "King-T", codeforcesHandle: "King-T", rating: 1639, rank: 4, tier: "Expert", clubRole: "Associate Core Member", solvedCount: 654, yearlyActivityCount: 24, avatarUrl: null },
-  { id: 5, name: "Alice Sharma", codeforcesHandle: "Alice", rating: 1447, rank: 5, tier: "Specialist", clubRole: "Batch Representative", solvedCount: 512, yearlyActivityCount: 18, avatarUrl: null },
-  { id: 6, name: "XYZ Coder", codeforcesHandle: "XYZ", rating: 1218, rank: 6, tier: "Pupil", clubRole: "Club Participant", solvedCount: 380, yearlyActivityCount: 12, avatarUrl: null },
-  { id: 7, name: "Binod Kumar", codeforcesHandle: "Binod", rating: 818, rank: 7, tier: "Newbie", clubRole: "Club Participant", solvedCount: 120, yearlyActivityCount: 0, avatarUrl: null },
-  { id: 8, name: "Rohan Gupta", codeforcesHandle: "rohan_dp", rating: 1750, rank: 8, tier: "Expert", clubRole: "Associate Core Member", solvedCount: 780, yearlyActivityCount: 31, avatarUrl: null },
-  { id: 9, name: "Meher Singh", codeforcesHandle: "meher.solves", rating: 1890, rank: 9, tier: "Candidate Master", clubRole: "Batch Representative", solvedCount: 810, yearlyActivityCount: 27, avatarUrl: null },
-  { id: 10, name: "Arjun Mehta", codeforcesHandle: "arjun_bitset", rating: 2050, rank: 10, tier: "Master", clubRole: "Core Member", solvedCount: 610, yearlyActivityCount: 0, avatarUrl: null },
+  { id: 1, name: "Sumeet Verma", codeforcesHandle: "Sumeet.Verma", rating: 2502, rank: 1, tier: "Grandmaster", clubRole: "CONVENOR", solvedCount: 1289, yearlyActivityCount: 42, avatarUrl: null },
+  { id: 2, name: "Preet Sheth", codeforcesHandle: "Preet Sheth", rating: 2210, rank: 2, tier: "Master", clubRole: "CORE", solvedCount: 1042, yearlyActivityCount: 38, avatarUrl: null },
+  { id: 3, name: "Jalp Patel", codeforcesHandle: "Jalp Patel", rating: 1990, rank: 3, tier: "Candidate Master", clubRole: "CORE", solvedCount: 915, yearlyActivityCount: 29, avatarUrl: null },
+  { id: 4, name: "King-T", codeforcesHandle: "King-T", rating: 1639, rank: 4, tier: "Expert", clubRole: "ASSOCIATE_CORE", solvedCount: 654, yearlyActivityCount: 24, avatarUrl: null },
+  { id: 5, name: "Alice Sharma", codeforcesHandle: "Alice", rating: 1447, rank: 5, tier: "Specialist", clubRole: "BATCH_REPRESENTATIVE", solvedCount: 512, yearlyActivityCount: 18, avatarUrl: null },
+  { id: 6, name: "XYZ Coder", codeforcesHandle: "XYZ", rating: 1218, rank: 6, tier: "Pupil", clubRole: "STUDENT", solvedCount: 380, yearlyActivityCount: 12, avatarUrl: null },
+  { id: 7, name: "Binod Kumar", codeforcesHandle: "Binod", rating: 818, rank: 7, tier: "Newbie", clubRole: "STUDENT", solvedCount: 120, yearlyActivityCount: 0, avatarUrl: null },
+  { id: 8, name: "Rohan Gupta", codeforcesHandle: "rohan_dp", rating: 1750, rank: 8, tier: "Expert", clubRole: "ASSOCIATE_CORE", solvedCount: 780, yearlyActivityCount: 31, avatarUrl: null },
+  { id: 9, name: "Meher Singh", codeforcesHandle: "meher.solves", rating: 1890, rank: 9, tier: "Candidate Master", clubRole: "BATCH_REPRESENTATIVE", solvedCount: 810, yearlyActivityCount: 27, avatarUrl: null },
+  { id: 10, name: "Arjun Mehta", codeforcesHandle: "arjun_bitset", rating: 2050, rank: 10, tier: "Master", clubRole: "CORE", solvedCount: 610, yearlyActivityCount: 0, avatarUrl: null },
 ];
 
 
@@ -54,9 +54,17 @@ export const getMockProfile = (userId: string): Profile => {
     role: "ROLE_USER",
     createdAt: "2024-01-01T00:00:00Z",
     avatarUrl: null,
+    phoneNumber: null,
+    leetcodeHandle: null,
+    leetcodeRating: null,
+    codechefUrl: null,
+    atcoderUrl: null,
+    githubUrl: null,
+    linkedinUrl: null,
+    batchYear: null,
     rating: 1990,
     maxRating: 1990,
-    clubRole: "Core Member",
+    clubRole: "CORE",
     eventParticipations: [
       {
         eventId: "evt-001",

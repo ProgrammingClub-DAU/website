@@ -21,7 +21,8 @@ import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import type { Profile, EventParticipation, ClubEventType } from "@/types/api";
+import { getClubRoleLabel } from "@/lib/club-roles";
+import type { Profile, EventParticipation, ClubEventType, ClubRole } from "@/types/api";
 import dynamic from "next/dynamic";
 const ActivityCalendar = dynamic(
   () => import("react-activity-calendar").then((mod) => mod.ActivityCalendar),
@@ -75,17 +76,17 @@ function getEventTypeColor(type: ClubEventType): string {
 }
 
 // ── Club role styling ──
-function getClubRoleBadgeStyle(role: string): { bg: string; text: string; border: string } {
+function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text: string; border: string } {
   switch (role) {
-    case "Convenor":
+    case "CONVENOR":
       return { bg: "rgba(255,215,0,0.1)", text: "#ffd700", border: "rgba(255,215,0,0.3)" };
-    case "Deputy Convenor":
+    case "DEPUTY_CONVENOR":
       return { bg: "rgba(192,192,192,0.1)", text: "#c0c0c0", border: "rgba(192,192,192,0.3)" };
-    case "Core Member":
+    case "CORE":
       return { bg: "rgba(138,43,226,0.1)", text: "#aa6dff", border: "rgba(138,43,226,0.3)" };
-    case "Associate Core Member":
+    case "ASSOCIATE_CORE":
       return { bg: "rgba(30,144,255,0.1)", text: "#5ba3ff", border: "rgba(30,144,255,0.3)" };
-    case "Batch Representative":
+    case "BATCH_REPRESENTATIVE":
       return { bg: "rgba(0,206,209,0.1)", text: "#40e0d0", border: "rgba(0,206,209,0.3)" };
     default:
       return { bg: "rgba(128,128,128,0.08)", text: "var(--fg-muted)", border: "var(--border)" };
@@ -256,8 +257,8 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
     };
   }, [eventParticipations]);
 
-  const clubRoleStyle = getClubRoleBadgeStyle(profile.clubRole ?? "Club Participant");
-  const isOfficialMember = profile.clubRole && profile.clubRole !== "Club Participant";
+  const clubRoleStyle = getClubRoleBadgeStyle(profile.clubRole);
+  const isOfficialMember = profile.clubRole !== null && profile.clubRole !== "STUDENT";
 
   return (
     <div className="space-y-8">
@@ -353,7 +354,7 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
                   }}
                 >
                   {isOfficialMember ? <Award className="size-3" /> : <Target className="size-3" />}
-                  {profile.clubRole ?? "Club Participant"}
+                  {profile.clubRole ? getClubRoleLabel(profile.clubRole) : "Member"}
                 </span>
                 <span className="text-sm text-fg-muted">
                   Rating:{" "}
