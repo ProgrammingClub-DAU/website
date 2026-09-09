@@ -2,6 +2,8 @@ package com.cpclub.backend.leaderboard;
 
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.leaderboard.controller.LeaderboardController;
+import com.cpclub.backend.leaderboard.dto.LeaderboardFilter;
+import com.cpclub.backend.leaderboard.dto.LeaderboardPlatform;
 import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
 import com.cpclub.backend.leaderboard.service.LeaderboardService;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +32,8 @@ class LeaderboardControllerTest {
 
     @Test
     void getLeaderboard_returnsPaginatedRankings() throws Exception {
-        LeaderboardResponseDto member = new LeaderboardResponseDto(21, 1L, "Alice", "alice_cf", 1900, "Candidate Master");
-        when(leaderboardService.getLeaderboard(1, 20))
+        LeaderboardResponseDto member = new LeaderboardResponseDto(21, 1L, "Alice", "alice_cf", 1900, "Candidate Master", "CORE");
+        when(leaderboardService.getLeaderboard(1, 20, LeaderboardPlatform.CODEFORCES, LeaderboardFilter.ALL))
                 .thenReturn(new PagedResponse<>(List.of(member), 1, 20, 21, 2, true));
 
         mockMvc.perform(get("/api/leaderboard").param("page", "1").param("size", "20"))

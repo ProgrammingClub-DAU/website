@@ -2,6 +2,8 @@ package com.cpclub.backend.leaderboard.service;
 
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
+import com.cpclub.backend.leaderboard.dto.LeaderboardFilter;
+import com.cpclub.backend.leaderboard.dto.LeaderboardPlatform;
 import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +41,30 @@ public class LeaderboardService {
      * @param size items per page limit
      * @return paginated response containing ranked users
      */
+    /**
+     * One page of the leaderboard, ranked within the requested slice.
+     *
+     * <p>Null arguments fall back to the whole membership ranked by Codeforces,
+     * which is what the board showed before either filter existed. Defaulting here
+     * rather than only in the controller means an internal caller that omits them
+     * gets the same board as an HTTP caller that omits the query parameters.</p>
+     *
+     * @param page zero-indexed page number
+     * @param size page size
+     * @param platform rating source, defaulting to {@link LeaderboardPlatform#CODEFORCES}
+     * @param filter membership slice, defaulting to {@link LeaderboardFilter#ALL}
+     * @return one page of ranked members
+     */
     @Transactional(readOnly = true)
-    public PagedResponse<LeaderboardResponseDto> getLeaderboard(int page, int size) {
+    public PagedResponse<LeaderboardResponseDto> getLeaderboard(
+            int page, int size, LeaderboardPlatform platform, LeaderboardFilter filter) {
+
+        LeaderboardPlatform resolvedPlatform = platform != null ? platform : LeaderboardPlatform.CODEFORCES;
+        LeaderboardFilter resolvedFilter = filter != null ? filter : LeaderboardFilter.ALL;
+
         Pageable pageable = PageRequest.of(page, size);
-        Page<LeaderboardEntryProjection> rankedPage = userRepository.findLeaderboardPage(pageable);
+        Page<LeaderboardEntryProjection> rankedPage = userRepository.findFilteredLeaderboardPage(
+                resolvedPlatform.name(), resolvedFilter.name(), pageable);
 
         List<LeaderboardResponseDto> content = rankedPage.getContent().stream()
                 .map(LeaderboardResponseDto::fromProjection)
@@ -56,6 +78,20 @@ public class LeaderboardService {
                 rankedPage.getTotalPages(),
                 rankedPage.isLast()
         );
+    }
+
+    /**
+     * The unfiltered board, ranked by Codeforces.
+     *
+     * <p>Kept so callers that predate the filters read the same as they did.</p>
+     *
+     * @param page zero-indexed page number
+     * @param size page size
+     * @return one page of ranked members
+     */
+    @Transactional(readOnly = true)
+    public PagedResponse<LeaderboardResponseDto> getLeaderboard(int page, int size) {
+        return getLeaderboard(page, size, LeaderboardPlatform.CODEFORCES, LeaderboardFilter.ALL);
     }
 }
 

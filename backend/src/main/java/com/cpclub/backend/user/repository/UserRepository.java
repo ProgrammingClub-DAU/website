@@ -1,6 +1,7 @@
 package com.cpclub.backend.user.repository;
 
 import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
+import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +70,40 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByCodeforcesHandleIsNotNull();
 
     /**
+     * Returns members eligible for LeetCode synchronization.
+     *
+     * <p>The bulk sync iterates this rather than {@code findAll()}: most members
+     * never link a LeetCode account, and each one that has costs a rate-limited
+     * HTTP round trip.</p>
+     *
+     * @return members that have supplied a LeetCode handle
+     */
+    List<User> findByLeetcodeHandleIsNotNull();
+
+    /**
+     * Checks whether a LeetCode handle is linked to any member.
+     *
+     * <p>The column is unique, so without this check a duplicate handle would
+     * surface as a constraint violation at flush time rather than a 400.</p>
+     *
+     * @param leetcodeHandle candidate external-account handle
+     * @return whether the handle is already linked
+     */
+    Boolean existsByLeetcodeHandle(String leetcodeHandle);
+
+    /**
+     * Returns members holding any of the given club positions.
+     *
+     * <p>Backs the leaderboard's role filter. {@code STUDENTS} cannot use this
+     * method, because its definition includes members with no role at all and
+     * {@code IN} never matches NULL — see {@code LeaderboardService}.</p>
+     *
+     * @param roles positions to match
+     * @return members holding one of them
+     */
+    List<User> findByClubRoleIn(List<ClubRole> roles);
+
+    /**
      * Resolves paginated list of users ordered by rating descending.
      * Non-rated members (null ratings) are pushed to the end of the ranking list.
      *
@@ -79,37 +114,72 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByOrderByRatingDescNullsLast(Pageable pageable);
 
     /**
-     * Resolves one page of the leaderboard with each member's absolute rank already
-     * computed by the database.
+     * One page of the leaderboard for a given platform and membership slice, with
+     * each member's rank already computed by the database.
      *
-     * <p>{@code RANK()} implements standard competition ranking: tied ratings share
-     * a position and the next distinct rating skips the gap (1, 1, 3). Unrated
-     * members sort last and, being all equal under {@code NULLS LAST}, tie with each
-     * other on a single trailing rank.</p>
+     * <p>Both variable parts are bound parameters compared against literals inside
+     * the SQL rather than interpolated into it. {@code platform} and {@code filter}
+     * arrive as enum names, so the set of possible values is closed, but building
+     * the statement by concatenation would still make this the one place in the
+     * codebase where a repository takes a caller-supplied fragment.</p>
      *
-     * <p>The window function is evaluated over the whole table before {@code LIMIT}
-     * is applied, so ranks stay absolute across pages — page 2 continues from where
-     * page 1 stopped rather than restarting at 1.</p>
+     * <p>The {@code WHERE} clause runs before the window function, so
+     * {@code RANK()} numbers the filtered board: viewing the core team shows ranks
+     * 1..n within the core team, not their positions in the club overall. That is
+     * the intended reading of a filtered leaderboard.</p>
      *
-     * <p>This replaces a per-row {@code COUNT}, which cost one query per member on
-     * every page load. Column aliases are deliberately single lowercase words; see
+     * <p>{@code STUDENTS} cannot be expressed as an {@code IN} list. Its definition
+     * includes members with no position recorded, and {@code IN} never matches
+     * NULL — every pre-Phase-2 account would vanish from the board.</p>
+     *
+     * <p>Column aliases are deliberately single lowercase words; see
      * {@link com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection}.</p>
      *
+     * @param platform {@code CODEFORCES} or {@code LEETCODE}
+     * @param filter {@code ALL}, {@code CORE}, {@code BATCH_REP} or {@code STUDENTS}
      * @param pageable requested page and size
      * @return one page of ranked members
      */
     @Query(value = """
-            SELECT u.id                AS id,
-                   u.name              AS name,
-                   u.codeforces_handle AS handle,
-                   u.rating            AS rating,
-                   RANK() OVER (ORDER BY u.rating DESC NULLS LAST) AS placement
+            SELECT u.id AS id,
+                   u.name AS name,
+                   CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
+                        THEN u.leetcode_handle ELSE u.codeforces_handle END AS handle,
+                   CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
+                        THEN u.leetcode_rating ELSE u.rating END AS rating,
+                   u.club_role AS clubrole,
+                   RANK() OVER (
+                       ORDER BY CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
+                                     THEN u.leetcode_rating ELSE u.rating END DESC NULLS LAST
+                   ) AS placement
             FROM users u
-            ORDER BY u.rating DESC NULLS LAST, u.id ASC
+            WHERE CAST(:filter AS VARCHAR) = 'ALL'
+               OR (CAST(:filter AS VARCHAR) = 'CORE'
+                   AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
+               OR (CAST(:filter AS VARCHAR) = 'BATCH_REP'
+                   AND u.club_role = 'BATCH_REPRESENTATIVE')
+               OR (CAST(:filter AS VARCHAR) = 'STUDENTS'
+                   AND (u.club_role = 'STUDENT' OR u.club_role IS NULL))
+            ORDER BY CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
+                          THEN u.leetcode_rating ELSE u.rating END DESC NULLS LAST,
+                     u.id ASC
             """,
-            countQuery = "SELECT count(*) FROM users",
+            countQuery = """
+            SELECT count(*)
+            FROM users u
+            WHERE CAST(:filter AS VARCHAR) = 'ALL'
+               OR (CAST(:filter AS VARCHAR) = 'CORE'
+                   AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
+               OR (CAST(:filter AS VARCHAR) = 'BATCH_REP'
+                   AND u.club_role = 'BATCH_REPRESENTATIVE')
+               OR (CAST(:filter AS VARCHAR) = 'STUDENTS'
+                   AND (u.club_role = 'STUDENT' OR u.club_role IS NULL))
+            """,
             nativeQuery = true)
-    Page<LeaderboardEntryProjection> findLeaderboardPage(Pageable pageable);
+    Page<LeaderboardEntryProjection> findFilteredLeaderboardPage(
+            @Param("platform") String platform,
+            @Param("filter") String filter,
+            Pageable pageable);
 
     /**
      * Case-insensitive keyword search matching user names or Codeforces handles.
