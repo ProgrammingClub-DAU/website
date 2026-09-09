@@ -20,7 +20,27 @@ import {
 import type { HofYear } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
 
-function EventPhotoStack({ title, isEven }: { title: string; isEven: boolean }) {
+/**
+ * The polaroid stack beside a Hall of Fame entry.
+ *
+ * Renders nothing unless the entry carries its own {@code photo}. It previously
+ * showed one shared placeholder on every entry, with alt text claiming to be
+ * "Event photo for {title}" — the same graphic presented as a photograph of
+ * each distinct achievement. The frames and rotation are kept here so a real
+ * photo drops straight in: set `photo` on the entry in
+ * `lib/content/hall-of-fame.ts` and its polaroid appears.
+ */
+function EventPhotoStack({
+  title,
+  isEven,
+  photo,
+}: {
+  title: string;
+  isEven: boolean;
+  photo?: string;
+}) {
+  if (!photo) return null;
+
   const frontRotate = isEven ? "-rotate-2 group-hover/photo:rotate-0" : "rotate-2 group-hover/photo:rotate-0";
   const backRotate = isEven ? "rotate-4 group-hover/photo:rotate-6" : "-rotate-4 group-hover/photo:-rotate-6";
 
@@ -44,7 +64,7 @@ function EventPhotoStack({ title, isEven }: { title: string; isEven: boolean }) 
       >
         <div className="relative h-full w-full overflow-hidden rounded-xs bg-surface-2">
           <Image
-            src="/dummySquare.png"
+            src={photo}
             alt={`Event photo for ${title}`}
             width={160}
             height={160}
@@ -197,7 +217,7 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                         </p>
                       </TimelineCard>
 
-                      <EventPhotoStack title={entry.title} isEven={i % 2 === 0} />
+                      <EventPhotoStack title={entry.title} isEven={i % 2 === 0} photo={entry.photo} />
                     </div>
                   </TimelineEntry>
                 ))}

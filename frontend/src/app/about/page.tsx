@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
 import BorderGlow from "@/components/site/border-glow";
@@ -94,33 +93,20 @@ export default function AboutPage() {
       {/* Community Showcase & Culture Feature */}
       <Section className="pb-16">
         <div className="overflow-hidden rounded-2xl border border-hairline bg-surface transition-all duration-300 hover:border-border hover:shadow-panel">
-          <div className="grid gap-0 lg:grid-cols-12">
-            {/* Photo Container */}
-            <div className="group relative min-h-[300px] sm:min-h-[360px] overflow-hidden lg:col-span-7">
-              <Image
-                src="/dummyImage.jpg"
-                alt="Programming Club DAU gathering and celebration"
-                width={960}
-                height={640}
-                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent lg:hidden" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-xl border border-hairline-strong bg-background/80 px-4 py-2.5 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 animate-pulse rounded-full bg-cf-pupil" />
-                  <span className="text-xs font-semibold tracking-tight text-foreground">
-                    DAU Campus Gatherings & Celebrations
-                  </span>
-                </div>
-                <span className="rounded-full border border-hairline bg-surface-2/80 px-2 py-0.5 font-mono text-[10px] text-fg-muted uppercase">
-                  Community
-                </span>
-              </div>
-            </div>
+          {/*
+            The photo half of this panel is deliberately absent. It was built
+            around /dummyImage.jpg, a placeholder, and a stock-looking filler
+            image on the About page undercuts the section it illustrates. The
+            copy stands on its own, so the story column spans the full width
+            until a real club photograph exists.
 
+            To restore it: put the photo in /public, wrap this in
+            `<div className="grid gap-0 lg:grid-cols-12">`, add the image
+            column as `lg:col-span-7`, and give this block `lg:col-span-5`.
+          */}
+          <div>
             {/* Story & Vibe */}
-            <div className="flex flex-col justify-between p-8 lg:col-span-5 lg:p-10">
+            <div className="flex flex-col justify-between p-8 lg:p-10">
               <div>
                 <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
                   Culture & Community
