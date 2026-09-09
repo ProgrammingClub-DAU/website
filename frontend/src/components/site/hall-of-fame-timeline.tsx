@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AnimatedBeam } from "@/components/site/animated-beam";
@@ -18,6 +19,62 @@ import {
 } from "@/components/site/timeline";
 import type { HofYear } from "@/lib/content/hall-of-fame";
 import { cn } from "@/lib/utils";
+
+/**
+ * The polaroid stack beside a Hall of Fame entry.
+ *
+ * Renders nothing unless the entry carries its own {@code photo}. It previously
+ * showed one shared placeholder on every entry, with alt text claiming to be
+ * "Event photo for {title}" — the same graphic presented as a photograph of
+ * each distinct achievement. The frames and rotation are kept here so a real
+ * photo drops straight in: set `photo` on the entry in
+ * `lib/content/hall-of-fame.ts` and its polaroid appears.
+ */
+function EventPhotoStack({
+  title,
+  isEven,
+  photo,
+}: {
+  title: string;
+  isEven: boolean;
+  photo?: string;
+}) {
+  if (!photo) return null;
+
+  const frontRotate = isEven ? "-rotate-2 group-hover/photo:rotate-0" : "rotate-2 group-hover/photo:rotate-0";
+  const backRotate = isEven ? "rotate-4 group-hover/photo:rotate-6" : "-rotate-4 group-hover/photo:-rotate-6";
+
+  return (
+    <div className="group/photo relative flex shrink-0 items-center justify-center p-3 sm:p-4 self-center sm:self-center">
+      {/* Background frame with solid white border and polaroid card look */}
+      <div
+        className={cn(
+          "absolute size-28 sm:size-32 md:size-36 rounded-xs border-2 sm:border-[3px] border-white bg-white/25 shadow-lg backdrop-blur-xs transition-transform duration-300",
+          backRotate
+        )}
+        aria-hidden
+      />
+
+      {/* Foreground polaroid photo with white border */}
+      <div
+        className={cn(
+          "relative size-28 sm:size-32 md:size-36 rounded-xs border-2 sm:border-[3px] border-white bg-white p-1 sm:p-1.5 shadow-2xl transition-all duration-300 group-hover/photo:scale-105",
+          frontRotate
+        )}
+      >
+        <div className="relative h-full w-full overflow-hidden rounded-xs bg-surface-2">
+          <Image
+            src={photo}
+            alt={`Event photo for ${title}`}
+            width={160}
+            height={160}
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/photo:scale-105"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Reads the beam's two colours off the document.
@@ -139,25 +196,29 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                       yearIndex === visible.length - 1 && i === year.entries.length - 1
                     }
                   >
-                    <TimelineCard>
-                      <div className="flex items-center gap-2.5">
-                        <RankDot rank={entry.cf} />
-                        <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
-                          {entry.cat}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold tracking-tight text-pretty">
-                          {entry.title}
-                        </h3>
-                        <p className="mt-2 font-mono text-xs text-fg-muted">
-                          {entry.people}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-8">
+                      <TimelineCard className="flex-1">
+                        <div className="flex items-center gap-2.5">
+                          <RankDot rank={entry.cf} />
+                          <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
+                            {entry.cat}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold tracking-tight text-pretty">
+                            {entry.title}
+                          </h3>
+                          <p className="mt-2 font-mono text-xs text-fg-muted">
+                            {entry.people}
+                          </p>
+                        </div>
+                        <p className="border-t border-hairline pt-3.5 text-[15px] leading-[1.5] text-fg-muted text-pretty">
+                          {entry.note}
                         </p>
-                      </div>
-                      <p className="border-t border-hairline pt-3.5 text-[15px] leading-[1.5] text-fg-muted text-pretty">
-                        {entry.note}
-                      </p>
-                    </TimelineCard>
+                      </TimelineCard>
+
+                      <EventPhotoStack title={entry.title} isEven={i % 2 === 0} photo={entry.photo} />
+                    </div>
                   </TimelineEntry>
                 ))}
               </Timeline>

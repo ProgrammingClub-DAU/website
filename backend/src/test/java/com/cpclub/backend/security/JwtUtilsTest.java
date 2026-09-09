@@ -119,4 +119,36 @@ class JwtUtilsTest {
 
         assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(utils, "validateSecret"));
     }
+
+    /**
+     * Reads the {@code alg} straight out of the token's header segment rather
+     * than through the parser, so the assertion does not depend on the same key
+     * derivation it is meant to be checking.
+     */
+    private static String algorithmOf(String token) {
+        return new String(
+                java.util.Base64.getUrlDecoder().decode(token.split("\\.")[0]),
+                java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @Test
+    @DisplayName("Tokens are signed with HS256 regardless of how long the secret is")
+    void generateJwtToken_AlwaysUsesHs256() {
+        // Keys.hmacShaKeyFor picks the key's algorithm from its length, so a
+        // secret of 64 bytes or more yields an HmacSHA512 key. If the signing
+        // algorithm were inferred from the key rather than stated, these two
+        // secrets would produce different `alg` headers — which is exactly the
+        // silent change this test exists to catch. TEST_SECRET is 69 bytes.
+        String longSecretToken = jwtUtils.generateTokenFromEmail("a@dau.ac.in", 1L, "ROLE_USER");
+
+        JwtUtils shortKeyUtils = new JwtUtils();
+        ReflectionTestUtils.setField(shortKeyUtils, "jwtSecret", "exactly-thirty-two-bytes-secret!");
+        ReflectionTestUtils.setField(shortKeyUtils, "jwtExpirationMs", 3600000);
+        String shortSecretToken = shortKeyUtils.generateTokenFromEmail("b@dau.ac.in", 2L, "ROLE_USER");
+
+        assertTrue(algorithmOf(longSecretToken).contains("\"alg\":\"HS256\""),
+                "64+ byte secret must still sign HS256, got: " + algorithmOf(longSecretToken));
+        assertTrue(algorithmOf(shortSecretToken).contains("\"alg\":\"HS256\""),
+                "32 byte secret must sign HS256, got: " + algorithmOf(shortSecretToken));
+    }
 }
