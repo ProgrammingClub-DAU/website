@@ -407,11 +407,15 @@ export default function AboutPage() {
           title="Past results and alumni."
           action={{ href: "/hall-of-fame", label: "All years" }}
         />
+        {/* Cards share the row rather than sitting at a fixed 280px, matching
+            the same teaser on the home page. With one confirmed record, a lone
+            narrow card at the left edge of a wide scroller reads as content
+            that failed to load. They still scroll once there are enough. */}
         <ul className="no-scrollbar mt-8 flex gap-4 overflow-x-auto pb-2">
           {hallOfFameTeaser.map((entry) => (
             <li
               key={entry.title}
-              className="w-70 flex-none rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
+              className="min-w-70 flex-1 rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">

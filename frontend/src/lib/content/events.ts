@@ -9,15 +9,37 @@ export type ClubEvent = {
   dots: CfRankKey[];
 };
 
-export const eventTypes = ["All events", "Flagship", "Contests", "Workshops", "ICPC"] as const;
+export type NextEvent = {
+  title: string;
+  summary: string;
+  /** Rows of the detail table beside the copy: date, time, venue, format. */
+  meta: { k: string; v: string }[];
+};
 
-export const nextEventMeta = [
-  { k: "Date", v: "[PLACEHOLDER]" },
-  { k: "Time", v: "[PLACEHOLDER] IST" },
-  { k: "Venue", v: "[PLACEHOLDER] Lab / online" },
-  { k: "Format", v: "[PLACEHOLDER] problems, duration" },
-];
+/**
+ * The event pinned to the top of the events page, or `null` when nothing is
+ * scheduled.
+ *
+ * It used to be a fixed block of copy reading "[PLACEHOLDER] Event name" under
+ * a live "Next up" pulse, beside a detail table whose every row said
+ * [PLACEHOLDER] — an announcement, in the styling of a real one, for an event
+ * that did not exist. The page now renders an honest panel instead when this is
+ * null, so announcing a real round is a matter of filling this in.
+ */
+export const nextEvent: NextEvent | null = null;
 
+/**
+ * Events the club has actually held.
+ *
+ * Six of the seven entries here were invented — a winter long contest, a
+ * beginner C series, an ICPC practice camp, a weekly round series, a guest
+ * session and an intra-DAU contest — each marked [PLACEHOLDER] in its own title
+ * and body, and each rendered on the page in exactly the layout a real event
+ * gets. They have been removed rather than relabelled: an archive that lists
+ * events that never happened is not an archive.
+ *
+ * Add real events here as they are confirmed against club records.
+ */
 export const events: ClubEvent[] = [
   {
     type: "Contests",
@@ -27,52 +49,17 @@ export const events: ClubEvent[] = [
     meta: "120 participants",
     dots: ["master", "candidate", "expert", "specialist"],
   },
-  {
-    type: "Flagship",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] Intra-DAU Programming Contest",
-    body: "[PLACEHOLDER] The club-wide campus contest. Add format, rounds, and prizes.",
-    meta: "[TBC] participants",
-    dots: ["grandmaster", "candidate", "expert"],
-  },
-  {
-    type: "Contests",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] Winter long contest",
-    body: "[PLACEHOLDER] Multi-day contest over the break. Add duration and problem count.",
-    meta: "[TBC] participants",
-    dots: ["expert", "specialist"],
-  },
-  {
-    type: "Workshops",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] Beginner C and logic-building series",
-    body: "[PLACEHOLDER] Sessions for first-years: syntax, complexity, and a first set of problems.",
-    meta: "[TBC] attendees",
-    dots: ["newbie", "pupil"],
-  },
-  {
-    type: "ICPC",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] ICPC prelims practice camp",
-    body: "[PLACEHOLDER] Team practice on past regional sets, with a debrief per session.",
-    meta: "[TBC] teams",
-    dots: ["master", "candidate", "expert"],
-  },
-  {
-    type: "Contests",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] Weekly round series",
-    body: "[PLACEHOLDER] The regular weekly contest. Add the season and number of rounds held.",
-    meta: "[TBC] rounds",
-    dots: ["specialist", "expert"],
-  },
-  {
-    type: "Workshops",
-    date: "[PLACEHOLDER] Month, Year",
-    title: "[PLACEHOLDER] Guest session",
-    body: "[PLACEHOLDER] Alumni or invited speaker session — topic and speaker, with their consent.",
-    meta: "[TBC] attendees",
-    dots: ["candidate"],
-  },
+];
+
+/**
+ * Filter chips for the timeline, derived from the events that exist.
+ *
+ * Previously a fixed list of all four categories, which meant three of the four
+ * chips filtered down to an empty state — a control that only ever reports
+ * having found nothing. Deriving it means a category appears once the club has
+ * run something in it.
+ */
+export const eventTypes: string[] = [
+  "All events",
+  ...Array.from(new Set(events.map((e) => e.type))),
 ];
