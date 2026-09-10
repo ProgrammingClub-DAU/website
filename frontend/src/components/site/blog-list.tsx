@@ -10,16 +10,32 @@ export function BlogList({ posts }: { posts: Post[] }) {
   const [tag, setTag] = useState("All");
   const visible = tag === "All" ? posts : posts.filter((p) => p.tags.includes(tag));
 
+  // Nothing published at all is a different state from a filter matching
+  // nothing, and it needs a different sentence: telling a reader to "pick
+  // another tag" when there is only one tag, and no posts behind it, sends them
+  // looking for content that does not exist. The chips go too — a lone "All"
+  // chip filtering an empty list is a control with nothing to control.
+  const isEmptyBlog = posts.length === 0;
+
   return (
     <>
-      <FilterChips label="Filter by tag" options={blogTags} value={tag} onChange={setTag} />
+      {!isEmptyBlog && (
+        <FilterChips label="Filter by tag" options={blogTags} value={tag} onChange={setTag} />
+      )}
 
       {visible.length === 0 ? (
-        <div className="mt-10">
-          <EmptyState
-            title="No posts with that tag yet."
-            hint="Pick another tag, or write the first one."
-          />
+        <div className={isEmptyBlog ? undefined : "mt-10"}>
+          {isEmptyBlog ? (
+            <EmptyState
+              title="No editorials published yet."
+              hint="Write-ups from club rounds will appear here once the first one goes live."
+            />
+          ) : (
+            <EmptyState
+              title="No posts with that tag yet."
+              hint="Pick another tag, or write the first one."
+            />
+          )}
         </div>
       ) : (
         <div className="mt-10 border-t border-hairline">

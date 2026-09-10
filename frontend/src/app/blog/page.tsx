@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
-import { Eyebrow, PageTitle, SampleBadge, Section } from "@/components/site/primitives";
+import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { BlogList } from "@/components/site/blog-list";
 import { featuredPost, posts } from "@/lib/content/blog";
 
@@ -17,62 +17,63 @@ export default function BlogPage() {
   return (
     <>
       <Section className="pt-10 pb-10 md:pt-14">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Eyebrow>Blog</Eyebrow>
-            <PageTitle className="max-w-[20ch]">
-              Editorials and write-ups.
-            </PageTitle>
-          </div>
-          <SampleBadge>Sample content</SampleBadge>
-        </div>
+        <Eyebrow>Blog</Eyebrow>
+        <PageTitle className="max-w-[20ch]">Editorials and write-ups.</PageTitle>
+        <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
+          Solutions and problem breakdowns from club rounds, written by the members who
+          solved them.
+        </p>
       </Section>
 
-      <Section className="pb-10">
-        {/* The article element stays: BorderGlow renders a div, and the
-            featured post is a self-contained piece of content. */}
-        <article>
-          <BorderGlow contentClassName="grid gap-8 p-9 md:grid-cols-2 md:items-center">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">
-                Featured
-              </span>
-              <span className="font-mono text-[11px] text-fg-subtle">
-                {featuredPost.date} · {featuredPost.read}
-              </span>
-            </div>
-            <h2 className="mt-5 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em] text-pretty">
-              {featuredPost.title}
-            </h2>
-            <p className="mt-3 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-              {featuredPost.excerpt}
-            </p>
-            <div className="mt-6 flex items-center gap-2.5">
-              <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-[11px] text-fg-muted">
-                {featuredPost.initials}
-              </span>
-              <span className="font-mono text-xs text-fg-muted">{featuredPost.author}</span>
-            </div>
-          </div>
+      {/* The featured slot only exists when something is pinned to it. It used
+          to render an invented post beside a hard-coded code sample, both of
+          which read as the club's published work. */}
+      {featuredPost && (
+        <Section className="pb-10">
+          {/* The article element stays: BorderGlow renders a div, and the
+              featured post is a self-contained piece of content. */}
+          <article>
+            <BorderGlow
+              contentClassName={
+                featuredPost.snippet
+                  ? "grid gap-8 p-9 md:grid-cols-2 md:items-center"
+                  : "p-9"
+              }
+            >
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">
+                    Featured
+                  </span>
+                  <span className="font-mono text-[11px] text-fg-subtle">
+                    {featuredPost.date} · {featuredPost.read}
+                  </span>
+                </div>
+                <h2 className="mt-5 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em] text-pretty">
+                  {featuredPost.title}
+                </h2>
+                <p className="mt-3 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
+                  {featuredPost.excerpt}
+                </p>
+                <div className="mt-6 flex items-center gap-2.5">
+                  <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-[11px] text-fg-muted">
+                    {featuredPost.initials}
+                  </span>
+                  <span className="font-mono text-xs text-fg-muted">
+                    {featuredPost.author}
+                  </span>
+                </div>
+              </div>
 
-          <pre className="overflow-x-auto rounded-control border border-hairline bg-surface-2 p-5 font-mono text-xs leading-5 text-fg-muted">
-            <code>
-              <span className="text-fg-subtle">{"// solution sketch"}</span>
-              {"\n"}
-              <span className="text-cf-expert">for</span>
-              {" (int i = 1; i <= n; i++)\n"}
-              {"    dp[i] = min(dp[i-1] + a[i], best);\n"}
-              <span className="text-cf-candidate">cout</span>
-              {" << dp[n] << "}
-              <span className="text-cf-pupil">{"'\\n'"}</span>
-              {";\n\n"}
-              <span className="text-fg-subtle">{"// O(n) time, O(1) extra space"}</span>
-            </code>
-          </pre>
-          </BorderGlow>
-        </article>
-      </Section>
+              {featuredPost.snippet && (
+                <pre className="overflow-x-auto rounded-control border border-hairline bg-surface-2 p-5 font-mono text-xs leading-5 text-fg-muted">
+                  <code>{featuredPost.snippet}</code>
+                </pre>
+              )}
+            </BorderGlow>
+          </article>
+        </Section>
+      )}
 
       <Section className="pb-10">
         <BlogList posts={posts} />

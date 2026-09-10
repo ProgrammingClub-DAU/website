@@ -81,12 +81,12 @@ export function Footer() {
           <a href={site.github} className={linkClass} target="_blank" rel="noopener noreferrer">
             GitHub org
           </a>
-          <span className="text-sm leading-relaxed text-fg-subtle">
-            [PLACEHOLDER] Codeforces group
-          </span>
-          <span className="text-sm leading-relaxed text-fg-subtle">
-            [PLACEHOLDER] Contact for joining
-          </span>
+          {/* A Codeforces group link and a contact line used to sit here as two
+              greyed-out spans reading "[PLACEHOLDER]", on every page of the
+              site, because neither destination was known. Dead entries in a
+              footer are worse than a short footer: they advertise places to go
+              and then refuse to go there. Add each back as a real <a> once its
+              URL exists. */}
         </div>
       </div>
 
