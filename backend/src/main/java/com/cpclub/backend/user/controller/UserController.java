@@ -3,9 +3,11 @@ package com.cpclub.backend.user.controller;
 import com.cpclub.backend.common.dto.ApiResponse;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.user.dto.PublicUserResponseDto;
+import com.cpclub.backend.user.dto.UpdateClubRoleRequest;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
+import com.cpclub.backend.user.dto.UserLookupDto;
 import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -88,6 +90,17 @@ public class UserController {
     public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(@PathVariable Long id) {
         PublicUserResponseDto user = userService.getPublicUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user, "Fetched user successfully"));
+    }
+
+    /**
+     * Retrieves the full member view used by administrators when managing attendance.
+     */
+    @GetMapping("/{id}/lookup")
+    @Operation(summary = "Look up a member (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserLookupDto>> lookupUserById(@PathVariable Long id) {
+        UserLookupDto user = userService.lookupUserById(id);
+        return ResponseEntity.ok(ApiResponse.success(user, "User lookup retrieved successfully"));
     }
 
     /**
@@ -189,6 +202,20 @@ public class UserController {
     ) {
         UserResponseDto updatedUser = userService.updateUserRole(id, request);
         return ResponseEntity.ok(ApiResponse.success(updatedUser, "User role updated successfully"));
+    }
+
+    /**
+     * Updates a member's club position without changing their platform authorization role.
+     */
+    @PutMapping("/{id}/club-role")
+    @Operation(summary = "Update member club role (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateClubRole(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateClubRoleRequest request
+    ) {
+        UserResponseDto updatedUser = userService.updateClubRole(id, request);
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Club role updated successfully"));
     }
 
     /**
