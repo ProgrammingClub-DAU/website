@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -137,5 +138,19 @@ class UserEndpointAuthorizationTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(put("/api/users/999999/club-role"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("An admin can reach the Phase 2 user routes")
+    void phaseTwoUserRoutesAllowAdmins() throws Exception {
+        // A missing member yields 404 only after both URL and method authorization
+        // have allowed the request to reach the service layer.
+        mockMvc.perform(get("/api/users/999999/lookup"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/users/999999/club-role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clubRole\":\"CORE\"}"))
+                .andExpect(status().isNotFound());
     }
 }
