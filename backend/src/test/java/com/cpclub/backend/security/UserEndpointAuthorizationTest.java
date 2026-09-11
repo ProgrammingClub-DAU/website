@@ -7,12 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -93,5 +96,46 @@ class UserEndpointAuthorizationTest {
         // reached the controller, which is what this asserts. A 401 would not.
         mockMvc.perform(get("/api/users/999999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Anonymous callers may read the public event listings and detail")
+    void publicEventReadsAreReachableAnonymously() throws Exception {
+        mockMvc.perform(get("/api/events/upcoming"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/events/completed"))
+                .andExpect(status().isOk());
+
+        // No event with this ID exists, so 404 proves the request passed the
+        // public matcher and reached the controller rather than being rejected.
+        mockMvc.perform(get("/api/events/999999"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/events/999999/photos"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Anonymous callers cannot access event administration, gallery writes, or snapshots")
+    void phaseTwoProtectedRoutesRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/gallery/members"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/snapshots/999999/codeforces"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("A non-admin cannot access Phase 2 admin routes")
+    void phaseTwoAdminRoutesRejectNonAdmins() throws Exception {
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/gallery/members"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/users/999999/lookup"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/users/999999/club-role"))
+                .andExpect(status().isForbidden());
     }
 }
