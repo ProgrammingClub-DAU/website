@@ -5,8 +5,11 @@ import com.cpclub.backend.common.exception.GlobalExceptionHandler;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.controller.UserController;
 import com.cpclub.backend.user.dto.PublicUserResponseDto;
+import com.cpclub.backend.user.dto.UserLookupDto;
+import com.cpclub.backend.user.dto.UpdateClubRoleRequest;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.service.UserService;
 import org.junit.jupiter.api.AfterEach;
@@ -124,6 +127,25 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/users/{id}/lookup - Should return the admin lookup view")
+    void shouldLookupUserById() throws Exception {
+        UserLookupDto user = new UserLookupDto(
+                5L, "Charlie", "charlie@example.com", "01700000000", null,
+                "charlie_cf", 2000, null, null, null, null, null, null,
+                ClubRole.CORE, 2024
+        );
+        when(userService.lookupUserById(5L)).thenReturn(user);
+
+        mockMvc.perform(get("/api/users/5/lookup"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.email", is("charlie@example.com")))
+                .andExpect(jsonPath("$.data.clubRole", is("CORE")));
+
+        verify(userService).lookupUserById(5L);
+    }
+
+    @Test
     @DisplayName("PUT /api/users/{id}/handle - Should update Codeforces handle when caller owns the resource")
     void shouldUpdateCodeforcesHandle() throws Exception {
         authenticateAs("alice@example.com", "ROLE_USER");
@@ -167,6 +189,35 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Validation failed")));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/{id}/club-role - Should update club role")
+    void shouldUpdateClubRole() throws Exception {
+        UserResponseDto updatedUser = userDto(1L, "Alice", "alice@example.com", "alice_cf", 1600, Role.ROLE_USER);
+        when(userService.updateClubRole(eq(1L), any(UpdateClubRoleRequest.class))).thenReturn(updatedUser);
+
+        mockMvc.perform(put("/api/users/1/club-role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clubRole\":\"CORE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.id", is(1)));
+
+        verify(userService).updateClubRole(eq(1L), argThat(request -> request.clubRole() == ClubRole.CORE));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/{id}/club-role - Should reject a missing club role")
+    void shouldRejectMissingClubRole() throws Exception {
+        mockMvc.perform(put("/api/users/1/club-role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clubRole\":null}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", containsString("Validation failed")));
+
+        verify(userService, never()).updateClubRole(any(), any());
     }
 
     /**
