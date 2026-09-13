@@ -87,10 +87,10 @@ export default function LoginForm() {
             cloud with an edge, while a text-shadow follows the letters and lets
             the field keep flowing right up to them. See .text-halo. */}
         <div className="space-y-3 text-center">
-          <p className="text-halo font-mono text-[11px] font-semibold tracking-[0.15em] text-primary uppercase">
+          <p className="text-halo font-mono text-label font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
           </p>
-          <h1 className="text-halo text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-semibold tracking-tight text-balance text-foreground">
+          <h1 className="text-halo font-heading text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-medium tracking-tight text-balance text-foreground">
             Solve. Rank up. Climb the board.
           </h1>
         </div>
@@ -110,7 +110,7 @@ export default function LoginForm() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+              <Label htmlFor="email" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
                 EMAIL ADDRESS
               </Label>
               <Input
@@ -130,7 +130,7 @@ export default function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+              <Label htmlFor="password" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
                 PASSWORD
               </Label>
               <Input
@@ -184,7 +184,7 @@ export default function LoginForm() {
 
         {/* The rank ladder the particles are drawn from. */}
         <div className="mt-8 flex flex-col items-center gap-2.5" aria-hidden>
-          <p className="font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+          <p className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
             RANK TRACK
           </p>
           <div className="flex gap-2.5">

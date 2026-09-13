@@ -372,14 +372,14 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3 relative overflow-hidden">
                 <div className="text-2xl font-bold opacity-30 blur-[2px]">247</div>
-                <div className="text-[11px] text-fg-muted">Total Solved</div>
+                <div className="text-label text-fg-muted">Total Solved</div>
                 <div className="absolute inset-0 flex items-center justify-center bg-surface-2/60 backdrop-blur-[1px]">
                   <Lock className="size-4 text-fg-subtle" />
                 </div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
                 <div className="text-2xl font-bold">{cfHistory.length}</div>
-                <div className="text-[11px] text-fg-muted">Contests</div>
+                <div className="text-label text-fg-muted">Contests</div>
               </div>
             </div>
           </div>

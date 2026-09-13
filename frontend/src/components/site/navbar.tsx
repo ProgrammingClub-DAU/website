@@ -49,7 +49,7 @@ function Wordmark({ className }: { className?: string }) {
       />
       <span className="flex items-baseline gap-1.5">
         <span className="font-semibold text-foreground tracking-tight">{site.name}</span>
-        <span className="rounded-md border border-hairline bg-surface-2/80 px-1.5 py-0.5 font-mono text-[11px] font-medium text-fg-muted">
+        <span className="rounded-md border border-hairline bg-surface-2/80 px-1.5 py-0.5 font-mono text-label font-medium text-fg-muted">
           {site.suffix}
         </span>
       </span>
@@ -98,7 +98,7 @@ export function Navbar() {
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
-                "rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors whitespace-nowrap",
+                "rounded-full px-3 py-1.5 text-meta font-medium transition-colors whitespace-nowrap",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                 isActive(item.href)
                   ? "bg-surface-2 text-foreground font-semibold shadow-xs"
@@ -139,7 +139,7 @@ export function Navbar() {
                   href={`/profile/${user?.id}`}
                   className="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-3 py-1 text-xs font-medium text-foreground transition-all hover:border-border hover:bg-surface-2"
                 >
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-label font-bold text-primary">
                     {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
                   </span>
                   <span className="max-w-[130px] truncate">{user?.fullName || "Profile"}</span>
@@ -252,7 +252,7 @@ export function Navbar() {
                         href={`/profile/${user?.id}`}
                         className="flex items-center justify-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-2"
                       >
-                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-label font-bold text-primary">
                           {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
                         </span>
                         <span>{user?.fullName}</span>

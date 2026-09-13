@@ -64,7 +64,7 @@ export function DomeGalleryStage({ tiles }: { tiles: GalleryTile[] }) {
         />
       </div>
 
-      <p className="mt-4 font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
+      <p className="mt-4 font-mono text-label tracking-caps text-fg-subtle uppercase">
         Drag to rotate · click a photo for event details · Esc to close
       </p>
     </div>

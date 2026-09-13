@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <Section className="flex min-h-[60vh] flex-col justify-center py-24">
       <Eyebrow>404</Eyebrow>
-      <h1 className="mt-6 max-w-[18ch] text-[clamp(2rem,5vw,3rem)] leading-[1.05] font-[510] tracking-[-0.02em] text-balance">
+      <h1 className="mt-6 max-w-[18ch] font-heading text-[clamp(2rem,5vw,3rem)] leading-[1.05] font-medium tracking-[-0.02em] text-balance">
         That page is not on the board.
       </h1>
       <p className="mt-5 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">

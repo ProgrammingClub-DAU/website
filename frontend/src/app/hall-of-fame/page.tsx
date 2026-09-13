@@ -32,7 +32,7 @@ export default function HallOfFamePage() {
 
       <Section className="pt-10 pb-22">
         <div className="flex flex-wrap items-center justify-between gap-5 border-t border-hairline pt-8">
-          <p className="max-w-[52ch] text-[15px] leading-[1.5] text-fg-muted text-pretty">
+          <p className="max-w-[52ch] text-body leading-[1.5] text-fg-muted text-pretty">
             Have a result that belongs here? Send the contest, year, and standing to the
             core team and it gets added with a source.
           </p>

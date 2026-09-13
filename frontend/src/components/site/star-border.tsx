@@ -68,7 +68,7 @@ const StarBorder = <T extends React.ElementType = 'button'>({
         }}
       ></div>
       <div
-        className={`relative z-1 text-center ${innerClassName || "border text-[16px] py-[16px] px-[26px] rounded-[20px]"}`}
+        className={`relative z-1 text-center ${innerClassName || "border text-base py-[16px] px-[26px] rounded-[20px]"}`}
         style={{
           ...(backgroundColor ? { background: backgroundColor } : null),
           ...(textColor ? { color: textColor } : null),

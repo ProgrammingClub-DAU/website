@@ -148,7 +148,7 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                 <button
                   key={r}
                   onClick={() => setRoleFilter(r)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
+                  className={`rounded-full border px-2.5 py-1 text-label font-medium transition-all ${
                     roleFilter === r
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-fg-muted hover:border-hairline-strong hover:text-foreground"
@@ -235,19 +235,19 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                             {entry.codeforcesHandle}
                           </span>
                           {entry.clubRole && entry.clubRole !== "STUDENT" && (
-                            <span className="rounded-full border border-border bg-background px-1.5 py-0.2 text-[9px] text-fg-muted">
+                            <span className="rounded-full border border-border bg-background px-1.5 py-0.2 text-nano text-fg-muted">
                               {getClubRoleLabel(entry.clubRole)}
                             </span>
                           )}
                         </div>
-                        <p className="truncate text-[11px] text-fg-muted">{entry.name}</p>
+                        <p className="truncate text-label text-fg-muted">{entry.name}</p>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
                       <div className="text-sm font-bold">{entry.rating}</div>
                       <div
-                        className="text-[10px] capitalize font-medium"
+                        className="text-micro capitalize font-medium"
                         style={{ color }}
                       >
                         {getRankName(cfRank)}
@@ -334,14 +334,14 @@ export default function LeaderboardDashboard({ entries }: LeaderboardDashboardPr
                   <Users className="size-4" />
                 </div>
                 <div className="text-xl font-bold">{clubStats.totalParticipants}</div>
-                <div className="text-[11px] text-fg-muted">Members</div>
+                <div className="text-label text-fg-muted">Members</div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 p-3">
                 <div className="flex justify-center mb-1 text-cf-master">
                   <Code2 className="size-4" />
                 </div>
                 <div className="text-xl font-bold">{clubStats.rated}</div>
-                <div className="text-[11px] text-fg-muted">Rated on Codeforces</div>
+                <div className="text-label text-fg-muted">Rated on Codeforces</div>
               </div>
             </div>
           </CardContent>
@@ -410,13 +410,13 @@ function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 
         >
           {entry.name}
         </h4>
-        <p className="truncate text-[10px] text-fg-muted">@{entry.codeforcesHandle}</p>
+        <p className="truncate text-micro text-fg-muted">@{entry.codeforcesHandle}</p>
       </div>
 
       <div className="mb-1">
         <div className="text-base font-extrabold">{entry.rating}</div>
         <div
-          className="text-[9px] font-medium capitalize truncate"
+          className="text-nano font-medium capitalize truncate"
           style={{ color }}
         >
           {getRankName(cfRank)}

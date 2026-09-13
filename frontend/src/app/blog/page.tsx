@@ -42,21 +42,21 @@ export default function BlogPage() {
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">
+                  <span className="rounded-full border border-primary px-2.5 py-1 font-mono text-micro tracking-caps-wide text-primary uppercase">
                     Featured
                   </span>
-                  <span className="font-mono text-[11px] text-fg-subtle">
+                  <span className="font-mono text-label text-fg-subtle">
                     {featuredPost.date} · {featuredPost.read}
                   </span>
                 </div>
-                <h2 className="mt-5 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em] text-pretty">
+                <h2 className="mt-5 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em] text-pretty">
                   {featuredPost.title}
                 </h2>
                 <p className="mt-3 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
                   {featuredPost.excerpt}
                 </p>
                 <div className="mt-6 flex items-center gap-2.5">
-                  <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-[11px] text-fg-muted">
+                  <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-label text-fg-muted">
                     {featuredPost.initials}
                   </span>
                   <span className="font-mono text-xs text-fg-muted">
@@ -83,7 +83,7 @@ export default function BlogPage() {
         <div className="flex flex-wrap items-center justify-between gap-5 rounded-panel border border-hairline bg-surface p-8">
           <div>
             <p className="text-lg font-semibold tracking-tight">Write for the club blog</p>
-            <p className="mt-2 max-w-[48ch] text-[15px] leading-[1.5] text-fg-muted text-pretty">
+            <p className="mt-2 max-w-[48ch] text-body leading-[1.5] text-fg-muted text-pretty">
               Members can publish editorials after any club round. Drafts are reviewed by
               the core team before they go live.
             </p>

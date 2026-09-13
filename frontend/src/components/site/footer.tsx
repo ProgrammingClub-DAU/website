@@ -63,7 +63,7 @@ export function Footer() {
 
         {columns.map((col) => (
           <div key={col.heading} className="flex flex-col gap-3">
-            <div className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase">
+            <div className="font-mono text-label tracking-caps text-fg-subtle uppercase">
               {col.heading}
             </div>
             {col.links.map((l) => (
@@ -75,7 +75,7 @@ export function Footer() {
         ))}
 
         <div className="flex flex-col gap-3">
-          <div className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase">
+          <div className="font-mono text-label tracking-caps text-fg-subtle uppercase">
             Elsewhere
           </div>
           <a href={site.github} className={linkClass} target="_blank" rel="noopener noreferrer">
@@ -91,7 +91,7 @@ export function Footer() {
       </div>
 
       <div className="container-page pb-10">
-        <div className="border-t border-hairline pt-6 font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
+        <div className="border-t border-hairline pt-6 font-mono text-label tracking-caps text-fg-subtle uppercase">
           © {new Date().getFullYear()} {site.fullName}
         </div>
       </div>

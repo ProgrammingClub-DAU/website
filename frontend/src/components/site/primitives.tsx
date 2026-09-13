@@ -9,7 +9,7 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   return (
     <div
       className={cn(
-        "font-mono text-[13px] tracking-[0.14em] text-fg-muted uppercase",
+        "font-mono text-meta tracking-caps-wide text-fg-muted uppercase",
         className
       )}
     >
@@ -38,14 +38,14 @@ export function SectionHeader({
     >
       <div>
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h2 className="mt-4 text-[clamp(1.625rem,3.4vw,2.25rem)] font-semibold tracking-[-0.02em] text-balance">
+        <h2 className="mt-4 font-heading text-[clamp(1.625rem,3.4vw,2.25rem)] font-medium tracking-[-0.02em] text-balance">
           {title}
         </h2>
       </div>
       {action && (
         <Link
           href={action.href}
-          className="rounded-control py-1.5 font-mono text-[13px] tracking-[0.06em] text-primary uppercase transition-colors hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+          className="rounded-control py-1.5 font-mono text-meta tracking-caps text-primary uppercase transition-colors hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
           {action.label} →
         </Link>
@@ -89,7 +89,7 @@ export function RankLegend({ className }: { className?: string }) {
             style={{ background: r.color }}
             aria-hidden
           />
-          <span className="font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
+          <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
             {r.name}
           </span>
         </li>
@@ -115,8 +115,8 @@ export function Section({
 export function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="rounded-panel border border-dashed border-border px-4 py-14 text-center">
-      <p className="text-[17px] font-semibold">{title}</p>
-      <p className="mt-2 text-[15px] text-fg-muted">{hint}</p>
+      <p className="text-lead font-semibold">{title}</p>
+      <p className="mt-2 text-body text-fg-muted">{hint}</p>
     </div>
   );
 }
@@ -133,7 +133,7 @@ export function PageTitle({ children, className }: { children: ReactNode; classN
   return (
     <h1
       className={cn(
-        "mt-6 text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-[510] tracking-[-0.02em] text-balance",
+        "mt-6 font-heading text-[clamp(2.125rem,5.4vw,3.5rem)] leading-[1.02] font-medium tracking-[-0.03em] text-balance",
         className
       )}
     >

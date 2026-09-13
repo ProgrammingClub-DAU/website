@@ -398,7 +398,7 @@ export function TimelineEnd({ label }: { label: string }) {
           aria-hidden
         />
       </div>
-      <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase">
+      <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
         {label}
       </span>
     </div>

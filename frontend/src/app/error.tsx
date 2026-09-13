@@ -30,7 +30,7 @@ export default function Error({
   return (
     <Section className="flex min-h-[60vh] flex-col justify-center py-24">
       <Eyebrow>Something went wrong</Eyebrow>
-      <h1 className="mt-6 max-w-[20ch] text-[clamp(2rem,5vw,3rem)] leading-[1.05] font-[510] tracking-[-0.02em] text-balance">
+      <h1 className="mt-6 max-w-[20ch] font-heading text-[clamp(2rem,5vw,3rem)] leading-[1.05] font-medium tracking-[-0.02em] text-balance">
         This page didn&apos;t load.
       </h1>
       <p className="mt-5 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">

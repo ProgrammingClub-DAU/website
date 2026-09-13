@@ -30,10 +30,10 @@ export function EventsTimeline({ events }: { events: ClubEvent[] }) {
       />
 
       <div className="mt-10 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
           Past events
         </h2>
-        <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+        <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
           {String(visible.length).padStart(2, "0")} shown
         </span>
       </div>
@@ -53,21 +53,21 @@ export function EventsTimeline({ events }: { events: ClubEvent[] }) {
                 <TimelineEntry key={event.title} isLast={i === visible.length - 1}>
                   <TimelineCard>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
+                      <span className="font-mono text-label tracking-caps text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
                         {event.date}
                       </span>
-                      <span className="ml-auto rounded-full border border-border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] whitespace-nowrap text-fg-muted uppercase">
+                      <span className="ml-auto rounded-full border border-border px-2.5 py-1 font-mono text-micro tracking-caps-wide whitespace-nowrap text-fg-muted uppercase">
                         {event.type}
                       </span>
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight text-pretty">
                       {event.title}
                     </h3>
-                    <p className="text-[15px] leading-[1.5] text-fg-muted text-pretty">
+                    <p className="text-body leading-[1.5] text-fg-muted text-pretty">
                       {event.body}
                     </p>
                     <div className="flex items-center justify-between gap-3 border-t border-hairline pt-3.5">
-                      <span className="font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
+                      <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                         {event.meta}
                       </span>
                       <span className="flex gap-1" aria-hidden>

@@ -10,7 +10,38 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-heading: var(--font-space-grotesk);
+
+  /* Type scale.
+   *
+   * These six replace 97 hand-written `text-[Npx]` values spread over 25 files,
+   * which had drifted into five near-identical sizes — 9, 10, 11, 13px and a
+   * lone 0.8rem that was 12.8px for no reason anyone recorded.
+   *
+   * Size only. Tracking is deliberately NOT bolted on here: 11px carries both
+   * the uppercase mono labels, which need generous letterspacing, and the
+   * sentence-case stat captions under the leaderboard numbers, which need
+   * none. Pairing the two would letterspace "Total Solved" to match an eyebrow.
+   * The `--tracking-caps-*` pair below is applied to the uppercase labels
+   * instead, so the decision stays with the role rather than the size. */
+  --text-nano: 0.5625rem; /* 9px */
+  --text-micro: 0.625rem; /* 10px */
+  --text-label: 0.6875rem; /* 11px — the dominant label size sitewide */
+  --text-meta: 0.8125rem; /* 13px */
+  --text-body: 0.9375rem; /* 15px */
+  --text-body--line-height: 1.5;
+  --text-lead: 1.0625rem; /* 17px */
+  --text-lead--line-height: 1.45;
+
+  /* Letterspacing for uppercase labels, which is where the real drift was:
+   * 0.06, 0.08, 0.1, 0.12 and 0.14em were all in use, paired with sizes in no
+   * consistent way — the same 11px label sat at 0.08em in one card and 0.12em
+   * in the next. Two steps replace all five, split by the one rule that
+   * actually governs the choice: smaller caps need more air between them.
+   *
+   * Only ever applied alongside `uppercase`. Lowercase text takes neither. */
+  --tracking-caps: 0.1em; /* 11px and up */
+  --tracking-caps-wide: 0.13em; /* 10px and below, and the page eyebrows */
 
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
