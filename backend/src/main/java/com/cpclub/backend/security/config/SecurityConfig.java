@@ -140,9 +140,18 @@ public class SecurityConfig {
                         // filter chain deny-by-default: a new endpoint under /api/users
                         // requires a token until someone deliberately opens it.
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id:[0-9]+}").permitAll()
-                        .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}/photos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/gallery/members", "/api/gallery/members/batches").permitAll()
+                        .requestMatchers("/api/events", "/api/events/**").hasRole("ADMIN")
+                        .requestMatchers("/api/gallery/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id:[0-9]+}/lookup").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{id:[0-9]+}/club-role").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/snapshots/**").authenticated()
+                        .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
