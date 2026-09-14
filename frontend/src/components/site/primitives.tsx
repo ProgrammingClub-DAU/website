@@ -112,14 +112,6 @@ export function Section({
   );
 }
 
-export function SampleBadge({ children = "Sample data" }: { children?: ReactNode }) {
-  return (
-    <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
-      {children}
-    </span>
-  );
-}
-
 export function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="rounded-panel border border-dashed border-border px-4 py-14 text-center">

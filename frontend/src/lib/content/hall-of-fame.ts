@@ -25,7 +25,24 @@ export type HofYear = {
   entries: HofEntry[];
 };
 
-/** Every entry is placeholder copy pending confirmation against club records. */
+/**
+ * The club's record of results.
+ *
+ * Eight of the nine entries this file used to hold were invented and marked
+ * [PLACEHOLDER] in every field — a regional standing, an intra-DAU winner, a
+ * rating milestone, a hackathon result, two alumni highlights, an ICPC
+ * qualification and a long-contest winner — spread across four academic years
+ * to make the archive look established. They were rendered in the same cards,
+ * with the same rank colours, that a real achievement gets, and four of them
+ * were on the home page.
+ *
+ * A hall of fame that lists achievements nobody earned is the one page on a
+ * club site that must not be padded, so they are gone rather than relabelled.
+ * What is left is the single entry the file did not mark as invented, and it
+ * still needs confirming against official standings before it is relied on.
+ *
+ * Add real results here as club records confirm them.
+ */
 export const hallOfFame: HofYear[] = [
   {
     year: "2025–26",
@@ -37,80 +54,6 @@ export const hallOfFame: HofYear[] = [
         people: "Team DAUCoders (Sumeet Verma, Jalp Patel, King-T)",
         note: "Qualified for regionals and placed top 50 in India.",
         cf: "master",
-      },
-      {
-        cat: "ICPC",
-        title: "[PLACEHOLDER] Regional standing",
-        people: "[PLACEHOLDER] Team + members",
-        note: "[PLACEHOLDER] Round reached and rank. Confirm from official standings before publishing.",
-        cf: "master",
-      },
-      {
-        cat: "Contest",
-        title: "[PLACEHOLDER] Intra-DAU winner",
-        people: "[PLACEHOLDER] Winner handle",
-        note: "[PLACEHOLDER] Contest name, date, and score.",
-        cf: "expert",
-      },
-      {
-        cat: "Milestone",
-        title: "[PLACEHOLDER] Rating milestone",
-        people: "[PLACEHOLDER] Member handle",
-        note: "[PLACEHOLDER] Rank crossed and on which platform.",
-        cf: "candidate",
-      },
-    ],
-  },
-  {
-    year: "2024–25",
-    label: "Archive",
-    entries: [
-      {
-        cat: "Hackathon",
-        title: "[PLACEHOLDER] Hackathon result",
-        people: "[PLACEHOLDER] Team",
-        note: "[PLACEHOLDER] Event, organiser, and placement.",
-        cf: "specialist",
-      },
-      {
-        cat: "Alumni",
-        title: "[PLACEHOLDER] Alumni highlight",
-        people: "[PLACEHOLDER] Name, batch",
-        note: "[PLACEHOLDER] Where they are now, with their consent to be listed.",
-        cf: "grandmaster",
-      },
-    ],
-  },
-  {
-    year: "2023–24",
-    label: "Archive",
-    entries: [
-      {
-        cat: "ICPC",
-        title: "[PLACEHOLDER] Qualification",
-        people: "[PLACEHOLDER] Team",
-        note: "[PLACEHOLDER] Prelims/regionals result.",
-        cf: "candidate",
-      },
-      {
-        cat: "Contest",
-        title: "[PLACEHOLDER] Long contest winner",
-        people: "[PLACEHOLDER] Winner handle",
-        note: "[PLACEHOLDER] Contest format and duration.",
-        cf: "pupil",
-      },
-    ],
-  },
-  {
-    year: "Earlier",
-    label: "Pre-2023",
-    entries: [
-      {
-        cat: "Alumni",
-        title: "[PLACEHOLDER] Notable alumni",
-        people: "[PLACEHOLDER] Names",
-        note: "[PLACEHOLDER] Club records from earlier batches, if available.",
-        cf: "newbie",
       },
     ],
   },

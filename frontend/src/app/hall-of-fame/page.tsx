@@ -21,8 +21,8 @@ export default function HallOfFamePage() {
           Results, year by year.
         </PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          ICPC standings, contest wins, and alumni the club keeps a record of. Every entry
-          below is a placeholder until it is confirmed against club records.
+          ICPC standings, contest wins, and alumni the club keeps a record of. Records
+          from earlier sessions are still being gathered.
         </p>
       </Section>
 

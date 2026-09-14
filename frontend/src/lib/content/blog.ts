@@ -7,63 +7,45 @@ export type Post = {
   excerpt: string;
 };
 
-export const featuredPost = {
-  title: "[SAMPLE] Editorial: Weekly Round 13 — the DP nobody solved",
-  excerpt:
-    "A walk through problem E from the last club round: the state definition, why the greedy fails, and the O(n) rewrite.",
-  date: "[DATE]",
-  read: "10 min",
-  author: "arjun_dp",
-  initials: "AR",
+export type FeaturedPost = {
+  title: string;
+  excerpt: string;
+  date: string;
+  read: string;
+  /** The author's own handle, as it appears on their profile. */
+  author: string;
+  /** Initials for the avatar chip. */
+  initials: string;
+  /**
+   * An optional snippet lifted from the post, shown beside it.
+   *
+   * Part of the post's own data rather than markup in the page, which is where
+   * it used to live: the page hard-coded a DP loop that was presented as coming
+   * from the featured editorial and would have stayed on screen unchanged
+   * underneath any real post that replaced it.
+   */
+  snippet?: string;
 };
 
-/** Sample posts, illustrative of format. Replace with real content. */
-export const posts: Post[] = [
-  {
-    title: "Editorial: Weekly Round 12, problems A–D",
-    date: "[DATE]",
-    read: "8 min",
-    author: "arjun_dp",
-    tags: ["dp", "greedy"],
-    excerpt:
-      "Full solutions with complexity notes, including the two approaches people tried for D.",
-  },
-  {
-    title: "A practical order for learning graph algorithms",
-    date: "[DATE]",
-    read: "6 min",
-    author: "meher.solves",
-    tags: ["graphs"],
-    excerpt:
-      "What to learn first, what can wait, and which problems to solve after each topic.",
-  },
-  {
-    title: "Binary search on the answer, without the off-by-ones",
-    date: "[DATE]",
-    read: "5 min",
-    author: "kx_bitset",
-    tags: ["binary search"],
-    excerpt:
-      "One template that works for both integer and floating-point predicates.",
-  },
-  {
-    title: "Setting up a contest-ready C++ environment",
-    date: "[DATE]",
-    read: "4 min",
-    author: "nidhi_ac",
-    tags: ["setup"],
-    excerpt:
-      "Compile flags, a debug macro that prints containers, and a stress-testing script.",
-  },
-  {
-    title: "Reading a problem statement under time pressure",
-    date: "[DATE]",
-    read: "5 min",
-    author: "arjun_dp",
-    tags: ["strategy"],
-    excerpt: "Where constraints usually give away the intended complexity.",
-  },
-];
+/**
+ * Editorials published by club members.
+ *
+ * Empty, because the club has not published any yet.
+ *
+ * This file previously held five posts under invented member handles —
+ * arjun_dp, meher.solves, kx_bitset, nidhi_ac — every one dated "[DATE]", which
+ * the blog page rendered in the same layout a real post would get. Sample copy
+ * that is shaped like real content is worse than no content at all: a visitor
+ * has no way to tell which of the two they are reading, and the handles named
+ * members who do not exist.
+ *
+ * The page renders a designed empty state off these, so publishing the first
+ * real editorial means adding an entry here and nothing else.
+ */
+export const posts: Post[] = [];
+
+/** The post pinned above the list, or `null` when there is nothing to pin. */
+export const featuredPost: FeaturedPost | null = null;
 
 export const blogTags = [
   "All",

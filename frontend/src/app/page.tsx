@@ -20,6 +20,7 @@ import {
   SectionHeader,
 } from "@/components/site/primitives";
 import { PlatformMark } from "@/components/site/platform-mark";
+import { RankLadder } from "@/components/site/rank-ladder";
 import { CF_RANKS } from "@/lib/cf-ranks";
 import { howItWorks } from "@/lib/content/home";
 import { site } from "@/lib/site";
@@ -170,6 +171,70 @@ export default function HomePage() {
         </div>
       </Section>
 
+      {/*
+        The one full-bleed, saturated block above the closing band.
+
+        Every other section on this page is a grid of bordered panels with the
+        same hover lift, so by the third one the page has stopped offering the
+        eye anything new. This breaks that run: it runs edge to edge, it is the
+        only place with real colour, and it is a chart rather than a card.
+
+        It also earns the space rather than only filling it. The rank dots
+        appear on the Hall of Fame cards above, on the leaderboard and through
+        the member directory, and nothing anywhere explains them — a visitor
+        sees seven arbitrary colours. This is the legend.
+      */}
+      <section
+        className="relative isolate overflow-hidden border-y border-hairline"
+        style={{ background: "var(--band)" }}
+      >
+        {/* Warm at the tall end, cool at the low end — the ladder's own two
+            extremes, bled into the band so the block is lit from beneath the
+            bars rather than sitting on flat colour. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(58% 62% at 84% 106%, color-mix(in srgb, var(--cf-grandmaster) 16%, transparent), transparent 68%), radial-gradient(52% 58% at 12% 106%, color-mix(in srgb, var(--cf-specialist) 15%, transparent), transparent 70%)",
+          }}
+        />
+
+        <div className="container-page pt-16 md:pt-20">
+          <SectionHeader eyebrow="The ladder" title="Everyone starts grey." />
+
+          {/* The link pairs with the paragraph rather than with the heading.
+              SectionHeader's own action slot wraps underneath the title on a
+              narrow screen, which left it stranded between the heading and the
+              body copy — reading as an interruption rather than as a way out of
+              the section. Here it sits beside the paragraph on a wide screen and
+              below it on a phone, which is right in both. */}
+          <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
+            <p className="max-w-[58ch] text-base leading-6 text-fg-muted text-pretty">
+              The coloured dots beside every name on this site are Codeforces ranks. This
+              is the whole ladder. Where a member sits is decided by rating alone, and it
+              moves again after every rated round.
+            </p>
+            <Link
+              href="/leaderboard"
+              className="shrink-0 rounded-control py-1.5 font-mono text-[13px] tracking-[0.06em] text-primary uppercase transition-colors hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            >
+              See the board →
+            </Link>
+          </div>
+        </div>
+
+        {/* Wider than container-page on purpose: the staircase spanning further
+            than the text above it is what makes the section read as full-bleed
+            rather than as one more contained block. */}
+        <div className="mx-auto w-full max-w-[1600px] px-6 pt-12 pb-16 sm:px-10 md:pb-20">
+          <RankLadder />
+          <p className="mt-8 text-center font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+            Rating floor of each band
+          </p>
+        </div>
+      </section>
+
       <Section className="pb-16">
         <SectionHeader
           eyebrow="How it works"
@@ -216,11 +281,15 @@ export default function HomePage() {
           title="The people who set the bar."
           action={{ href: "/hall-of-fame", label: "All years" }}
         />
+        {/* Cards grow to share the row rather than sitting at a fixed 280px.
+            The club has one confirmed record, and a single narrow card marooned
+            at the left edge of a wide scroller reads as content that failed to
+            load. They still scroll once there are enough to overflow. */}
         <ul className="no-scrollbar mt-8 flex gap-4 overflow-x-auto pb-2">
           {hallOfFameTeaser.map((entry) => (
             <li
               key={entry.title}
-              className="w-70 flex-none rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
+              className="min-w-70 flex-1 rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">

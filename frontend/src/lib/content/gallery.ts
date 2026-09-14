@@ -28,9 +28,17 @@ export type GalleryAlbum = {
   /** URL-safe identifier, also used as the deep-link hash. */
   id: string;
   title: string;
-  /** Human-readable, matching the style used in events.ts ("March 2025"). */
-  date: string;
-  venue: string;
+  /**
+   * Human-readable, matching the style used in events.ts ("March 2025").
+   *
+   * Optional, along with {@link GalleryAlbum.venue}: an album whose date or
+   * venue nobody has confirmed omits the field rather than carrying a
+   * "[PLACEHOLDER] Month, Year" that renders on the page as though it were the
+   * record. The dome joins whichever of the two exist and shows neither when
+   * both are missing.
+   */
+  date?: string;
+  venue?: string;
   /** One or two lines shown beside the photos when the album is open. */
   summary: string;
   /** Photo shown in the grid. Usually the first entry of `photos`. */
@@ -39,47 +47,45 @@ export type GalleryAlbum = {
 };
 
 /**
- * Placeholder albums pending real club photos.
+ * Albums for events the club has actually run.
  *
- * The copy is marked [PLACEHOLDER] in the same way as events.ts and
- * hall-of-fame.ts, so unverified content is obvious on the page rather than
- * being mistaken for a record of something that happened.
+ * No photographs have been collected yet, so every `src` below is absent and
+ * each tile falls back to `placeholderFor`, which draws an "awaiting upload"
+ * card in the album's own colour. That is a designed pending state rather than
+ * a fabrication: it says plainly that the photo is not there.
+ *
+ * The copy is not. This file previously carried an invented third album — an
+ * "[PLACEHOLDER] Intro to CP Workshop" that never happened — and marked every
+ * venue, summary and alt string [PLACEHOLDER] while the page presented them as
+ * the club's record of the event. Fields nobody has confirmed are now omitted
+ * instead, and the invented album is gone.
+ *
+ * To add an album: drop the images in `public/gallery/<slug>/`, add an entry
+ * here, and write real `alt` text describing each photo as you add it.
  */
 export const galleryAlbums: GalleryAlbum[] = [
   {
     id: "spring-code-sprint-2025",
     title: "Spring Code Sprint",
     date: "March 2025",
-    venue: "[PLACEHOLDER] Lab 101, DAU",
-    summary: "[PLACEHOLDER] Annual spring contest — 5 problems, 2 hours, open to all skill levels.",
+    summary:
+      "The club's annual spring contest. Five problems, two hours, open to all skill levels.",
     cover: "/gallery/spring-code-sprint-2025/01.jpg",
     photos: [
-      { src: "/gallery/spring-code-sprint-2025/01.jpg", alt: "[PLACEHOLDER] Participants at their machines during the contest" },
-      { src: "/gallery/spring-code-sprint-2025/02.jpg", alt: "[PLACEHOLDER] Scoreboard on the projector near the end of the round" },
-      { src: "/gallery/spring-code-sprint-2025/03.jpg", alt: "[PLACEHOLDER] Prize giving after the contest" },
+      { src: "/gallery/spring-code-sprint-2025/01.jpg", alt: "Spring Code Sprint — photo not yet uploaded" },
+      { src: "/gallery/spring-code-sprint-2025/02.jpg", alt: "Spring Code Sprint — photo not yet uploaded" },
+      { src: "/gallery/spring-code-sprint-2025/03.jpg", alt: "Spring Code Sprint — photo not yet uploaded" },
     ],
   },
   {
     id: "icpc-amritapuri-regionals",
     title: "ICPC Amritapuri Regionals",
-    date: "[PLACEHOLDER] Month, Year",
-    venue: "[PLACEHOLDER] Amritapuri",
-    summary: "[PLACEHOLDER] Team DAUCoders at the regional round.",
+    venue: "Amritapuri",
+    summary: "Team DAUCoders at the regional round.",
     cover: "/gallery/icpc-amritapuri-regionals/01.jpg",
     photos: [
-      { src: "/gallery/icpc-amritapuri-regionals/01.jpg", alt: "[PLACEHOLDER] The team before the contest" },
-      { src: "/gallery/icpc-amritapuri-regionals/02.jpg", alt: "[PLACEHOLDER] Working through a problem at the table" },
-    ],
-  },
-  {
-    id: "intro-to-cp-workshop",
-    title: "[PLACEHOLDER] Intro to CP Workshop",
-    date: "[PLACEHOLDER] Month, Year",
-    venue: "[PLACEHOLDER] Seminar hall",
-    summary: "[PLACEHOLDER] First-year session on setup, complexity and the standard library.",
-    cover: "/gallery/intro-to-cp-workshop/01.jpg",
-    photos: [
-      { src: "/gallery/intro-to-cp-workshop/01.jpg", alt: "[PLACEHOLDER] Session in progress" },
+      { src: "/gallery/icpc-amritapuri-regionals/01.jpg", alt: "ICPC Amritapuri Regionals — photo not yet uploaded" },
+      { src: "/gallery/icpc-amritapuri-regionals/02.jpg", alt: "ICPC Amritapuri Regionals — photo not yet uploaded" },
     ],
   },
 ];
@@ -95,8 +101,8 @@ export type GalleryTile = {
   src: string;
   alt: string;
   title: string;
-  date: string;
-  venue: string;
+  date?: string;
+  venue?: string;
   /** Shown when `src` fails to load. See `placeholderFor` below. */
   placeholder: string;
 };

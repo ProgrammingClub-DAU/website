@@ -20,8 +20,8 @@ export default function GalleryPage() {
         </PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           Drag to look around, then open a photo to see which event it was, when
-          it ran and where. Captions are placeholders until confirmed against
-          club records.
+          it ran and where. Photographs are still being collected, so the tiles
+          show which events are waiting on them.
         </p>
       </Section>
 
