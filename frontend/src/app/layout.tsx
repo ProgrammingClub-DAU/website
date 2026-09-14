@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/site/theme-provider";
@@ -15,6 +15,27 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+/**
+ * The display face, used only for page and section headings.
+ *
+ * Space Grotesk descends from Space Mono, so it carries the same squared
+ * terminals and single-storey `a` as the Geist Mono labels that run through
+ * every card and eyebrow on this site. Headings therefore read as the same
+ * voice as the labels rather than as a third unrelated typeface, while still
+ * being visibly not the body text — which Geist Sans set against itself was
+ * never going to be.
+ *
+ * Body copy stays on Geist Sans: it is the more comfortable face at 15px over
+ * several lines, and a display grotesque is not meant to carry paragraphs.
+ */
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  // Headings use one weight each, so the two that are actually rendered are
+  // named rather than shipping the whole variable range.
+  weight: ["500", "700"],
 });
 
 const description =
@@ -48,7 +69,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider

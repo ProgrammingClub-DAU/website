@@ -114,7 +114,7 @@ export default function AboutPage() {
                 <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
                   Code hard, celebrate harder.
                 </h3>
-                <p className="mt-4 text-[15px] leading-relaxed text-fg-muted text-pretty">
+                <p className="mt-4 text-body leading-relaxed text-fg-muted text-pretty">
                   We believe the best problem solvers aren&apos;t solitary grinders — they are a tight-knit family.
                   Beyond the Codeforces leaderboards and 5-hour ICPC qualifiers, our club comes alive during
                   festive Navratri Garba nights, Diwali celebrations, batch dinners, and late-night hostel debriefs.
@@ -142,7 +142,7 @@ export default function AboutPage() {
             <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
               Origin Story
             </div>
-            <h2 className="mt-2 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
+            <h2 className="mt-2 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
               Where the club came from
             </h2>
             <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
@@ -156,7 +156,7 @@ export default function AboutPage() {
             <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
               Inclusivity
             </div>
-            <h2 className="mt-2 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
+            <h2 className="mt-2 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
               Who it is for
             </h2>
             <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
@@ -170,7 +170,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-16">
-        <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
           How the club is organised
         </h2>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -185,11 +185,11 @@ export default function AboutPage() {
                   style={{ background: item.color }}
                   aria-hidden
                 />
-                <span className="font-mono text-[11px] tracking-[0.12em] text-fg-muted uppercase">
+                <span className="font-mono text-label tracking-caps text-fg-muted uppercase">
                   {item.role}
                 </span>
               </div>
-              <p className="mt-4 text-[15px] leading-[1.5] text-fg-muted text-pretty">
+              <p className="mt-4 text-body leading-[1.5] text-fg-muted text-pretty">
                 {item.body}
               </p>
             </div>
@@ -198,7 +198,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-16">
-        <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
           The year, roughly
         </h2>
         <p className="mt-4 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
@@ -215,7 +215,7 @@ export default function AboutPage() {
                 {item.when}
               </div>
               <p className="mt-3 text-base font-semibold tracking-tight">{item.title}</p>
-              <p className="mt-2 text-[15px] leading-[1.5] text-fg-muted text-pretty">
+              <p className="mt-2 text-body leading-[1.5] text-fg-muted text-pretty">
                 {item.body}
               </p>
             </div>
@@ -224,7 +224,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-16">
-        <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
           What we do
         </h2>
         <dl className="mt-8 border-t border-hairline">
@@ -233,7 +233,7 @@ export default function AboutPage() {
               key={item.title}
               className="grid gap-2 border-b border-hairline py-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-8"
             >
-              <dt className="font-mono text-[13px] tracking-[0.08em] uppercase">
+              <dt className="font-mono text-meta tracking-caps uppercase">
                 {item.title}
               </dt>
               <dd className="text-base leading-6 text-fg-muted text-pretty">{item.body}</dd>
@@ -321,8 +321,8 @@ export default function AboutPage() {
                       <span
                         className={
                           platform.syncs
-                            ? "rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--accent)] uppercase ring-1"
-                            : "rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase"
+                            ? "rounded-full px-2.5 py-0.5 font-mono text-micro tracking-caps-wide text-[var(--accent)] uppercase ring-1"
+                            : "rounded-full border border-hairline px-2.5 py-0.5 font-mono text-micro tracking-caps-wide text-fg-subtle uppercase"
                         }
                         style={
                           platform.syncs
@@ -381,7 +381,7 @@ export default function AboutPage() {
       </Section>
 
       <Section className="pb-16">
-        <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
           Common questions
         </h2>
         <dl className="mt-8 border-t border-hairline">
@@ -393,7 +393,7 @@ export default function AboutPage() {
               <dt className="text-base font-semibold tracking-tight text-pretty">
                 {item.q}
               </dt>
-              <dd className="text-[15px] leading-[1.5] text-fg-muted text-pretty">
+              <dd className="text-body leading-[1.5] text-fg-muted text-pretty">
                 {item.a}
               </dd>
             </div>
@@ -418,12 +418,12 @@ export default function AboutPage() {
               className="min-w-70 flex-1 rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                   {entry.year}
                 </span>
                 <RankDot rank={entry.cf} />
               </div>
-              <p className="mt-11 text-[17px] font-semibold tracking-tight">{entry.title}</p>
+              <p className="mt-11 text-lead font-semibold tracking-tight">{entry.title}</p>
               <p className="mt-2 text-sm leading-[1.5] text-fg-muted text-pretty">
                 {entry.note}
               </p>
@@ -435,7 +435,7 @@ export default function AboutPage() {
       <Section className="pb-22">
         <BorderGlow contentClassName="grid gap-8 p-10 md:grid-cols-2 md:items-center">
           <div>
-            <h2 className="text-[clamp(1.5rem,3.2vw,2rem)] font-semibold tracking-[-0.02em]">
+            <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
               How to join
             </h2>
             <p className="mt-4 max-w-[44ch] text-base leading-6 text-fg-muted text-pretty">
@@ -457,7 +457,7 @@ export default function AboutPage() {
             {joinSteps.map((step) => (
               <li key={step.n} className="flex items-baseline gap-3.5 bg-surface-2 px-5 py-4.5">
                 <span className="font-mono text-xs text-primary">{step.n}</span>
-                <span className="text-[15px] leading-[1.45]">{step.text}</span>
+                <span className="text-body leading-[1.45]">{step.text}</span>
               </li>
             ))}
           </ol>

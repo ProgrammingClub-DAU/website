@@ -50,7 +50,7 @@ export function BlogList({ posts }: { posts: Post[] }) {
               className="grid gap-2 border-b border-hairline px-2 py-6 md:grid-cols-2 md:gap-8"
             >
               <div>
-                <div className="font-mono text-[11px] tracking-[0.08em] text-fg-subtle uppercase">
+                <div className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                   {post.date} · {post.read}
                 </div>
                 <h3 className="mt-2.5 text-lg font-semibold tracking-tight text-pretty">
@@ -58,19 +58,19 @@ export function BlogList({ posts }: { posts: Post[] }) {
                 </h3>
               </div>
               <div className="flex flex-col gap-3">
-                <p className="text-[15px] leading-[1.5] text-fg-muted text-pretty">
+                <p className="text-body leading-[1.5] text-fg-muted text-pretty">
                   {post.excerpt}
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {post.tags.map((t) => (
                     <span
                       key={t}
-                      className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-fg-muted"
+                      className="rounded-full border border-hairline px-2 py-0.5 font-mono text-label text-fg-muted"
                     >
                       {t}
                     </span>
                   ))}
-                  <span className="ml-1 font-mono text-[11px] text-fg-subtle">
+                  <span className="ml-1 font-mono text-label text-fg-subtle">
                     {post.author}
                   </span>
                 </div>

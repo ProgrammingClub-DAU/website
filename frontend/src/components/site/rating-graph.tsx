@@ -236,7 +236,7 @@ export function RatingGraph({
                 x={PADDING.left - 10}
                 y={tick.y + 4}
                 textAnchor="end"
-                className="fill-fg-subtle font-mono text-[10px]"
+                className="fill-fg-subtle font-mono text-micro"
               >
                 {tick.value}
               </text>
@@ -285,7 +285,7 @@ export function RatingGraph({
             top: Math.max(0, activePoint.y - 78),
           }}
         >
-          <p className="font-mono text-[10px] tracking-[0.08em] text-fg-subtle uppercase">
+          <p className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
             {new Date(activePoint.date).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -299,7 +299,7 @@ export function RatingGraph({
             </span>
           </p>
           {activePoint.contestName && (
-            <p className="mt-0.5 line-clamp-2 text-[11px] text-fg-muted">
+            <p className="mt-0.5 line-clamp-2 text-label text-fg-muted">
               {activePoint.contestName}
             </p>
           )}

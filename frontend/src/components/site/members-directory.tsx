@@ -141,7 +141,7 @@ export function MembersDirectory({ members }: { members: Member[] }) {
       </div>
 
       {/* Results count text */}
-      <p className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+      <p className="font-mono text-label tracking-caps text-fg-subtle uppercase">
         Showing {filteredMembers.length} of {members.length} members
       </p>
 
@@ -317,7 +317,7 @@ function MemberCard({
           </div>
 
           {/* Active status indicator */}
-          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2.5 py-1 text-[10px] font-mono text-fg-muted">
+          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2.5 py-1 text-micro font-mono text-fg-muted">
             <span
               className={`size-1.5 rounded-full ${
                 member.isActive !== false ? "bg-emerald-400 animate-pulse" : "bg-fg-subtle"
@@ -341,7 +341,7 @@ function MemberCard({
         {/* Role badge & Degree */}
         <div className="mt-3 space-y-1.5">
           <span
-            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase"
+            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-micro font-medium uppercase"
             style={{
               borderColor: isStudent ? "var(--border)" : color,
               color: isStudent ? "var(--fg-muted)" : color,
@@ -351,7 +351,7 @@ function MemberCard({
             <RankDot rank={member.cf} size={4} ring={false} />
             {roleTitle}
           </span>
-          <p className="text-[11px] text-fg-muted flex items-center gap-1">
+          <p className="text-label text-fg-muted flex items-center gap-1">
             <GraduationCap className="size-3" />
             <span>{member.degree || "B.Tech ICT"} • {member.gradYear || member.batch.replace("B.Tech ’", "20")}</span>
           </p>
@@ -372,26 +372,26 @@ function MemberCard({
               <div className="text-xs font-bold" style={{ color }}>
                 {member.rating ?? "—"}
               </div>
-              <div className="text-[9px] text-fg-muted">Rating</div>
+              <div className="text-nano text-fg-muted">Rating</div>
             </div>
             <div>
               <div className="text-xs font-bold">
                 {member.solvedCount ?? "—"}
               </div>
-              <div className="text-[9px] text-fg-muted">Solved</div>
+              <div className="text-nano text-fg-muted">Solved</div>
             </div>
             <div>
               <div className="text-xs font-bold">
                 {member.contestCount ?? "—"}
               </div>
-              <div className="text-[9px] text-fg-muted">Contests</div>
+              <div className="text-nano text-fg-muted">Contests</div>
             </div>
           </div>
         )}
 
         {/* Rank Title Badge & View Profile Link */}
         <div className="flex items-center justify-between text-xs">
-          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
+          <span className="text-micro font-semibold uppercase tracking-wider" style={{ color }}>
             🏆 {getRankName(member.cf)}
           </span>
           <Link

@@ -68,10 +68,10 @@ export default async function MembersPage() {
                   {credit.initials}
                 </span>
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] tracking-[0.12em] text-fg-subtle uppercase">
+                  <p className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
                     {credit.years}
                   </p>
-                  <p className="mt-2 text-[15px] font-semibold tracking-tight">
+                  <p className="mt-2 text-body font-semibold tracking-tight">
                     {credit.name}
                   </p>
                   <p className="mt-1.5 text-sm leading-5 text-fg-muted text-pretty">
@@ -86,7 +86,7 @@ export default async function MembersPage() {
 
       <Section className="pb-22">
         <div className="flex flex-wrap items-center justify-between gap-5 border-t border-hairline pt-8">
-          <p className="max-w-[52ch] text-[15px] leading-[1.5] text-fg-muted text-pretty">
+          <p className="max-w-[52ch] text-body leading-[1.5] text-fg-muted text-pretty">
             Your profile appears here once you sign in and add a photo and a line about
             yourself.
           </p>

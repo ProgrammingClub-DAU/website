@@ -178,11 +178,11 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                     <h2 className="font-mono text-[clamp(1.5rem,3vw,2rem)] font-medium tracking-tight">
                       {year.year}
                     </h2>
-                    <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                    <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                       {String(year.entries.length).padStart(2, "0")} entries
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                  <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                     {year.label}
                   </span>
                 </div>
@@ -200,7 +200,7 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                       <TimelineCard className="flex-1">
                         <div className="flex items-center gap-2.5">
                           <RankDot rank={entry.cf} />
-                          <span className="font-mono text-[11px] tracking-[0.12em] text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
+                          <span className="font-mono text-label tracking-caps text-fg-subtle uppercase transition-colors [@media(hover:hover)]:group-hover/entry:text-primary group-[.tl-active]/entry:text-primary">
                             {entry.cat}
                           </span>
                         </div>
@@ -212,7 +212,7 @@ export function HallOfFameTimeline({ years }: { years: HofYear[] }) {
                             {entry.people}
                           </p>
                         </div>
-                        <p className="border-t border-hairline pt-3.5 text-[15px] leading-[1.5] text-fg-muted text-pretty">
+                        <p className="border-t border-hairline pt-3.5 text-body leading-[1.5] text-fg-muted text-pretty">
                           {entry.note}
                         </p>
                       </TimelineCard>

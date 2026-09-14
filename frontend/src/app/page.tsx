@@ -93,7 +93,7 @@ export default function HomePage() {
               the text carries its own legibility. See .text-halo. */}
           <div className="mx-auto max-w-[54ch]">
             <Eyebrow className="text-halo animate-rise">Competitive programming club</Eyebrow>
-            <h1 className="text-halo mt-6 text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-[510] tracking-[-0.02em] text-balance">
+            <h1 className="text-halo mt-6 font-heading text-[clamp(2.375rem,6.4vw,4rem)] leading-none font-medium tracking-[-0.02em] text-balance">
               A home for problem solvers at DAU.
             </h1>
             <p className="text-halo mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
@@ -128,7 +128,7 @@ export default function HomePage() {
                     <Icon className="size-4" />
                   </span>
                   {feature.badge && (
-                    <span className="rounded-full border border-border px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-fg-subtle uppercase">
+                    <span className="rounded-full border border-border px-2 py-1 font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
                       {feature.badge}
                     </span>
                   )}
@@ -217,7 +217,7 @@ export default function HomePage() {
             </p>
             <Link
               href="/leaderboard"
-              className="shrink-0 rounded-control py-1.5 font-mono text-[13px] tracking-[0.06em] text-primary uppercase transition-colors hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              className="shrink-0 rounded-control py-1.5 font-mono text-meta tracking-caps text-primary uppercase transition-colors hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
               See the board →
             </Link>
@@ -229,7 +229,7 @@ export default function HomePage() {
             rather than as one more contained block. */}
         <div className="mx-auto w-full max-w-[1600px] px-6 pt-12 pb-16 sm:px-10 md:pb-20">
           <RankLadder />
-          <p className="mt-8 text-center font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+          <p className="mt-8 text-center font-mono text-label tracking-caps text-fg-subtle uppercase">
             Rating floor of each band
           </p>
         </div>
@@ -249,8 +249,8 @@ export default function HomePage() {
               <span className="font-mono text-xs tracking-[0.1em] text-primary">
                 Step {step.n}
               </span>
-              <p className="mt-3 text-[17px] font-semibold tracking-tight">{step.title}</p>
-              <p className="mt-2 text-[15px] leading-[1.45] text-fg-muted text-pretty">
+              <p className="mt-3 text-lead font-semibold tracking-tight">{step.title}</p>
+              <p className="mt-2 text-body leading-[1.45] text-fg-muted text-pretty">
                 {step.body}
               </p>
               {/*
@@ -292,12 +292,12 @@ export default function HomePage() {
               className="min-w-70 flex-1 rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                   {entry.year}
                 </span>
                 <RankDot rank={entry.cf} />
               </div>
-              <p className="mt-11 text-[17px] font-semibold tracking-tight">{entry.title}</p>
+              <p className="mt-11 text-lead font-semibold tracking-tight">{entry.title}</p>
               <p className="mt-2 text-sm leading-[1.5] text-fg-muted text-pretty">
                 {entry.note}
               </p>
@@ -319,7 +319,7 @@ export default function HomePage() {
             className="mx-auto max-w-[680px]"
             contentClassName="px-8 py-14 text-center"
           >
-            <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold tracking-[-0.02em]">
+            <h2 className="font-heading text-[clamp(1.75rem,4vw,2.5rem)] font-medium tracking-[-0.02em]">
               Ready to compete?
             </h2>
             <p className="mx-auto mt-4 max-w-[46ch] text-base leading-6 text-fg-muted">

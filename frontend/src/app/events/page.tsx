@@ -49,11 +49,11 @@ export default function EventsPage() {
                     className="size-1.5 animate-pulse-ring rounded-full bg-cf-pupil"
                     aria-hidden
                   />
-                  <span className="font-mono text-[11px] tracking-[0.12em] text-fg-muted uppercase">
+                  <span className="font-mono text-label tracking-caps text-fg-muted uppercase">
                     Next up
                   </span>
                 </div>
-                <h2 className="mt-4.5 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em]">
+                <h2 className="mt-4.5 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
                   {nextEvent.title}
                 </h2>
                 <p className="mt-3 max-w-[48ch] text-base leading-6 text-fg-muted text-pretty">
@@ -75,7 +75,7 @@ export default function EventsPage() {
                     key={row.k}
                     className="flex items-baseline justify-between gap-4 bg-surface-2 px-4.5 py-3.5"
                   >
-                    <dt className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                    <dt className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                       {row.k}
                     </dt>
                     <dd className="text-right font-mono text-xs">{row.v}</dd>
@@ -88,11 +88,11 @@ export default function EventsPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="size-1.5 rounded-full bg-fg-subtle" aria-hidden />
-                  <span className="font-mono text-[11px] tracking-[0.12em] text-fg-muted uppercase">
+                  <span className="font-mono text-label tracking-caps text-fg-muted uppercase">
                     Nothing scheduled
                   </span>
                 </div>
-                <h2 className="mt-4.5 text-[clamp(1.375rem,2.8vw,1.75rem)] font-semibold tracking-[-0.02em] text-pretty">
+                <h2 className="mt-4.5 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em] text-pretty">
                   The next round has not been announced.
                 </h2>
                 <p className="mt-3 max-w-[48ch] text-base leading-6 text-fg-muted text-pretty">
@@ -116,10 +116,10 @@ export default function EventsPage() {
               <dl className="flex flex-col gap-px overflow-hidden rounded-control bg-hairline">
                 {EVENT_KINDS.map((kind) => (
                   <div key={kind.k} className="bg-surface-2 px-4.5 py-3.5">
-                    <dt className="font-mono text-[11px] tracking-[0.1em] text-fg-subtle uppercase">
+                    <dt className="font-mono text-label tracking-caps text-fg-subtle uppercase">
                       {kind.k}
                     </dt>
-                    <dd className="mt-1 text-[13px] leading-[1.45] text-fg-muted text-pretty">
+                    <dd className="mt-1 text-meta leading-[1.45] text-fg-muted text-pretty">
                       {kind.v}
                     </dd>
                   </div>
@@ -136,7 +136,7 @@ export default function EventsPage() {
 
       <Section className="pt-6 pb-22">
         <div className="flex flex-wrap items-center justify-between gap-5 border-t border-hairline pt-8">
-          <p className="max-w-[52ch] text-[15px] leading-[1.5] text-fg-muted text-pretty">
+          <p className="max-w-[52ch] text-body leading-[1.5] text-fg-muted text-pretty">
             Have an idea for a round, a workshop, or a guest session? Members can propose
             events and set problems for them.
           </p>

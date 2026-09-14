@@ -82,7 +82,7 @@ export function RankLadder({ className }: { className?: string }) {
         return (
           <li key={rank.key} className="flex min-w-0 flex-1 flex-col items-center">
             <span
-              className="mb-2 font-mono text-[10px] tracking-[0.06em] text-fg-subtle transition-opacity duration-500 sm:text-[11px]"
+              className="mb-2 font-mono text-micro text-fg-subtle transition-opacity duration-500 sm:text-label"
               style={{ opacity: collapsed ? 0 : 1, transitionDelay: `${i * 70 + 220}ms` }}
             >
               {rank.min}
@@ -111,7 +111,7 @@ export function RankLadder({ className }: { className?: string }) {
             {/* The full name is always in the DOM for a screen reader; the two
                 visible spans are an abbreviation swap for narrow viewports,
                 where "Candidate Master" cannot fit in a seventh of the width. */}
-            <span className="mt-3 text-center font-mono text-[10px] leading-tight tracking-[0.06em] text-fg-muted uppercase sm:text-[11px]">
+            <span className="mt-3 text-center font-mono text-micro leading-tight tracking-[0.06em] text-fg-muted uppercase sm:text-label">
               <span className="sr-only">{rank.name}</span>
               <span aria-hidden className="sm:hidden">
                 {rank.short}
