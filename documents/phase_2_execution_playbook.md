@@ -2,7 +2,24 @@
 **Branch model:** every member branches from `main` and raises PRs into `main`, merged one at a time by M6.
 **Duration:** 3 sprints -- ~3 weeks
 **Team:** 6 members
-**Stack:** Spring Boot 4.1 -- PostgreSQL -- Next.js 15 -- Cloudinary -- Apache POI
+**Stack:** Spring Boot 4.1 -- PostgreSQL -- Next.js 16.3 -- Cloudinary -- Apache POI
+
+> [!NOTE]
+> **Status on 14 Sep 2026 -- checked against the code on `main`, not against PR titles.**
+>
+> | Stage | Owner | Status | Evidence in the code |
+> |---|---|---|---|
+> | 0 -- Migrations + entities | M6 | **[DONE]** PR #50 | V2-V7 and every Phase 2 entity present |
+> | 1A -- Security + gallery | M4 | **[DONE]** PR #73 | `gallery/` package, lookup and club-role endpoints, SecurityConfig rules |
+> | 1B -- Profiles, LeetCode, filters, events | M5 | **[DONE]** PR #67 | `leetcode/` and `event/` packages, `UserLookupDto`, Apache POI |
+> | 1C -- Snapshots | M6 | **[DONE]** PR #62 | `snapshot/` package |
+> | 2A -- Frontend UI | M1 | **[NOT STARTED]** | None of the 6 components or 3 pages exist. Events and Gallery still read `lib/content/`. |
+> | 2B -- Auth + state | M2 | **[DONE]** PR #71 | Store fields, types, `events.ts` (16 functions), `gallery.ts`, mapper, leaderboard params |
+> | 2C -- Dashboards | M3 | **[NOT STARTED]** | No admin pages. The profile edits the CF handle only. The leaderboard fetches once and filters in the browser. |
+> | 3 -- Tests + polish | M6 | **[PARTIAL]** | Export and gallery tests and env docs done. `LeetCodeSyncServiceTest`, 5 `EventServiceTest` cases and Testcontainers missing (Section 10). |
+>
+> **Can start now:** M1 -- all of Stage 2A. M3 -- the profile and leaderboard parts of
+> Stage 2C (Section 9). M6 -- the missing Stage 3 tests.
 
 ---
 
@@ -47,7 +64,7 @@ Rules:
 > (`docker compose down -v && docker compose up -d`).
 
 **M6 also owned the `snapshot/` package in Stage 1** (Section 6.6), moved off M5
-to shorten the critical path. **Stage 1C is complete** — repository, DTO,
+to shorten the critical path. **Stage 1C is complete** -- repository, DTO,
 service with the Monday cron, controller, and 7 unit tests, merged via PR #62.
 
 ---
@@ -134,7 +151,7 @@ Run ./mvnw.cmd clean test and fix all failures before raising a PR.
 I am Member 1 (Frontend UI/UX Architect) on the CP Club Website project.
 I need to implement Stage 2A of Phase 2 -- new UI components and page layouts.
 
-IMPORTANT: Stage 1 (M4 + M5 work) must be merged into main before I start. Branch from main.
+IMPORTANT: Stage 1 (M4 + M5) and Stage 2B (M2) are already merged -- start now. Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 7
@@ -143,16 +160,24 @@ Please do the following:
 Then create in this order:
 1. components/ui/club-role-badge.tsx -- small colored badge (Convenor=gold, Core=blue, Batch Rep=green, Ex-*=grey outline)
 2. components/ui/data-table.tsx -- generic table with loading skeleton and empty state
+   Raise items 1 and 2 as a first, small PR on their own -- M3 is waiting on them.
 3. components/site/event-card.tsx -- event card with cover image, title, date, location, status badge. Full card is a Link.
 4. components/site/event-photo-grid.tsx -- responsive photo grid with lightbox
 5. components/site/member-gallery-grid.tsx -- same grid for batch member photos
 6. components/site/admin-tabs.tsx -- tab nav with Members, Events, Galleries tabs
-7. Modify app/events/page.tsx -- replace hardcoded placeholders with server-side fetch from GET /api/events/upcoming
+7. Modify app/events/page.tsx -- replace the lib/content/events.ts data with a server-side fetch
+   from GET /api/events/upcoming and GET /api/events/completed. Keep the "Nothing scheduled"
+   empty state added in PR #72.
 8. Create app/events/[id]/page.tsx -- event detail page
-9. Create app/gallery/page.tsx -- member gallery with batch year dropdown filter
+9. Member gallery with a batch year dropdown. app/gallery/page.tsx ALREADY EXISTS (the dome
+   gallery of event photos), so build this at app/gallery/members/page.tsx and link to it
+   from /gallery -- unless M6 decides otherwise (Section 7).
 10. Create shell app/(dashboard)/admin/page.tsx -- layout only, M3 fills data
 
-Match the dark-mode design: glass-panel, rounded-panel, Eyebrow, Section components.
+Match the design system: glass-panel, rounded-panel, Eyebrow, Section components, and the
+type scale tokens from PR #74 (text-label, text-meta, text-body -- never text-[Npx];
+tracking-caps only together with uppercase). Charts are plain SVG, like rating-graph.tsx --
+do not add recharts. Never render invented placeholder data; design an empty state (PR #72).
 Run npm run build to verify zero TypeScript errors before raising a PR.
 ```
 
@@ -164,6 +189,8 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 ```
 I am Member 2 (Frontend Auth & Logic Engineer) on the CP Club Website project.
 I need to implement Stage 2B of Phase 2 -- TypeScript types, store updates, and all API service files.
+
+[DONE] Stage 2B is merged (PR #71). Nothing is left to do here.
 
 IMPORTANT: Stage 1 must be merged into main before I start. Branch from main.
 
@@ -177,7 +204,7 @@ Please do the following:
 Then implement in this order:
 1. Update store/auth.ts -- add clubRole, batchYear, leetcodeHandle, phoneNumber, avatarUrl to the User interface
 2. Update/create types/api.ts -- add Event, EventDetail, EventAttendee, EventPhoto, UserLookup, MemberGalleryPhoto interfaces and ClubRole string union type
-3. Create lib/services/events.ts -- 17 functions covering all event, attendee, photo, and user lookup API calls. The exportAttendees function must use responseType: 'blob'.
+3. Create lib/services/events.ts -- 16 functions covering all event, attendee, photo, and user lookup API calls. The exportAttendees function must use responseType: 'blob'.
 4. Create lib/services/gallery.ts -- 4 functions for member gallery
 5. Update lib/services/dashboard.ts -- mapUserToProfile() must map all new fields using ?? null fallback
 6. Update lib/services/leaderboard.ts -- pass ?platform= and ?filter= query params
@@ -194,7 +221,11 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 I am Member 3 (Frontend Dashboards Engineer) on the CP Club Website project.
 I need to implement Stage 2C of Phase 2 -- all dashboard pages and data-heavy features.
 
-IMPORTANT: Member 1 AND Member 2 PRs must both be merged into main before I start. Branch from main only after both are merged.
+IMPORTANT: M2 (Stage 2B) is merged. M1 (Stage 2A) is not.
+- Start now on steps 1 and 4 below (profile and leaderboard) -- they only need M2's services.
+- Wait for M1's ClubRoleBadge, DataTable and AdminTabs before steps 2 and 3 (the admin pages),
+  and before swapping ClubRoleBadge into the profile and leaderboard.
+Branch from main.
 
 Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 9
@@ -210,7 +241,8 @@ Then implement in this order:
    - Club role badge below member name using the ClubRoleBadge component from M1
    - Platform icon links row: CodeChef, AtCoder, GitHub, LinkedIn
    - Full "Edit Profile" panel (owner-only): name, phone (required), CF handle, LeetCode handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked to visitors.
-   - Two recharts LineCharts: CF rating history + LeetCode rating history from /api/snapshots
+   - LeetCode rating chart from /api/snapshots/{id}/leetcode, drawn with the existing RatingGraph
+     (plain SVG -- recharts was removed on purpose). The CF graph already exists; leave it.
 
 2. Fill in app/(dashboard)/admin/page.tsx (3 tabs):
    - Tab 1 Members: DataTable with all columns. Inline club role dropdown per row. Promote/Demote + Delete actions.
@@ -272,7 +304,7 @@ STAGE 1A - Security+Gallery  STAGE 1B - Data   STAGE 1C - Snapshots
   Owner: M4                    Owner: M5         Owner: M6
   PR: phase2/backend-security  PR: phase2/       PR: phase2/snapshots
                                   backend-data
-  ~3-4 days                    ~4-5 days         ~1 day
+  [DONE - PR #73]              [DONE - PR #67]   [DONE - PR #62]
   All three run in parallel. None of them calls into another.
         |                       |                 |
         +-----------+-----------+-----------------+
@@ -284,10 +316,12 @@ STAGE 1A - Security+Gallery  STAGE 1B - Data   STAGE 1C - Snapshots
 STAGE 2A         STAGE 2B    STAGE 2C
 Frontend UI      Auth/State  Dashboards
 Owner: M1        Owner: M2   Owner: M3
-                             (depends on M1 + M2 first)
+[NOT STARTED]    [DONE #71]  [NOT STARTED]
+                             (profile + leaderboard: now;
+                              admin pages: after M1)
         +-----------+-----------+
                     v
-STAGE 3 --- Integration, Tests, Polish, Deploy
+STAGE 3 --- Integration, Tests, Polish, Deploy     [PARTIAL]
               Owner: M6 -- PR: phase2/integration
 ```
 
@@ -302,14 +336,14 @@ STAGE 3 --- Integration, Tests, Polish, Deploy
 >
 > 1. **CI only runs on `main`.** Both workflows in `.github/workflows/` are
 >    configured with `branches: [ main ]`, so a PR into `feature/phase-2` ran no
->    backend tests and no frontend build — verified on PR #62, which got only
+>    backend tests and no frontend build -- verified on PR #62, which got only
 >    Vercel checks. Six people merging for three weeks with no automated
 >    verification was the larger risk by far.
 > 2. It matches how the team already works, so nobody branches from the wrong
 >    place by habit.
 >
 > The trade-off accepted: `main` carries backend endpoints before the frontend
-> wires them up. That is safe here — unreferenced endpoints are unreachable from
+> wires them up. That is safe here -- unreferenced endpoints are unreachable from
 > the UI, and every Phase 2 migration column is nullable, so the schema stays
 > backward compatible with whatever is currently deployed.
 
@@ -772,7 +806,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 7 -- Stage 2A: Frontend UI/UX
+## Section 7 -- Stage 2A: Frontend UI/UX -- [NOT STARTED]
 **Owner: Member 1**
 **PR: `phase2/frontend-ui`**
 **Estimated time: 3 days**
@@ -787,14 +821,19 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 | `components/ui/data-table.tsx` | NEW | Generic reusable table. Props: `columns`, `data`, `isLoading`. Shows skeleton on load, "No records" if empty. |
 | `components/ui/club-role-badge.tsx` | NEW | Small colored badge component for displaying club roles. Maps `clubRole` string to: Convenor=gold, Core=blue, Batch Rep=green, Student=grey, Ex-*=outline. |
 | `components/site/admin-tabs.tsx` | NEW | Tab nav shell with tabs: Members, Events, Galleries. |
-| `app/events/page.tsx` | MODIFY | Replace hardcoded placeholder. Server Component. Fetches `GET /api/events/upcoming`. Maps to `<EventCard>`. Shows "No upcoming events" if empty. |
+| `app/events/page.tsx` | MODIFY | Replace the `lib/content/events.ts` data (its invented entries were already removed in PR #72). Server Component. Fetches `GET /api/events/upcoming` and `GET /api/events/completed`. Maps to `<EventCard>`. **Keep the "Nothing scheduled" panel from PR #72** for an empty upcoming list. |
 | `app/events/[id]/page.tsx` | NEW | Event detail page. Shows: cover image, title, date, location, description, photo gallery grid, attendee count. Fetches `GET /api/events/{id}`. |
-| `app/gallery/page.tsx` | NEW | Member gallery page. Shows batch year filter dropdown. Fetches `GET /api/gallery/members/batches` for years. Fetches photos by selected year. |
+| `app/gallery/members/page.tsx` | NEW | Member gallery page. Shows batch year filter dropdown. Fetches `GET /api/gallery/members/batches` for years. Fetches photos by selected year. **[DECISION NEEDED]** `app/gallery/page.tsx` already exists -- the dome gallery of event photos, built from static files. Default: keep it at `/gallery` and add this page at `/gallery/members`, linked from `/gallery`. M6 confirms before M1 builds it. |
 | `app/(dashboard)/admin/page.tsx` | CREATE SHELL | Admin dashboard shell with the tab layout. M3 fills the data. |
+
+> [!NOTE]
+> **Ship `ClubRoleBadge` and `DataTable` first, as their own small PR.** M3's admin pages
+> cannot start without them. The profile already styles the club role inline
+> (`getClubRoleBadgeStyle` in `profile-dashboard.tsx`); M3 swaps that for this component.
 
 ---
 
-## Section 8 -- Stage 2B: Frontend Auth & State
+## Section 8 -- Stage 2B: Frontend Auth & State -- [DONE - PR #71]
 **Owner: Member 2**
 **PR: `phase2/frontend-auth`**
 **Estimated time: 2 days**
@@ -812,10 +851,10 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 9 -- Stage 2C: Frontend Dashboards & Data
+## Section 9 -- Stage 2C: Frontend Dashboards & Data -- [NOT STARTED]
 **Owner: Member 3**
 **PR: `phase2/frontend-dashboards`**
-**Depends on: M1 + M2 PRs merged**
+**Depends on:** M2 (merged) for the profile and leaderboard changes -- these can start now. M1's `ClubRoleBadge`, `DataTable` and `AdminTabs` for the two admin pages.
 **Estimated time: 5 days**
 
 ### Files & Responsibilities
@@ -826,7 +865,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 If `profile.avatarUrl` exists -> render image with CF rank border. If owner and no avatar -> show placeholder icon + "Upload photo" button. Click opens Cloudinary Upload Widget (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`). On success -> `dashboardService.updateProfile({ avatarUrl: result.info.secure_url })` -> `loadProfile()`.
 
 **Change 2 -- Club Role & Batch Year badge:**
-Below the member's name in the profile header, show their `<ClubRoleBadge clubRole={profile.clubRole} />` (the M1 component). If no club role, show nothing.
+Below the member's name in the profile header, show their `<ClubRoleBadge clubRole={profile.clubRole} />` (the M1 component). If no club role, show nothing. The profile already renders the club role with an inline style (`getClubRoleBadgeStyle`); replace it with the M1 component once that merges.
 
 **Change 3 -- Platform links in header:**
 Row of icon links below CF handle. Only rendered if the URL is set: CodeChef, AtCoder, GitHub, LinkedIn. Each is `<a href="..." target="_blank" rel="noopener noreferrer">`.
@@ -835,7 +874,7 @@ Row of icon links below CF handle. Only rendered if the URL is set: CodeChef, At
 Replace the inline CF handle edit form with a full "Edit Profile" panel (owner-only). Fields: Name (required), Phone Number (required -- cannot save without it), Codeforces Handle, LeetCode Handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked (`--------`) to visitors. On save: `PUT /api/users/profile`. On success: refresh. On error: show inline error.
 
 **Change 5 -- Rating charts:**
-Replace "Coming Soon" overlay with live charts using `recharts`. CF chart: `GET /api/snapshots/{userId}/codeforces`. LeetCode chart: `GET /api/snapshots/{userId}/leetcode`. If < 2 points: "Not enough data yet." Reuse Phase 1 chart styling.
+The Codeforces graph already exists: `RatingGraph` (plain SVG), fed from the browser-side Codeforces `user.rating` proxy. Add a LeetCode graph with the same component, from `GET /api/snapshots/{userId}/leetcode`. **Do not add `recharts`** -- it was removed on purpose (about 104 kB gzipped on this route). If < 2 points: "Not enough data yet." The snapshot endpoints require sign-in, so a signed-out visitor sees "Sign in to see LeetCode history" rather than an error. Remove the "Multi-platform integration ... will be available soon" text once the chart is live.
 
 ---
 
@@ -901,6 +940,8 @@ Two-column layout (stacks on mobile):
 
 #### `app/(dashboard)/leaderboard/page.tsx` [MODIFY]
 
+Today the page calls `dashboardService.getLeaderboard()` once, with no parameters, and filters club roles in the browser (`RoleFilter` in `leaderboard-dashboard.tsx`). `leaderboardService` from Stage 2B already accepts `platform` and `filter`.
+
 Add two sets of filter controls above the leaderboard table:
 
 **Platform toggles:** "Codeforces | LeetCode" -- pill buttons. Updates `platform` state and re-fetches.
@@ -911,20 +952,24 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 
 ---
 
-## Section 10 -- Stage 3: Integration, Tests & Polish
+## Section 10 -- Stage 3: Integration, Tests & Polish -- [PARTIAL]
 **Owner: Member 6**
 **PR: `phase2/integration-and-tests`**
 **Estimated time: 2-3 days**
 
 ### Unit Tests
 
-#### `EventServiceTest.java`
+#### `EventServiceTest.java` -- [PARTIAL]
+
+The file exists with 11 tests covering the attendee guards, the attendee list, event
+detail and update. **Still missing:** `createEvent_success`, `removeAttendee_success`,
+`markCompleted_success`, `addEventPhoto_success`, `deleteEventPhoto_notFound`.
 
 | Test | Scenario | Expected |
 |---|---|---|
 | `createEvent_success` | Valid request, admin exists | Event saved, status=UPCOMING |
 | `addAttendee_success` | Valid userId, has phone, not duplicate | Attendee row created |
-| `addAttendee_noPhone` | User has null phoneNumber | `BadRequestException` |
+| `addAttendee_noPhone` | User has null phoneNumber | Attendee row created -- **allowed**, per Section 1. Already covered by `addAttendee_allowsMembersWithoutAPhoneNumber`. |
 | `addAttendee_duplicate` | Student already registered | `BadRequestException` |
 | `addAttendee_userNotFound` | userId doesn't exist | `ResourceNotFoundException` |
 | `addAttendee_eventCompleted` | Event status is COMPLETED | `BadRequestException` |
@@ -933,7 +978,7 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 | `addEventPhoto_success` | Valid eventId + url | Photo saved, DTO returned |
 | `deleteEventPhoto_notFound` | photoId doesn't exist | `ResourceNotFoundException` |
 
-#### `LeetCodeSyncServiceTest.java`
+#### `LeetCodeSyncServiceTest.java` -- [NOT STARTED]
 
 | Test | Scenario | Expected |
 |---|---|---|
@@ -942,7 +987,7 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 | `sync_noContest` | `userContestRanking` is null in response | Rating set to 0 |
 | `sync_httpError` | RestTemplate throws exception | No exception propagated, rating unchanged |
 
-#### `EventExportServiceTest.java`
+#### `EventExportServiceTest.java` -- [DONE] (5 tests)
 
 | Test | Scenario | Expected |
 |---|---|---|
@@ -950,7 +995,7 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 | `export_correctHeaders` | Any attendees | Row 0, Cell 0 = "ID", Cell 1 = "Name", etc. |
 | `export_clubRoleColumn` | Attendee has `clubRole = CORE` | Row 1, Club Role cell = "CORE" |
 
-#### `MemberGalleryServiceTest.java`
+#### `MemberGalleryServiceTest.java` -- [DONE - PR #73] (6 tests)
 
 | Test | Scenario | Expected |
 |---|---|---|
@@ -960,7 +1005,7 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 
 ### Environment Variables
 
-**Frontend only (Vercel).** Both are documented in `frontend/.env.example`:
+**Frontend only (Vercel).** [DONE] Both are documented in `frontend/.env.example`:
 ```
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=stdcydx1
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=cpclub_unsigned
@@ -976,7 +1021,7 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 
 ### Carried-over follow-ups
 
-1. **Add Testcontainers.** `src/test/resources/application-test.yml` runs H2 with
+1. **Add Testcontainers.** [NOT STARTED -- if still open at Phase 3 kickoff, Phase 3 Stage 0 lands it.] `src/test/resources/application-test.yml` runs H2 with
    `ddl-auto: create-drop` and Flyway **disabled**, so CI cannot detect a
    migration that has drifted from the entities -- a green suite proves nothing
    about the schema. Stage 0 was verified by booting against real PostgreSQL by
@@ -998,9 +1043,12 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 |---|---|---|---|
 | GET | `/api/users` | Public | Member directory (paginated) |
 | GET | `/api/users/{id}` | Public | Public profile |
+| GET | `/api/users/all` | **Admin** | Full member list, with emails -- admin Members tab |
 | GET | `/api/users/{id}/lookup` | **Admin** | Full lookup for event panel |
+| GET | `/api/users/handle/{handle}/exists` | Auth | Whether a Codeforces handle is already linked |
 | GET | `/api/users/profile` | Auth | Own full profile |
 | PUT | `/api/users/profile` | Auth | Update own profile (all new fields) |
+| PUT | `/api/users/{id}/handle` | Auth | Update a member's Codeforces handle (owner) |
 | PUT | `/api/users/{id}/role` | **Admin** | Change platform role (ADMIN/USER) |
 | PUT | `/api/users/{id}/club-role` | **Admin** | Change club role (CORE, CONVENOR, etc.) |
 | DELETE | `/api/users/{id}` | **Admin** | Delete user |
@@ -1033,9 +1081,9 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 
 | Member | Role | Stage | Owns |
 |---|---|---|---|
-| **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[Stage 1]** entire `snapshot/` package. **[Stage 3]** all unit tests, Render env vars, PR reviews, final merge |
-| **M4** | Backend Security + Gallery | 1A | `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint, entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller) |
-| **M5** | Backend Data + APIs | 1B | `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (7 DTOs + 3 repos + 2 services + 1 controller), `pom.xml` POI dep |
-| **M1** | Frontend UI/UX | 2A | `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
-| **M2** | Frontend State + Auth | 2B | `auth.ts` new User fields, `types/api.ts` 6 new types + ClubRole union, `events.ts` service (17 functions), `gallery.ts` service (4 functions), `dashboard.ts` mapper update, `leaderboard.ts` params update |
-| **M3** | Frontend Dashboards | 2C | Profile dashboard (Cloudinary avatar, club role badge, platform links, edit panel, rating charts), Admin dashboard all 3 tabs (Members with club role assignment, Events CRUD + gallery upload, Gallery management), Admin event attendee page (search + auto-fill + table + Excel download), Leaderboard platform + club filter toggles |
+| **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[DONE - PR #62]** entire `snapshot/` package. **[Stage 3 -- PARTIAL]** remaining unit tests (Section 10), Testcontainers, Render env vars, PR reviews, final merge |
+| **M4** | Backend Security + Gallery | 1A | **[DONE - PR #73]** `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint, entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller) |
+| **M5** | Backend Data + APIs | 1B | **[DONE - PR #67]** `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (7 DTOs + 3 repos + 2 services + 1 controller), `pom.xml` POI dep |
+| **M1** | Frontend UI/UX | 2A | **[NOT STARTED]** `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
+| **M2** | Frontend State + Auth | 2B | **[DONE - PR #71]** `auth.ts` new User fields, `types/api.ts` 6 new types + ClubRole union, `events.ts` service (16 functions), `gallery.ts` service (4 functions), `dashboard.ts` mapper update, `leaderboard.ts` params update |
+| **M3** | Frontend Dashboards | 2C | **[NOT STARTED]** Profile dashboard (Cloudinary avatar, club role badge, platform links, edit panel, rating charts), Admin dashboard all 3 tabs (Members with club role assignment, Events CRUD + gallery upload, Gallery management), Admin event attendee page (search + auto-fill + table + Excel download), Leaderboard platform + club filter toggles |
