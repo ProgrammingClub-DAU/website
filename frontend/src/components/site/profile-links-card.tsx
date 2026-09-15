@@ -1,0 +1,178 @@
+"use client";
+
+/**
+ * The member's profiles on every platform, as one row of capsules.
+ *
+ * Before this, four of the six links sat as small grey pills in the profile
+ * header, and the two that matter most -- Codeforces and LeetCode -- were not
+ * linked at all, even though the site knows both handles and shows both ratings.
+ *
+ * Each capsule carries the platform mark, the username and the rating where one
+ * exists, so the card answers "who is this member, where" without a click, and
+ * the whole capsule is the link.
+ */
+
+import { ExternalLink, Plus } from "lucide-react";
+
+import { GitHubMark } from "@/components/site/github-mark";
+import { PlatformMark, PLATFORM_ACCENT, type PlatformId } from "@/components/site/platform-mark";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PROFILE_PLATFORMS, profileUrl, usernameFrom, type ProfilePlatformId } from "@/lib/platform-profiles";
+import { cn } from "@/lib/utils";
+
+/** LinkedIn has no simple-icons entry here, and lucide dropped brand glyphs. */
+function LinkedInMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden focusable="false">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 0 0-1.6 1.6 1.6 1.6 0 0 0 1.6 1.6 1.6 1.6 0 0 0 1.6-1.6 1.6 1.6 0 0 0-1.6-1.6Z" />
+    </svg>
+  );
+}
+
+function Mark({ platform, className }: { platform: ProfilePlatformId; className?: string }) {
+  if (platform === "github") return <GitHubMark className={className} />;
+  if (platform === "linkedin") return <LinkedInMark className={className} />;
+  return <PlatformMark platform={platform as PlatformId} className={className} />;
+}
+
+/** Accent hue per platform. The four CP platforms already have one. */
+const ACCENT: Record<ProfilePlatformId, string> = {
+  codeforces: PLATFORM_ACCENT.codeforces,
+  leetcode: PLATFORM_ACCENT.leetcode,
+  codechef: PLATFORM_ACCENT.codechef,
+  atcoder: PLATFORM_ACCENT.atcoder,
+  github: "var(--fg-muted)",
+  linkedin: "var(--cf-expert)",
+};
+
+export interface ProfileLink {
+  platform: ProfilePlatformId;
+  /** Stored handle or URL, whichever that platform keeps. */
+  value: string | null;
+  /** Shown beside the username when the platform has a rating. */
+  rating?: number | null;
+}
+
+/**
+ * @param links every platform in display order, linked or not
+ * @param isOwner whether the viewer owns this profile, which decides what an
+ *        unlinked platform looks like
+ * @param onAddClick opens the edit panel, for the owner's unlinked capsules
+ */
+export function ProfileLinksCard({
+  links,
+  isOwner,
+  onAddClick,
+}: {
+  links: ProfileLink[];
+  isOwner: boolean;
+  onAddClick?: () => void;
+}) {
+  const linked = links.filter((l) => usernameFrom(l.platform, l.value));
+  const missing = links.filter((l) => !usernameFrom(l.platform, l.value));
+
+  // A visitor looking at a profile with nothing linked gets a plain sentence
+  // rather than six dead capsules.
+  if (linked.length === 0 && !isOwner) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Coding profiles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-2 text-sm text-fg-muted">This member has not linked any profiles yet.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Coding profiles</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {linked.map(({ platform, value, rating }) => {
+            const username = usernameFrom(platform, value);
+            const href = profileUrl(platform, value);
+            const accent = ACCENT[platform];
+            if (!href) return null;
+
+            return (
+              <a
+                key={platform}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                // The accent is decorative: it tints the mark and the hover
+                // border only. Every word stays on a normal text colour.
+                style={{ ["--accent" as string]: accent }}
+                className={cn(
+                  "group flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-3.5 py-3",
+                  "transition-all hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_55%,transparent)]",
+                  "hover:shadow-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                )}
+              >
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-hairline"
+                  style={{
+                    color: accent,
+                    background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                  }}
+                >
+                  <Mark platform={platform} className="size-4" />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-meta tracking-caps text-fg-subtle uppercase">
+                      {PROFILE_PLATFORMS[platform].label}
+                    </span>
+                    {typeof rating === "number" && rating > 0 && (
+                      <span className="rounded-full border border-hairline px-1.5 font-mono text-nano text-fg-muted">
+                        {rating}
+                      </span>
+                    )}
+                  </span>
+                  <span className="block truncate text-body font-medium text-foreground">
+                    @{username}
+                  </span>
+                </span>
+
+                <ExternalLink className="size-3.5 shrink-0 text-fg-subtle transition-colors group-hover:text-foreground" />
+              </a>
+            );
+          })}
+
+          {/* The owner sees what is still missing; a visitor does not, because
+              another member's empty slots are not information they can act on. */}
+          {isOwner &&
+            missing.map(({ platform }) => (
+              <button
+                key={platform}
+                type="button"
+                onClick={onAddClick}
+                className="group flex items-center gap-3 rounded-panel border border-dashed border-border px-3.5 py-3 text-left transition-colors hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-hairline text-fg-subtle">
+                  <Mark platform={platform} className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-meta tracking-caps text-fg-subtle uppercase">
+                    {PROFILE_PLATFORMS[platform].label}
+                  </span>
+                  <span className="block text-body text-fg-muted group-hover:text-foreground">
+                    Not linked
+                  </span>
+                </span>
+                <Plus className="size-3.5 shrink-0 text-fg-subtle transition-colors group-hover:text-foreground" />
+              </button>
+            ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default ProfileLinksCard;
