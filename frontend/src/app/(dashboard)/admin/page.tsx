@@ -304,6 +304,7 @@ function MembersTab() {
       header: "Club Role",
       render: (m) => (
         <div className="flex items-center gap-2">
+          <ClubRoleBadge clubRole={m.clubRole} showIcon={false} />
           <select
             value={m.clubRole || "STUDENT"}
             disabled={actionLoadingId === m.id}
