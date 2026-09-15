@@ -2,9 +2,14 @@ package com.cpclub.backend.event;
 
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
+import com.cpclub.backend.event.dto.AddEventPhotoRequest;
 import com.cpclub.backend.event.dto.EventAttendeeDto;
+import com.cpclub.backend.event.dto.EventCreateRequest;
+import com.cpclub.backend.event.dto.EventPhotoDto;
+import com.cpclub.backend.event.dto.EventResponseDto;
 import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventAttendee;
+import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
@@ -16,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -224,5 +230,132 @@ class EventServiceTest {
         assertEquals("Renamed", result.title());
         assertEquals(EventStatus.COMPLETED, result.status(),
                 "an ordinary edit must not reopen a completed event");
+    }
+
+    // -- Event lifecycle -----------------------------------------------------
+
+    @Test
+    @DisplayName("A new event starts UPCOMING and records the admin who created it")
+    void createEvent_success() {
+        when(userRepository.findByEmail("admin@dau.ac.in")).thenReturn(Optional.of(admin));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        EventResponseDto result = eventService.createEvent(new EventCreateRequest(
+                "Spring Code Sprint", "Five problems, two hours",
+                LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null), "admin@dau.ac.in");
+
+        ArgumentCaptor<Event> saved = ArgumentCaptor.forClass(Event.class);
+        verify(eventRepository).save(saved.capture());
+        assertEquals(EventStatus.UPCOMING, saved.getValue().getStatus(),
+                "a request cannot create an event that is already completed or cancelled");
+        assertEquals(admin, saved.getValue().getCreatedBy());
+        assertEquals("Spring Code Sprint", result.title());
+        assertEquals(EventStatus.UPCOMING, result.status());
+    }
+
+    @Test
+    @DisplayName("Creating an event as an account that no longer exists is a 404")
+    void createEvent_rejectsAnUnknownAdmin() {
+        when(userRepository.findByEmail("gone@dau.ac.in")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.createEvent(new EventCreateRequest(
+                "Title", null, LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null), "gone@dau.ac.in"));
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Marking an event completed sets its status")
+    void markCompleted_success() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        EventResponseDto result = eventService.markEventCompleted(10L);
+
+        assertEquals(EventStatus.COMPLETED, result.status());
+        assertEquals(EventStatus.COMPLETED, upcoming.getStatus());
+    }
+
+    @Test
+    @DisplayName("Marking an unknown event completed is a 404")
+    void markCompleted_rejectsAnUnknownEvent() {
+        when(eventRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.markEventCompleted(99L));
+        verify(eventRepository, never()).save(any());
+    }
+
+    // -- Attendance removal --------------------------------------------------
+
+    @Test
+    @DisplayName("Removing an attendee deletes exactly that attendance row")
+    void removeAttendee_success() {
+        EventAttendee row = EventAttendee.builder().id(5L).event(upcoming).user(student).addedBy(admin).build();
+        when(eventAttendeeRepository.findByEventIdAndUserId(10L, 2L)).thenReturn(Optional.of(row));
+
+        eventService.removeAttendee(10L, 2L);
+
+        verify(eventAttendeeRepository).delete(row);
+    }
+
+    @Test
+    @DisplayName("Removing a member who was never recorded is a 404, not a silent no-op")
+    void removeAttendee_rejectsAMissingRow() {
+        when(eventAttendeeRepository.findByEventIdAndUserId(10L, 2L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.removeAttendee(10L, 2L));
+        verify(eventAttendeeRepository, never()).delete(any());
+    }
+
+    // -- Event photos --------------------------------------------------------
+
+    @Test
+    @DisplayName("An event photo stores the Cloudinary URL, caption and uploader")
+    void addEventPhoto_success() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(userRepository.findByEmail("admin@dau.ac.in")).thenReturn(Optional.of(admin));
+        when(eventPhotoRepository.save(any(EventPhoto.class))).thenAnswer(i -> i.getArgument(0));
+
+        EventPhotoDto result = eventService.addEventPhoto(10L,
+                new AddEventPhotoRequest("https://res.cloudinary.com/demo/image/upload/round.jpg", "Final standings"),
+                "admin@dau.ac.in");
+
+        ArgumentCaptor<EventPhoto> saved = ArgumentCaptor.forClass(EventPhoto.class);
+        verify(eventPhotoRepository).save(saved.capture());
+        assertEquals(upcoming, saved.getValue().getEvent());
+        assertEquals(admin, saved.getValue().getUploadedBy());
+        assertEquals("https://res.cloudinary.com/demo/image/upload/round.jpg", result.imageUrl());
+        assertEquals("Final standings", result.caption());
+    }
+
+    @Test
+    @DisplayName("A photo cannot be attached to an unknown event")
+    void addEventPhoto_rejectsAnUnknownEvent() {
+        when(eventRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.addEventPhoto(99L,
+                new AddEventPhotoRequest("https://res.cloudinary.com/demo/image/upload/x.jpg", null),
+                "admin@dau.ac.in"));
+        verify(eventPhotoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deleting an existing photo removes that row")
+    void deleteEventPhoto_success() {
+        EventPhoto photo = EventPhoto.builder().id(7L).event(upcoming)
+                .imageUrl("https://res.cloudinary.com/demo/image/upload/x.jpg").uploadedBy(admin).build();
+        when(eventPhotoRepository.findById(7L)).thenReturn(Optional.of(photo));
+
+        eventService.deleteEventPhoto(7L);
+
+        verify(eventPhotoRepository).delete(photo);
+    }
+
+    @Test
+    @DisplayName("Deleting a photo that does not exist is a 404")
+    void deleteEventPhoto_notFound() {
+        when(eventPhotoRepository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.deleteEventPhoto(404L));
+        verify(eventPhotoRepository, never()).delete(any());
     }
 }

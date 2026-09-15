@@ -16,10 +16,10 @@
 > | 2A -- Frontend UI | M1 | **[NOT STARTED]** | None of the 6 components or 3 pages exist. Events and Gallery still read `lib/content/`. |
 > | 2B -- Auth + state | M2 | **[DONE]** PR #71 | Store fields, types, `events.ts` (16 functions), `gallery.ts`, mapper, leaderboard params |
 > | 2C -- Dashboards | M3 | **[NOT STARTED]** | No admin pages. The profile edits the CF handle only. The leaderboard fetches once and filters in the browser. |
-> | 3 -- Tests + polish | M6 | **[PARTIAL]** | Export and gallery tests and env docs done. `LeetCodeSyncServiceTest`, 5 `EventServiceTest` cases and Testcontainers missing (Section 10). |
+> | 3 -- Tests + polish | M6 | **[PARTIAL]** | Every planned unit test, Testcontainers and the env docs are done. Left: Cloudinary preset hardening, phone backfill, env vars on Render and Vercel (Section 10). |
 >
 > **Can start now:** M1 -- all of Stage 2A. M3 -- the profile and leaderboard parts of
-> Stage 2C (Section 9). M6 -- the missing Stage 3 tests.
+> Stage 2C (Section 9). M6 -- the non-code Stage 3 items (Section 10).
 
 ---
 
@@ -959,11 +959,10 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 
 ### Unit Tests
 
-#### `EventServiceTest.java` -- [PARTIAL]
+#### `EventServiceTest.java` -- [DONE] (21 tests)
 
-The file exists with 11 tests covering the attendee guards, the attendee list, event
-detail and update. **Still missing:** `createEvent_success`, `removeAttendee_success`,
-`markCompleted_success`, `addEventPhoto_success`, `deleteEventPhoto_notFound`.
+Every case below is covered, plus the not-found paths for create, mark-completed,
+remove-attendee and add-photo.
 
 | Test | Scenario | Expected |
 |---|---|---|
@@ -978,7 +977,7 @@ detail and update. **Still missing:** `createEvent_success`, `removeAttendee_suc
 | `addEventPhoto_success` | Valid eventId + url | Photo saved, DTO returned |
 | `deleteEventPhoto_notFound` | photoId doesn't exist | `ResourceNotFoundException` |
 
-#### `LeetCodeSyncServiceTest.java` -- [NOT STARTED]
+#### `LeetCodeSyncServiceTest.java` -- [DONE] (8 tests)
 
 | Test | Scenario | Expected |
 |---|---|---|
@@ -1021,7 +1020,7 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 
 ### Carried-over follow-ups
 
-1. **Add Testcontainers.** [NOT STARTED -- if still open at Phase 3 kickoff, Phase 3 Stage 0 lands it.] `src/test/resources/application-test.yml` runs H2 with
+1. **Add Testcontainers.** [DONE] `FlywayMigrationIntegrationTest` runs every migration on PostgreSQL 15 in CI with `ddl-auto: validate`, and skips on a machine with no Docker daemon. The original problem, kept for context: `src/test/resources/application-test.yml` runs H2 with
    `ddl-auto: create-drop` and Flyway **disabled**, so CI cannot detect a
    migration that has drifted from the entities -- a green suite proves nothing
    about the schema. Stage 0 was verified by booting against real PostgreSQL by
@@ -1081,7 +1080,7 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 
 | Member | Role | Stage | Owns |
 |---|---|---|---|
-| **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[DONE - PR #62]** entire `snapshot/` package. **[Stage 3 -- PARTIAL]** remaining unit tests (Section 10), Testcontainers, Render env vars, PR reviews, final merge |
+| **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[DONE - PR #62]** entire `snapshot/` package. **[Stage 3 -- PARTIAL]** unit tests and Testcontainers done; Render and Vercel env vars, Cloudinary preset, phone backfill, PR reviews and final merge remain |
 | **M4** | Backend Security + Gallery | 1A | **[DONE - PR #73]** `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint, entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller) |
 | **M5** | Backend Data + APIs | 1B | **[DONE - PR #67]** `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (7 DTOs + 3 repos + 2 services + 1 controller), `pom.xml` POI dep |
 | **M1** | Frontend UI/UX | 2A | **[NOT STARTED]** `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
