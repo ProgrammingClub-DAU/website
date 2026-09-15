@@ -95,6 +95,23 @@ public class UserController {
     /**
      * Retrieves the full member view used by administrators when managing attendance.
      */
+    /**
+     * Finds members for the attendance panel. Restricted to Administrator role.
+     *
+     * <p>Mapped above {@code /{id}} on purpose: a literal path wins over a path
+     * variable, so this never collides with a numeric lookup.</p>
+     *
+     * @param query student ID, email address, name fragment or Codeforces handle
+     * @return up to ten matching members
+     */
+    @GetMapping("/lookup")
+    @Operation(summary = "Find members by student ID, email or name (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserLookupDto>>> lookupUsers(@RequestParam String query) {
+        List<UserLookupDto> matches = userService.searchForAttendance(query);
+        return ResponseEntity.ok(ApiResponse.success(matches, "Found " + matches.size() + " member(s)"));
+    }
+
     @GetMapping("/{id}/lookup")
     @Operation(summary = "Look up a member (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")

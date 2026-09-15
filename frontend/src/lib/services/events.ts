@@ -104,6 +104,21 @@ export const eventsService = {
     return response.data.data;
   },
 
+  /**
+   * Finds members for the attendance panel.
+   *
+   * Takes what an admin can read off a student card: the student ID in front
+   * of a DAU address, so 202401226 resolves 202401226@dau.ac.in. A full email,
+   * a name or a Codeforces handle also match, for members who joined with
+   * another address.
+   */
+  lookupMembers: async (query: string): Promise<UserLookup[]> => {
+    const response = await apiClient.get<ApiResponse<UserLookup[]>>("/api/users/lookup", {
+      params: { query },
+    });
+    return response.data?.data ?? [];
+  },
+
   lookupUser: async (userId: number): Promise<UserLookup> => {
     const response = await apiClient.get<ApiResponse<UserLookup>>(`/api/users/${userId}/lookup`);
     return response.data.data;
