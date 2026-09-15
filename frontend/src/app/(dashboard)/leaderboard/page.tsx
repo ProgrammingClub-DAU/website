@@ -8,8 +8,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
-import { dashboardService } from "@/lib/services/dashboard";
+import { leaderboardService } from "@/lib/services/leaderboard";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
+import type { LeaderboardEntry } from "@/types/api";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
@@ -17,9 +18,9 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  let leaderboard: Awaited<ReturnType<typeof dashboardService.getLeaderboard>> = [];
+  let leaderboard: LeaderboardEntry[] = [];
   try {
-    leaderboard = await dashboardService.getLeaderboard();
+    leaderboard = await leaderboardService.getLeaderboard("CODEFORCES", "ALL");
   } catch {
     // API unreachable — render with empty list, page stays functional
   }
@@ -38,13 +39,13 @@ export default async function LeaderboardPage() {
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <Button asChild className="h-10 rounded-full px-5.5">
-            <Link href="/profile">Add CF Handle to Join</Link>
+            <Link href="/profile">Add Handle to Join</Link>
           </Button>
         </div>
       </Section>
 
       <Section className="pb-16">
-        <LeaderboardDashboard entries={leaderboard} />
+        <LeaderboardDashboard initialEntries={leaderboard} />
       </Section>
     </>
   );

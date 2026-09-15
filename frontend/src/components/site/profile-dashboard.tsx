@@ -1,132 +1,141 @@
 "use client";
 
 /**
- * Profile Dashboard Page
+ * Profile Dashboard Page (Phase 2 Stage 2C)
  *
- * This is a client component because it uses interactive libraries
- * (react-activity-calendar) and a hand-built SVG rating graph.
- * It receives data from a server-side wrapper and renders:
- * - Profile header with avatar, name (colored by CF rank), club role, and key stats
- * - Club Activity & Event Performance (stats summary, achievements, event list with filters)
- * - GitHub-style activity heat map (green dots for DSA practice days)
- * - Contest rating graph over time (RatingGraph, plain SVG)
- * - Platform-wise breakdown of problems solved
+ * This client component renders:
+ * - Profile header with avatar (Cloudinary upload support), name, club role badge, CF handle, and platform links
+ * - Full owner-only Edit Profile panel (Name, Phone [required], CF, LeetCode, CodeChef, AtCoder, GitHub, LinkedIn)
+ * - Contest rating graphs: Codeforces rating history + LeetCode snapshot rating history
+ * - Account details with masked phone for visitors
+ * - Club Activity & Event Performance summary
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-
-import { RatingGraph } from "@/components/site/rating-graph";
-import { dashboardService } from "@/lib/services/dashboard";
+import Script from "next/script";
+import Image from "next/image";
+import { RatingGraph, type RatingPoint } from "@/components/site/rating-graph";
+import { ClubRoleBadge } from "@/components/ui/club-role-badge";
+import { GitHubMark } from "@/components/site/github-mark";
+import { PlatformMark } from "@/components/site/platform-mark";
+import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
+import { snapshotService, type SnapshotEntry } from "@/lib/services/snapshots";
 import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import { getClubRoleLabel } from "@/lib/club-roles";
-import type { Profile, EventParticipation, ClubEventType, ClubRole } from "@/types/api";
-import dynamic from "next/dynamic";
-const ActivityCalendar = dynamic(
-  () => import("react-activity-calendar").then((mod) => mod.ActivityCalendar),
-  { ssr: false }
-);
+import type { Profile, EventParticipation } from "@/types/api";
 import {
   User,
   Trophy,
-  Code,
-  Calendar,
+  Code,
   Award,
-  Target,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ChevronDown,
   Zap,
-  BookOpen,
-  Swords,
-  Crown,
-  Star,
   Lock,
   Edit2,
-  Check,
-  X,
-  Plus
+  Camera,
+  ExternalLink,
+  Phone,
+  Mail,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
-import Image from "next/image";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
-// ── Event type icon and color (used in Phase 2 event section) ──
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getEventTypeIcon(type: ClubEventType) {
-  switch (type) {
-    case "Contest": return <Swords className="size-4" />;
-    case "Workshop": return <BookOpen className="size-4" />;
-    case "ICPC": return <Crown className="size-4" />;
-    case "Flagship": return <Star className="size-4" />;
-    default: return <Zap className="size-4" />;
-  }
+function LinkedInIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 0 0-1.6 1.6 1.6 1.6 0 0 0 1.6 1.6 1.6 1.6 0 0 0 1.6-1.6 1.6 1.6 0 0 0-1.6-1.6Z" />
+    </svg>
+  );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getEventTypeColor(type: ClubEventType): string {
-  switch (type) {
-    case "Contest": return "var(--cf-expert)";
-    case "Workshop": return "var(--cf-pupil)";
-    case "ICPC": return "var(--cf-master)";
-    case "Flagship": return "var(--cf-grandmaster)";
-    default: return "var(--cf-specialist)";
-  }
-}
-
-// ── Club role styling ──
-function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text: string; border: string } {
-  switch (role) {
-    case "CONVENOR":
-      return { bg: "rgba(255,215,0,0.1)", text: "#ffd700", border: "rgba(255,215,0,0.3)" };
-    case "DEPUTY_CONVENOR":
-      return { bg: "rgba(192,192,192,0.1)", text: "#c0c0c0", border: "rgba(192,192,192,0.3)" };
-    case "CORE":
-      return { bg: "rgba(138,43,226,0.1)", text: "#aa6dff", border: "rgba(138,43,226,0.3)" };
-    case "ASSOCIATE_CORE":
-      return { bg: "rgba(30,144,255,0.1)", text: "#5ba3ff", border: "rgba(30,144,255,0.3)" };
-    case "BATCH_REPRESENTATIVE":
-      return { bg: "rgba(0,206,209,0.1)", text: "#40e0d0", border: "rgba(0,206,209,0.3)" };
-    default:
-      return { bg: "rgba(128,128,128,0.08)", text: "var(--fg-muted)", border: "var(--border)" };
+declare global {
+  interface Window {
+    cloudinary?: {
+      createUploadWidget: (
+        options: Record<string, unknown>,
+        callback: (error: unknown, result: { event: string; info: { secure_url: string } }) => void
+      ) => { open: () => void };
+    };
   }
 }
 
 // ── Generate achievements from event participations ──
+/**
+ * Builds a complete profile payload.
+ *
+ * PUT /api/users/profile replaces every field it receives, and a field that is
+ * absent is stored as empty. Sending only the avatar therefore wiped the phone
+ * number and all four platform links, and saving the edit form wiped the avatar.
+ * Every call sends the whole profile, with only the edited fields overridden.
+ */
+function profilePayload(profile: Profile, overrides: Partial<ProfileUpdateRequest>): ProfileUpdateRequest {
+  return {
+    name: profile.name,
+    phoneNumber: profile.phoneNumber,
+    codeforcesHandle: profile.codeforcesHandle,
+    leetcodeHandle: profile.leetcodeHandle,
+    codechefUrl: profile.codechefUrl,
+    atcoderUrl: profile.atcoderUrl,
+    githubUrl: profile.githubUrl,
+    linkedinUrl: profile.linkedinUrl,
+    avatarUrl: profile.avatarUrl,
+    ...overrides,
+  };
+}
+
+/** Edit-form values for a member, used when the panel is opened. */
+function formFromProfile(profile: Profile) {
+  return {
+    name: profile.name || "",
+    phoneNumber: profile.phoneNumber || "",
+    codeforcesHandle: profile.codeforcesHandle || "",
+    leetcodeHandle: profile.leetcodeHandle || "",
+    codechefUrl: profile.codechefUrl || "",
+    atcoderUrl: profile.atcoderUrl || "",
+    githubUrl: profile.githubUrl || "",
+    linkedinUrl: profile.linkedinUrl || "",
+  };
+}
+
 function generateAchievements(events: EventParticipation[]): { icon: string; label: string }[] {
   const achievements: { icon: string; label: string }[] = [];
 
-  // Top finishes
   events.forEach((e) => {
     if (e.achievement) {
-      achievements.push({ icon: e.achievement.split(" ")[0], label: `${e.eventName} \u2014 ${e.achievement.substring(e.achievement.indexOf(" ") + 1)}` });
+      achievements.push({
+        icon: e.achievement.split(" ")[0],
+        label: `${e.eventName} — ${e.achievement.substring(e.achievement.indexOf(" ") + 1)}`,
+      });
     }
   });
 
-  // Milestone badges
   const totalEvents = events.length;
-  if (totalEvents >= 10) achievements.push({ icon: "\ud83c\udfaf", label: "Participated in 10+ Club Events" });
-  else if (totalEvents >= 5) achievements.push({ icon: "\ud83c\udfaf", label: "Participated in 5+ Club Events" });
+  if (totalEvents >= 10) achievements.push({ icon: "🎯", label: "Participated in 10+ Club Events" });
+  else if (totalEvents >= 5) achievements.push({ icon: "🎯", label: "Participated in 5+ Club Events" });
 
-  const contests = events.filter((e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC");
+  const contests = events.filter(
+    (e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC"
+  );
   const top3Count = contests.filter((e) => e.rank !== null && e.rank <= 3).length;
-  if (top3Count >= 3) achievements.push({ icon: "\ud83c\udfc6", label: "Top 3 Finisher \u2014 3+ Contests" });
+  if (top3Count >= 3) achievements.push({ icon: "🏆", label: "Top 3 Finisher — 3+ Contests" });
 
   return achievements;
 }
-
-// ── Filter type (used in Phase 2 event section) ──
-type EventFilter = "All" | "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const EVENT_FILTERS: EventFilter[] = ["All", "Contest", "Workshop", "ICPC", "Flagship"];
-
-const EVENTS_PER_PAGE = 5;
 
 export default function ProfileDashboard({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cfInfo, setCfInfo] = useState<CfUserInfo | null>(null);
   const [cfHistory, setCfHistory] = useState<CfRatingHistoryEntry[]>([]);
+  const [lcHistory, setLcHistory] = useState<SnapshotEntry[]>([]);
+  const [lcLoading, setLcLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
 
@@ -134,70 +143,207 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
 
   const loadProfile = useCallback(async () => {
     try {
-      const data = isOwner 
+      const data = isOwner
         ? await dashboardService.getProfile(userId)
         : await dashboardService.getUserProfileById(userId);
       setProfile(data);
 
       if (data.codeforcesHandle) {
-        const [info, history] = await Promise.all([
-          codeforcesService.getUserInfo(data.codeforcesHandle),
-          codeforcesService.getRatingHistory(data.codeforcesHandle),
-        ]);
-        setCfInfo(info);
-        setCfHistory(history);
+        try {
+          const [info, history] = await Promise.all([
+            codeforcesService.getUserInfo(data.codeforcesHandle),
+            codeforcesService.getRatingHistory(data.codeforcesHandle),
+          ]);
+          setCfInfo(info);
+          setCfHistory(history);
+        } catch (err) {
+          console.error("Failed to load Codeforces data:", err);
+        }
+      }
+
+      if (isAuthenticated && data.id) {
+        setLcLoading(true);
+        try {
+          const snapshots = await snapshotService.getLeetCodeSnapshots(data.id);
+          setLcHistory(snapshots);
+        } catch (err) {
+          console.error("Failed to load LeetCode snapshots:", err);
+        } finally {
+          setLcLoading(false);
+        }
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [userId, isOwner]);
+  }, [userId, isOwner, isAuthenticated]);
 
   useEffect(() => {
-    // We allow viewing without auth for public profiles, but redirect if no profile is found.
-    // Actually, dashboardService handles public profiles, so we just load it.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch is intentional
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadProfile();
   }, [loadProfile]);
 
   if (loading) {
-    return <div className="animate-pulse flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Loading profile data...</div>;
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center font-mono text-sm tracking-wider text-fg-muted uppercase animate-pulse">
+        <Loader2 className="mb-2 size-6 animate-spin text-primary" />
+        Loading profile data...
+      </div>
+    );
   }
 
   if (!profile) {
-    return <div className="flex flex-col items-center justify-center min-h-[400px] text-fg-muted font-mono text-sm tracking-wider uppercase">Please log in to view your profile.</div>;
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center font-mono text-sm tracking-wider text-fg-muted uppercase">
+        Profile not found.
+      </div>
+    );
   }
 
-  return <ProfileDashboardContent profile={profile} cfInfo={cfInfo} cfHistory={cfHistory} onUpdate={loadProfile} isOwner={isOwner} />;
+  return (
+    <>
+      <Script src="https://upload-widget.cloudinary.com/global/all.js" strategy="lazyOnload" />
+      <ProfileDashboardContent
+        profile={profile}
+        cfInfo={cfInfo}
+        cfHistory={cfHistory}
+        lcHistory={lcHistory}
+        lcLoading={lcLoading}
+        onUpdate={loadProfile}
+        isOwner={isOwner}
+      />
+    </>
+  );
 }
 
-function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner }: { profile: Profile, cfInfo: CfUserInfo | null, cfHistory: CfRatingHistoryEntry[], onUpdate: () => void, isOwner: boolean }) {
-  // ── State ──
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [eventFilter, setEventFilter] = useState<EventFilter>("All");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [showAllEvents, setShowAllEvents] = useState(false);
-  const [isEditingHandle, setIsEditingHandle] = useState(false);
-  const [newHandle, setNewHandle] = useState("");
-  const [isSubmittingHandle, setIsSubmittingHandle] = useState(false);
+function ProfileDashboardContent({
+  profile,
+  cfInfo,
+  cfHistory,
+  lcHistory,
+  lcLoading,
+  onUpdate,
+  isOwner,
+}: {
+  profile: Profile;
+  cfInfo: CfUserInfo | null;
+  cfHistory: CfRatingHistoryEntry[];
+  lcHistory: SnapshotEntry[];
+  lcLoading: boolean;
+  onUpdate: () => void;
+  isOwner: boolean;
+}) {
+  const { isAuthenticated } = useAuthStore();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleUpdateCfHandle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newHandle.trim()) return;
-    setIsSubmittingHandle(true);
-    try {
-      await dashboardService.updateCodeforcesHandle(String(profile.id), newHandle.trim());
-      setIsEditingHandle(false);
-      onUpdate();
-    } catch (error) {
-      console.error("Failed to update handle:", error);
-    } finally {
-      setIsSubmittingHandle(false);
+  // Form state
+  const [formData, setFormData] = useState({
+    name: profile.name || "",
+    phoneNumber: profile.phoneNumber || "",
+    codeforcesHandle: profile.codeforcesHandle || "",
+    leetcodeHandle: profile.leetcodeHandle || "",
+    codechefUrl: profile.codechefUrl || "",
+    atcoderUrl: profile.atcoderUrl || "",
+    githubUrl: profile.githubUrl || "",
+    linkedinUrl: profile.linkedinUrl || "",
+  });
+
+  const openEditor = () => {
+    setFormData(formFromProfile(profile));
+    setSaveError(null);
+    setIsEditingProfile(true);
+  };
+
+
+
+  const handleOpenCloudinary = () => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
+
+    if (window.cloudinary) {
+      const widget = window.cloudinary.createUploadWidget(
+        {
+          cloudName,
+          uploadPreset,
+          folder: "cpclub",
+          maxFiles: 1,
+          clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
+          maxFileSize: 5000000,
+        },
+        async (error, result) => {
+          if (!error && result && result.event === "success") {
+            setIsUploadingAvatar(true);
+            try {
+              await dashboardService.updateProfile(
+                profilePayload(profile, { avatarUrl: result.info.secure_url })
+              );
+              onUpdate();
+            } catch (err) {
+              console.error("Failed to save avatar URL:", err);
+            } finally {
+              setIsUploadingAvatar(false);
+            }
+          }
+        }
+      );
+      widget.open();
+    } else {
+      const manualUrl = window.prompt("Enter direct image URL for your avatar:");
+      if (manualUrl && manualUrl.trim()) {
+        setIsUploadingAvatar(true);
+        dashboardService
+          .updateProfile(profilePayload(profile, { avatarUrl: manualUrl.trim() }))
+          .then(() => onUpdate())
+          .catch((err) => console.error("Failed to update avatar:", err))
+          .finally(() => setIsUploadingAvatar(false));
+      }
     }
   };
 
-  // Resolve the CF rank color using the existing utility
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaveError(null);
+
+    if (!formData.name.trim()) {
+      setSaveError("Name is required.");
+      return;
+    }
+    if (!formData.phoneNumber.trim()) {
+      setSaveError("Phone number is required.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const payload: ProfileUpdateRequest = {
+        name: formData.name.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        codeforcesHandle: formData.codeforcesHandle.trim() || null,
+        leetcodeHandle: formData.leetcodeHandle.trim() || null,
+        codechefUrl: formData.codechefUrl.trim() || null,
+        atcoderUrl: formData.atcoderUrl.trim() || null,
+        githubUrl: formData.githubUrl.trim() || null,
+        linkedinUrl: formData.linkedinUrl.trim() || null,
+        // Carried through so that saving the form does not clear the avatar.
+        avatarUrl: profile.avatarUrl,
+      };
+      await dashboardService.updateProfile(payload);
+      setIsEditingProfile(false);
+      onUpdate();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to update profile. Please check your inputs.";
+      setSaveError(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const getCfRank = (rating: number): import("@/lib/cf-ranks").CfRankKey => {
     if (rating >= 2400) return "grandmaster";
     if (rating >= 2100) return "master";
@@ -208,41 +354,16 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
     return "newbie";
   };
 
-  /*
-   * Prefer the live Codeforces value when it is available — cfInfo is already
-   * fetched for the avatar on every profile page visit, so this is free.
-   * The database copy (profile.rating) exists for the leaderboard, which cannot
-   * call Codeforces once per row; on the profile page it is only the fallback.
-   *
-   * Using ?? not || : rating 0 is a valid (unrated) value; || would skip it.
-   */
   const currentRating = cfInfo?.rating ?? profile.rating;
-
   const actualCfRank = getCfRank(currentRating ?? 0);
   const nameColor = rankColor(actualCfRank);
   const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
-  const totalSolved = profile.platformStats?.reduce((acc, curr) => acc + curr.solved, 0) || 0;
-  void totalSolved; // Platform stats locked until Phase 2
 
-  // ── Club activity computed values (used in Phase 2 event section) ──
-   
   const eventParticipations = useMemo(() => profile.eventParticipations ?? [], [profile.eventParticipations]);
-  const sortedEvents = useMemo(() =>
-    [...eventParticipations].sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()),
-    [eventParticipations]
-  );
-
-   
-  const filteredEvents = useMemo(() => {
-    if (eventFilter === "All") return sortedEvents;
-    return sortedEvents.filter((e) => e.eventType === eventFilter);
-  }, [sortedEvents, eventFilter]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const visibleEvents = showAllEvents ? filteredEvents : filteredEvents.slice(0, EVENTS_PER_PAGE);
-
   const clubStats = useMemo(() => {
-    const contests = eventParticipations.filter((e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC");
+    const contests = eventParticipations.filter(
+      (e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC"
+    );
     const workshops = eventParticipations.filter((e) => e.eventType === "Workshop");
     const rankedEvents = eventParticipations.filter((e) => e.rank !== null);
     const bestRank = rankedEvents.length > 0 ? Math.min(...rankedEvents.map((e) => e.rank!)) : null;
@@ -257,8 +378,16 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
     };
   }, [eventParticipations]);
 
-  const clubRoleStyle = getClubRoleBadgeStyle(profile.clubRole);
-  const isOfficialMember = profile.clubRole !== null && profile.clubRole !== "STUDENT";
+  const lcPoints: RatingPoint[] = useMemo(() => {
+    return lcHistory.map((h) => ({
+      date: h.date,
+      rating: h.rating,
+      contestName: "LeetCode Weekly Snapshot",
+    }));
+  }, [lcHistory]);
+
+  const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
+
 
   return (
     <div className="space-y-8">
@@ -266,123 +395,301 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-            {/* Avatar */}
-            <div
-              className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 bg-surface-2"
-              style={{ borderColor: nameColor }}
-            >
-              {cfInfo?.titlePhoto || cfInfo?.avatar || profile.avatarUrl ? (
-                <Image
-                  src={cfInfo?.titlePhoto || cfInfo?.avatar || profile.avatarUrl || ""}
-                  alt={profile.name}
-                  width={96}
-                  height={96}
-                  className="size-full rounded-full object-cover"
-                />
-              ) : (
-                <User className="size-10 text-fg-muted" />
+            {/* Avatar with Cloudinary Upload Option */}
+            <div className="relative group">
+              <div
+                className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 bg-surface-2 overflow-hidden"
+                style={{ borderColor: nameColor }}
+              >
+                {displayAvatar ? (
+                  <Image
+                    src={displayAvatar}
+                    alt={profile.name}
+                    width={96}
+                    height={96}
+                    className="size-full rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="size-10 text-fg-muted" />
+                )}
+              </div>
+              {isOwner && (
+                <button
+                  onClick={handleOpenCloudinary}
+                  disabled={isUploadingAvatar}
+                  title="Upload profile photo via Cloudinary"
+                  className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border border-border bg-surface text-fg-muted shadow-md transition-all hover:bg-primary hover:text-primary-foreground"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Camera className="size-4" />
+                  )}
+                </button>
               )}
             </div>
 
             {/* Name + handle + rank + club role */}
             <div className="flex-1 text-center sm:text-left">
-              <h2
-                className="text-2xl font-bold tracking-tight"
-                style={{ color: nameColor }}
-              >
-                {profile.name}
-              </h2>
-              {isOwner && isEditingHandle ? (
-                <form onSubmit={handleUpdateCfHandle} className="mt-1 flex items-center justify-center sm:justify-start gap-2">
-                  <span className="text-sm text-fg-muted">@</span>
-                  <input
-                    type="text"
-                    value={newHandle}
-                    onChange={(e) => setNewHandle(e.target.value)}
-                    className="h-7 rounded border border-border bg-surface-1 px-2 text-sm outline-none focus:border-primary w-32"
-                    placeholder="CF Handle"
-                    autoFocus
-                    disabled={isSubmittingHandle}
-                  />
-                  <button type="submit" disabled={isSubmittingHandle || !newHandle.trim()} className="text-primary hover:text-primary/80 disabled:opacity-50">
-                    <Check className="size-4" />
-                  </button>
-                  <button type="button" onClick={() => setIsEditingHandle(false)} disabled={isSubmittingHandle} className="text-fg-muted hover:text-foreground">
-                    <X className="size-4" />
-                  </button>
-                </form>
-              ) : (
-                <p className="mt-1 flex items-center justify-center sm:justify-start gap-2 text-sm text-fg-muted group">
-                  @{profile.codeforcesHandle || "No handle linked"}
-                  {isOwner && (
-                    <button 
-                      onClick={() => { setNewHandle(profile.codeforcesHandle || ""); setIsEditingHandle(true); }} 
-                      className="opacity-0 transition-opacity group-hover:opacity-100 text-fg-subtle hover:text-foreground"
-                      title="Edit Codeforces Handle"
-                    >
-                      <Edit2 className="size-3.5" />
-                    </button>
-                  )}
-                </p>
-              )}
-              {isOwner && !profile.codeforcesHandle && !isEditingHandle && (
-                <div className="mt-3">
-                  <button 
-                    onClick={() => { setNewHandle(""); setIsEditingHandle(true); }} 
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-fg-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-                  >
-                    <Plus className="size-3.5" /> Add CF Handle
-                  </button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight" style={{ color: nameColor }}>
+                    {profile.name}
+                  </h2>
+                  <p className="mt-0.5 text-sm text-fg-muted">
+                    {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "No Codeforces handle linked"}
+                    {profile.leetcodeHandle && (
+                      <span className="ml-3 text-fg-subtle">
+                        LC: <strong className="text-foreground">@{profile.leetcodeHandle}</strong>
+                      </span>
+                    )}
+                  </p>
                 </div>
-              )}
 
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                {isOwner && (
+                  <button
+                    onClick={() => (isEditingProfile ? setIsEditingProfile(false) : openEditor())}
+                    className="inline-flex items-center self-center sm:self-start gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-hairline-strong hover:bg-surface-3"
+                  >
+                    <Edit2 className="size-3.5" />
+                    {isEditingProfile ? "Cancel Editing" : "Edit Profile"}
+                  </button>
+                )}
+              </div>
+
+              {/* Badges row */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium capitalize"
+                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium capitalize"
                   style={{ color: nameColor, borderColor: nameColor }}
                 >
                   <Trophy className="size-3" />
                   {rankName}
                 </span>
-                {/* Club role badge */}
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
-                  style={{
-                    color: clubRoleStyle.text,
-                    borderColor: clubRoleStyle.border,
-                    backgroundColor: clubRoleStyle.bg,
-                  }}
-                >
-                  {isOfficialMember ? <Award className="size-3" /> : <Target className="size-3" />}
-                  {profile.clubRole ? getClubRoleLabel(profile.clubRole) : "Member"}
-                </span>
-                <span className="text-sm text-fg-muted">
-                  Rating:{" "}
-                  <strong className="text-foreground">
-                    {currentRating ?? "Unrated"}
-                  </strong>
+
+                <ClubRoleBadge clubRole={profile.clubRole} />
+
+                {profile.batchYear && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-fg-muted">
+                    Batch {profile.batchYear}
+                  </span>
+                )}
+
+                <span className="text-xs text-fg-muted">
+                  CF Rating: <strong className="text-foreground">{currentRating ?? "Unrated"}</strong>
                   {cfInfo?.maxRating && currentRating !== cfInfo.maxRating && (
                     <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>
                   )}
                 </span>
+                {profile.leetcodeRating !== null && profile.leetcodeRating > 0 && (
+                  <span className="text-xs text-fg-muted">
+                    LeetCode: <strong className="text-foreground">{profile.leetcodeRating}</strong>
+                  </span>
+                )}
+              </div>
+
+              {/* Platform icon links */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                {profile.codechefUrl && (
+                  <a
+                    href={profile.codechefUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
+                    title="CodeChef Profile"
+                  >
+                    <PlatformMark platform="codechef" className="size-3" />
+                    <span>CodeChef</span>
+                    <ExternalLink className="size-2.5 opacity-60" />
+                  </a>
+                )}
+                {profile.atcoderUrl && (
+                  <a
+                    href={profile.atcoderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
+                    title="AtCoder Profile"
+                  >
+                    <PlatformMark platform="atcoder" className="size-3" />
+                    <span>AtCoder</span>
+                    <ExternalLink className="size-2.5 opacity-60" />
+                  </a>
+                )}
+                {profile.githubUrl && (
+                  <a
+                    href={profile.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
+                    title="GitHub Profile"
+                  >
+                    <GitHubMark className="size-3" />
+                    <span>GitHub</span>
+                    <ExternalLink className="size-2.5 opacity-60" />
+                  </a>
+                )}
+                {profile.linkedinUrl && (
+                  <a
+                    href={profile.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
+                    title="LinkedIn Profile"
+                  >
+                    <LinkedInIcon className="size-3 text-blue-500" />
+                    <span>LinkedIn</span>
+                    <ExternalLink className="size-2.5 opacity-60" />
+                  </a>
+                )}
               </div>
             </div>
 
             {/* Quick stats cards */}
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3 relative overflow-hidden">
-                <div className="text-2xl font-bold opacity-30 blur-[2px]">247</div>
-                <div className="text-label text-fg-muted">Total Solved</div>
-                <div className="absolute inset-0 flex items-center justify-center bg-surface-2/60 backdrop-blur-[1px]">
-                  <Lock className="size-4 text-fg-subtle" />
-                </div>
+              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
+                <div className="text-2xl font-bold">{profile.leetcodeRating ?? "—"}</div>
+                <div className="text-label text-fg-muted">LeetCode</div>
               </div>
               <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
                 <div className="text-2xl font-bold">{cfHistory.length}</div>
-                <div className="text-label text-fg-muted">Contests</div>
+                <div className="text-label text-fg-muted">CF Contests</div>
               </div>
             </div>
           </div>
+
+          {/* ── Edit Profile Form (Owner Only) ── */}
+          {isOwner && isEditingProfile && (
+            <div className="mt-6 border-t border-border pt-6">
+              <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Edit2 className="size-4 text-primary" />
+                Edit Profile
+              </h3>
+
+              {saveError && (
+                <div className="mb-4 flex items-center gap-2 rounded-panel border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      Full Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      Phone Number <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+91 9876543210"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Codeforces Handle</label>
+                    <input
+                      type="text"
+                      placeholder="tourist"
+                      value={formData.codeforcesHandle}
+                      onChange={(e) => setFormData({ ...formData, codeforcesHandle: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">LeetCode Handle</label>
+                    <input
+                      type="text"
+                      placeholder="leetcode_ninja"
+                      value={formData.leetcodeHandle}
+                      onChange={(e) => setFormData({ ...formData, leetcodeHandle: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">CodeChef URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://www.codechef.com/users/username"
+                      value={formData.codechefUrl}
+                      onChange={(e) => setFormData({ ...formData, codechefUrl: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">AtCoder URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://atcoder.jp/users/username"
+                      value={formData.atcoderUrl}
+                      onChange={(e) => setFormData({ ...formData, atcoderUrl: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">GitHub URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://github.com/username"
+                      value={formData.githubUrl}
+                      onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">LinkedIn URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://linkedin.com/in/username"
+                      value={formData.linkedinUrl}
+                      onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(false)}
+                    className="rounded-control border border-border px-4 py-1.5 text-xs text-fg-muted hover:text-foreground"
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isSaving && <Loader2 className="size-3 animate-spin" />}
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -390,37 +697,37 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Zap className="size-4" />
+            <Zap className="size-4 text-primary" />
             Club Stats
           </CardTitle>
         </CardHeader>
         <CardContent>
           {eventParticipations.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong">
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
                 <div className="text-2xl font-bold">{clubStats.totalEvents}</div>
                 <div className="mt-1 text-xs text-fg-muted">Events Participated</div>
               </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong">
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
                 <div className="text-2xl font-bold">{clubStats.totalContests}</div>
                 <div className="mt-1 text-xs text-fg-muted">Contests</div>
               </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong">
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
                 <div className="text-2xl font-bold">{clubStats.totalWorkshops}</div>
                 <div className="mt-1 text-xs text-fg-muted">Workshops</div>
               </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong">
-                <div className="text-2xl font-bold">{clubStats.bestRank !== null ? `#${clubStats.bestRank}` : "\u2014"}</div>
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
+                <div className="text-2xl font-bold">{clubStats.bestRank !== null ? `#${clubStats.bestRank}` : "—"}</div>
                 <div className="mt-1 text-xs text-fg-muted">Best Rank</div>
               </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-hairline-strong">
+              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
                 <div className="text-2xl font-bold">{clubStats.achievementCount}</div>
                 <div className="mt-1 text-xs text-fg-muted">Achievements</div>
               </div>
             </div>
           ) : (
-            <p className="py-6 text-center text-sm text-fg-muted">
-              No club activities yet. Participate in an event to see your stats here.
+            <p className="py-4 text-center text-sm text-fg-muted">
+              No club activities recorded yet.
             </p>
           )}
         </CardContent>
@@ -431,7 +738,7 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Award className="size-4" />
+              <Award className="size-4 text-amber-400" />
               Achievements
             </CardTitle>
           </CardHeader>
@@ -440,7 +747,7 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
               {clubStats.achievements.map((a, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
+                  className="flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-4 py-3"
                 >
                   <span className="text-xl">{a.icon}</span>
                   <span className="text-sm font-medium">{a.label}</span>
@@ -451,141 +758,110 @@ function ProfileDashboardContent({ profile, cfInfo, cfHistory, onUpdate, isOwner
         </Card>
       )}
 
-      {/* ── Club Activity & Event Performance ── */}
+      {/* ── Codeforces Contest Rating History ── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Calendar className="size-4" />
-            Club Activity & Event Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative py-12">
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
-              <Lock className="size-8 text-fg-muted mb-2" />
-              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
-              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
-                Event tracking and club leaderboards will be unlocked in the next major update.
-              </p>
-            </div>
-            <div className="opacity-30 pointer-events-none select-none blur-[2px]">
-              {/* Dummy content to give the locked section some shape */}
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 rounded-panel border border-border bg-surface-2 p-4"></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Platform Stats ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Code className="size-4" />
-            Problems Solved by Platform
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
-              <Lock className="size-8 text-fg-muted mb-2" />
-              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
-              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
-                Multi-platform integration (LeetCode, CodeChef, etc.) will be available soon.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 opacity-30 blur-[2px] pointer-events-none select-none">
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">142</div>
-                <div className="mt-1 text-xs text-fg-muted">Codeforces</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">45</div>
-                <div className="mt-1 text-xs text-fg-muted">LeetCode</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Rating Graph ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Trophy className="size-4" />
-            Contest Rating History
+            <Trophy className="size-4 text-primary" />
+            Codeforces Contest Rating History
           </CardTitle>
         </CardHeader>
         <CardContent>
           {cfHistory.length > 0 ? (
             <RatingGraph data={cfHistory} />
           ) : (
-            <div className="flex h-[300px] flex-col items-center justify-center text-sm text-fg-muted gap-2">
+            <div className="flex h-[240px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
               <Trophy className="size-8 opacity-20" />
-              {profile.codeforcesHandle ? "No rating history found for this user." : "No Codeforces handle linked."}
+              {profile.codeforcesHandle
+                ? "No contest history found on Codeforces."
+                : "No Codeforces handle linked."}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* ── Activity Heat Map (GitHub-style green dots) ── */}
+      {/* ── LeetCode Rating History (Snapshots) ── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Calendar className="size-4" />
-            Practice Activity
+            <Code className="size-4 text-amber-500" />
+            LeetCode Rating History (Weekly Snapshots)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative py-8">
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-1/80 backdrop-blur-sm z-10 rounded-md border border-border/50">
-              <Lock className="size-8 text-fg-muted mb-2" />
-              <p className="font-semibold text-foreground">Coming Soon (Phase 2)</p>
-              <p className="text-xs text-fg-muted max-w-xs text-center mt-1">
-                Daily practice heatmap and activity tracking will be unlocked soon.
-              </p>
+          {!isAuthenticated ? (
+            <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
+              <Lock className="size-6 text-fg-subtle" />
+              <span>Sign in to see LeetCode rating history</span>
             </div>
-            <div className="overflow-x-auto opacity-30 blur-[2px] pointer-events-none select-none">
-              <ActivityCalendar
-                data={[{ date: "2024-01-01", count: 1, level: 1 }]}
-                theme={{
-                  dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-                  light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
-                }}
-                labels={{
-                  totalCount: "{{count}} problems solved in the last year",
-                }}
-                blockSize={12}
-                blockMargin={3}
-                fontSize={12}
-              />
+          ) : lcLoading ? (
+            <div className="flex h-[200px] items-center justify-center text-xs text-fg-muted">
+              <Loader2 className="mr-2 size-4 animate-spin text-primary" />
+              Loading LeetCode history...
             </div>
-          </div>
+          ) : lcPoints.length >= 2 ? (
+            <RatingGraph data={lcPoints} />
+          ) : (
+            <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
+              <Code className="size-6 text-fg-subtle" />
+              <span>
+                {profile.leetcodeHandle
+                  ? "Not enough weekly snapshot data yet. Snapshots record every Monday."
+                  : "No LeetCode handle linked."}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* ── Account Info ── */}
+      {/* ── Account Details ── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Account Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-fg-muted">Email</span>
-            <span>{profile.email}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between">
+          {isOwner && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-fg-muted">
+                  <Mail className="size-3.5" /> Email
+                </span>
+                <span className="font-mono text-xs">{profile.email}</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-fg-muted">
+                  <Phone className="size-3.5" /> Phone Number
+                </span>
+                <span>
+                  {profile.phoneNumber || <span className="text-fg-subtle">Not provided</span>}
+                </span>
+              </div>
+              <Separator />
+            </>
+          )}
+          <div className="flex items-center justify-between">
             <span className="text-fg-muted">Codeforces Handle</span>
-            <span style={{ color: nameColor }}>@{profile.codeforcesHandle}</span>
+            <span style={{ color: nameColor }}>
+              {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "None"}
+            </span>
           </div>
           <Separator />
-          <div className="flex justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-fg-muted">LeetCode Handle</span>
+            <span>{profile.leetcodeHandle ? `@${profile.leetcodeHandle}` : "None"}</span>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
             <span className="text-fg-muted">Member Since</span>
-            <span>{new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+            <span>
+              {profile.createdAt
+                ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "—"}
+            </span>
           </div>
         </CardContent>
       </Card>
