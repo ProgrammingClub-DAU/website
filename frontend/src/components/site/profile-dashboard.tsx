@@ -16,9 +16,9 @@ import Script from "next/script";
 import Image from "next/image";
 import { RatingGraph, type RatingPoint } from "@/components/site/rating-graph";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
-import { GitHubMark } from "@/components/site/github-mark";
-import { PlatformMark } from "@/components/site/platform-mark";
+import { ProfileLinksCard } from "@/components/site/profile-links-card";
 import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
+import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
 import { snapshotService, type SnapshotEntry } from "@/lib/services/snapshots";
 import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,6 @@ import {
   Lock,
   Edit2,
   Camera,
-  ExternalLink,
   Phone,
   Mail,
   AlertCircle,
@@ -43,18 +42,6 @@ import {
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
-function LinkedInIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 0 0-1.6 1.6 1.6 1.6 0 0 0 1.6 1.6 1.6 1.6 0 0 0 1.6-1.6 1.6 1.6 0 0 0-1.6-1.6Z" />
-    </svg>
-  );
-}
 
 declare global {
   interface Window {
@@ -98,10 +85,10 @@ function formFromProfile(profile: Profile) {
     phoneNumber: profile.phoneNumber || "",
     codeforcesHandle: profile.codeforcesHandle || "",
     leetcodeHandle: profile.leetcodeHandle || "",
-    codechefUrl: profile.codechefUrl || "",
-    atcoderUrl: profile.atcoderUrl || "",
-    githubUrl: profile.githubUrl || "",
-    linkedinUrl: profile.linkedinUrl || "",
+    codechef: usernameFrom("codechef", profile.codechefUrl),
+    atcoder: usernameFrom("atcoder", profile.atcoderUrl),
+    github: usernameFrom("github", profile.githubUrl),
+    linkedin: usernameFrom("linkedin", profile.linkedinUrl),
   };
 }
 
@@ -246,10 +233,10 @@ function ProfileDashboardContent({
     phoneNumber: profile.phoneNumber || "",
     codeforcesHandle: profile.codeforcesHandle || "",
     leetcodeHandle: profile.leetcodeHandle || "",
-    codechefUrl: profile.codechefUrl || "",
-    atcoderUrl: profile.atcoderUrl || "",
-    githubUrl: profile.githubUrl || "",
-    linkedinUrl: profile.linkedinUrl || "",
+    codechef: usernameFrom("codechef", profile.codechefUrl),
+    atcoder: usernameFrom("atcoder", profile.atcoderUrl),
+    github: usernameFrom("github", profile.githubUrl),
+    linkedin: usernameFrom("linkedin", profile.linkedinUrl),
   });
 
   const openEditor = () => {
@@ -324,10 +311,12 @@ function ProfileDashboardContent({
         phoneNumber: formData.phoneNumber.trim(),
         codeforcesHandle: formData.codeforcesHandle.trim() || null,
         leetcodeHandle: formData.leetcodeHandle.trim() || null,
-        codechefUrl: formData.codechefUrl.trim() || null,
-        atcoderUrl: formData.atcoderUrl.trim() || null,
-        githubUrl: formData.githubUrl.trim() || null,
-        linkedinUrl: formData.linkedinUrl.trim() || null,
+        // Members type a username; the column keeps the full profile link,
+        // which is also what the attendance export writes out.
+        codechefUrl: profileUrl("codechef", formData.codechef),
+        atcoderUrl: profileUrl("atcoder", formData.atcoder),
+        githubUrl: profileUrl("github", formData.github),
+        linkedinUrl: profileUrl("linkedin", formData.linkedin),
         // Carried through so that saving the form does not clear the avatar.
         avatarUrl: profile.avatarUrl,
       };
@@ -488,61 +477,6 @@ function ProfileDashboardContent({
                 )}
               </div>
 
-              {/* Platform icon links */}
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                {profile.codechefUrl && (
-                  <a
-                    href={profile.codechefUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
-                    title="CodeChef Profile"
-                  >
-                    <PlatformMark platform="codechef" className="size-3" />
-                    <span>CodeChef</span>
-                    <ExternalLink className="size-2.5 opacity-60" />
-                  </a>
-                )}
-                {profile.atcoderUrl && (
-                  <a
-                    href={profile.atcoderUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
-                    title="AtCoder Profile"
-                  >
-                    <PlatformMark platform="atcoder" className="size-3" />
-                    <span>AtCoder</span>
-                    <ExternalLink className="size-2.5 opacity-60" />
-                  </a>
-                )}
-                {profile.githubUrl && (
-                  <a
-                    href={profile.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
-                    title="GitHub Profile"
-                  >
-                    <GitHubMark className="size-3" />
-                    <span>GitHub</span>
-                    <ExternalLink className="size-2.5 opacity-60" />
-                  </a>
-                )}
-                {profile.linkedinUrl && (
-                  <a
-                    href={profile.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
-                    title="LinkedIn Profile"
-                  >
-                    <LinkedInIcon className="size-3 text-blue-500" />
-                    <span>LinkedIn</span>
-                    <ExternalLink className="size-2.5 opacity-60" />
-                  </a>
-                )}
-              </div>
             </div>
 
             {/* Quick stats cards */}
@@ -625,45 +559,53 @@ function ProfileDashboardContent({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">CodeChef URL</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      CodeChef username
+                    </label>
                     <input
-                      type="url"
-                      placeholder="https://www.codechef.com/users/username"
-                      value={formData.codechefUrl}
-                      onChange={(e) => setFormData({ ...formData, codechefUrl: e.target.value })}
+                      type="text"
+                      placeholder={PROFILE_PLATFORMS.codechef.placeholder}
+                      value={formData.codechef}
+                      onChange={(e) => setFormData({ ...formData, codechef: e.target.value })}
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">AtCoder URL</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      AtCoder username
+                    </label>
                     <input
-                      type="url"
-                      placeholder="https://atcoder.jp/users/username"
-                      value={formData.atcoderUrl}
-                      onChange={(e) => setFormData({ ...formData, atcoderUrl: e.target.value })}
+                      type="text"
+                      placeholder={PROFILE_PLATFORMS.atcoder.placeholder}
+                      value={formData.atcoder}
+                      onChange={(e) => setFormData({ ...formData, atcoder: e.target.value })}
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">GitHub URL</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      GitHub username
+                    </label>
                     <input
-                      type="url"
-                      placeholder="https://github.com/username"
-                      value={formData.githubUrl}
-                      onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                      type="text"
+                      placeholder={PROFILE_PLATFORMS.github.placeholder}
+                      value={formData.github}
+                      onChange={(e) => setFormData({ ...formData, github: e.target.value })}
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">LinkedIn URL</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      LinkedIn profile name
+                    </label>
                     <input
-                      type="url"
-                      placeholder="https://linkedin.com/in/username"
-                      value={formData.linkedinUrl}
-                      onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                      type="text"
+                      placeholder={PROFILE_PLATFORMS.linkedin.placeholder}
+                      value={formData.linkedin}
+                      onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
@@ -694,6 +636,21 @@ function ProfileDashboardContent({
       </Card>
 
       {/* ── Club Stats Summary ── */}
+      {/* Every platform this member is on, each capsule linking straight to
+          the profile. Ratings come from the sync jobs where we have them. */}
+      <ProfileLinksCard
+        isOwner={isOwner}
+        onAddClick={openEditor}
+        links={[
+          { platform: "codeforces", value: profile.codeforcesHandle, rating: currentRating },
+          { platform: "leetcode", value: profile.leetcodeHandle, rating: profile.leetcodeRating },
+          { platform: "codechef", value: profile.codechefUrl },
+          { platform: "atcoder", value: profile.atcoderUrl },
+          { platform: "github", value: profile.githubUrl },
+          { platform: "linkedin", value: profile.linkedinUrl },
+        ]}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
