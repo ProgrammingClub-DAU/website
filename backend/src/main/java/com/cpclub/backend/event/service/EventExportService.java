@@ -1,5 +1,6 @@
 package com.cpclub.backend.event.service;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.event.dto.EventAttendeeDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -37,9 +38,7 @@ public class EventExportService {
      * silent misalignment of every later column.</p>
      */
     private static final String[] HEADERS = {
-            "ID", "Name", "Email", "Phone Number", "Club Role", "Avatar URL",
-            "CF Handle", "CF Rating", "LeetCode Handle", "LeetCode Rating",
-            "CodeChef URL", "AtCoder URL", "GitHub", "LinkedIn", "Added At"
+            "Name", "Codeforces Profile", "Email", "Student ID", "Year", "Added At"
     };
 
     /** Written as text so the sheet reads the same in every locale. */
@@ -116,23 +115,51 @@ public class EventExportService {
      */
     private void writeAttendeeRow(Row row, EventAttendeeDto attendee) {
         int column = 0;
-        writeText(row, column++, attendee.userId() != null ? String.valueOf(attendee.userId()) : null);
         writeText(row, column++, attendee.name());
+        writeText(row, column++, codeforcesProfile(attendee.codeforcesHandle()));
         writeText(row, column++, attendee.email());
-        writeText(row, column++, attendee.phoneNumber());
-        writeText(row, column++, attendee.clubRole() != null ? attendee.clubRole().name() : null);
-        writeText(row, column++, attendee.avatarUrl());
-        writeText(row, column++, attendee.codeforcesHandle());
-        writeNumber(row, column++, attendee.cfRating());
-        writeText(row, column++, attendee.leetcodeHandle());
-        writeNumber(row, column++, attendee.leetcodeRating());
-        writeText(row, column++, attendee.codechefUrl());
-        writeText(row, column++, attendee.atcoderUrl());
-        writeText(row, column++, attendee.githubUrl());
-        writeText(row, column++, attendee.linkedinUrl());
+        writeText(row, column++, studentId(attendee.email()));
+        writeText(row, column++, yearLabel(attendee.academicYear()));
         writeText(row, column, attendee.addedAt() != null
-                ? attendee.addedAt().format(ADDED_AT_FORMAT)
+                ? ADDED_AT_FORMAT.format(attendee.addedAt())
                 : null);
+    }
+
+    /**
+     * The student ID, taken from the part of the address before the @.
+     *
+     * <p>Members sign up with their university address, so 202401226@dau.ac.in
+     * carries the ID the department files attendance under. An address in another
+     * shape has no student ID to report, and leaves the cell blank rather than
+     * inventing one.</p>
+     *
+     * @param email the member's address
+     * @return the local part, or null when there is nothing usable
+     */
+    private String studentId(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.indexOf('@');
+        if (at <= 0) {
+            return null;
+        }
+        return email.substring(0, at);
+    }
+
+    /** A clickable profile rather than a bare handle, since this sheet gets shared. */
+    private String codeforcesProfile(String handle) {
+        return handle == null || handle.isBlank()
+                ? null
+                : "https://codeforces.com/profile/" + handle.trim();
+    }
+
+    /** Words rather than the enum name, because people read this sheet. */
+    private String yearLabel(AcademicYear year) {
+        if (year == null) {
+            return null;
+        }
+        return year == AcademicYear.FIRST_YEAR ? "1st year" : "2nd year onwards";
     }
 
     /**

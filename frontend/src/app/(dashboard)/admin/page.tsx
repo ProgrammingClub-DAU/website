@@ -12,7 +12,14 @@ import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
-import type { ClubRole, Event, EventPhoto, MemberGalleryPhoto } from "@/types/api";
+import {
+  ACADEMIC_YEAR_LABELS,
+  type AcademicYear,
+  type ClubRole,
+  type Event,
+  type EventPhoto,
+  type MemberGalleryPhoto,
+} from "@/types/api";
 import {
   Users,
   Calendar,
@@ -20,6 +27,7 @@ import {
   Trash2,
   Edit2,
   CheckCircle2,
+  AlertTriangle,
   XCircle,
   Shield,
   ShieldAlert,
@@ -60,6 +68,8 @@ interface AdminMember {
   leetcodeRating: number | null;
   clubRole: ClubRole | null;
   batchYear: number | null;
+  academicYear: AcademicYear | null;
+  profileComplete: boolean;
   role: string;
 }
 
@@ -319,6 +329,26 @@ function MembersTab() {
           </select>
         </div>
       ),
+    },
+    {
+      key: "academicYear",
+      header: "Year",
+      className: "text-xs",
+      render: (m) => (m.academicYear ? ACADEMIC_YEAR_LABELS[m.academicYear] : "--"),
+    },
+    {
+      key: "profileComplete",
+      header: "Profile",
+      render: (m) =>
+        m.profileComplete ? (
+          <span className="inline-flex items-center gap-1 text-nano font-semibold text-emerald-400">
+            <CheckCircle2 className="size-3.5" /> Complete
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-nano text-fg-subtle">
+            <AlertTriangle className="size-3.5" /> Incomplete
+          </span>
+        ),
     },
     {
       key: "batchYear",

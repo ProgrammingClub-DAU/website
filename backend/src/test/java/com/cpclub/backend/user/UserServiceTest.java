@@ -247,6 +247,7 @@ class UserServiceTest {
                 leetcodeHandle,
                 null, null,         // codechefUrl, atcoderUrl
                 null, null,         // githubUrl, linkedinUrl
+                null,               // academicYear
                 null                // avatarUrl
         );
     }

@@ -62,6 +62,8 @@ export const getMockProfile = (userId: string): Profile => {
     githubUrl: null,
     linkedinUrl: null,
     batchYear: null,
+    academicYear: "SECOND_YEAR_ONWARDS",
+    profileComplete: false,
     rating: 1990,
     maxRating: 1990,
     clubRole: "CORE",

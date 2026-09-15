@@ -102,6 +102,11 @@ public class User {
     @Column(name = "batch_year")
     private Integer batchYear;
 
+    /** First year, or second year onwards. Chosen at registration (V8). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "academic_year", length = 30)
+    private AcademicYear academicYear;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

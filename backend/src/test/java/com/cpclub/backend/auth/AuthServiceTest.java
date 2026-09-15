@@ -1,5 +1,6 @@
 package com.cpclub.backend.auth;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.auth.dto.AuthResponse;
 import com.cpclub.backend.auth.dto.LoginRequest;
 import com.cpclub.backend.auth.dto.RegisterRequest;
@@ -87,7 +88,8 @@ class AuthServiceTest {
                 "Alice Developer",
                 "alice@example.com",
                 "Password123!",
-                "alice_cp"
+                "alice_cp",
+                AcademicYear.SECOND_YEAR_ONWARDS
         );
 
         when(userRepository.existsByEmail("alice@example.com")).thenReturn(false);
@@ -112,7 +114,8 @@ class AuthServiceTest {
                 "Alice Developer",
                 "alice@example.com",
                 "Password123!",
-                null
+                null,
+                AcademicYear.SECOND_YEAR_ONWARDS
         );
 
         when(userRepository.existsByEmail("alice@example.com")).thenReturn(true);
@@ -128,7 +131,8 @@ class AuthServiceTest {
                 "Alice Developer",
                 "new-alice@example.com",
                 "Password123!",
-                "alice_cp"
+                "alice_cp",
+                AcademicYear.SECOND_YEAR_ONWARDS
         );
 
         when(userRepository.existsByEmail("new-alice@example.com")).thenReturn(false);

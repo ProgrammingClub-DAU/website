@@ -24,7 +24,7 @@ import { useAuthStore } from "@/store/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import type { Profile, EventParticipation } from "@/types/api";
+import { ACADEMIC_YEAR_LABELS, type Profile, type EventParticipation, type AcademicYear } from "@/types/api";
 import {
   User,
   Trophy,
@@ -37,6 +37,7 @@ import {
   Phone,
   Mail,
   AlertCircle,
+  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
@@ -74,6 +75,7 @@ function profilePayload(profile: Profile, overrides: Partial<ProfileUpdateReques
     githubUrl: profile.githubUrl,
     linkedinUrl: profile.linkedinUrl,
     avatarUrl: profile.avatarUrl,
+    academicYear: profile.academicYear,
     ...overrides,
   };
 }
@@ -89,6 +91,7 @@ function formFromProfile(profile: Profile) {
     atcoder: usernameFrom("atcoder", profile.atcoderUrl),
     github: usernameFrom("github", profile.githubUrl),
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
+    academicYear: (profile.academicYear ?? "") as AcademicYear | "",
   };
 }
 
@@ -237,6 +240,7 @@ function ProfileDashboardContent({
     atcoder: usernameFrom("atcoder", profile.atcoderUrl),
     github: usernameFrom("github", profile.githubUrl),
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
+    academicYear: (profile.academicYear ?? "") as AcademicYear | "",
   });
 
   const openEditor = () => {
@@ -303,6 +307,10 @@ function ProfileDashboardContent({
       setSaveError("Phone number is required.");
       return;
     }
+    if (!formData.academicYear) {
+      setSaveError("Select your year of study.");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -317,6 +325,7 @@ function ProfileDashboardContent({
         atcoderUrl: profileUrl("atcoder", formData.atcoder),
         githubUrl: profileUrl("github", formData.github),
         linkedinUrl: profileUrl("linkedin", formData.linkedin),
+        academicYear: formData.academicYear || null,
         // Carried through so that saving the form does not clear the avatar.
         avatarUrl: profile.avatarUrl,
       };
@@ -374,6 +383,14 @@ function ProfileDashboardContent({
       contestName: "LeetCode Weekly Snapshot",
     }));
   }, [lcHistory]);
+
+  /** The four fields the club needs, named the way the form names them. */
+  const missingProfileFields = [
+    !profile.name?.trim() && "name",
+    !profile.codeforcesHandle?.trim() && "Codeforces handle",
+    !profile.phoneNumber?.trim() && "phone number",
+    !profile.academicYear && "year of study",
+  ].filter(Boolean) as string[];
 
   const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
 
@@ -458,6 +475,27 @@ function ProfileDashboardContent({
 
                 <ClubRoleBadge clubRole={profile.clubRole} />
 
+                {profile.profileComplete ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400"
+                    title="Name, Codeforces handle, phone number and year are all filled in"
+                  >
+                    <CheckCircle2 className="size-3" />
+                    Profile complete
+                  </span>
+                ) : isOwner ? (
+                  // Only the owner can fix it, so only the owner is told.
+                  <button
+                    type="button"
+                    onClick={openEditor}
+                    title={`Still missing: ${missingProfileFields.join(", ")}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/20"
+                  >
+                    <AlertCircle className="size-3" />
+                    Finish your profile ({missingProfileFields.length} left)
+                  </button>
+                ) : null}
+
                 {profile.batchYear && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-fg-muted">
                     Batch {profile.batchYear}
@@ -534,6 +572,29 @@ function ProfileDashboardContent({
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">
+                      Year of study <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      required
+                      value={formData.academicYear}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          academicYear: e.target.value as AcademicYear | "",
+                        })
+                      }
+                      className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                    >
+                      <option value="">Select your year</option>
+                      <option value="FIRST_YEAR">{ACADEMIC_YEAR_LABELS.FIRST_YEAR}</option>
+                      <option value="SECOND_YEAR_ONWARDS">
+                        {ACADEMIC_YEAR_LABELS.SECOND_YEAR_ONWARDS}
+                      </option>
+                    </select>
                   </div>
 
                   <div>

@@ -48,6 +48,7 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         codeforcesHandle: null, // Fixed payload requirement
+        academicYear: data.academicYear,
       });
 
       const authData = response.data.data;
@@ -152,6 +153,43 @@ export default function RegisterForm() {
                 </p>
               )}
             </div>
+
+            <fieldset className="space-y-1.5">
+              <legend id="academicyear-legend" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
+                YEAR OF STUDY
+              </legend>
+              <div
+                role="radiogroup"
+                aria-labelledby="academicyear-legend"
+                aria-invalid={!!errors.academicYear}
+                aria-describedby={errors.academicYear ? "academicyear-error" : undefined}
+                className="grid grid-cols-2 gap-2"
+              >
+                {(
+                  [
+                    { value: "FIRST_YEAR", label: "1st year" },
+                    { value: "SECOND_YEAR_ONWARDS", label: "2nd year onwards" },
+                  ] as const
+                ).map((option) => (
+                  <label key={option.value} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      value={option.value}
+                      className="peer sr-only"
+                      {...register("academicYear")}
+                    />
+                    <span className="flex items-center justify-center rounded-control border border-border bg-surface-2 px-3 py-2.5 text-xs font-medium text-fg-muted transition-colors hover:text-foreground peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {errors.academicYear && (
+                <p id="academicyear-error" role="alert" className="font-mono text-xs text-destructive">
+                  {errors.academicYear.message}
+                </p>
+              )}
+            </fieldset>
 
             <div className="space-y-1.5">
               <Label htmlFor="password" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
