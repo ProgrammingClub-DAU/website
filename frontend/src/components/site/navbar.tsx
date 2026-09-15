@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { GitHubMark } from "@/components/site/github-mark";
+import { dashboardService } from "@/lib/services/dashboard";
 import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
@@ -60,7 +61,7 @@ function Wordmark({ className }: { className?: string }) {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, syncUser } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -73,6 +74,44 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const userId = user?.id;
+
+  useEffect(() => {
+    if (!isAuthenticated || !userId) return;
+    let cancelled = false;
+
+    // Roles change while a member is signed in: an admin promotes them from
+    // the members table, and nothing tells this browser. Reading the profile
+    // once per load keeps the menu honest without a logout.
+    dashboardService
+      .getProfile(String(userId))
+      .then((profile) => {
+        if (cancelled) return;
+        syncUser({
+          role: profile.role,
+          clubRole: profile.clubRole,
+          avatarUrl: profile.avatarUrl,
+        });
+      })
+      // A failed refresh is not worth showing anyone: the stored role stays,
+      // and every admin route is enforced by the API regardless.
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, userId, syncUser]);
+
+  /**
+   * Admin screens are not secret, but a link to a page that answers
+   * Access Denied is noise for everyone else. isMounted keeps the server and
+   * client markup identical, since the role comes from persisted storage.
+   */
+  const isAdmin = isMounted && isAuthenticated && user?.role === "ROLE_ADMIN";
+  const links = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin" }]
+    : [...navItems];
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -92,7 +131,7 @@ export function Navbar() {
 
         {/* Desktop navigation. Below lg the links move into the sheet. */}
         <div className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
+          {links.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -206,7 +245,7 @@ export function Navbar() {
               </SheetHeader>
 
               <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-                {navItems.map((item) => (
+                {links.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <Link
                       href={item.href}
