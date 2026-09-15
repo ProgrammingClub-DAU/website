@@ -13,12 +13,12 @@
 > | 1A -- Security + gallery | M4 | **[DONE]** PR #73 | `gallery/` package, lookup and club-role endpoints, SecurityConfig rules |
 > | 1B -- Profiles, LeetCode, filters, events | M5 | **[DONE]** PR #67 | `leetcode/` and `event/` packages, `UserLookupDto`, Apache POI |
 > | 1C -- Snapshots | M6 | **[DONE]** PR #62 | `snapshot/` package |
-> | 2A -- Frontend UI | M1 | **[NOT STARTED]** | None of the 6 components or 3 pages exist. Events and Gallery still read `lib/content/`. |
+> | 2A -- Frontend UI | M1 | **[PARTLY DONE]** | `ClubRoleBadge`, `DataTable` and `AdminTabs` were delivered in PR #77 and are now the official versions. Left: `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, the Events page on the API, the event detail page, the member gallery page. |
 > | 2B -- Auth + state | M2 | **[DONE]** PR #71 | Store fields, types, `events.ts` (16 functions), `gallery.ts`, mapper, leaderboard params |
 > | 2C -- Dashboards | M3 | **[NOT STARTED]** | No admin pages. The profile edits the CF handle only. The leaderboard fetches once and filters in the browser. |
 > | 3 -- Tests + polish | M6 | **[PARTIAL]** | Every planned unit test, Testcontainers and the env docs are done. Left: Cloudinary preset hardening, phone backfill, env vars on Render and Vercel (Section 10). |
 >
-> **Can start now:** M1 -- all of Stage 2A. M3 -- the profile and leaderboard parts of
+> **Can start now:** M1 -- the remaining Stage 2A items. M3 -- the profile and leaderboard parts of
 > Stage 2C (Section 9). M6 -- the non-code Stage 3 items (Section 10).
 
 ---
@@ -157,22 +157,21 @@ Please do the following:
 1. Read the full Phase 2 plan: documents/phase_2_execution_playbook.md -- focus on Section 7
 2. Look at existing components for the design language: frontend/src/components/site/ and frontend/src/app/events/page.tsx
 
+ALREADY DONE, do not rebuild: club-role-badge.tsx, data-table.tsx and admin-tabs.tsx were
+delivered with the Stage 2C work in PR #77 and are the official versions. Reuse them, and
+refine them in place if a page needs something more. The admin dashboard shell is built too.
+
 Then create in this order:
-1. components/ui/club-role-badge.tsx -- small colored badge (Convenor=gold, Core=blue, Batch Rep=green, Ex-*=grey outline)
-2. components/ui/data-table.tsx -- generic table with loading skeleton and empty state
-   Raise items 1 and 2 as a first, small PR on their own -- M3 is waiting on them.
-3. components/site/event-card.tsx -- event card with cover image, title, date, location, status badge. Full card is a Link.
-4. components/site/event-photo-grid.tsx -- responsive photo grid with lightbox
-5. components/site/member-gallery-grid.tsx -- same grid for batch member photos
-6. components/site/admin-tabs.tsx -- tab nav with Members, Events, Galleries tabs
-7. Modify app/events/page.tsx -- replace the lib/content/events.ts data with a server-side fetch
+1. components/site/event-card.tsx -- event card with cover image, title, date, location, status badge. Full card is a Link.
+2. components/site/event-photo-grid.tsx -- responsive photo grid with lightbox
+3. components/site/member-gallery-grid.tsx -- same grid for batch member photos
+4. Modify app/events/page.tsx -- replace the lib/content/events.ts data with a server-side fetch
    from GET /api/events/upcoming and GET /api/events/completed. Keep the "Nothing scheduled"
    empty state added in PR #72.
-8. Create app/events/[id]/page.tsx -- event detail page
-9. Member gallery with a batch year dropdown. app/gallery/page.tsx ALREADY EXISTS (the dome
+5. Create app/events/[id]/page.tsx -- event detail page
+6. Member gallery with a batch year dropdown. app/gallery/page.tsx ALREADY EXISTS (the dome
    gallery of event photos), so build this at app/gallery/members/page.tsx and link to it
    from /gallery -- unless M6 decides otherwise (Section 7).
-10. Create shell app/(dashboard)/admin/page.tsx -- layout only, M3 fills data
 
 Match the design system: glass-panel, rounded-panel, Eyebrow, Section components, and the
 type scale tokens from PR #74 (text-label, text-meta, text-body -- never text-[Npx];
@@ -221,9 +220,10 @@ Run npm run build to verify zero TypeScript errors before raising a PR.
 I am Member 3 (Frontend Dashboards Engineer) on the CP Club Website project.
 I need to implement Stage 2C of Phase 2 -- all dashboard pages and data-heavy features.
 
-IMPORTANT: M2 (Stage 2B) is merged. M1 (Stage 2A) is not.
+IMPORTANT: Stage 2C shipped in PR #77, together with ClubRoleBadge, DataTable and
+AdminTabs. Check what is already merged before starting anything below.
 - Start now on steps 1 and 4 below (profile and leaderboard) -- they only need M2's services.
-- Wait for M1's ClubRoleBadge, DataTable and AdminTabs before steps 2 and 3 (the admin pages),
+- The shared components exist now, so nothing here is blocked (this line mattered before #77),
   and before swapping ClubRoleBadge into the profile and leaderboard.
 Branch from main.
 
@@ -806,7 +806,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 7 -- Stage 2A: Frontend UI/UX -- [NOT STARTED]
+## Section 7 -- Stage 2A: Frontend UI/UX -- [PARTLY DONE]
 **Owner: Member 1**
 **PR: `phase2/frontend-ui`**
 **Estimated time: 3 days**
@@ -818,18 +818,19 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 | `components/site/event-card.tsx` | NEW | Card for a single event. Shows: cover image (if any), title, date formatted as "Sat 15 Nov -- 3:00 PM", location, status badge (green=Upcoming, grey=Completed, red=Cancelled). Entire card is a `<Link href="/events/{id}">`. |
 | `components/site/event-photo-grid.tsx` | NEW | Responsive photo grid for event gallery. Props: `photos: EventPhotoDto[]`. Lightbox on click. Shows caption below each photo. |
 | `components/site/member-gallery-grid.tsx` | NEW | Same photo grid for batch photos. Props: `photos: MemberGalleryPhotoDto[]`. |
-| `components/ui/data-table.tsx` | NEW | Generic reusable table. Props: `columns`, `data`, `isLoading`. Shows skeleton on load, "No records" if empty. |
-| `components/ui/club-role-badge.tsx` | NEW | Small colored badge component for displaying club roles. Maps `clubRole` string to: Convenor=gold, Core=blue, Batch Rep=green, Student=grey, Ex-*=outline. |
-| `components/site/admin-tabs.tsx` | NEW | Tab nav shell with tabs: Members, Events, Galleries. |
+| `components/ui/data-table.tsx` | **[DONE - PR #77]** | Generic reusable table. Props: `columns`, `data`, `isLoading`. Skeleton on load, "No records" if empty. |
+| `components/ui/club-role-badge.tsx` | **[DONE - PR #77]** | Small coloured badge for club roles: Convenor=gold, Core=purple, Associate Core=blue, Batch Rep=green, Ex-*=outline, Student=grey. |
+| `components/site/admin-tabs.tsx` | **[DONE - PR #77]** | Tab nav with Members, Events, Galleries. |
 | `app/events/page.tsx` | MODIFY | Replace the `lib/content/events.ts` data (its invented entries were already removed in PR #72). Server Component. Fetches `GET /api/events/upcoming` and `GET /api/events/completed`. Maps to `<EventCard>`. **Keep the "Nothing scheduled" panel from PR #72** for an empty upcoming list. |
 | `app/events/[id]/page.tsx` | NEW | Event detail page. Shows: cover image, title, date, location, description, photo gallery grid, attendee count. Fetches `GET /api/events/{id}`. |
 | `app/gallery/members/page.tsx` | NEW | Member gallery page. Shows batch year filter dropdown. Fetches `GET /api/gallery/members/batches` for years. Fetches photos by selected year. **[DECISION NEEDED]** `app/gallery/page.tsx` already exists -- the dome gallery of event photos, built from static files. Default: keep it at `/gallery` and add this page at `/gallery/members`, linked from `/gallery`. M6 confirms before M1 builds it. |
 | `app/(dashboard)/admin/page.tsx` | CREATE SHELL | Admin dashboard shell with the tab layout. M3 fills the data. |
 
 > [!NOTE]
-> **Ship `ClubRoleBadge` and `DataTable` first, as their own small PR.** M3's admin pages
-> cannot start without them. The profile already styles the club role inline
-> (`getClubRoleBadgeStyle` in `profile-dashboard.tsx`); M3 swaps that for this component.
+> **`ClubRoleBadge`, `DataTable` and `AdminTabs` are already built.** M3 needed them for the
+> admin pages and wrote them in PR #77, where they were reviewed. They are the official
+> versions -- M1 does not rebuild them, and improves them in place if a page needs more.
+> `app/(dashboard)/admin/page.tsx` also exists, so the shell in this table is done as well.
 
 ---
 
@@ -1083,6 +1084,6 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
 | **M6 (Lead)** | Foundation + DevOps | 0 + 1 + 3 | **[DONE]** All 6 Flyway migrations, all entity files, `ClubRole` enum, `EventStatus` enum, Flyway auto-config fix, Cloudinary env vars. **[DONE - PR #62]** entire `snapshot/` package. **[Stage 3 -- PARTIAL]** unit tests and Testcontainers done; Render and Vercel env vars, Cloudinary preset, phone backfill, PR reviews and final merge remain |
 | **M4** | Backend Security + Gallery | 1A | **[DONE - PR #73]** `SecurityConfig` new rules (all 8 rule blocks), `UserController` lookup endpoint, `UserController` club-role endpoint, entire `gallery/` package (2 DTOs + 1 repo + 1 service + 1 controller) |
 | **M5** | Backend Data + APIs | 1B | **[DONE - PR #67]** `UserProfileUpdateRequest` update, `UpdateClubRoleRequest`, `UserLookupDto`, `UserResponseDto` update, `UserService` 3 new methods, `UserRepository` 3 new methods, leaderboard filter by `clubRole`, entire `leetcode/` package, entire `event/` package (7 DTOs + 3 repos + 2 services + 1 controller), `pom.xml` POI dep |
-| **M1** | Frontend UI/UX | 2A | **[NOT STARTED]** `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, `DataTable`, `ClubRoleBadge`, `AdminTabs`, Events page redesign, Event detail page, Member Gallery page |
+| **M1** | Frontend UI/UX | 2A | **[PARTLY DONE]** `EventCard`, `EventPhotoGrid`, `MemberGalleryGrid`, Events page redesign, Event detail page, Member Gallery page. `DataTable`, `ClubRoleBadge` and `AdminTabs` were delivered in PR #77 and are not M1's to rebuild. |
 | **M2** | Frontend State + Auth | 2B | **[DONE - PR #71]** `auth.ts` new User fields, `types/api.ts` 6 new types + ClubRole union, `events.ts` service (16 functions), `gallery.ts` service (4 functions), `dashboard.ts` mapper update, `leaderboard.ts` params update |
 | **M3** | Frontend Dashboards | 2C | **[NOT STARTED]** Profile dashboard (Cloudinary avatar, club role badge, platform links, edit panel, rating charts), Admin dashboard all 3 tabs (Members with club role assignment, Events CRUD + gallery upload, Gallery management), Admin event attendee page (search + auto-fill + table + Excel download), Leaderboard platform + club filter toggles |
