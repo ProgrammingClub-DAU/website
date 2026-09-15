@@ -2,6 +2,7 @@ package com.cpclub.backend.user.repository;
 
 import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
 import com.cpclub.backend.user.entity.ClubRole;
+import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return whether a member already owns the email
      */
     Boolean existsByEmail(String email);
+    /**
+     * Counts the members holding one platform role.
+     *
+     * <p>Read before a demotion or a deletion, to refuse the change that would
+     * leave the club with no administrator at all.</p>
+     *
+     * @param role platform role to count
+     * @return number of members holding that role
+     */
+    long countByRole(Role role);
 
     /**
      * Checks whether a Codeforces handle is linked to any member.

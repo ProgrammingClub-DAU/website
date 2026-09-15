@@ -145,10 +145,80 @@ class UserServiceTest {
     @Test
     @DisplayName("Should reject deletion of a user that does not exist")
     void shouldRejectDeletingMissingUser() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
         verify(userRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("The last administrator cannot be demoted")
+    void shouldRejectDemotingTheLastAdmin() {
+        // Administrators are ordinary members promoted by another administrator,
+        // so an empty admin list can only be repaired with SQL against production.
+        User lastAdmin = new User("Lead", "lead@dau.ac.in", "pass", Role.ROLE_ADMIN);
+        lastAdmin.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(lastAdmin));
+        when(userRepository.countByRole(Role.ROLE_ADMIN)).thenReturn(1L);
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> userService.updateUserRole(1L, new UpdateRoleRequest(Role.ROLE_USER)));
+
+        assertTrue(error.getMessage().contains("At least one administrator"));
+        assertEquals(Role.ROLE_ADMIN, lastAdmin.getRole());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("An administrator can be demoted while another one remains")
+    void shouldAllowDemotingAnAdminWhenAnotherRemains() {
+        User admin = new User("Core", "core@dau.ac.in", "pass", Role.ROLE_ADMIN);
+        admin.setId(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(Role.ROLE_ADMIN)).thenReturn(2L);
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        UserResponseDto result = userService.updateUserRole(2L, new UpdateRoleRequest(Role.ROLE_USER));
+
+        assertEquals(Role.ROLE_USER, result.role());
+    }
+
+    @Test
+    @DisplayName("The last administrator cannot be deleted")
+    void shouldRejectDeletingTheLastAdmin() {
+        User lastAdmin = new User("Lead", "lead@dau.ac.in", "pass", Role.ROLE_ADMIN);
+        lastAdmin.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(lastAdmin));
+        when(userRepository.countByRole(Role.ROLE_ADMIN)).thenReturn(1L);
+
+        assertThrows(BadRequestException.class, () -> userService.deleteUser(1L));
+        verify(userRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("An administrator can be deleted while another one remains")
+    void shouldAllowDeletingAnAdminWhenAnotherRemains() {
+        User admin = new User("Core", "core@dau.ac.in", "pass", Role.ROLE_ADMIN);
+        admin.setId(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(Role.ROLE_ADMIN)).thenReturn(2L);
+
+        userService.deleteUser(2L);
+
+        verify(userRepository).deleteById(2L);
+    }
+
+    @Test
+    @DisplayName("Deleting an ordinary member never counts administrators")
+    void shouldDeleteAnOrdinaryMemberWithoutCountingAdmins() {
+        User member = new User("Student", "student@dau.ac.in", "pass", Role.ROLE_USER);
+        member.setId(3L);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(member));
+
+        userService.deleteUser(3L);
+
+        verify(userRepository).deleteById(3L);
+        verify(userRepository, never()).countByRole(any());
     }
 
     /**
