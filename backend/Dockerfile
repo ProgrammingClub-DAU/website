@@ -27,22 +27,39 @@ EXPOSE 8080
 #
 # Total container limit:                       512 MB
 #
-# Heap  (-Xmx192m / -Xms64m)          ≤ 192 MB   — Spring Boot + Hibernate data
-# Code Cache (-XX:ReservedCodeCacheSize)  64 MB   — JIT-compiled code
-# Metaspace (-XX:MaxMetaspaceSize)        96 MB   — class metadata
-# Thread stacks (Xss256k × ~50 threads)  ~12 MB  — request + scheduler threads
-# JVM internals / GC / off-heap          ~50 MB  — NIO, Hikari, misc
-# OS / kernel                            ~50 MB  — always present
+# Heap  (-Xmx160m / -Xms64m)          ≤ 160 MB   — Spring Boot + Hibernate data
+# Metaspace (-XX:MaxMetaspaceSize)       160 MB   — class metadata
+# Code Cache (-XX:ReservedCodeCacheSize)  48 MB   — JIT-compiled code
+# Thread stacks (Xss256k × ~50 threads)  ~12 MB   — request + scheduler threads
+# JVM internals / GC / off-heap          ~50 MB   — NIO, Hikari, misc
+# OS / kernel                            ~50 MB   — always present
 #                                       ──────────
-# Worst-case total                      ~464 MB  — leaves ~48 MB headroom
+# Worst-case total                      ~480 MB   — leaves ~32 MB headroom
+#
+# Metaspace went 96 MB -> 160 MB, paid for out of heap and code cache.
+#
+# 96 MB was sized for the Phase 1 application. Phase 2 added the event, gallery,
+# snapshot and leetcode packages, and Apache POI for the attendance export, which
+# loads several hundred classes the first time a spreadsheet is written. Class
+# metadata is effectively never reclaimed here, so the cap was reached in normal
+# use, and from that moment every request that had to load a class failed with
+# OutOfMemoryError: Metaspace — sign-in included, that being the request members
+# hit first. Heap is the safer place to take it from: this service holds no large
+# objects, it serves paginated lists and single rows.
 #
 # Why not MaxRAMPercentage=75? 75% × 512 MB = 384 MB heap alone.
-# Add Metaspace (128 MB) + CodeCache + OS = well over 512 MB → OOM at startup.
+# Add Metaspace + CodeCache + OS = well over 512 MB → OOM at startup.
+#
+# ExitOnOutOfMemoryError: a JVM out of Metaspace cannot load another class, so it
+# cannot serve one more request. Staying alive only keeps Render routing traffic
+# to a process that answers everything with a 500. Exiting hands it back to the
+# platform, which restarts it.
 ENTRYPOINT ["java", \
-            "-Xms64m", "-Xmx192m", \
+            "-Xms64m", "-Xmx160m", \
             "-Xss256k", \
-            "-XX:MaxMetaspaceSize=96m", \
-            "-XX:ReservedCodeCacheSize=64m", \
+            "-XX:MaxMetaspaceSize=160m", \
+            "-XX:ReservedCodeCacheSize=48m", \
             "-XX:+UseSerialGC", \
             "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", \
+            "-XX:+ExitOnOutOfMemoryError", \
             "-jar", "app.jar"]
