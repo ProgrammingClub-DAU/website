@@ -54,7 +54,7 @@ Leader review — no self-merging, no force-pushing shared branches.
 | --- | --- |
 | Frontend shell, design system, static pages | Built (Role 1) |
 | Home, About, Events, Hall of Fame, Blog, Members | Built, placeholder content |
-| Auth, login/register | Not started (Role 2) |
+| Auth (Google sign-in, @dau.ac.in only) | Built (Role 2) |
 | Profiles, leaderboard UI | Not started (Role 3) |
 | Backend entities, APIs, security | Boilerplate only (Roles 4–5) |
 | Codeforces sync job, deployment | Not started (Role 6) |

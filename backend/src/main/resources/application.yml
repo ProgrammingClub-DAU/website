@@ -39,6 +39,17 @@ app:
     # If not set, the application will fail to start intentionally.
     secret: ${JWT_SECRET}
     expiration-ms: 86400000
+  google:
+    # The OAuth 2.0 Web client ID from Google Cloud Console. Every ID token is
+    # checked to have been issued for this client, which is what stops a token
+    # minted for some other site being replayed here.
+    #
+    # No default: if it is missing the application refuses to start, rather than
+    # coming up with sign-in quietly broken.
+    client-id: ${GOOGLE_CLIENT_ID}
+    # Only this email domain may sign in. Google reports it twice -- as the
+    # address and as the `hd` hosted-domain claim -- and both are checked.
+    allowed-domain: ${GOOGLE_ALLOWED_DOMAIN:dau.ac.in}
 
 cpclub:
   cors:

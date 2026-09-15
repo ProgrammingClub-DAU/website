@@ -41,7 +41,9 @@ apiClient.interceptors.response.use(
   (error) => {
     // Session expiration handler: 401 on protected requests triggers local logout and login redirect
     const url = error.config?.url || "";
-    const isAuthEndpoint = url.includes("/api/auth/login") || url.includes("/api/auth/register");
+    // A 401 from sign-in itself means the sign-in was refused, not that a
+    // session expired, so it must not trigger the logout-and-redirect below.
+    const isAuthEndpoint = url.includes("/api/auth/google");
     // Browser-only: the store is a shared singleton on the server, so clearing
     // it there would sign out whoever the process serves next.
     if (
