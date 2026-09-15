@@ -199,6 +199,27 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param pageable requested page and sort order
      * @return page of matching members
      */
+    /**
+     * Finds members for the attendance panel, by the things an admin can actually
+     * read off a student card or a message.
+     *
+     * <p>Matches, in one pass: the student ID that starts a DAU address, so
+     * 202401226 finds 202401226@dau.ac.in; the whole email address; part of a
+     * name; or an exact Codeforces handle. The database id is deliberately not
+     * searchable -- nobody knows their own.</p>
+     *
+     * @param query student ID, email address, name fragment or Codeforces handle
+     * @param pageable caps how many matches come back
+     * @return matching members, ordered by name
+     */
+    @Query("SELECT u FROM User u WHERE " +
+           "LOWER(u.email) LIKE LOWER(CONCAT(:query, '@%')) " +
+           "OR LOWER(u.email) = LOWER(:query) " +
+           "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(u.codeforcesHandle) = LOWER(:query) " +
+           "ORDER BY u.name ASC")
+    List<User> searchForAttendance(@Param("query") String query, Pageable pageable);
+
     @Query("SELECT u FROM User u WHERE " +
            "(:query IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.codeforcesHandle) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<User> searchUsers(@Param("query") String query, Pageable pageable);

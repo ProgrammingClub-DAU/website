@@ -41,6 +41,7 @@ export default function EventAttendeesPage() {
   const [searchId, setSearchId] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchedUser, setSearchedUser] = useState<UserLookup | null>(null);
+  const [searchResults, setSearchResults] = useState<UserLookup[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -87,26 +88,29 @@ export default function EventAttendeesPage() {
     e.preventDefault();
     setSearchError(null);
     setSearchedUser(null);
+    setSearchResults([]);
 
     const trimmed = searchId.trim();
-    if (!trimmed) {
-      setSearchError("Please enter a student ID.");
-      return;
-    }
-
-    const idNum = Number(trimmed);
-    if (isNaN(idNum) || idNum <= 0) {
-      setSearchError("Student ID must be a valid positive number.");
+    if (trimmed.length < 2) {
+      setSearchError("Enter a student ID, an email address or a name.");
       return;
     }
 
     setSearching(true);
     try {
-      const result = await eventsService.lookupUser(idNum);
-      setSearchedUser(result);
+      const matches = await eventsService.lookupMembers(trimmed);
+      if (matches.length === 0) {
+        setSearchError(`No member found for "${trimmed}".`);
+      } else if (matches.length === 1) {
+        setSearchedUser(matches[0]);
+      } else {
+        // Several people can share a name, so the admin picks rather than the
+        // page guessing and recording the wrong person as present.
+        setSearchResults(matches);
+      }
     } catch (err: unknown) {
-      console.error("User lookup error:", err);
-      setSearchError("No student found with this ID.");
+      console.error("Member lookup error:", err);
+      setSearchError("Could not search members. Please try again.");
     } finally {
       setSearching(false);
     }
@@ -391,14 +395,15 @@ export default function EventAttendeesPage() {
                 Record Student Attendance
               </h2>
               <p className="mt-0.5 text-micro text-fg-muted">
-                Search member by Student ID to verify details and mark present.
+                Search by student ID, email or name, check it is the right member, then mark present.
               </p>
             </div>
 
             <form onSubmit={handleSearchStudent} className="flex gap-2">
               <input
-                type="number"
-                placeholder="Enter Student ID (e.g. 42)"
+                type="text"
+                placeholder="Student ID, email or name"
+                aria-label="Student ID, email address or name"
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
                 className="flex-1 rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
@@ -412,6 +417,40 @@ export default function EventAttendeesPage() {
                 Search
               </button>
             </form>
+
+            <p className="text-micro text-fg-subtle">
+              The student ID is the part before @ in a DAU address -- 202401226 for
+              202401226@dau.ac.in.
+            </p>
+
+            {searchResults.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-micro text-fg-muted">
+                  {searchResults.length} members match. Pick the right one:
+                </p>
+                {searchResults.map((match) => (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => {
+                      setSearchedUser(match);
+                      setSearchResults([]);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-control border border-border bg-surface-2 px-3 py-2 text-left transition-colors hover:border-hairline-strong"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-semibold text-foreground">
+                        {match.name}
+                      </span>
+                      <span className="block truncate font-mono text-micro text-fg-muted">
+                        {match.email}
+                      </span>
+                    </span>
+                    <ClubRoleBadge clubRole={match.clubRole} showIcon={false} />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {searchError && (
               <div className="flex items-center gap-2 rounded-panel border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400">

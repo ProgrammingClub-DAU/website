@@ -221,6 +221,17 @@ class UserServiceTest {
         verify(userRepository, never()).countByRole(any());
     }
 
+    @Test
+    @DisplayName("An attendance search needs at least two characters")
+    void shouldRejectATooShortAttendanceSearch() {
+        // One character would return most of the club, which is not a search.
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> userService.searchForAttendance("2"));
+
+        assertTrue(error.getMessage().contains("at least 2 characters"));
+        verify(userRepository, never()).searchForAttendance(any(), any());
+    }
+
     /**
      * Builds a {@link UserProfileUpdateRequest} with only the fields under test set.
      *

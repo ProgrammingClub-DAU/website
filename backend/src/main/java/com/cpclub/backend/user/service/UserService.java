@@ -309,6 +309,34 @@ public class UserService {
     }
 
     /**
+     * Finds members for the attendance panel.
+     *
+     * <p>The panel used to take the database id, which no member knows and no
+     * admin can see without opening the members table first. This takes what is
+     * on a student card instead: the student ID in front of a DAU address, so
+     * 202401226 resolves 202401226@dau.ac.in. A full email, a name or a
+     * Codeforces handle work too, because members who joined with another
+     * address have no student ID to type.</p>
+     *
+     * @param query student ID, email address, name fragment or Codeforces handle
+     * @return up to ten matches, ordered by name; empty when nothing matches
+     * @throws BadRequestException if the query is too short to narrow anything down
+     */
+    @Transactional(readOnly = true)
+    public List<UserLookupDto> searchForAttendance(String query) {
+        String trimmed = query == null ? "" : query.trim();
+        if (trimmed.length() < 2) {
+            throw new BadRequestException(
+                    "Enter at least 2 characters: a student ID, an email address or a name.");
+        }
+
+        return userRepository.searchForAttendance(trimmed, PageRequest.of(0, 10))
+                .stream()
+                .map(UserLookupDto::fromEntity)
+                .toList();
+    }
+
+    /**
      * Full member record for the admin event-attendance panel.
      *
      * <p>Returns {@link UserLookupDto}, which carries the member's phone number,

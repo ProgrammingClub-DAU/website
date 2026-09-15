@@ -31,6 +31,49 @@ class UserRepositoryTest {
     }
 
     @Test
+    @DisplayName("A student ID finds the DAU address that starts with it")
+    void shouldFindByStudentIdPrefix() {
+        // What an admin can read off a student card. The database id, which the
+        // panel used to ask for, is not something anybody knows.
+        userRepository.save(new User("Ravi", "202401226@dau.ac.in", "hashed", Role.ROLE_USER));
+        userRepository.save(new User("Other", "202401999@dau.ac.in", "hashed", Role.ROLE_USER));
+
+        var found = userRepository.searchForAttendance("202401226", PageRequest.of(0, 10));
+
+        assertEquals(1, found.size());
+        assertEquals("Ravi", found.get(0).getName());
+    }
+
+    @Test
+    @DisplayName("A full email address matches exactly")
+    void shouldFindByFullEmail() {
+        userRepository.save(new User("Ravi", "202401226@dau.ac.in", "hashed", Role.ROLE_USER));
+
+        var found = userRepository.searchForAttendance("202401226@DAU.AC.IN", PageRequest.of(0, 10));
+
+        assertEquals(1, found.size());
+    }
+
+    @Test
+    @DisplayName("Part of a name matches, for members with no student ID in their address")
+    void shouldFindByNameFragment() {
+        userRepository.save(new User("Meher Shah", "meher@gmail.com", "hashed", Role.ROLE_USER));
+
+        var found = userRepository.searchForAttendance("meher", PageRequest.of(0, 10));
+
+        assertEquals(1, found.size());
+        assertEquals("Meher Shah", found.get(0).getName());
+    }
+
+    @Test
+    @DisplayName("A student ID that belongs to nobody returns nothing")
+    void shouldReturnNothingForAnUnknownStudentId() {
+        userRepository.save(new User("Ravi", "202401226@dau.ac.in", "hashed", Role.ROLE_USER));
+
+        assertTrue(userRepository.searchForAttendance("999999999", PageRequest.of(0, 10)).isEmpty());
+    }
+
+    @Test
     @DisplayName("Should find user by email")
     void shouldFindByEmail() {
         User user = new User("Alice", "alice@example.com", "hashed", Role.ROLE_USER);
