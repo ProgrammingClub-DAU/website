@@ -1,14 +1,10 @@
 package com.cpclub.backend.security;
 
 import com.cpclub.backend.security.jwt.JwtUtils;
-import com.cpclub.backend.security.service.UserDetailsImpl;
 import com.cpclub.backend.user.entity.Role;
-import com.cpclub.backend.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,27 +29,17 @@ class JwtUtilsTest {
     }
 
     @Test
-    @DisplayName("Should generate valid JWT token for authenticated user")
-    void generateJwtToken_Success() {
-        User user = User.builder()
-                .id(1L)
-                .name("Alice Doe")
-                .email("alice@example.com")
-                .password("password")
-                .role(Role.ROLE_USER)
-                .codeforcesHandle("alice_cp")
-                .build();
-
-        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
-        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-        String token = jwtUtils.generateJwtToken(auth);
+    @DisplayName("Should generate a valid JWT carrying the member's address")
+    void generateTokenFromEmail_Success() {
+        // The only way tokens are issued now. Sign-in verifies a Google ID token
+        // and mints one of these from the address inside it, so there is no
+        // Spring Security Authentication to generate from.
+        String token = jwtUtils.generateTokenFromEmail("alice@dau.ac.in", 1L, Role.ROLE_USER.name());
 
         assertNotNull(token);
         assertTrue(jwtUtils.validateJwtToken(token));
-        assertEquals("alice@example.com", jwtUtils.getUserNameFromJwtToken(token));
+        assertEquals("alice@dau.ac.in", jwtUtils.getUserNameFromJwtToken(token));
     }
-
     @Test
     @DisplayName("Should reject invalid or malformed JWT token")
     void validateJwtToken_Malformed() {

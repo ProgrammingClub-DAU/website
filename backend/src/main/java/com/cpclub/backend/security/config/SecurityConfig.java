@@ -8,15 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -51,40 +46,11 @@ public class SecurityConfig {
     private final AuthEntryPointJwt unauthorizedHandler;
     private final AuthTokenFilter authTokenFilter;
 
-    /**
-     * Connects repository-backed user lookup and BCrypt password verification to Spring Security.
-     *
-     * @return configured authentication provider
-     */
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    /**
-     * Exposes Spring Security's configured authentication manager to the auth service.
-     *
-     * @param authConfig framework authentication configuration
-     * @return authentication manager for email/password login
-     * @throws Exception if the framework cannot construct the manager
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
-
-    /**
-     * Supplies BCrypt hashing so passwords are never stored or compared as plaintext.
-     *
-     * @return password encoder with an intentionally adaptive work factor
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
+    // No AuthenticationManager, DaoAuthenticationProvider or PasswordEncoder.
+    // Sign-in is a verified Google ID token exchanged for one of our JWTs, so
+    // there is no credential for Spring Security to check and nothing to hash.
+    // UserDetailsServiceImpl is still wired in below: the JWT filter uses it to
+    // re-read a member's authorities from the database on every request.
     /**
      * Defines browser origins, methods, and headers permitted to call the API.
      * Origins are read from the {@code cpclub.cors.allowed-origins} property, which maps
@@ -156,7 +122,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
 
-        http.authenticationProvider(authenticationProvider());
+        // No authentication provider is registered: the filter below establishes
+        // the principal from our own JWT, and nothing else authenticates a request.
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

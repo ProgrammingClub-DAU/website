@@ -101,7 +101,7 @@ export default function EventsPage() {
                 </p>
                 <div className="mt-6.5 flex flex-wrap gap-3">
                   <Button asChild className="h-10 rounded-full px-5.5">
-                    <Link href="/register">Join the Club</Link>
+                    <Link href="/login">Join the Club</Link>
                   </Button>
                   <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
                     <Link href="/about">About the club</Link>

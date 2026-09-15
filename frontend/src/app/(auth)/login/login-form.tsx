@@ -1,22 +1,16 @@
 /**
  * LoginForm Client Component
- * Renders sign-in interface and handles logic connecting to POST /api/auth/login.
+ * Renders the Google sign-in interface and connects to POST /api/auth/google.
  */
 
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
 import { AuthBackdrop } from "@/components/site/auth-backdrop";
-import StarBorder from "@/components/site/star-border";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { loginSchema, type LoginInput } from "@/lib/validations/auth";
+import { GoogleSignInButton } from "@/components/site/google-sign-in-button";
 import { apiClient } from "@/lib/axios";
 import { useAuthStore, type ApiResponse, type AuthResponse, mapAuthResponseToUser } from "@/store/auth";
 
@@ -24,47 +18,49 @@ export default function LoginForm() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (data: LoginInput) => {
+  /**
+   * Exchanges Google's ID token for a session here.
+   *
+   * The token is not inspected in the browser. Everything that decides whether
+   * this person may sign in -- that Google really issued the token, that it was
+   * issued for this site, that the address is on the university domain -- is
+   * checked on the server, where the answer cannot be edited.
+   */
+  const handleCredential = async (idToken: string) => {
     setApiError(null);
+    setIsSigningIn(true);
+
     try {
-      // Connect to backend login endpoint using strongly typed responses
-      const response = await apiClient.post<ApiResponse<AuthResponse>>("/api/auth/login", {
-        email: data.email,
-        password: data.password,
+      const response = await apiClient.post<ApiResponse<AuthResponse>>("/api/auth/google", {
+        idToken,
       });
 
       const authData = response.data.data;
-
-      // Map backend AuthResponse to Zustand User object via shared mapper function
       login(mapAuthResponseToUser(authData), authData.token);
 
-      // Redirect home on success
-      router.push("/");
+      // A member with no year on record has never been through the welcome
+      // question -- either they just signed up, or their account predates it.
+      // Signing in is the only moment we are certain to have their attention.
+      router.push(authData.academicYear ? "/" : "/welcome");
     } catch (err: unknown) {
-      // Differentiate between network connection problems and server-side validation/cred failures
       let msg = "Failed to sign in. Please try again.";
+
       if (axios.isAxiosError(err)) {
         if (!err.response) {
           msg = "Cannot reach the server. Check your connection and try again.";
         } else {
+          // The server's message is the useful one here: it names the actual
+          // problem, which is almost always a personal account rather than the
+          // university one.
           const responseData = err.response.data as { message?: string } | undefined;
-          msg = responseData?.message ?? "Failed to sign in. Please check your credentials.";
+          msg = responseData?.message ?? "Failed to sign in. Please try again.";
         }
       }
+
       setApiError(msg);
+      setIsSigningIn(false);
     }
   };
 
@@ -78,14 +74,11 @@ export default function LoginForm() {
       <AuthBackdrop className="absolute inset-0 -z-10 [mask-image:radial-gradient(60%_46%_at_50%_46%,rgb(0_0_0/0.35),#000_72%)]" />
 
       <div className="w-full max-w-md">
-        {/* Was the left panel's branding. It keeps the page's h1 — dropping the
-            panel outright would have left an auth page whose only heading was
-            the form's h2. */}
-        {/* The headline is the only text sitting on the raw backdrop — the form
-            below has its own glass panel. It carries a halo on the glyphs rather
-            than a pool of page colour behind the block: the pool read as a
-            cloud with an edge, while a text-shadow follows the letters and lets
-            the field keep flowing right up to them. See .text-halo. */}
+        {/* The headline is the only text sitting on the raw backdrop — the panel
+            below has its own glass. It carries a halo on the glyphs rather than
+            a pool of page colour behind the block: the pool read as a cloud
+            with an edge, while a text-shadow follows the letters and lets the
+            field keep flowing right up to them. See .text-halo. */}
         <div className="space-y-3 text-center">
           <p className="text-halo font-mono text-label font-semibold tracking-[0.15em] text-primary uppercase">
             WEEKLY CONTESTS, LIVE RANK
@@ -104,50 +97,12 @@ export default function LoginForm() {
               Welcome back
             </h2>
             <p className="text-sm text-fg-muted">
-              Enter your credentials to access your account
+              Use your university Google account to continue
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
-                EMAIL ADDRESS
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="member@university.edu"
-                autoComplete="email"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-                {...register("email")}
-              />
-              {errors.email && (
-                <p id="email-error" role="alert" className="font-mono text-xs text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
-                PASSWORD
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? "password-error" : undefined}
-                {...register("password")}
-              />
-              {errors.password && (
-                <p id="password-error" role="alert" className="font-mono text-xs text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
+          <div className="mt-7 space-y-4">
+            <GoogleSignInButton onCredential={handleCredential} busy={isSigningIn} />
 
             {apiError && (
               <div
@@ -159,27 +114,15 @@ export default function LoginForm() {
               </div>
             )}
 
-            <StarBorder
-              type="submit"
-              backgroundColor="var(--primary)"
-              textColor="var(--primary-foreground)"
-              disabled={isSubmitting}
-              className="mt-2 w-full disabled:opacity-60"
-              innerClassName="h-10 w-full rounded-lg font-mono text-xs tracking-wider uppercase flex items-center justify-center"
-            >
-              {isSubmitting ? "Signing in..." : "Sign In"}
-            </StarBorder>
-          </form>
-
-          <p className="text-center font-mono text-xs text-fg-muted">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="text-foreground underline underline-offset-4 hover:text-primary transition-colors"
-            >
-              Register
-            </Link>
-          </p>
+            <div className="space-y-2 border-t border-border pt-4 text-center">
+              <p className="font-mono text-xs text-fg-muted">
+                Only <span className="text-foreground">@dau.ac.in</span> accounts can sign in.
+              </p>
+              <p className="text-xs text-fg-subtle">
+                No account needed — signing in for the first time creates one.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* The rank ladder the particles are drawn from. */}
