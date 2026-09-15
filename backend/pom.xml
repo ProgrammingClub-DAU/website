@@ -134,6 +134,27 @@
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!--
+		  Testcontainers: runs the Flyway migrations against a real PostgreSQL in CI.
+		  The H2 test profile builds its schema from the entities with Flyway off, so
+		  it cannot notice a migration that has drifted from them. Versions come from
+		  the Spring Boot BOM; the artifact names are the Testcontainers 2.x ones.
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
 
 		<!--
 		  Apache POI, for the event attendance export.
