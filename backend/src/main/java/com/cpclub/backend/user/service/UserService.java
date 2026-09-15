@@ -10,6 +10,7 @@ import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserLookupDto;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
@@ -336,6 +337,8 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
+        requireAnAdminRemains(user, request.role());
+
         user.setRole(request.role());
         User saved = userRepository.save(user);
         log.info("Updated role for user id {} to {}", userId, request.role());
@@ -349,10 +352,35 @@ public class UserService {
      */
     @Transactional
     public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        requireAnAdminRemains(user, Role.ROLE_USER);
+
         userRepository.deleteById(userId);
         log.info("Deleted user id {}", userId);
+    }
+
+    /**
+     * Refuses a change that would leave the club with no administrator.
+     *
+     * <p>An administrator here is an ordinary member whom another administrator
+     * promoted, so the admin list can only be refilled from inside the admin
+     * screens. Emptying it locks everyone out of those screens, and the only way
+     * back is an UPDATE run by hand against the production database.</p>
+     *
+     * <p>A deletion passes {@link Role#ROLE_USER} as the new role: the account is
+     * about to stop being an administrator by disappearing.</p>
+     *
+     * @param user member being demoted or deleted
+     * @param newRole role that member is about to hold
+     * @throws BadRequestException if the change would remove the last administrator
+     */
+    private void requireAnAdminRemains(User user, Role newRole) {
+        boolean losesAdmin = user.getRole() == Role.ROLE_ADMIN && newRole != Role.ROLE_ADMIN;
+        if (losesAdmin && userRepository.countByRole(Role.ROLE_ADMIN) <= 1) {
+            throw new BadRequestException(
+                    "At least one administrator must remain. Promote another member first.");
+        }
     }
 }
