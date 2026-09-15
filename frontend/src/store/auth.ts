@@ -68,6 +68,14 @@ interface AuthState {
   role: string | null;
   isAuthenticated: boolean;
   login: (user: User, token: string) => void;
+  /**
+   * Merges freshly fetched profile fields into the stored user.
+   *
+   * The role is captured at sign-in, so a member promoted to admin since then
+   * would keep seeing the member menu until their next login, and a demoted
+   * admin would keep seeing admin links the API already refuses.
+   */
+  syncUser: (patch: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -86,6 +94,13 @@ export const useAuthStore = create<AuthState>()(
           role: user.role,
           isAuthenticated: true,
         }),
+
+      syncUser: (patch: Partial<User>) =>
+        set((state) =>
+          state.user
+            ? { user: { ...state.user, ...patch }, role: patch.role ?? state.role }
+            : state
+        ),
 
       logout: () =>
         set({
