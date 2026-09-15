@@ -12,25 +12,21 @@ import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
-import type { ClubRole, Event, EventPhoto, MemberGalleryPhoto, UserLookup } from "@/types/api";
+import type { ClubRole, Event, EventPhoto, MemberGalleryPhoto } from "@/types/api";
 import {
   Users,
   Calendar,
-  Image as ImageIcon,
   Plus,
   Trash2,
   Edit2,
   CheckCircle2,
   XCircle,
-  ExternalLink,
   Shield,
   ShieldAlert,
-  Loader2,
-  AlertTriangle,
+  Loader2,
   Upload,
   UserCheck,
   Search,
-  Filter,
 } from "lucide-react";
 
 const ALL_CLUB_ROLES: ClubRole[] = [
@@ -44,6 +40,28 @@ const ALL_CLUB_ROLES: ClubRole[] = [
   "EX_CDC",
   "STUDENT",
 ];
+
+/**
+ * One row of GET /api/users/all, which returns UserResponseDto.
+ *
+ * Not the UserLookup shape used by the attendee panel: that one calls the
+ * Codeforces rating cfRating, while this endpoint calls it rating, and it also
+ * carries the platform role that the Promote and Demote buttons act on.
+ */
+interface AdminMember {
+  id: number;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  phoneNumber: string | null;
+  codeforcesHandle: string | null;
+  rating: number | null;
+  leetcodeHandle: string | null;
+  leetcodeRating: number | null;
+  clubRole: ClubRole | null;
+  batchYear: number | null;
+  role: string;
+}
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -121,7 +139,8 @@ export default function AdminDashboardPage() {
 // ══════════════════════════════════════════════════════════════════
 
 function MembersTab() {
-  const [members, setMembers] = useState<UserLookup[]>([]);
+  const { user: currentUser } = useAuthStore();
+  const [members, setMembers] = useState<AdminMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
@@ -130,7 +149,7 @@ function MembersTab() {
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get<ApiResponse<UserLookup[]>>("/api/users/all");
+      const res = await apiClient.get<ApiResponse<AdminMember[]>>("/api/users/all");
       setMembers(res.data?.data || []);
     } catch (err) {
       console.error("Failed to load members:", err);
@@ -141,6 +160,7 @@ function MembersTab() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     fetchMembers();
   }, [fetchMembers]);
 
@@ -209,7 +229,7 @@ function MembersTab() {
     );
   }, [members, search]);
 
-  const columns: Column<UserLookup>[] = [
+  const columns: Column<AdminMember>[] = [
     {
       key: "id",
       header: "ID",
@@ -255,7 +275,7 @@ function MembersTab() {
           {m.codeforcesHandle ? (
             <div>
               <span className="font-medium">@{m.codeforcesHandle}</span>
-              <span className="ml-1.5 text-fg-muted">({m.cfRating ?? "—"})</span>
+              <span className="ml-1.5 text-fg-muted">({m.rating ?? "—"})</span>
             </div>
           ) : (
             <span className="text-fg-subtle">--</span>
@@ -309,11 +329,13 @@ function MembersTab() {
       key: "role",
       header: "Platform Role",
       render: (m) => {
-        const isAdmin = (m as { role?: string }).role === "ROLE_ADMIN";
+        const isAdmin = m.role === "ROLE_ADMIN";
+        const isSelf = currentUser?.id === m.id;
         return (
           <button
-            onClick={() => handlePlatformRoleToggle(m.id, (m as { role?: string }).role || "ROLE_USER")}
-            disabled={actionLoadingId === m.id}
+            onClick={() => handlePlatformRoleToggle(m.id, m.role || "ROLE_USER")}
+            disabled={actionLoadingId === m.id || isSelf}
+            title={isSelf ? "You cannot change your own platform role" : undefined}
             className={`rounded-full border px-2.5 py-0.5 text-nano font-semibold transition-all ${
               isAdmin
                 ? "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20"
@@ -332,8 +354,8 @@ function MembersTab() {
       render: (m) => (
         <button
           onClick={() => handleDeleteUser(m.id, m.name)}
-          disabled={actionLoadingId === m.id}
-          title="Delete user"
+          disabled={actionLoadingId === m.id || currentUser?.id === m.id}
+          title={currentUser?.id === m.id ? "You cannot delete your own account" : "Delete user"}
           className="rounded-control p-1 text-fg-muted hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
           <Trash2 className="size-4" />
@@ -420,6 +442,7 @@ function EventsTab() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     fetchEvents();
   }, [fetchEvents]);
 
@@ -462,7 +485,9 @@ function EventsTab() {
       const payload: EventRequest = {
         title: formData.title.trim(),
         description: formData.description.trim() || null,
-        eventDate: new Date(formData.eventDate).toISOString(),
+        // datetime-local gives "YYYY-MM-DDTHH:mm"; the API expects a LocalDateTime,
+        // so send exactly what was typed rather than a UTC instant.
+        eventDate: formData.eventDate.length === 16 ? `${formData.eventDate}:00` : formData.eventDate,
         location: formData.location.trim(),
         coverImageUrl: formData.coverImageUrl.trim() || null,
       };
@@ -516,7 +541,7 @@ function EventsTab() {
     setFormData({
       title: ev.title,
       description: ev.description || "",
-      eventDate: ev.eventDate ? new Date(ev.eventDate).toISOString().slice(0, 16) : "",
+      eventDate: ev.eventDate ? ev.eventDate.slice(0, 16) : "",
       location: ev.location,
       coverImageUrl: ev.coverImageUrl || "",
     });
@@ -667,7 +692,7 @@ function EventsTab() {
       {/* Modal for Create / Edit */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-panel border border-border bg-surface-1 p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-panel border border-border bg-surface p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground">
                 {editingEvent ? "Edit Event" : "Create New Event"}
@@ -855,11 +880,13 @@ function MemberGalleryManager() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadYears();
   }, [loadYears]);
 
   useEffect(() => {
     if (selectedYear) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
       loadPhotos(selectedYear);
     }
   }, [selectedYear, loadPhotos]);
@@ -939,7 +966,7 @@ function MemberGalleryManager() {
     <div className="grid gap-8 lg:grid-cols-12">
       {/* Upload Form (4 cols) */}
       <div className="lg:col-span-4">
-        <div className="rounded-panel border border-border bg-surface-1 p-5 space-y-4">
+        <div className="rounded-panel border border-border bg-surface p-5 space-y-4">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             <Upload className="size-4 text-primary" />
             Upload Batch Photo
@@ -1122,6 +1149,7 @@ function EventGalleryManager() {
 
   useEffect(() => {
     if (selectedEventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
       loadPhotos(selectedEventId);
     }
   }, [selectedEventId, loadPhotos]);
@@ -1196,7 +1224,7 @@ function EventGalleryManager() {
     <div className="grid gap-8 lg:grid-cols-12">
       {/* Upload Form */}
       <div className="lg:col-span-4">
-        <div className="rounded-panel border border-border bg-surface-1 p-5 space-y-4">
+        <div className="rounded-panel border border-border bg-surface p-5 space-y-4">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             <Upload className="size-4 text-primary" />
             Add Event Photo

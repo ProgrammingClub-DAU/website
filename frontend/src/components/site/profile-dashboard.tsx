@@ -28,14 +28,12 @@ import type { Profile, EventParticipation } from "@/types/api";
 import {
   User,
   Trophy,
-  Code,
-  Calendar,
+  Code,
   Award,
   Zap,
   Lock,
   Edit2,
-  Camera,
-  Globe,
+  Camera,
   ExternalLink,
   Phone,
   Mail,
@@ -70,6 +68,43 @@ declare global {
 }
 
 // ── Generate achievements from event participations ──
+/**
+ * Builds a complete profile payload.
+ *
+ * PUT /api/users/profile replaces every field it receives, and a field that is
+ * absent is stored as empty. Sending only the avatar therefore wiped the phone
+ * number and all four platform links, and saving the edit form wiped the avatar.
+ * Every call sends the whole profile, with only the edited fields overridden.
+ */
+function profilePayload(profile: Profile, overrides: Partial<ProfileUpdateRequest>): ProfileUpdateRequest {
+  return {
+    name: profile.name,
+    phoneNumber: profile.phoneNumber,
+    codeforcesHandle: profile.codeforcesHandle,
+    leetcodeHandle: profile.leetcodeHandle,
+    codechefUrl: profile.codechefUrl,
+    atcoderUrl: profile.atcoderUrl,
+    githubUrl: profile.githubUrl,
+    linkedinUrl: profile.linkedinUrl,
+    avatarUrl: profile.avatarUrl,
+    ...overrides,
+  };
+}
+
+/** Edit-form values for a member, used when the panel is opened. */
+function formFromProfile(profile: Profile) {
+  return {
+    name: profile.name || "",
+    phoneNumber: profile.phoneNumber || "",
+    codeforcesHandle: profile.codeforcesHandle || "",
+    leetcodeHandle: profile.leetcodeHandle || "",
+    codechefUrl: profile.codechefUrl || "",
+    atcoderUrl: profile.atcoderUrl || "",
+    githubUrl: profile.githubUrl || "",
+    linkedinUrl: profile.linkedinUrl || "",
+  };
+}
+
 function generateAchievements(events: EventParticipation[]): { icon: string; label: string }[] {
   const achievements: { icon: string; label: string }[] = [];
 
@@ -145,6 +180,7 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   }, [userId, isOwner, isAuthenticated]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadProfile();
   }, [loadProfile]);
 
@@ -216,19 +252,13 @@ function ProfileDashboardContent({
     linkedinUrl: profile.linkedinUrl || "",
   });
 
-  // Sync formData when profile updates
-  useEffect(() => {
-    setFormData({
-      name: profile.name || "",
-      phoneNumber: profile.phoneNumber || "",
-      codeforcesHandle: profile.codeforcesHandle || "",
-      leetcodeHandle: profile.leetcodeHandle || "",
-      codechefUrl: profile.codechefUrl || "",
-      atcoderUrl: profile.atcoderUrl || "",
-      githubUrl: profile.githubUrl || "",
-      linkedinUrl: profile.linkedinUrl || "",
-    });
-  }, [profile]);
+  const openEditor = () => {
+    setFormData(formFromProfile(profile));
+    setSaveError(null);
+    setIsEditingProfile(true);
+  };
+
+
 
   const handleOpenCloudinary = () => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
@@ -248,10 +278,9 @@ function ProfileDashboardContent({
           if (!error && result && result.event === "success") {
             setIsUploadingAvatar(true);
             try {
-              await dashboardService.updateProfile({
-                name: profile.name,
-                avatarUrl: result.info.secure_url,
-              });
+              await dashboardService.updateProfile(
+                profilePayload(profile, { avatarUrl: result.info.secure_url })
+              );
               onUpdate();
             } catch (err) {
               console.error("Failed to save avatar URL:", err);
@@ -267,10 +296,7 @@ function ProfileDashboardContent({
       if (manualUrl && manualUrl.trim()) {
         setIsUploadingAvatar(true);
         dashboardService
-          .updateProfile({
-            name: profile.name,
-            avatarUrl: manualUrl.trim(),
-          })
+          .updateProfile(profilePayload(profile, { avatarUrl: manualUrl.trim() }))
           .then(() => onUpdate())
           .catch((err) => console.error("Failed to update avatar:", err))
           .finally(() => setIsUploadingAvatar(false));
@@ -302,6 +328,8 @@ function ProfileDashboardContent({
         atcoderUrl: formData.atcoderUrl.trim() || null,
         githubUrl: formData.githubUrl.trim() || null,
         linkedinUrl: formData.linkedinUrl.trim() || null,
+        // Carried through so that saving the form does not clear the avatar.
+        avatarUrl: profile.avatarUrl,
       };
       await dashboardService.updateProfile(payload);
       setIsEditingProfile(false);
@@ -360,12 +388,6 @@ function ProfileDashboardContent({
 
   const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
 
-  // Mask phone for visitors: only show if owner or show masked
-  const maskedPhone = profile.phoneNumber
-    ? isOwner
-      ? profile.phoneNumber
-      : `${profile.phoneNumber.slice(0, 3)}••••••${profile.phoneNumber.slice(-2)}`
-    : null;
 
   return (
     <div className="space-y-8">
@@ -396,7 +418,7 @@ function ProfileDashboardContent({
                   onClick={handleOpenCloudinary}
                   disabled={isUploadingAvatar}
                   title="Upload profile photo via Cloudinary"
-                  className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border border-border bg-surface-1 text-fg-muted shadow-md transition-all hover:bg-primary hover:text-primary-foreground"
+                  className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border border-border bg-surface text-fg-muted shadow-md transition-all hover:bg-primary hover:text-primary-foreground"
                 >
                   {isUploadingAvatar ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -426,7 +448,7 @@ function ProfileDashboardContent({
 
                 {isOwner && (
                   <button
-                    onClick={() => setIsEditingProfile((prev) => !prev)}
+                    onClick={() => (isEditingProfile ? setIsEditingProfile(false) : openEditor())}
                     className="inline-flex items-center self-center sm:self-start gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-hairline-strong hover:bg-surface-3"
                   >
                     <Edit2 className="size-3.5" />
@@ -459,7 +481,7 @@ function ProfileDashboardContent({
                     <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>
                   )}
                 </span>
-                {profile.leetcodeRating && (
+                {profile.leetcodeRating !== null && profile.leetcodeRating > 0 && (
                   <span className="text-xs text-fg-muted">
                     LeetCode: <strong className="text-foreground">{profile.leetcodeRating}</strong>
                   </span>
@@ -798,20 +820,26 @@ function ProfileDashboardContent({
           <CardTitle className="text-base">Account Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-fg-muted">
-              <Mail className="size-3.5" /> Email
-            </span>
-            <span className="font-mono text-xs">{profile.email}</span>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-fg-muted">
-              <Phone className="size-3.5" /> Phone Number
-            </span>
-            <span>{maskedPhone || <span className="text-fg-subtle">Not provided</span>}</span>
-          </div>
-          <Separator />
+          {isOwner && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-fg-muted">
+                  <Mail className="size-3.5" /> Email
+                </span>
+                <span className="font-mono text-xs">{profile.email}</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-fg-muted">
+                  <Phone className="size-3.5" /> Phone Number
+                </span>
+                <span>
+                  {profile.phoneNumber || <span className="text-fg-subtle">Not provided</span>}
+                </span>
+              </div>
+              <Separator />
+            </>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-fg-muted">Codeforces Handle</span>
             <span style={{ color: nameColor }}>

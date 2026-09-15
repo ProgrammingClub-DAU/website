@@ -39,6 +39,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
   // Re-fetch whenever platform or roleFilter changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     fetchLeaderboard(platform, roleFilter);
   }, [platform, roleFilter, fetchLeaderboard]);
 

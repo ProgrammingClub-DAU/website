@@ -29,7 +29,7 @@ export function DataTable<T>({
   keyExtractor,
 }: DataTableProps<T>) {
   return (
-    <div className={cn("overflow-hidden rounded-panel border border-border bg-surface-1", className)}>
+    <div className={cn("overflow-hidden rounded-panel border border-border bg-surface", className)}>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-surface-2/70 text-xs font-semibold tracking-wider text-fg-muted uppercase">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/auth";
@@ -77,28 +77,11 @@ export default function EventAttendeesPage() {
   }, [eventId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadEventData();
     loadAttendees();
   }, [loadEventData, loadAttendees]);
 
-  // Auth guards
-  if (!isAuthenticated || user?.role !== "ROLE_ADMIN") {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
-        <ShieldAlert className="size-10 text-red-500" />
-        <h2 className="text-lg font-bold">Admin Access Required</h2>
-        <p className="text-xs text-fg-muted max-w-sm">
-          You need administrative access to manage event attendees.
-        </p>
-        <Link
-          href="/admin"
-          className="mt-2 rounded-control bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow"
-        >
-          Go to Admin
-        </Link>
-      </div>
-    );
-  }
 
   const handleSearchStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,6 +193,27 @@ export default function EventAttendeesPage() {
     );
   }, [attendees, attendeeFilter]);
 
+  // Placed after every hook: an early return above useMemo changes the number of
+  // hooks React sees between renders, which is the rules-of-hooks error.
+  // Auth guards
+  if (!isAuthenticated || user?.role !== "ROLE_ADMIN") {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
+        <ShieldAlert className="size-10 text-red-500" />
+        <h2 className="text-lg font-bold">Admin Access Required</h2>
+        <p className="text-xs text-fg-muted max-w-sm">
+          You need administrative access to manage event attendees.
+        </p>
+        <Link
+          href="/admin"
+          className="mt-2 rounded-control bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow"
+        >
+          Go to Admin
+        </Link>
+      </div>
+    );
+  }
+
   const attendeeColumns: Column<EventAttendee>[] = [
     {
       key: "userId",
@@ -318,7 +322,7 @@ export default function EventAttendeesPage() {
         {loadingEvent ? (
           <div className="h-14 animate-pulse rounded-panel bg-surface-2" />
         ) : event ? (
-          <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface-1 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight text-foreground">{event.title}</h1>
@@ -380,7 +384,7 @@ export default function EventAttendeesPage() {
       <div className="grid gap-8 lg:grid-cols-12">
         {/* LEFT COLUMN: Student Search & Add Panel (4 cols) */}
         <div className="space-y-4 lg:col-span-4">
-          <div className="rounded-panel border border-border bg-surface-1 p-5 space-y-4">
+          <div className="rounded-panel border border-border bg-surface p-5 space-y-4">
             <div>
               <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="size-4 text-primary" />
@@ -440,7 +444,7 @@ export default function EventAttendeesPage() {
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <ClubRoleBadge clubRole={searchedUser.clubRole} showIcon={false} />
                       {searchedUser.batchYear && (
-                        <span className="rounded-full border border-border bg-background px-2 py-0.2 text-nano text-fg-muted">
+                        <span className="rounded-full border border-border bg-background px-2 py-0.5 text-nano text-fg-muted">
                           Batch {searchedUser.batchYear}
                         </span>
                       )}
