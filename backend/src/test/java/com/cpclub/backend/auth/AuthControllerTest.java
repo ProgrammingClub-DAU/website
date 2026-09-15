@@ -1,5 +1,6 @@
 package com.cpclub.backend.auth;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.auth.controller.AuthController;
 import com.cpclub.backend.auth.dto.AuthResponse;
 import com.cpclub.backend.auth.dto.LoginRequest;
@@ -55,7 +56,8 @@ class AuthControllerTest {
                 "John Doe",
                 "john@example.com",
                 "Password123!",
-                "tourist"
+                "tourist",
+                AcademicYear.FIRST_YEAR
         );
 
         AuthResponse authResponse = new AuthResponse(
@@ -80,7 +82,8 @@ class AuthControllerTest {
                 "John Doe",
                 "john@example.com",
                 "Password123!",
-                null
+                null,
+                AcademicYear.FIRST_YEAR
         );
 
         when(authService.registerUser(any(RegisterRequest.class)))

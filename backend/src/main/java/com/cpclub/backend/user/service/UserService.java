@@ -232,6 +232,7 @@ public class UserService {
         user.setGithubUrl(trimToNull(request.githubUrl()));
         user.setLinkedinUrl(trimToNull(request.linkedinUrl()));
         user.setAvatarUrl(trimToNull(request.avatarUrl()));
+        user.setAcademicYear(request.academicYear());
 
         boolean codeforcesChanged = false;
         if (request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank()) {

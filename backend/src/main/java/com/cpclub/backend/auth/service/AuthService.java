@@ -61,6 +61,7 @@ public class AuthService {
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
                 .codeforcesHandle(request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank() ? request.codeforcesHandle().trim() : null)
+                .academicYear(request.academicYear())
                 .role(Role.ROLE_USER)
                 .build();
 
