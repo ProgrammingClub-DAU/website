@@ -70,6 +70,18 @@ export const eventsService = {
     return response.data.data;
   },
 
+  /**
+   * Puts a completed or cancelled event back to upcoming.
+   *
+   * The way back from a mis-click. Completing an event freezes its attendance,
+   * so before this an event finished by accident could not be corrected.
+   * Changes the status only -- results and their switches are untouched.
+   */
+  reopen: async (id: number): Promise<Event> => {
+    const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}/reopen`);
+    return response.data.data;
+  },
+
   cancel: async (id: number): Promise<Event> => {
     const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}/cancel`);
     return response.data.data;

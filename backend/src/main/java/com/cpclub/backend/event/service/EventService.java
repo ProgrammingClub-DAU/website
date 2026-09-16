@@ -195,6 +195,41 @@ public class EventService {
     }
 
     /**
+     * Puts an event back to upcoming.
+     *
+     * <p>The way back from a mis-click. Completing an event freezes its
+     * attendance -- {@link #addAttendee} refuses anything not upcoming -- so an
+     * event finished by accident, or finished before the last few people were
+     * recorded, could not be corrected at all. Cancelling had the same problem in
+     * the other direction.</p>
+     *
+     * <p>Changes the status and nothing else. The contest link, the podium and
+     * the three visibility switches are left exactly as they were: an admin
+     * reopening an event to fix its attendance has not asked to un-announce its
+     * results, and silently clearing settings they would have to rebuild is a
+     * worse surprise than leaving them. The admin panel warns when something is
+     * still published.</p>
+     *
+     * <p>Idempotent: reopening an event that is already upcoming does nothing and
+     * succeeds, so two admins pressing at once do not produce an error.</p>
+     *
+     * @param id event identifier
+     * @return the updated event
+     * @throws ResourceNotFoundException if the event does not exist
+     */
+    @Transactional
+    public EventResponseDto reopenEvent(Long id) {
+        Event event = requireEvent(id);
+        EventStatus previous = event.getStatus();
+
+        event.setStatus(EventStatus.UPCOMING);
+        Event saved = eventRepository.save(event);
+
+        log.info("Reopened event id {} (was {})", id, previous);
+        return EventResponseDto.fromEntity(saved, true);
+    }
+
+    /**
      * Cancels an event.
      *
      * @param id event identifier
