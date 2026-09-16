@@ -33,6 +33,7 @@ export default function WelcomeForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [name, setName] = useState("");
   const [academicYear, setAcademicYear] = useState<AcademicYear | "">("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [codeforcesHandle, setCodeforcesHandle] = useState("");
@@ -60,6 +61,12 @@ export default function WelcomeForm() {
         }
 
         setProfile(loaded);
+        // Prefilled with whatever Google supplied, which is a starting point and
+        // not an answer: Workspace accounts often carry a name in capitals, or
+        // with the roll number in front of it, and an account with no name claim
+        // at all falls back to the student ID -- so some members arrive here
+        // called "202401226".
+        setName(loaded.name ?? "");
         setPhoneNumber(loaded.phoneNumber ?? "");
         setCodeforcesHandle(loaded.codeforcesHandle ?? "");
         setIsLoading(false);
@@ -80,6 +87,10 @@ export default function WelcomeForm() {
     e.preventDefault();
     setError(null);
 
+    if (name.trim().length < 2) {
+      setError("Please enter your full name.");
+      return;
+    }
     if (!academicYear) {
       setError("Please choose your year to continue.");
       return;
@@ -91,7 +102,7 @@ export default function WelcomeForm() {
       // The profile endpoint replaces every field it receives, so the whole
       // profile goes back, not just what this screen asked about.
       await dashboardService.updateProfile({
-        name: profile.name,
+        name: name.trim(),
         phoneNumber: phoneNumber.trim() || null,
         codeforcesHandle: codeforcesHandle.trim() || null,
         leetcodeHandle: profile.leetcodeHandle,
@@ -125,7 +136,7 @@ export default function WelcomeForm() {
             ONE LAST THING
           </p>
           <h1 className="text-halo font-heading text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-medium tracking-tight text-balance text-foreground">
-            {profile?.name ? `Welcome, ${profile.name.split(" ")[0]}.` : "Welcome."}
+            {name.trim() ? `Welcome, ${name.trim().split(" ")[0]}.` : "Welcome."}
           </h1>
         </div>
 
@@ -134,6 +145,26 @@ export default function WelcomeForm() {
             <p className="py-8 text-center font-mono text-xs text-fg-muted">Loading your account...</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="welcome-name" className="mb-1 block text-xs font-medium text-fg-muted">
+                  Your name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="welcome-name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  maxLength={100}
+                  placeholder="Ravi Patel"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                />
+                <p className="mt-1 text-nano text-fg-subtle">
+                  This is how you appear on the leaderboard and the members page.
+                </p>
+              </div>
+
               <fieldset className="space-y-2">
                 <legend
                   id="year-legend"
