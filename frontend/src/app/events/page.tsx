@@ -4,8 +4,13 @@ import Link from "next/link";
 import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
-import { EventsTimeline } from "@/components/site/events-timeline";
-import { events, nextEvent } from "@/lib/content/events";
+import { EventsList } from "@/components/site/events-list";
+import { eventsService } from "@/lib/services/events";
+import type { Event } from "@/types/api";
+
+// The listing is live, so it must not be baked at build time: an event created
+// this morning has to appear without a redeploy.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -21,7 +26,26 @@ const EVENT_KINDS = [
   { k: "ICPC", v: "Team practice and preparation for the regionals." },
 ];
 
-export default function EventsPage() {
+export default async function EventsPage() {
+  // Both listings in one round trip each, in parallel. Empty on failure: this
+  // page renders at request time against a backend that can be asleep on a free
+  // tier, and an events page with no events beats a 500.
+  let upcoming: Event[] = [];
+  let completed: Event[] = [];
+
+  try {
+    [upcoming, completed] = await Promise.all([
+      eventsService.listUpcoming(),
+      eventsService.listCompleted(),
+    ]);
+  } catch {
+    // Backend unreachable - the page still renders its explanatory panel.
+  }
+
+  // The soonest upcoming event is the one pinned at the top. Taken from the
+  // list rather than configured separately, so it cannot go stale.
+  const nextEvent = upcoming[0] ?? null;
+
   return (
     <>
       <Section className="pt-10 pb-10 md:pt-14">
@@ -56,12 +80,14 @@ export default function EventsPage() {
                 <h2 className="mt-4.5 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
                   {nextEvent.title}
                 </h2>
-                <p className="mt-3 max-w-[48ch] text-base leading-6 text-fg-muted text-pretty">
-                  {nextEvent.summary}
-                </p>
+                {nextEvent.description && (
+                  <p className="mt-3 max-w-[48ch] text-base leading-6 text-fg-muted text-pretty line-clamp-3">
+                    {nextEvent.description}
+                  </p>
+                )}
                 <div className="mt-6.5 flex flex-wrap gap-3">
                   <Button asChild className="h-10 rounded-full px-5.5">
-                    <Link href="/login">Register</Link>
+                    <Link href={`/events/${nextEvent.id}`}>Event details</Link>
                   </Button>
                   <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
                     <Link href="/about">About the club</Link>
@@ -69,8 +95,27 @@ export default function EventsPage() {
                 </div>
               </div>
 
+              {/* Every row is read off the event, so there is no way for this
+                  table to disagree with the event it describes. */}
               <dl className="flex flex-col gap-px overflow-hidden rounded-control bg-hairline">
-                {nextEvent.meta.map((row) => (
+                {[
+                  {
+                    k: "Date",
+                    v: new Date(nextEvent.eventDate).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    }),
+                  },
+                  {
+                    k: "Time",
+                    v: new Date(nextEvent.eventDate).toLocaleTimeString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                  },
+                  { k: "Venue", v: nextEvent.location },
+                ].map((row) => (
                   <div
                     key={row.k}
                     className="flex items-baseline justify-between gap-4 bg-surface-2 px-4.5 py-3.5"
@@ -131,7 +176,7 @@ export default function EventsPage() {
       </Section>
 
       <Section className="pb-10">
-        <EventsTimeline events={events} />
+        <EventsList upcoming={upcoming} completed={completed} />
       </Section>
 
       <Section className="pt-6 pb-22">

@@ -56,6 +56,38 @@ const ALL_CLUB_ROLES: ClubRole[] = [
  * Codeforces rating cfRating, while this endpoint calls it rating, and it also
  * carries the platform role that the Promote and Demote buttons act on.
  */
+/**
+ * The event form's fields.
+ *
+ * Strings rather than nulls for the optional URLs: this is what an input
+ * element holds, and converting once on submit beats a null check on every
+ * keystroke.
+ */
+interface EventFormState {
+  title: string;
+  description: string;
+  eventDate: string;
+  location: string;
+  coverImageUrl: string;
+  codeforcesContestUrl: string;
+  showContestLink: boolean;
+  showWinners: boolean;
+  showAttendeeCount: boolean;
+}
+
+/** A new event publishes nothing until somebody decides it should. */
+const EMPTY_EVENT_FORM: EventFormState = {
+  title: "",
+  description: "",
+  eventDate: "",
+  location: "",
+  coverImageUrl: "",
+  codeforcesContestUrl: "",
+  showContestLink: false,
+  showWinners: false,
+  showAttendeeCount: false,
+};
+
 interface AdminMember {
   id: number;
   name: string;
@@ -445,19 +477,7 @@ function EventsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [formData, setFormData] = useState<{
-    title: string;
-    description: string;
-    eventDate: string;
-    location: string;
-    coverImageUrl: string;
-  }>({
-    title: "",
-    description: "",
-    eventDate: "",
-    location: "",
-    coverImageUrl: "",
-  });
+  const [formData, setFormData] = useState<EventFormState>(EMPTY_EVENT_FORM);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -521,6 +541,10 @@ function EventsTab() {
         eventDate: formData.eventDate.length === 16 ? `${formData.eventDate}:00` : formData.eventDate,
         location: formData.location.trim(),
         coverImageUrl: formData.coverImageUrl.trim() || null,
+        codeforcesContestUrl: formData.codeforcesContestUrl.trim() || null,
+        showContestLink: formData.showContestLink,
+        showWinners: formData.showWinners,
+        showAttendeeCount: formData.showAttendeeCount,
       };
 
       if (editingEvent) {
@@ -533,7 +557,7 @@ function EventsTab() {
 
       setShowCreateModal(false);
       setEditingEvent(null);
-      setFormData({ title: "", description: "", eventDate: "", location: "", coverImageUrl: "" });
+      setFormData(EMPTY_EVENT_FORM);
       await fetchEvents();
     } catch (err) {
       console.error("Failed to save event:", err);
@@ -575,6 +599,10 @@ function EventsTab() {
       eventDate: ev.eventDate ? ev.eventDate.slice(0, 16) : "",
       location: ev.location,
       coverImageUrl: ev.coverImageUrl || "",
+      codeforcesContestUrl: ev.codeforcesContestUrl || "",
+      showContestLink: ev.showContestLink,
+      showWinners: ev.showWinners,
+      showAttendeeCount: ev.showAttendeeCount,
     });
     setShowCreateModal(true);
   };
@@ -708,7 +736,7 @@ function EventsTab() {
         <button
           onClick={() => {
             setEditingEvent(null);
-            setFormData({ title: "", description: "", eventDate: "", location: "", coverImageUrl: "" });
+            setFormData(EMPTY_EVENT_FORM);
             setShowCreateModal(true);
           }}
           className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
@@ -811,6 +839,71 @@ function EventsTab() {
                   </button>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs font-medium text-fg-muted mb-1">
+                  Codeforces contest URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://codeforces.com/contest/1234"
+                  value={formData.codeforcesContestUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, codeforcesContestUrl: e.target.value })
+                  }
+                  className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                />
+                <p className="mt-1 text-nano text-fg-subtle">
+                  Leave empty for a workshop or talk. Without a contest, the public page
+                  shows no results section at all.
+                </p>
+              </div>
+
+              {/* Three switches, not one: the club shares the link when the round
+                  opens, the winners only once it closes, and sometimes never
+                  publishes the turnout. Nothing here is on by default. */}
+              <fieldset className="rounded-control border border-border bg-surface-2 p-3">
+                <legend className="px-1 font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
+                  Visible to the public
+                </legend>
+
+                <div className="space-y-2 pt-1">
+                  {(
+                    [
+                      {
+                        key: "showContestLink" as const,
+                        label: "Contest link",
+                        hint: "Publish once the round is open.",
+                      },
+                      {
+                        key: "showWinners" as const,
+                        label: "Winners",
+                        hint: "Record them any time; this announces them.",
+                      },
+                      {
+                        key: "showAttendeeCount" as const,
+                        label: "Number who attended",
+                        hint: "Turnout is hidden unless you publish it.",
+                      },
+                    ]
+                  ).map((item) => (
+                    <label key={item.key} className="flex cursor-pointer items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={formData[item.key]}
+                        onChange={(e) =>
+                          setFormData({ ...formData, [item.key]: e.target.checked })
+                        }
+                        className="mt-0.5 size-3.5 accent-[var(--primary)]"
+                      />
+                      <span>
+                        <span className="block text-xs text-foreground">{item.label}</span>
+                        <span className="block text-nano text-fg-subtle">{item.hint}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <div className="flex justify-end gap-2 pt-3">
                 <button

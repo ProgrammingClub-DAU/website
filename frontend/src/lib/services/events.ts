@@ -9,6 +9,22 @@ export interface EventRequest {
   eventDate: string;
   location: string;
   coverImageUrl: string | null;
+  /** Optional. No contest means no results section on the public page at all. */
+  codeforcesContestUrl: string | null;
+  /**
+   * What the public may see. Sent on every save, including creation, because the
+   * backend replaces all three -- omitting one would turn it off rather than
+   * leave it alone.
+   */
+  showContestLink: boolean;
+  showWinners: boolean;
+  showAttendeeCount: boolean;
+}
+
+/** One placing, as the admin sets it. */
+export interface WinnerRequest {
+  position: number;
+  userId: number;
 }
 
 export interface EventPhotoRequest {
@@ -54,6 +70,22 @@ export const eventsService = {
 
   cancel: async (id: number): Promise<Event> => {
     const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}/cancel`);
+    return response.data.data;
+  },
+
+  /**
+   * Replaces an event's podium.
+   *
+   * The whole podium goes at once: the rules the server enforces are between
+   * the placings, so it needs the complete list. An empty array clears it.
+   *
+   * Recording winners does not announce them -- that is the showWinners switch.
+   */
+  setWinners: async (eventId: number, winners: WinnerRequest[]): Promise<EventDetail> => {
+    const response = await apiClient.put<ApiResponse<EventDetail>>(
+      `/api/events/${eventId}/winners`,
+      { winners }
+    );
     return response.data.data;
   },
 
