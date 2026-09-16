@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       // Member avatars, event covers and gallery photos, uploaded from the browser.
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // Avatars taken from Google at first sign-in. AuthService stores the
+      // `picture` claim, so this is the default avatar for every account the
+      // club has; without it next/image throws on the members page.
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
       // Codeforces profile pictures, read through the user.info proxy.
       { protocol: "https", hostname: "userpic.codeforces.org" },
       { protocol: "https", hostname: "st.codeforces.com" },

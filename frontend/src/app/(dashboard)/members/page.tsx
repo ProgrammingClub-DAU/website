@@ -19,12 +19,25 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  // Fetch live members from the backend. Falls back to [] if API is unavailable at build time.
-  let apiMembers: Awaited<ReturnType<typeof dashboardService.getMembers>> = [];
+  // Two lists: the committee in club hierarchy order, and the searchable
+  // membership. Fetched together so one being slow does not serialise the other.
+  //
+  // Both fall back to empty if the API is unreachable. This page renders at
+  // build time, when the backend may legitimately not be running, and a
+  // members page with no members beats a failed build.
+  let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
+  let directory: Awaited<ReturnType<typeof dashboardService.getDirectory>> = {
+    members: [],
+    total: 0,
+  };
+
   try {
-    apiMembers = await dashboardService.getMembers();
+    [team, directory] = await Promise.all([
+      dashboardService.getTeam(),
+      dashboardService.getDirectory(),
+    ]);
   } catch {
-    // API unreachable — render with empty list, page stays functional
+    // API unreachable - render empty, page stays functional
   }
 
   return (
@@ -44,7 +57,7 @@ export default async function MembersPage() {
       </Section>
 
       <Section className="pb-10">
-        <MembersDirectory members={apiMembers} />
+        <MembersDirectory team={team} members={directory.members} total={directory.total} />
       </Section>
 
       <Section className="pb-10">

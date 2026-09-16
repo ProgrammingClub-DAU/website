@@ -7,7 +7,7 @@ import ProfileDashboard from "@/components/site/profile-dashboard";
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "Your CP Club profile dashboard — rating history, practice streaks, and stats.",
+  description: "A CP Club member's profile — rating history, practice streaks, and stats.",
 };
 
 /**
@@ -28,8 +28,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             Dashboard
           </PageTitle>
         </div>
+        {/* Neutral wording: this route is public and is usually somebody
+            else's profile, reached from a card on the members page. */}
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          Your competitive programming journey at a glance.
+          A competitive programming journey at a glance.
         </p>
       </Section>
 

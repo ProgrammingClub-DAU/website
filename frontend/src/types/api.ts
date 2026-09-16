@@ -3,6 +3,44 @@ import type { CfRankKey } from "@/lib/cf-ranks";
 // These are the types for our backend API responses.
 // They reflect the data we expect from the backend.
 
+/**
+ * A member exactly as the public API returns them.
+ *
+ * Mirrors PublicUserResponseDto field for field, on purpose. The older `Member`
+ * below is a view model with invented fields -- a batch, a degree, an "about"
+ * line -- that the backend has never supplied; this one has nothing in it the
+ * server did not say.
+ *
+ * `phoneNumber` is null unless the viewer is allowed it: office bearers publish
+ * theirs, everyone else's is admin-only, and that is decided server-side.
+ */
+export interface PublicMember {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+  clubRole: ClubRole | null;
+  academicYear: AcademicYear | null;
+  codeforcesHandle: string | null;
+  rating: number | null;
+  leetcodeHandle: string | null;
+  leetcodeRating: number | null;
+  codechefUrl: string | null;
+  atcoderUrl: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  phoneNumber: string | null;
+  createdAt: string;
+}
+
+/** The club posts that appear on the members page, in the order they appear. */
+export const CLUB_HIERARCHY: ClubRole[] = [
+  "CONVENOR",
+  "DEPUTY_CONVENOR",
+  "CORE",
+  "ASSOCIATE_CORE",
+  "BATCH_REPRESENTATIVE",
+];
+
 export interface Member {
   id?: string;
   name: string;
