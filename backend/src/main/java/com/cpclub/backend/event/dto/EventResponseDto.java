@@ -6,20 +6,16 @@ import com.cpclub.backend.event.entity.EventStatus;
 import java.time.LocalDateTime;
 
 /**
- * Public view of an event, as shown in a list.
+ * An event as a listing row.
  *
- * <p>Carries the organiser's name but not their id or email: the page says who ran
- * the event, and nothing on it links to their profile.</p>
+ * <p>The contest link is withheld from the public until an admin publishes it,
+ * so a round scheduled for Friday does not leak on Wednesday. The three
+ * {@code show*} flags describe the event's publication state rather than its
+ * contents, and are sent to everyone: they are what the admin panel renders its
+ * switches from, and knowing that an event has results pending is not a secret.</p>
  *
- * @param id event identifier
- * @param title event name
- * @param description long-form details
- * @param eventDate when it runs
- * @param location where it runs
- * @param status upcoming, completed or cancelled
- * @param coverImageUrl card image
- * @param createdByName display name of the admin who created it
- * @param createdAt creation timestamp
+ * @param codeforcesContestUrl the contest, or null when there is none or it is
+ *                             not published yet
  */
 public record EventResponseDto(
         Long id,
@@ -29,19 +25,22 @@ public record EventResponseDto(
         String location,
         EventStatus status,
         String coverImageUrl,
+        String codeforcesContestUrl,
+        boolean showContestLink,
+        boolean showWinners,
+        boolean showAttendeeCount,
         String createdByName,
         LocalDateTime createdAt
 ) {
+
     /**
-     * Maps a persisted event into its list representation.
+     * Builds the listing row.
      *
-     * <p>Reads {@code createdBy}, which is a lazy association, so call this inside
-     * the transaction that loaded the event.</p>
-     *
-     * @param event persisted event
-     * @return public event projection
+     * @param event the event
+     * @param viewerIsAdmin whether the caller holds ROLE_ADMIN, who sees the
+     *                      contest link regardless of whether it is published
      */
-    public static EventResponseDto fromEntity(Event event) {
+    public static EventResponseDto fromEntity(Event event, boolean viewerIsAdmin) {
         return new EventResponseDto(
                 event.getId(),
                 event.getTitle(),
@@ -50,8 +49,23 @@ public record EventResponseDto(
                 event.getLocation(),
                 event.getStatus(),
                 event.getCoverImageUrl(),
+                visibleContestUrl(event, viewerIsAdmin),
+                event.isShowContestLink(),
+                event.isShowWinners(),
+                event.isShowAttendeeCount(),
                 event.getCreatedBy() != null ? event.getCreatedBy().getName() : null,
                 event.getCreatedAt()
         );
+    }
+
+    /**
+     * The contest link, if this viewer may have it.
+     *
+     * <p>Withheld rather than hidden in the browser. A link sent and then not
+     * rendered is still in the page source, and the entire point of the switch is
+     * that the round is not open yet.</p>
+     */
+    static String visibleContestUrl(Event event, boolean viewerIsAdmin) {
+        return viewerIsAdmin || event.isShowContestLink() ? event.getCodeforcesContestUrl() : null;
     }
 }

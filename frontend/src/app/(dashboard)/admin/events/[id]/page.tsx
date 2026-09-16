@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   XCircle,
   Users,
+  Trophy,
   Calendar,
   MapPin,
   Loader2,
@@ -69,12 +70,29 @@ export default function EventAttendeesPage() {
   // Filter attendees state
   const [attendeeFilter, setAttendeeFilter] = useState("");
 
+  /**
+   * The podium being edited, as "" or a member id per placing.
+   *
+   * Separate from the loaded event so an unsaved change is not lost on every
+   * refetch, and so Save has something definite to send: three selects, three
+   * placings, whatever is set.
+   */
+  const [podium, setPodium] = useState<Record<number, number | "">>({ 1: "", 2: "", 3: "" });
+  const [isSavingPodium, setIsSavingPodium] = useState(false);
+
   const loadEventData = useCallback(async () => {
     if (!eventId || isNaN(eventId)) return;
     setLoadingEvent(true);
     try {
       const data = await eventsService.getEventDetail(eventId);
       setEvent(data);
+
+      // Seeded from the server so the selects show what is actually recorded.
+      const loaded: Record<number, number | ""> = { 1: "", 2: "", 3: "" };
+      data.winners.forEach((w) => {
+        loaded[w.position] = w.userId;
+      });
+      setPodium(loaded);
     } catch (err) {
       console.error("Failed to load event:", err);
       setStatusMessage({ type: "error", text: "Failed to load event details." });
@@ -241,6 +259,42 @@ export default function EventAttendeesPage() {
       setStatusMessage({ type: "error", text });
     } finally {
       setIsExportingSheet(false);
+    }
+  };
+
+  /**
+   * Saves the podium.
+   *
+   * Sends only the placings that have somebody in them, so leaving third empty
+   * records a top two rather than an error. Clearing all three clears the podium.
+   */
+  const handleSavePodium = async () => {
+    if (!eventId) return;
+
+    const winners = [1, 2, 3]
+      .filter((position) => podium[position] !== "")
+      .map((position) => ({ position, userId: Number(podium[position]) }));
+
+    setIsSavingPodium(true);
+    setStatusMessage(null);
+    try {
+      const updated = await eventsService.setWinners(eventId, winners);
+      setEvent(updated);
+      setStatusMessage({
+        type: "success",
+        text: winners.length
+          ? "Winners saved. They stay hidden until you switch on \"Winners\" for this event."
+          : "Winners cleared.",
+      });
+    } catch (err: unknown) {
+      // The server's message names the actual rule that was broken -- a repeated
+      // placing, or somebody who was never marked present -- so it is shown as-is.
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Could not save the winners.";
+      setStatusMessage({ type: "error", text: message });
+    } finally {
+      setIsSavingPodium(false);
     }
   };
 
@@ -663,6 +717,84 @@ export default function EventAttendeesPage() {
 
         {/* RIGHT COLUMN: Attendees List (8 cols) */}
         <div className="space-y-4 lg:col-span-8">
+          {/*
+            Winners are picked from people already marked present, not typed.
+            That is what lets the public page link a winner to their profile, and
+            it makes announcing somebody who was not there impossible rather than
+            merely unlikely.
+          */}
+          <div className="rounded-panel border border-border bg-surface p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                <Trophy className="size-4 text-primary" />
+                Winners
+              </h2>
+              <span className="font-mono text-nano text-fg-subtle uppercase">
+                {event?.showWinners ? "Published" : "Hidden from the public"}
+              </span>
+            </div>
+
+            {attendees.length === 0 ? (
+              <p className="mt-3 text-xs text-fg-muted">
+                Record attendance first. Winners are chosen from the people who attended.
+              </p>
+            ) : (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {[1, 2, 3].map((position) => (
+                    <div key={position}>
+                      <label
+                        htmlFor={`podium-${position}`}
+                        className="mb-1 block text-xs font-medium text-fg-muted"
+                      >
+                        {position === 1 ? "1st" : position === 2 ? "2nd" : "3rd"} place
+                      </label>
+                      <select
+                        id={`podium-${position}`}
+                        value={podium[position]}
+                        onChange={(e) =>
+                          setPodium({
+                            ...podium,
+                            [position]: e.target.value === "" ? "" : Number(e.target.value),
+                          })
+                        }
+                        className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="">Nobody</option>
+                        {attendees.map((a) => (
+                          <option key={a.userId} value={a.userId}>
+                            {a.name}
+                            {a.codeforcesHandle ? ` (@${a.codeforcesHandle})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSavePodium}
+                    disabled={isSavingPodium}
+                    className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {isSavingPodium ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Trophy className="size-3.5" />
+                    )}
+                    Save winners
+                  </button>
+                  <p className="text-nano text-fg-subtle">
+                    Saving records the result. Announcing it is the &quot;Winners&quot; switch on
+                    the event itself.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />

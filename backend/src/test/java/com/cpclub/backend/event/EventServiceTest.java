@@ -7,6 +7,7 @@ import com.cpclub.backend.event.dto.EventAttendeeDto;
 import com.cpclub.backend.event.dto.EventCreateRequest;
 import com.cpclub.backend.event.dto.EventPhotoDto;
 import com.cpclub.backend.event.dto.EventResponseDto;
+import com.cpclub.backend.event.dto.SetEventWinnersRequest;
 import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventAttendee;
 import com.cpclub.backend.event.entity.EventPhoto;
@@ -27,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -209,7 +211,7 @@ class EventServiceTest {
         when(eventPhotoRepository.findByEventIdOrderByUploadedAtAsc(10L)).thenReturn(java.util.List.of());
         when(eventAttendeeRepository.countByEventId(10L)).thenReturn(42L);
 
-        assertEquals(42, eventService.getEventDetail(10L).attendeeCount());
+        assertEquals(42, eventService.getEventDetail(10L, true).attendeeCount());
 
         // Loading the list here would pull every attendee's phone number and email
         // out of the database to render a single number on a public page.
@@ -225,7 +227,8 @@ class EventServiceTest {
 
         var result = eventService.updateEvent(10L, new com.cpclub.backend.event.dto.EventCreateRequest(
                 "Renamed", "New description",
-                LocalDateTime.of(2026, 5, 1, 18, 0), "Lab 2", null));
+                LocalDateTime.of(2026, 5, 1, 18, 0), "Lab 2", null,
+                null, false, false, false));
 
         assertEquals("Renamed", result.title());
         assertEquals(EventStatus.COMPLETED, result.status(),
@@ -242,7 +245,8 @@ class EventServiceTest {
 
         EventResponseDto result = eventService.createEvent(new EventCreateRequest(
                 "Spring Code Sprint", "Five problems, two hours",
-                LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null), "admin@dau.ac.in");
+                LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
+                null, false, false, false), "admin@dau.ac.in");
 
         ArgumentCaptor<Event> saved = ArgumentCaptor.forClass(Event.class);
         verify(eventRepository).save(saved.capture());
@@ -259,7 +263,8 @@ class EventServiceTest {
         when(userRepository.findByEmail("gone@dau.ac.in")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.createEvent(new EventCreateRequest(
-                "Title", null, LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null), "gone@dau.ac.in"));
+                "Title", null, LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
+                null, false, false, false), "gone@dau.ac.in"));
         verify(eventRepository, never()).save(any());
     }
 
@@ -357,5 +362,86 @@ class EventServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.deleteEventPhoto(404L));
         verify(eventPhotoRepository, never()).delete(any());
+    }
+    // -- Winners -------------------------------------------------------------
+
+    @Test
+    @DisplayName("An event cannot have two firsts")
+    void setWinners_rejectsARepeatedPlacing() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+
+        BadRequestException thrown = assertThrows(BadRequestException.class,
+                () -> eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                        new SetEventWinnersRequest.Winner(1, 5L),
+                        new SetEventWinnersRequest.Winner(1, 6L)))));
+
+        assertTrue(thrown.getMessage().contains("placing"));
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("One member cannot stand in two places at once")
+    void setWinners_rejectsARepeatedMember() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+
+        assertThrows(BadRequestException.class,
+                () -> eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                        new SetEventWinnersRequest.Winner(1, 5L),
+                        new SetEventWinnersRequest.Winner(2, 5L)))));
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("A winner who was never marked present is refused, not quietly recorded")
+    void setWinners_rejectsSomebodyWhoDidNotAttend() {
+        // Nearly always a mis-click on a name that looked right in a dropdown.
+        // Cheap to refuse here, expensive to notice on the public page.
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventAttendeeRepository.existsByEventIdAndUserId(10L, 5L)).thenReturn(false);
+
+        BadRequestException thrown = assertThrows(BadRequestException.class,
+                () -> eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                        new SetEventWinnersRequest.Winner(1, 5L)))));
+
+        assertTrue(thrown.getMessage().toLowerCase().contains("attending"));
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Placings are recorded for members who attended")
+    void setWinners_recordsThePodium() {
+        User winner = new User("Ravi", "ravi@dau.ac.in", null, com.cpclub.backend.user.entity.Role.ROLE_USER);
+        winner.setId(5L);
+
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventAttendeeRepository.existsByEventIdAndUserId(10L, 5L)).thenReturn(true);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(winner));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+        when(eventPhotoRepository.findByEventIdOrderByUploadedAtAsc(10L)).thenReturn(List.of());
+        when(eventAttendeeRepository.countByEventId(10L)).thenReturn(1L);
+
+        eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                new SetEventWinnersRequest.Winner(1, 5L))));
+
+        assertEquals(1, upcoming.getWinners().size());
+        assertEquals(5L, upcoming.getWinners().get(0).getUser().getId());
+        assertEquals(1, upcoming.getWinners().get(0).getPosition());
+    }
+
+    @Test
+    @DisplayName("An empty list clears the podium, which is how a mistake is undone")
+    void setWinners_clearsThePodium() {
+        upcoming.getWinners().add(com.cpclub.backend.event.entity.EventWinner.builder()
+                .event(upcoming).user(admin).position(1).build());
+
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+        when(eventPhotoRepository.findByEventIdOrderByUploadedAtAsc(10L)).thenReturn(List.of());
+        when(eventAttendeeRepository.countByEventId(10L)).thenReturn(0L);
+
+        eventService.setWinners(10L, new SetEventWinnersRequest(List.of()));
+
+        assertTrue(upcoming.getWinners().isEmpty());
     }
 }
