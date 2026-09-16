@@ -1,5 +1,6 @@
 package com.cpclub.backend.user.dto;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.User;
 
@@ -47,7 +48,8 @@ public record UserLookupDto(
         String githubUrl,
         String linkedinUrl,
         ClubRole clubRole,
-        Integer batchYear
+        Integer batchYear,
+        AcademicYear academicYear
 ) {
     /**
      * Maps a persisted member into the admin lookup view.
@@ -71,7 +73,8 @@ public record UserLookupDto(
                 user.getGithubUrl(),
                 user.getLinkedinUrl(),
                 user.getClubRole(),
-                user.getBatchYear()
+                user.getBatchYear(),
+                user.getAcademicYear()
         );
     }
 }

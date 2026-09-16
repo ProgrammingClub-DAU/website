@@ -65,6 +65,8 @@ interface UserProfileResponse {
   linkedinUrl?: string | null;
   clubRole?: Profile["clubRole"];
   batchYear?: number | null;
+  academicYear?: Profile["academicYear"];
+  profileComplete?: boolean;
 }
 
 export interface ProfileUpdateRequest {
@@ -77,6 +79,7 @@ export interface ProfileUpdateRequest {
   githubUrl?: string | null;
   linkedinUrl?: string | null;
   avatarUrl?: string | null;
+  academicYear?: Profile["academicYear"];
 }
 
 function mapUserToProfile(user: UserProfileResponse): Profile {
@@ -98,6 +101,8 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     linkedinUrl: user.linkedinUrl ?? null,
     clubRole: user.clubRole ?? null,
     batchYear: user.batchYear ?? null,
+    academicYear: user.academicYear ?? null,
+    profileComplete: user.profileComplete ?? false,
     maxRating: user.rating,
     eventParticipations: [], // Phase 2
     platformStats: [], // Phase 2

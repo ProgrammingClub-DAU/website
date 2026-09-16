@@ -1,5 +1,6 @@
 package com.cpclub.backend.event.dto;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.event.entity.EventAttendee;
 import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.User;
@@ -45,6 +46,7 @@ public record EventAttendeeDto(
         String githubUrl,
         String linkedinUrl,
         ClubRole clubRole,
+        AcademicYear academicYear,
         LocalDateTime addedAt
 ) {
     /**
@@ -75,6 +77,7 @@ public record EventAttendeeDto(
                 user.getGithubUrl(),
                 user.getLinkedinUrl(),
                 user.getClubRole(),
+                user.getAcademicYear(),
                 attendee.getAddedAt()
         );
     }

@@ -1,7 +1,9 @@
 package com.cpclub.backend.auth.dto;
 
 import jakarta.validation.constraints.Email;
+import com.cpclub.backend.user.entity.AcademicYear;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -29,6 +31,9 @@ public record RegisterRequest(
         String password,
 
         @Size(max = 100, message = "Codeforces handle must be at most 100 characters")
-        String codeforcesHandle
+        String codeforcesHandle,
+
+        @NotNull(message = "Tell us whether you are in your first year")
+        AcademicYear academicYear
 ) {
 }

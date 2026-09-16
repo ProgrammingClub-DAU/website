@@ -1,5 +1,6 @@
 package com.cpclub.backend.user.dto;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
@@ -56,6 +57,14 @@ public record UserResponseDto(
         String linkedinUrl,
         ClubRole clubRole,
         Integer batchYear,
+        AcademicYear academicYear,
+        /**
+         * Whether this member has filled in everything the club needs.
+         *
+         * <p>Computed rather than stored: the answer changes the moment any of
+         * those fields changes, and a stored copy would drift.</p>
+         */
+        boolean profileComplete,
         Role role,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -83,9 +92,33 @@ public record UserResponseDto(
                 user.getLinkedinUrl(),
                 user.getClubRole(),
                 user.getBatchYear(),
+                user.getAcademicYear(),
+                isProfileComplete(user),
                 user.getRole(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );
+    }
+
+    /**
+     * The four things the club needs from every member.
+     *
+     * <p>Name and Codeforces handle put them on the leaderboard, the phone number
+     * is how an organiser reaches them at an event, and the year decides which
+     * sessions are meant for them. Blank strings count as missing: a space is not
+     * a phone number.</p>
+     *
+     * @param user the member to check
+     * @return true when nothing is outstanding
+     */
+    private static boolean isProfileComplete(User user) {
+        return notBlank(user.getName())
+                && notBlank(user.getCodeforcesHandle())
+                && notBlank(user.getPhoneNumber())
+                && user.getAcademicYear() != null;
+    }
+
+    private static boolean notBlank(String value) {
+        return value != null && !value.isBlank();
     }
 }

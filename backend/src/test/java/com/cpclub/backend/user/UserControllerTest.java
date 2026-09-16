@@ -1,5 +1,6 @@
 package com.cpclub.backend.user;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.GlobalExceptionHandler;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
@@ -132,7 +133,8 @@ class UserControllerTest {
         UserLookupDto user = new UserLookupDto(
                 5L, "Charlie", "charlie@example.com", "01700000000", null,
                 "charlie_cf", 2000, null, null, null, null, null, null,
-                ClubRole.CORE, 2024
+                ClubRole.CORE, 2024,
+                AcademicYear.SECOND_YEAR_ONWARDS
         );
         when(userService.lookupUserById(5L)).thenReturn(user);
 
@@ -240,6 +242,8 @@ class UserControllerTest {
                 null, null,         // githubUrl, linkedinUrl
                 null,               // clubRole
                 null,               // batchYear
+                null,               // academicYear
+                false,              // profileComplete
                 role,
                 LocalDateTime.now(), LocalDateTime.now()
         );

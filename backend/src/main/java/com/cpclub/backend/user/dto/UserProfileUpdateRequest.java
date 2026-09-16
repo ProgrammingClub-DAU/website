@@ -1,5 +1,6 @@
 package com.cpclub.backend.user.dto;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -50,6 +51,8 @@ public record UserProfileUpdateRequest(
 
         @Size(max = 512, message = "LinkedIn URL must be at most 512 characters")
         String linkedinUrl,
+
+        AcademicYear academicYear,
 
         @Size(max = 512, message = "Avatar URL must be at most 512 characters")
         String avatarUrl

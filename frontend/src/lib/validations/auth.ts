@@ -36,6 +36,12 @@ export const registerSchema = z
       .min(8, { message: "Password must be at least 8 characters" })
       .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
       .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+    // Asked once, at registration: the club runs separate sessions for
+    // first-years, so this decides what a new member is invited to.
+    academicYear: z.enum(["FIRST_YEAR", "SECOND_YEAR_ONWARDS"], {
+      // Covers both "nothing chosen" and a value that did not come from the form.
+      error: "Select whether you are in your first year",
+    }),
     confirmPassword: z
       .string()
       .min(1, { message: "Please confirm your password" }),

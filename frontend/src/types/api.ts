@@ -68,6 +68,15 @@ export interface EventParticipation {
   achievement: string | null; // e.g. "🥇 1st Place", null if none
 }
 
+/** How far into the course a member is. Chosen once, at registration. */
+export type AcademicYear = "FIRST_YEAR" | "SECOND_YEAR_ONWARDS";
+
+/** Words for each year, so no screen hand-types them. */
+export const ACADEMIC_YEAR_LABELS: Record<AcademicYear, string> = {
+  FIRST_YEAR: "1st year",
+  SECOND_YEAR_ONWARDS: "2nd year onwards",
+};
+
 export interface Profile {
   id: number;
   name: string;
@@ -86,6 +95,9 @@ export interface Profile {
   linkedinUrl: string | null;
   clubRole: ClubRole | null;
   batchYear: number | null;
+  academicYear: AcademicYear | null;
+  /** Name, Codeforces handle, phone number and year all filled in. */
+  profileComplete: boolean;
   maxRating: number | null;
   eventParticipations: EventParticipation[];
   platformStats: PlatformStats[];
