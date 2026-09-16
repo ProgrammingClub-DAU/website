@@ -1,8 +1,7 @@
 package com.cpclub.backend.auth.controller;
 
 import com.cpclub.backend.auth.dto.AuthResponse;
-import com.cpclub.backend.auth.dto.LoginRequest;
-import com.cpclub.backend.auth.dto.RegisterRequest;
+import com.cpclub.backend.auth.dto.GoogleSignInRequest;
 import com.cpclub.backend.auth.service.AuthService;
 import com.cpclub.backend.common.dto.ApiResponse;
 import com.cpclub.backend.user.dto.UserResponseDto;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,46 +17,39 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * REST controller handling authentication requests including user registration,
- * credential validation (login), and fetching current session details.
- * Communicates with {@link AuthService} for core security operations and token vending.
+ * Sign-in and identity.
+ *
+ * <p>There is one way in: a Google account on the club's university domain. The
+ * register and password-login endpoints this controller used to expose are gone,
+ * along with the accounts-with-passwords model behind them. Signing in for the
+ * first time is what creates an account, so there is nothing to register.</p>
  */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Endpoints for user registration, login, and identity verification")
+@Tag(name = "Authentication", description = "Google sign-in and identity verification")
 public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
 
     /**
-     * Registers a new user account.
-     * Checks for duplicate credentials and generates a secure salted password hash via BCrypt.
+     * Exchanges a Google ID token for a session on this site.
      *
-     * @param registerRequest details of the new student account
-     * @return payload containing generated JWT access token and user metadata
-     */
-    @PostMapping("/register")
-    @Operation(summary = "Register a new student account")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        AuthResponse response = authService.registerUser(registerRequest);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "User registered successfully"));
-    }
-
-    /**
-     * Authenticates an existing user's email and password.
-     * Standardizes login using Spring Security's AuthenticationManager and returns JWT.
+     * <p>Creates the account if this is the member's first sign-in, so the same
+     * call serves both returning and new members. The response carries
+     * {@code academicYear}, which is null for a new member and tells the client to
+     * ask the welcome question before continuing.</p>
      *
-     * @param loginRequest login credentials
-     * @return payload containing generated JWT access token and user metadata
+     * @param request the credential issued by Google's sign-in button
+     * @return payload containing this site's JWT and user metadata
      */
-    @PostMapping("/login")
-    @Operation(summary = "Authenticate user and receive JWT token")
-    public ResponseEntity<ApiResponse<AuthResponse>> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthResponse response = authService.authenticateUser(loginRequest);
-        return ResponseEntity.ok(ApiResponse.success(response, "User authenticated successfully"));
+    @PostMapping("/google")
+    @Operation(summary = "Sign in with a university Google account")
+    public ResponseEntity<ApiResponse<AuthResponse>> signInWithGoogle(
+            @Valid @RequestBody GoogleSignInRequest request) {
+        AuthResponse response = authService.signInWithGoogle(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Signed in successfully"));
     }
 
     /**
@@ -75,4 +66,3 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(userResponse, "Current user details retrieved successfully"));
     }
 }
-

@@ -37,6 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         // application.yml reads JWT_SECRET with no default, and JwtUtils refuses to
         // start without a strong secret. Same test-only value as application-test.yml.
         "app.jwt.secret=test-only-signing-key-not-used-anywhere-outside-this-suite-0123456789",
+        // Likewise GOOGLE_CLIENT_ID, which application.yml reads with no default so
+        // that a deployment cannot come up with sign-in quietly broken. This test
+        // runs on the production settings, so it has to supply one. Never used:
+        // no token is verified here.
+        "app.google.client-id=test-only-client-id.apps.googleusercontent.com",
         "spring.jpa.show-sql=false"
 })
 @Testcontainers(disabledWithoutDocker = true)

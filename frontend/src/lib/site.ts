@@ -33,8 +33,10 @@ export const navItems = [
  * unreachable from every other page. It sits apart from `navItems` because
  * it is a destination off the site rather than a section of it.
  *
- * Joining already has a route in the navbar itself (`/register`, rendered
- * as "Join" / "Join the Club"), so it isn't duplicated here.
+ * Joining already has a route in the navbar itself (`/login`, rendered as
+ * "Sign in"), so it isn't duplicated here. Signing in with a university
+ * Google account is what creates an account, so there is no separate
+ * registration route to link to.
  */
 export const utilityLinks = [
   { href: site.github, label: "GitHub", external: true },
