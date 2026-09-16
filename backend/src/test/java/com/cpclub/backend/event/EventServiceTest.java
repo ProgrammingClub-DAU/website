@@ -444,4 +444,71 @@ class EventServiceTest {
 
         assertTrue(upcoming.getWinners().isEmpty());
     }
+    // -- Reopening ------------------------------------------------------------
+
+    @Test
+    @DisplayName("A completed event can be put back to upcoming, which unfreezes attendance")
+    void reopenEvent_fromCompleted() {
+        upcoming.setStatus(EventStatus.COMPLETED);
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertEquals(EventStatus.UPCOMING, eventService.reopenEvent(10L).status());
+
+        // The point of the feature: addAttendee refuses anything not upcoming,
+        // so an event completed by mistake was previously uncorrectable.
+        assertEquals(EventStatus.UPCOMING, upcoming.getStatus());
+    }
+
+    @Test
+    @DisplayName("A cancelled event can be reopened too")
+    void reopenEvent_fromCancelled() {
+        upcoming.setStatus(EventStatus.CANCELLED);
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertEquals(EventStatus.UPCOMING, eventService.reopenEvent(10L).status());
+    }
+
+    @Test
+    @DisplayName("Reopening leaves the results alone, including whether they are published")
+    void reopenEvent_doesNotTouchResults() {
+        // An admin reopening an event to fix its attendance has not asked to
+        // un-announce its winners. Clearing settings they would have to rebuild
+        // is a worse surprise than leaving them; the admin panel warns instead.
+        upcoming.setStatus(EventStatus.COMPLETED);
+        upcoming.setCodeforcesContestUrl("https://codeforces.com/contest/1234");
+        upcoming.setShowContestLink(true);
+        upcoming.setShowWinners(true);
+        upcoming.setShowAttendeeCount(true);
+
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        eventService.reopenEvent(10L);
+
+        assertEquals("https://codeforces.com/contest/1234", upcoming.getCodeforcesContestUrl());
+        assertTrue(upcoming.isShowContestLink());
+        assertTrue(upcoming.isShowWinners());
+        assertTrue(upcoming.isShowAttendeeCount());
+    }
+
+    @Test
+    @DisplayName("Reopening an event that is already upcoming succeeds rather than erroring")
+    void reopenEvent_isIdempotent() {
+        // Two admins pressing at once should not produce a failure.
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertEquals(EventStatus.UPCOMING, eventService.reopenEvent(10L).status());
+    }
+
+    @Test
+    @DisplayName("Reopening an event that does not exist is a 404")
+    void reopenEvent_rejectsUnknownEvent() {
+        when(eventRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.reopenEvent(99L));
+        verify(eventRepository, never()).save(any());
+    }
 }

@@ -211,6 +211,24 @@ public class EventController {
      * @param id event identifier
      * @return the updated event
      */
+    /**
+     * Puts an event back to upcoming, from completed or cancelled.
+     *
+     * <p>Completing an event freezes its attendance, so a mis-click was
+     * previously unrecoverable. Changes the status only -- results stay as they
+     * were.</p>
+     *
+     * @param id event identifier
+     * @return the updated event
+     */
+    @PutMapping("/{id}/reopen")
+    @Operation(summary = "Reopen a completed or cancelled event (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EventResponseDto>> reopenEvent(@PathVariable Long id) {
+        EventResponseDto event = eventService.reopenEvent(id);
+        return ResponseEntity.ok(ApiResponse.success(event, "Event reopened successfully"));
+    }
+
     @PutMapping("/{id}/cancel")
     @Operation(summary = "Cancel an event (admin)")
     @PreAuthorize("hasRole('ADMIN')")
