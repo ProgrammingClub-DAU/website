@@ -81,10 +81,13 @@ export function MembersDirectory({
   team,
   members,
   total,
+  unreachable = false,
 }: {
   team: PublicMember[];
   members: PublicMember[];
   total: number;
+  /** True when the server could not be reached at all, as opposed to having nobody to show. */
+  unreachable?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
@@ -169,7 +172,19 @@ export function MembersDirectory({
         </div>
       </div>
 
-      {visibleCount === 0 ? (
+      {unreachable ? (
+        /*
+          An empty list and an unreachable server are different facts, and saying
+          the first when the second is true is a lie about the club. This page is
+          public, so it says which one it is.
+        */
+        <div className="rounded-panel border border-dashed border-destructive/40 bg-destructive/5 py-12 text-center">
+          <p className="text-sm text-destructive">Could not load the member list.</p>
+          <p className="mt-1 text-xs text-fg-muted">
+            The server may be waking up. Reload in a few seconds.
+          </p>
+        </div>
+      ) : visibleCount === 0 ? (
         <div className="rounded-panel border border-dashed border-border py-12 text-center text-sm text-fg-muted">
           {total === 0
             ? "No members yet. The directory fills up as people sign in."
