@@ -14,6 +14,8 @@ import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
 import {
   ACADEMIC_YEAR_LABELS,
+  EVENT_TYPE_LABELS,
+  type EventType,
   type AcademicYear,
   type ClubRole,
   type Event,
@@ -69,6 +71,7 @@ interface EventFormState {
   eventDate: string;
   location: string;
   coverImageUrl: string;
+  eventType: EventType | "";
   codeforcesContestUrl: string;
   showContestLink: boolean;
   showWinners: boolean;
@@ -82,6 +85,7 @@ const EMPTY_EVENT_FORM: EventFormState = {
   eventDate: "",
   location: "",
   coverImageUrl: "",
+  eventType: "",
   codeforcesContestUrl: "",
   showContestLink: false,
   showWinners: false,
@@ -541,6 +545,7 @@ function EventsTab() {
         eventDate: formData.eventDate.length === 16 ? `${formData.eventDate}:00` : formData.eventDate,
         location: formData.location.trim(),
         coverImageUrl: formData.coverImageUrl.trim() || null,
+        eventType: formData.eventType || null,
         codeforcesContestUrl: formData.codeforcesContestUrl.trim() || null,
         showContestLink: formData.showContestLink,
         showWinners: formData.showWinners,
@@ -599,6 +604,7 @@ function EventsTab() {
       eventDate: ev.eventDate ? ev.eventDate.slice(0, 16) : "",
       location: ev.location,
       coverImageUrl: ev.coverImageUrl || "",
+      eventType: ev.eventType ?? "",
       codeforcesContestUrl: ev.codeforcesContestUrl || "",
       showContestLink: ev.showContestLink,
       showWinners: ev.showWinners,
@@ -838,6 +844,34 @@ function EventsTab() {
                     Upload
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="event-type"
+                  className="mb-1 block text-xs font-medium text-fg-muted"
+                >
+                  Event type
+                </label>
+                <select
+                  id="event-type"
+                  value={formData.eventType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, eventType: e.target.value as EventType | "" })
+                  }
+                  className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                >
+                  <option value="">No type</option>
+                  {(Object.keys(EVENT_TYPE_LABELS) as EventType[]).map((type) => (
+                    <option key={type} value={type}>
+                      {EVENT_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-nano text-fg-subtle">
+                  The badge on the public timeline. Leave unset and the event simply carries
+                  none.
+                </p>
               </div>
 
               <div>

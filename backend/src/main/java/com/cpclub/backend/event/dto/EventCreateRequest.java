@@ -1,5 +1,6 @@
 package com.cpclub.backend.event.dto;
 
+import com.cpclub.backend.event.entity.EventType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -39,6 +40,12 @@ public record EventCreateRequest(
 
         @Size(max = 512, message = "Cover image URL must be at most 512 characters")
         String coverImageUrl,
+
+        /**
+         * What kind of event this is. Optional: an event with no type simply
+         * carries no badge, which is better than forcing a wrong one.
+         */
+        EventType eventType,
 
         /**
          * The Codeforces contest this event runs on, if any.

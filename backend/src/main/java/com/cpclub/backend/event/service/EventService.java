@@ -63,6 +63,7 @@ public class EventService {
                 .eventDate(request.eventDate())
                 .location(request.location())
                 .coverImageUrl(request.coverImageUrl())
+                .eventType(request.eventType())
                 .codeforcesContestUrl(trimToNull(request.codeforcesContestUrl()))
                 .showContestLink(request.showContestLink())
                 .showWinners(request.showWinners())
@@ -163,6 +164,7 @@ public class EventService {
         event.setEventDate(request.eventDate());
         event.setLocation(request.location());
         event.setCoverImageUrl(request.coverImageUrl());
+        event.setEventType(request.eventType());
         event.setCodeforcesContestUrl(trimToNull(request.codeforcesContestUrl()));
         event.setShowContestLink(request.showContestLink());
         event.setShowWinners(request.showWinners());

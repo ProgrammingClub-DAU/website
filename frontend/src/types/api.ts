@@ -162,6 +162,18 @@ export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";
 
 export type LeaderboardFilter = "ALL" | "CORE" | "BATCH_REP" | "STUDENTS";
 
+/** What kind of event this is. Presentation only -- nothing branches on it. */
+export type EventType = "FLAGSHIP" | "CONTEST" | "WORKSHOP" | "ICPC" | "TALK";
+
+/** The words for each, so no screen hand-types them. */
+export const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  FLAGSHIP: "Flagship",
+  CONTEST: "Contest",
+  WORKSHOP: "Workshop",
+  ICPC: "ICPC",
+  TALK: "Talk",
+};
+
 export interface Event {
   id: number;
   title: string;
@@ -170,6 +182,8 @@ export interface Event {
   location: string;
   status: EventStatus;
   coverImageUrl: string | null;
+  /** The badge on the timeline. Null for events created before types existed. */
+  eventType: EventType | null;
   /**
    * The contest this event ran on.
    *

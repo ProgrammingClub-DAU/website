@@ -228,7 +228,7 @@ class EventServiceTest {
         var result = eventService.updateEvent(10L, new com.cpclub.backend.event.dto.EventCreateRequest(
                 "Renamed", "New description",
                 LocalDateTime.of(2026, 5, 1, 18, 0), "Lab 2", null,
-                null, false, false, false));
+                null, null, false, false, false));
 
         assertEquals("Renamed", result.title());
         assertEquals(EventStatus.COMPLETED, result.status(),
@@ -246,7 +246,7 @@ class EventServiceTest {
         EventResponseDto result = eventService.createEvent(new EventCreateRequest(
                 "Spring Code Sprint", "Five problems, two hours",
                 LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
-                null, false, false, false), "admin@dau.ac.in");
+                null, null, false, false, false), "admin@dau.ac.in");
 
         ArgumentCaptor<Event> saved = ArgumentCaptor.forClass(Event.class);
         verify(eventRepository).save(saved.capture());
@@ -264,7 +264,7 @@ class EventServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.createEvent(new EventCreateRequest(
                 "Title", null, LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
-                null, false, false, false), "gone@dau.ac.in"));
+                null, null, false, false, false), "gone@dau.ac.in"));
         verify(eventRepository, never()).save(any());
     }
 
