@@ -1,36 +1,12 @@
 import apiClient from "@/lib/axios";
-import { Member, Profile, LeaderboardEntry } from "@/types/api";
+import { Profile, LeaderboardEntry, PublicMember } from "@/types/api";
 import type { ApiResponse } from "@/store/auth";
-import { ratingToRank } from "@/lib/cf-ranks";
-import { members as mockMembers } from "@/lib/content/members";
 import { mockLeaderboardEntries, getMockProfile } from "@/lib/content/mock-dashboards";
 
 // Mock mode disabled for Phase 1 completion
 const IS_MOCK = false;
 
 // ── Mappers: Transform backend UserResponseDto to Frontend Types ──
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapUserToMember(user: any): Member {
-  return {
-    id: String(user.id),
-    name: user.name,
-    initials: user.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase(),
-    batch: "", // Phase 2 — no batch field on the backend yet
-    group: "Associate team", // Phase 2
-    role: user.role,
-    // Derived from the rating rather than hardcoded, or every member renders
-    // as a grey Newbie regardless of their actual standing.
-    cf: ratingToRank(user.rating),
-    about: "",
-    codeforcesHandle: user.codeforcesHandle,
-    rating: user.rating,
-    // The directory buckets members by this field. Without it every bucket is
-    // empty and the page renders no members at all. The backend has no club-role
-    // concept yet (Phase 2), so everyone is a participant until it does.
-    clubRoleCategory: "Student Participant",
-  };
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapUserToLeaderboard(user: any): LeaderboardEntry {
@@ -113,14 +89,31 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
 
 export const dashboardService = {
   // Members
-  getMembers: async (): Promise<Member[]> => {
-    if (IS_MOCK) {
-      return new Promise((resolve) => setTimeout(() => resolve(mockMembers), 500));
-    }
-    const response = await apiClient.get("/api/users");
-    // Unwrap Spring Data PagedResponse
-    const content = response.data?.data?.content || [];
-    return content.map(mapUserToMember);
+  /**
+   * The club's office bearers, already in hierarchy order.
+   *
+   * The order is the server's, not ours: it knows the club hierarchy and the
+   * list is small enough to send whole. Re-sorting here would be a second place
+   * for that order to be wrong.
+   */
+  getTeam: async (): Promise<PublicMember[]> => {
+    const response = await apiClient.get<ApiResponse<PublicMember[]>>("/api/users/team");
+    return response.data.data ?? [];
+  },
+
+  /**
+   * The searchable membership, first page.
+   *
+   * Returns the total alongside, so the page can say honestly how many it is
+   * showing rather than implying the list is everyone.
+   */
+  getDirectory: async (size = 100): Promise<{ members: PublicMember[]; total: number }> => {
+    const response = await apiClient.get(`/api/users?size=${size}`);
+    const paged = response.data?.data;
+    return {
+      members: (paged?.content ?? []) as PublicMember[],
+      total: Number(paged?.totalElements ?? 0),
+    };
   },
 
   // Leaderboard

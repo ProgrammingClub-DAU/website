@@ -1,233 +1,234 @@
 "use client";
 
+/**
+ * The public members page.
+ *
+ * Two lists arrive: the committee, already in club hierarchy order from the
+ * server, and the searchable membership. They are kept apart because they answer
+ * different questions -- "who runs this club" and "who is in it" -- and because
+ * only the first is small enough to send whole.
+ *
+ * Nothing here is invented. An earlier version filled the gaps the API left with
+ * defaults: every card claimed "B.Tech ICT", an ACTIVE badge nobody could turn
+ * off, and Solved and Contest counters showing a dash. On a real club's public
+ * site those read as facts about real people. A field the server does not send
+ * is now simply absent.
+ */
+
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ArrowRight, Users, GraduationCap } from "lucide-react";
+import Image from "next/image";
+import { Search, ArrowRight, Users, ExternalLink } from "lucide-react";
 
 import BorderGlow from "@/components/site/border-glow";
 import { Input } from "@/components/ui/input";
 import { RankDot } from "@/components/site/primitives";
-import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import type { Member } from "@/types/api";
-import Image from "next/image";
+import { PlatformGlyph, PROFILE_ACCENT } from "@/components/site/platform-glyph";
+import { rankColor, ratingToRank, CF_RANKS } from "@/lib/cf-ranks";
+import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
+import { profileUrl } from "@/lib/platform-profiles";
+import { ACADEMIC_YEAR_LABELS, type ClubRole, type PublicMember } from "@/types/api";
 
-function getRankName(key: string): string {
+function rankName(key: string): string {
   return CF_RANKS.find((r) => r.key === key)?.name ?? key;
 }
 
-const FILTER_CATEGORIES = [
-  "All Members",
-  "Core",
-  "Associate Core",
-  "Batch Representatives",
-] as const;
+function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
-export function MembersDirectory({ members }: { members: Member[] }) {
+/**
+ * The page's sections, top to bottom.
+ *
+ * The order here is the club hierarchy, and it is the only place it is stated on
+ * the frontend. The server sorts the team the same way; this decides which posts
+ * share a heading.
+ */
+const SECTIONS: { title: string; subtitle: string; posts: ClubRole[]; wide?: boolean }[] = [
+  {
+    title: "LEADERSHIP",
+    subtitle: "Convenor and Deputy Convenor, steering the club.",
+    posts: ["CONVENOR", "DEPUTY_CONVENOR"],
+    wide: true,
+  },
+  {
+    title: "CORE TEAM",
+    subtitle: "Running contests, problem setting, and the club's technical work.",
+    posts: ["CORE"],
+  },
+  {
+    title: "ASSOCIATE CORE",
+    subtitle: "Workshops, outreach, and practice sessions.",
+    posts: ["ASSOCIATE_CORE"],
+  },
+  {
+    title: "BATCH REPRESENTATIVES",
+    subtitle: "The link between each admission batch and the club.",
+    posts: ["BATCH_REPRESENTATIVE"],
+  },
+];
+
+const FILTERS = ["All", "Committee", "Members"] as const;
+type Filter = (typeof FILTERS)[number];
+
+export function MembersDirectory({
+  team,
+  members,
+  total,
+}: {
+  team: PublicMember[];
+  members: PublicMember[];
+  total: number;
+}) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("All Members");
+  const [filter, setFilter] = useState<Filter>("All");
 
   const q = query.trim().toLowerCase();
 
-  // Filtered members list
-  const filteredMembers = useMemo(() => {
-    return members.filter((m) => {
-      // Query search
-      const matchesSearch =
-        !q ||
-        m.name.toLowerCase().includes(q) ||
-        (m.codeforcesHandle && m.codeforcesHandle.toLowerCase().includes(q)) ||
-        m.role.toLowerCase().includes(q);
+  const matches = useMemo(() => {
+    return (m: PublicMember) =>
+      !q ||
+      m.name.toLowerCase().includes(q) ||
+      (m.codeforcesHandle ?? "").toLowerCase().includes(q) ||
+      (m.clubRole ? CLUB_ROLE_LABELS[m.clubRole].toLowerCase().includes(q) : false);
+  }, [q]);
 
-      if (!matchesSearch) return false;
+  const committee = useMemo(() => team.filter(matches), [team, matches]);
 
-      // Filter category
-      if (activeFilter === "All Members") return true;
-      if (activeFilter === "Core") return m.clubRoleCategory === "Leadership" || m.clubRoleCategory === "Core";
-      if (activeFilter === "Associate Core") return m.clubRoleCategory === "Associate Core";
-      if (activeFilter === "Batch Representatives") return m.clubRoleCategory === "Batch Representative";
-
-      return true;
-    });
-  }, [members, q, activeFilter]);
-
-  // Section categorizations
-  const leadership = useMemo(
-    () => filteredMembers.filter((m) => m.clubRoleCategory === "Leadership"),
-    [filteredMembers]
-  );
-  const coreTeam = useMemo(
-    () => filteredMembers.filter((m) => m.clubRoleCategory === "Core"),
-    [filteredMembers]
-  );
-  const associateCore = useMemo(
-    () => filteredMembers.filter((m) => m.clubRoleCategory === "Associate Core"),
-    [filteredMembers]
-  );
-  const batchReps = useMemo(
-    () => filteredMembers.filter((m) => m.clubRoleCategory === "Batch Representative"),
-    [filteredMembers]
-  );
-  /*
-   * Everyone the four named sections do not claim. Without this the page silently
-   * renders no members at all: the backend has no club-role concept yet, so every
-   * member arrives as a participant and every named bucket is empty.
+  /**
+   * Everyone the committee sections do not already show.
+   *
+   * The two endpoints overlap -- a Convenor is also in the directory -- so
+   * without this every office bearer appears twice on the page.
    */
-  const participants = useMemo(
-    () =>
-      filteredMembers.filter(
-        (m) =>
-          m.clubRoleCategory !== "Leadership" &&
-          m.clubRoleCategory !== "Core" &&
-          m.clubRoleCategory !== "Associate Core" &&
-          m.clubRoleCategory !== "Batch Representative"
-      ),
-    [filteredMembers]
-  );
+  const others = useMemo(() => {
+    const onCommittee = new Set(team.map((m) => m.id));
+    return members.filter((m) => !onCommittee.has(m.id)).filter(matches);
+  }, [members, team, matches]);
 
-  const officialMembersCount = members.length;
+  const showCommittee = filter === "All" || filter === "Committee";
+  const showOthers = filter === "All" || filter === "Members";
 
-  const isFiltering = q !== "" || activeFilter !== "All Members";
+  const visibleCount =
+    (showCommittee ? committee.length : 0) + (showOthers ? others.length : 0);
 
   return (
     <div className="space-y-10">
-      {/*
-        Only counts the site can actually derive are shown. Participant, event and
-        contest totals were previously hardcoded (818 / 20 / 14) and rendered as
-        fact on a real club's public site — restore them once the backend can
-        supply real figures.
-      */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-panel border border-border bg-surface-2 px-6 py-4">
-        <div className="flex flex-wrap items-center gap-6 sm:gap-8 font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-6 font-mono text-xs sm:gap-8">
           <div className="flex items-center gap-2">
             <Users className="size-4 text-primary" />
             <span>
-              <strong className="text-foreground">{officialMembersCount}</strong> Registered
-              Members
+              <strong className="text-foreground">{total}</strong> Registered Members
             </span>
           </div>
+          {team.length > 0 && (
+            <div className="flex items-center gap-2 text-fg-muted">
+              <span>
+                <strong className="text-foreground">{team.length}</strong> on the committee
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Search & Filter Controls ── */}
+      {/* Search & filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search input */}
         <div className="relative min-w-64 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-fg-muted" />
           <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search members by name or handle..."
-            className="h-10 rounded-control border-border bg-surface-2 pl-9 text-xs placeholder:text-fg-muted"
+            placeholder="Search members by name, handle or post..."
+            className="pl-10"
           />
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {FILTER_CATEGORIES.map((filter) => (
+        <div className="flex gap-2">
+          {FILTERS.map((option) => (
             <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
-                activeFilter === filter
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-fg-muted hover:border-hairline-strong hover:text-foreground"
+              key={option}
+              type="button"
+              onClick={() => setFilter(option)}
+              className={`rounded-full border px-3.5 py-1.5 font-mono text-micro tracking-caps-wide uppercase transition-colors ${
+                filter === option
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border bg-surface-2 text-fg-muted hover:text-foreground"
               }`}
             >
-              {filter}
+              {option}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Results count text */}
-      <p className="font-mono text-label tracking-caps text-fg-subtle uppercase">
-        Showing {filteredMembers.length} of {members.length} members
-      </p>
-
-      {/* ── Tiered Member Grids ── */}
-      {filteredMembers.length === 0 ? (
+      {visibleCount === 0 ? (
         <div className="rounded-panel border border-dashed border-border py-12 text-center text-sm text-fg-muted">
-          No members match your search criteria.
+          {total === 0
+            ? "No members yet. The directory fills up as people sign in."
+            : "No members match your search."}
         </div>
       ) : (
         <div className="space-y-12">
-          {/* 👑 LEADERSHIP SECTION */}
-          {(!isFiltering || leadership.length > 0) && (
-            <SectionGroup
-              title="👑 LEADERSHIP"
-              subtitle="Convenor & Deputy Convenor driving club strategy and activities."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                {leadership.map((m) => (
-                  <MemberCard key={m.id ?? m.name} member={m} isProminent />
-                ))}
-              </div>
-            </SectionGroup>
-          )}
+          {showCommittee &&
+            SECTIONS.map((section) => {
+              const people = committee.filter(
+                (m) => m.clubRole && section.posts.includes(m.clubRole),
+              );
+              if (people.length === 0) return null;
 
-          {/* ⚡ CORE TEAM SECTION */}
-          {(!isFiltering || coreTeam.length > 0) && (
-            <SectionGroup
-              title="⚡ CORE TEAM"
-              subtitle="Leading contest operations, problem setting, technical services, and editorials."
-            >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {coreTeam.map((m) => (
-                  <MemberCard key={m.id ?? m.name} member={m} />
-                ))}
-              </div>
-            </SectionGroup>
-          )}
+              return (
+                <SectionGroup
+                  key={section.title}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  count={people.length}
+                >
+                  <div
+                    className={
+                      section.wide
+                        ? "grid gap-4 md:grid-cols-2"
+                        : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    }
+                  >
+                    {people.map((m) => (
+                      <MemberCard key={m.id} member={m} prominent={section.wide} />
+                    ))}
+                  </div>
+                </SectionGroup>
+              );
+            })}
 
-          {/* ◈ ASSOCIATE CORE SECTION */}
-          {(!isFiltering || associateCore.length > 0) && (
+          {showOthers && others.length > 0 && (
             <SectionGroup
-              title="◈ ASSOCIATE CORE"
-              subtitle="Running workshops, managing outreach, and organizing practice sessions."
+              title="MEMBERS"
+              subtitle="Everyone else on the club platform."
+              count={others.length}
             >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {associateCore.map((m) => (
-                  <MemberCard key={m.id ?? m.name} member={m} />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {others.map((m) => (
+                  <MemberCard key={m.id} member={m} />
                 ))}
               </div>
-            </SectionGroup>
-          )}
 
-          {/* 🎓 BATCH REPRESENTATIVES SECTION */}
-          {(!isFiltering || batchReps.length > 0) && (
-            <SectionGroup
-              title="🎓 BATCH REPRESENTATIVES"
-              subtitle="Connecting student batches across B.Tech & M.Tech to Programming Club events."
-            >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {batchReps.map((m) => (
-                  <MemberCard key={m.id ?? m.name} member={m} />
-                ))}
-              </div>
-            </SectionGroup>
-          )}
-
-          {/* Everyone the named sections above do not claim. */}
-          {participants.length > 0 && (
-            <SectionGroup
-              title="◇ MEMBERS"
-              subtitle="Everyone registered on the club platform."
-            >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {participants.map((m) => (
-                  <MemberCard key={m.id ?? m.name} member={m} />
-                ))}
-              </div>
+              {/* Said plainly rather than implying the page is everyone. */}
+              {!q && members.length < total - team.length && (
+                <p className="mt-5 text-center font-mono text-xs text-fg-subtle">
+                  Showing {members.length} of {total}. Search to find someone not listed.
+                </p>
+              )}
             </SectionGroup>
           )}
         </div>
       )}
 
-      {/* ── Bottom CTA ── */}
-      {/* The page's one full-width panel, so it gets the same glow the other
-          four do. Not the member cards: there are dozens, and each BorderGlow
-          is a pointer-tracked component with three extra layers. */}
       <BorderGlow className="mt-16" contentClassName="p-8 text-center">
         <h3 className="font-mono text-xs font-bold tracking-[0.14em] text-primary uppercase">
           WANT TO BE PART OF IT?
@@ -252,157 +253,154 @@ export function MembersDirectory({ members }: { members: Member[] }) {
   );
 }
 
-// ── Section Group Wrapper ──
 function SectionGroup({
   title,
   subtitle,
+  count,
   children,
 }: {
   title: string;
   subtitle: string;
+  count: number;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-bold tracking-wide">{title}</h2>
-        <p className="text-xs text-fg-muted">{subtitle}</p>
+    <section>
+      <div className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border pb-3">
+        <h2 className="font-mono text-xs font-bold tracking-caps-wide text-primary uppercase">
+          {title}
+        </h2>
+        <span className="font-mono text-micro text-fg-subtle">{count}</span>
+        <p className="w-full text-sm text-fg-muted sm:w-auto">{subtitle}</p>
       </div>
       {children}
-    </div>
+    </section>
   );
 }
 
-// ── Member Card Component ──
-function MemberCard({
-  member,
-  isProminent = false,
-  isStudent = false,
-}: {
-  member: Member;
-  isProminent?: boolean;
-  isStudent?: boolean;
-}) {
-  const color = rankColor(member.cf);
-  const handleDisplay = member.codeforcesHandle ? `@${member.codeforcesHandle}` : `@${member.name.toLowerCase().replace(/\s+/g, "")}`;
-  const roleTitle = isStudent ? "Student Participant" : member.role;
-  const hasStats = member.rating !== undefined || member.solvedCount !== undefined;
+/**
+ * One member.
+ *
+ * The whole card is the link to their profile, via a stretched anchor on the
+ * name rather than a wrapper: the platform capsules are links too, and an anchor
+ * inside an anchor is invalid and behaves differently in every browser. The
+ * capsules sit above the stretched link on the z axis so they stay clickable.
+ */
+function MemberCard({ member, prominent = false }: { member: PublicMember; prominent?: boolean }) {
+  const rank = ratingToRank(member.rating);
+  const color = rankColor(rank);
+
+  const links = (
+    [
+      { platform: "codeforces" as const, value: member.codeforcesHandle, label: "Codeforces" },
+      { platform: "linkedin" as const, value: member.linkedinUrl, label: "LinkedIn" },
+    ] satisfies { platform: "codeforces" | "linkedin"; value: string | null; label: string }[]
+  )
+    .map((link) => ({ ...link, href: profileUrl(link.platform, link.value) }))
+    .filter((link) => link.href !== null);
 
   return (
-    <div
-      className={`group flex flex-col justify-between rounded-panel border border-border bg-surface-2 p-5 transition-all hover:-translate-y-1 hover:border-hairline-strong hover:shadow-panel ${
-        isProminent ? "border-primary/40 bg-gradient-to-b from-primary/5 via-surface-2 to-surface-2" : ""
+    <article
+      className={`group relative flex flex-col justify-between rounded-panel border border-border bg-surface-2 p-5 transition-all hover:-translate-y-1 hover:border-hairline-strong hover:shadow-panel ${
+        prominent
+          ? "border-primary/40 bg-gradient-to-b from-primary/5 via-surface-2 to-surface-2"
+          : ""
       }`}
     >
       <div>
-        {/* Header: Avatar + Active Indicator */}
         <div className="flex items-start justify-between gap-3">
           <div
-            className="flex size-14 shrink-0 items-center justify-center rounded-full border-2 bg-surface-3"
+            className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 bg-surface-3"
             style={{ borderColor: color }}
           >
             {member.avatarUrl ? (
               <Image
                 src={member.avatarUrl}
-                alt={member.name}
+                alt=""
                 width={56}
                 height={56}
                 className="size-full rounded-full object-cover"
               />
             ) : (
               <span className="font-mono text-base font-bold text-foreground">
-                {member.initials}
+                {initialsOf(member.name)}
               </span>
             )}
           </div>
 
-          {/* Active status indicator */}
-          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2.5 py-1 text-micro font-mono text-fg-muted">
-            <span
-              className={`size-1.5 rounded-full ${
-                member.isActive !== false ? "bg-emerald-400 animate-pulse" : "bg-fg-subtle"
-              }`}
-            />
-            <span>{member.isActive !== false ? "ACTIVE" : "INACTIVE"}</span>
-          </div>
+          {member.rating !== null && (
+            <div className="text-right">
+              <div className="font-mono text-sm font-bold" style={{ color }}>
+                {member.rating}
+              </div>
+              <div className="font-mono text-nano text-fg-subtle uppercase">{rankName(rank)}</div>
+            </div>
+          )}
         </div>
 
-        {/* Name & Handle */}
         <div className="mt-4">
-          <h3
-            className="text-base font-bold tracking-tight truncate group-hover:underline"
-            style={{ color }}
-          >
-            {member.name}
+          <h3 className="truncate text-base font-bold tracking-tight" style={{ color }}>
+            <Link
+              href={`/profile/${member.id}`}
+              className="after:absolute after:inset-0 group-hover:underline"
+            >
+              {member.name}
+            </Link>
           </h3>
-          <p className="text-xs text-fg-muted font-mono">{handleDisplay}</p>
+          {member.codeforcesHandle && (
+            <p className="truncate font-mono text-xs text-fg-muted">@{member.codeforcesHandle}</p>
+          )}
         </div>
 
-        {/* Role badge & Degree */}
-        <div className="mt-3 space-y-1.5">
-          <span
-            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-micro font-medium uppercase"
-            style={{
-              borderColor: isStudent ? "var(--border)" : color,
-              color: isStudent ? "var(--fg-muted)" : color,
-              backgroundColor: `color-mix(in srgb, ${color} 8%, transparent)`,
-            }}
-          >
-            <RankDot rank={member.cf} size={4} ring={false} />
-            {roleTitle}
-          </span>
-          <p className="text-label text-fg-muted flex items-center gap-1">
-            <GraduationCap className="size-3" />
-            <span>{member.degree || "B.Tech ICT"} • {member.gradYear || member.batch.replace("B.Tech ’", "20")}</span>
-          </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {member.clubRole && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-micro font-medium uppercase"
+              style={{
+                borderColor: color,
+                color,
+                backgroundColor: `color-mix(in srgb, ${color} 8%, transparent)`,
+              }}
+            >
+              <RankDot rank={rank} size={4} ring={false} />
+              {CLUB_ROLE_LABELS[member.clubRole]}
+            </span>
+          )}
+          {member.academicYear && (
+            <span className="font-mono text-micro text-fg-subtle">
+              {ACADEMIC_YEAR_LABELS[member.academicYear]}
+            </span>
+          )}
         </div>
-
-        {/* Short Note */}
-        <p className="mt-3 text-xs leading-relaxed text-fg-muted line-clamp-2">
-          {member.about}
-        </p>
       </div>
 
-      {/* Footer: CP Stats & Profile Link */}
-      <div className="mt-4 pt-3 border-t border-border/60 space-y-3">
-        {/* CP Statistics (Gracefully hidden if missing) */}
-        {hasStats && (
-          <div className="grid grid-cols-3 gap-2 text-center bg-background/40 p-2 rounded-control border border-border/40">
-            <div>
-              <div className="text-xs font-bold" style={{ color }}>
-                {member.rating ?? "—"}
-              </div>
-              <div className="text-nano text-fg-muted">Rating</div>
-            </div>
-            <div>
-              <div className="text-xs font-bold">
-                {member.solvedCount ?? "—"}
-              </div>
-              <div className="text-nano text-fg-muted">Solved</div>
-            </div>
-            <div>
-              <div className="text-xs font-bold">
-                {member.contestCount ?? "—"}
-              </div>
-              <div className="text-nano text-fg-muted">Contests</div>
-            </div>
+      {/* Straight to the platform, without going through the profile first. */}
+      <div className="mt-4 border-t border-border/60 pt-3">
+        {links.length > 0 ? (
+          <div className="relative z-10 flex flex-wrap gap-2">
+            {links.map((link) => (
+              <a
+                key={link.platform}
+                href={link.href!}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on ${link.label}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/50 px-2.5 py-1 font-mono text-micro text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
+              >
+                {/* The glyph carries the platform's own colour, so the two
+                    capsules read apart at a glance instead of as grey pills. */}
+                <span style={{ color: PROFILE_ACCENT[link.platform] }} className="flex">
+                  <PlatformGlyph platform={link.platform} className="size-3.5" />
+                </span>
+                {link.label}
+                <ExternalLink className="size-2.5 opacity-60" />
+              </a>
+            ))}
           </div>
+        ) : (
+          <p className="font-mono text-micro text-fg-subtle">No linked profiles yet</p>
         )}
-
-        {/* Rank Title Badge & View Profile Link */}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-micro font-semibold uppercase tracking-wider" style={{ color }}>
-            🏆 {getRankName(member.cf)}
-          </span>
-          <Link
-            href="/profile"
-            className="flex items-center gap-1 font-medium text-primary hover:underline text-xs"
-          >
-            <span>View Profile</span>
-            <ArrowRight className="size-3" />
-          </Link>
-        </div>
       </div>
-    </div>
+    </article>
   );
 }

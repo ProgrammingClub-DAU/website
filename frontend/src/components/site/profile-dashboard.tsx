@@ -384,6 +384,13 @@ function ProfileDashboardContent({
     }));
   }, [lcHistory]);
 
+  /** Posts the club publishes a contact number for. */
+  const isOfficeBearer =
+    profile.clubRole !== null &&
+    ["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE", "BATCH_REPRESENTATIVE"].includes(
+      profile.clubRole,
+    );
+
   /** The four fields the club needs, named the way the form names them. */
   const missingProfileFields = [
     !profile.name?.trim() && "name",
@@ -838,6 +845,8 @@ function ProfileDashboardContent({
           <CardTitle className="text-base">Account Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
+          {/* The address is never in the public projection, so this is owner-only
+              by construction as well as by this check. */}
           {isOwner && (
             <>
               <div className="flex items-center justify-between">
@@ -847,14 +856,36 @@ function ProfileDashboardContent({
                 <span className="font-mono text-xs">{profile.email}</span>
               </div>
               <Separator />
+            </>
+          )}
+
+          {/*
+            Whether this number arrived at all is the server's decision: office
+            bearers publish theirs because the post is a point of contact, and
+            everyone else's reaches admins only. So the rule is not repeated
+            here -- a number in hand is a number this viewer may see.
+          */}
+          {(isOwner || profile.phoneNumber) && (
+            <>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-fg-muted">
                   <Phone className="size-3.5" /> Phone Number
                 </span>
                 <span>
-                  {profile.phoneNumber || <span className="text-fg-subtle">Not provided</span>}
+                  {profile.phoneNumber ? (
+                    <a href={`tel:${profile.phoneNumber}`} className="hover:text-primary">
+                      {profile.phoneNumber}
+                    </a>
+                  ) : (
+                    <span className="text-fg-subtle">Not provided</span>
+                  )}
                 </span>
               </div>
+              {!isOwner && isOfficeBearer && (
+                <p className="text-nano text-fg-subtle">
+                  Listed publicly because this is a club post.
+                </p>
+              )}
               <Separator />
             </>
           )}
