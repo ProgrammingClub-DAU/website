@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarDays, MapPin, Trophy, Users, ArrowRight } from "lucide-react";
+import { CalendarDays, MapPin, Trophy, ArrowRight } from "lucide-react";
 
 import type { Event } from "@/types/api";
 
@@ -142,19 +142,15 @@ function EventCard({ event }: { event: Event }) {
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-4">
           {/*
-            Only says what is true. A contest badge appears when the link has
-            actually been published, so a round that has not opened yet gives
-            nothing away.
+            One badge, and only when the contest link has actually been
+            published, so a round that has not opened yet gives nothing away.
+            A second badge reading "Turnout" used to sit beside it, which told
+            a visitor that a number exists without telling them the number.
           */}
-          <div className="flex flex-wrap gap-1.5">
+          <div>
             {event.codeforcesContestUrl && (
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-nano text-primary uppercase">
                 <Trophy className="size-2.5" /> Contest
-              </span>
-            )}
-            {event.showAttendeeCount && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-nano text-fg-subtle uppercase">
-                <Users className="size-2.5" /> Turnout
               </span>
             )}
           </div>

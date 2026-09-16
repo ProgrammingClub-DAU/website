@@ -116,21 +116,6 @@ export const dashboardService = {
     return response.data.data ?? [];
   },
 
-  /**
-   * The searchable membership, first page.
-   *
-   * Returns the total alongside, so the page can say honestly how many it is
-   * showing rather than implying the list is everyone.
-   */
-  getDirectory: async (size = 100): Promise<{ members: PublicMember[]; total: number }> => {
-    const response = await apiClient.get(`/api/users?size=${size}`, { timeout: SSR_TIMEOUT_MS });
-    const paged = response.data?.data;
-    return {
-      members: (paged?.content ?? []) as PublicMember[],
-      total: Number(paged?.totalElements ?? 0),
-    };
-  },
-
   // Leaderboard
   getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
     if (IS_MOCK) {
