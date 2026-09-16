@@ -26,6 +26,174 @@
 
 ---
 
+## Amendments -- Read Before Any Phase 3 Work
+
+This plan was written at the end of Phase 2. A run of work shipped afterwards,
+between Phase 2 and Phase 3, and it invalidates parts of what follows. These
+amendments override the body of the document wherever they disagree with it.
+
+Two of them would stop a deploy or waste a fortnight, so they come first.
+
+### A1 -- Migration numbers V8 to V11 are taken. Renumber every Phase 3 migration.
+
+`main` already has V8 through V11:
+
+| Applied | What it did |
+|---|---|
+| `V8__add_academic_year.sql` | first year / second year onwards |
+| `V9__passwords_no_longer_required.sql` | password column relaxed, sign-in moved to Google |
+| `V10__event_results.sql` | contest URL, podium, three visibility switches |
+| `V11__event_type.sql` | Flagship / Contest / Workshop / ICPC / Talk |
+
+The plan assigns V8, V9, V10 and V12 to V15 to Phase 3 tables. Two files sharing
+a version number is not a warning: Flyway refuses to start with "Found more than
+one migration with version 8", so the deploy fails outright and the service does
+not come up.
+
+Renumber, keeping the plan's order:
+
+| In the plan | Use instead |
+|---|---|
+| `V8__create_codeforces_problems_and_solves.sql` | `V12__...` |
+| `V9__create_contest_participations.sql` | `V13__...` |
+| `V10__create_platform_daily_totals.sql` | `V14__...` |
+| `V12__create_scores_awards_and_practice.sql` | `V15__...` |
+| `V13__create_club_contests.sql` | `V16__...` |
+| `V14__blog_workflow_and_comments.sql` | `V17__...` |
+| `V15__events_registrations_calendar_and_reminders.sql` | `V18__...` |
+
+Stage 1A's "Read first" line says "migrations V8 to V11". Those are now Phase 2.5
+migrations and are worth reading for a different reason -- they are the schema
+this work extends -- but the Phase 3 tables are V12 onward.
+
+### A2 -- D15 is withdrawn. There is no email verification to build.
+
+D15 specified a verification link mailed on signup, single use, 24 hours,
+SHA-256 hashed at rest, plus `email_verified_at`, an allowed-domain policy in
+`AuthService.register`, and a `VerifiedMemberGuard` gating Phase 3 writes.
+
+None of it is needed, and none of it can be built as written. Sign-in is now
+Google-only and restricted to the university domain. Before an account exists,
+Google has already established both things D15 set out to establish:
+
+- **The address is real and the holder controls it** -- the ID token's
+  `email_verified` claim, checked server-side.
+- **It belongs to the university** -- the address suffix and the `hd`
+  hosted-domain claim, both checked server-side.
+
+There is also no `AuthService.register` to modify and no registration form to
+add a domain check to. Signing in for the first time is what creates an account.
+
+**What this deletes from the plan:** the verification token table and its
+columns, the mail templates, the resend endpoint and its rate limit, Spring Mail
+configuration for this purpose, and every "unverified member" branch.
+
+**What replaces `VerifiedMemberGuard`:** plain `authenticated()`. Every account
+that exists reached this site through a verified university Google account, so
+"signed in" and "verified member" are now the same set of people. Where the plan
+says `VerifiedMemberGuard`, read `isAuthenticated()`.
+
+Spring Mail stays on the stack list only if a later stage sends mail for another
+reason -- event reminders, for instance. Check before removing the dependency.
+
+### A3 -- Already built. Do not build these again.
+
+Shipped between Phase 2 and Phase 3, and live on `main`:
+
+| Area | What exists now |
+|---|---|
+| Sign-in | Google-only, `@dau.ac.in` enforced server-side. No passwords, no registration form. First sign-in creates the account and routes to `/welcome`, which asks for name (required), year (required), and optionally handle and phone |
+| Members | `GET /api/users/team` -- office bearers, hierarchy-ordered, public. The members page is the committee in two sections: core team (Convenor, Deputy Convenor, Core, Associate Core) and batch representatives. There is no public directory of all members |
+| Privacy | Phone numbers are public for office bearers and admin-only for everyone else, decided server-side in `PublicUserResponseDto` |
+| Events | Public events page driven by the API, on the club timeline; public event detail page at `/events/{id}`; contest URL, podium picked from attendees, and three independent visibility switches; event type badge; reopen a completed or cancelled event |
+| Attendance | Export is six columns -- name, Codeforces profile, email, student ID, year, added at. Also exports to Google Sheets from the browser, into the admin's own Drive |
+| Profiles | Academic year, and a completeness badge over name, Codeforces handle, phone and year |
+
+Anything in Section 0 that traces to one of these is done. Check `main` before
+starting a stage rather than trusting the traceability table alone.
+
+### A4 -- The sync must fit in 160 MB of heap. Three rules.
+
+This is the constraint most likely to be discovered the hard way, because the
+obvious implementation works perfectly on a laptop and dies in production.
+
+The deployed backend runs with `-Xmx160m`, `-XX:MaxMetaspaceSize=160m` and
+`-XX:ReservedCodeCacheSize=48m` on a 512 MB instance. Those numbers are not
+arbitrary: the service died of `OutOfMemoryError: Metaspace` in production once
+already, and the Metaspace cap was raised from 96 MB out of the heap's budget to
+fix it. There is no slack left.
+
+`user.status` returns a member's entire submission history in one JSON array.
+For an active competitor that is megabytes of JSON, and the naive shape --
+fetch everything, map it to entities, `saveAll` -- holds the raw response, the
+parsed tree and the entity graph in the heap at the same time, for every member
+in turn. That is the shape that fails.
+
+**Rule 1 -- Sync incrementally.** Keep the highest submission id already stored
+per member. Codeforces returns submissions newest-first, so page until you meet
+that id, then stop. After the first import a routine run fetches a handful of
+submissions per member rather than thousands. This is worth more than every
+other optimisation combined.
+
+**Rule 2 -- Page the backfill, never the whole history.** Use
+`userStatus(handle, from, count)` with `count = 500`, insert the batch, discard
+it, take the next page. Peak memory becomes one page instead of one member's
+lifetime. Section 4.2 currently says "omit `from` and `count` for full history"
+-- **do not**. That sentence describes the failing path.
+
+**Rule 3 -- Store derived facts, not raw submissions.** D3 says gym and mashup
+submissions are stored "because the upsolve tracker needs them". D12 defines an
+upsolve far more narrowly: an accepted submission **inside the club contest,
+after it ended**. That is a small, knowable set. Store distinct solves plus
+those upsolve rows, and the raw submission table does not need to exist at all
+-- fewer rows, less memory, and one less table to keep correct.
+
+**And in the query layer:** every statistic in Section 1.1 is a SQL aggregate
+over indexed columns. Counting or averaging in Java makes heap scale with
+history, which is precisely what this instance cannot afford.
+
+**Run the one-time historical backfill off the box.** Stage 7's backfill is the
+single heaviest thing Phase 3 does. Run it from a GitHub Actions job against the
+production API rather than from a Render dyno: Actions gives several GB of
+memory for free, and Render then only ever performs the light incremental work.
+Do not move the recurring sync there -- that would put domain logic in two
+places.
+
+### A5 -- Scheduled jobs and the free tier
+
+`@Scheduled` is an in-process timer, and Render's free tier stops an idle
+instance, which stops its timers with it. D6's daily baseline at 00:05 IST is
+the case that matters: nobody is on the site at five past midnight, so on an
+unattended free instance that job never runs and every LeetCode period figure is
+silently wrong rather than missing.
+
+**Current mitigation:** an external cron pings the service every 10 minutes, so
+it never idles out and the timers fire. Phase 3 may rely on that.
+
+Two consequences worth writing down:
+
+- A service that never sleeps consumes about 730 of the ~750 free instance hours
+  in a month. There is no room for a second free service on the same account.
+- Sleeping used to restart the JVM nightly, which quietly reset Metaspace and
+  masked any slow growth. It no longer does. If Phase 3 introduces a leak, this
+  is when it will surface. `-XX:+ExitOnOutOfMemoryError` is set, so the container
+  dies and restarts rather than limping -- self-healing, but with downtime and a
+  cold start attached.
+
+### A6 -- Smaller corrections
+
+- Section 8 lists `app/(auth)/register/register-form.tsx` as a file to modify.
+  It was deleted with the registration flow. The equivalent screen is
+  `app/(auth)/welcome/welcome-form.tsx`.
+- `lib/content/events.ts` and `components/site/events-timeline.tsx` were deleted;
+  the events page reads the API through `components/site/events-list.tsx`.
+- `dashboardService.getMembers` and `getDirectory` no longer exist. The members
+  page uses `getTeam`.
+- The frontend stack line should read Google Identity Services rather than a
+  password form.
+
+---
+
 ## Prerequisites -- Phase 2 Must Be Finished First
 
 Phase 3 builds on Phase 2 screens that do not exist yet. Do not start Phase 3
@@ -283,7 +451,7 @@ plan for that phase and never built. *Proposed* -- suggested during the Phase 2 
 | D12 | What counts as an upsolve | An accepted submission **inside the club contest on Codeforces**, made after the contest ended. Solving the same problem elsewhere does not count. | A mashup problem cannot be reliably mapped back to its original. Matching on the club contest ID is exact, and "upsolve from the contest page" is a one-sentence instruction to members. |
 | D13 | RSVP versus attendance | **Two separate records.** An RSVP is a member's own intent, open only while the event is UPCOMING and before its start time. Attendance stays admin-only, exactly as Phase 2 decided. The admin can turn RSVPs into attendance in bulk. | RSVP answers "how many chairs". Attendance is the official record. Merging them would let members mark themselves present. |
 | D14 | Deleting events | `DELETE /api/events/{id}` **succeeds only when the event has no attendees, RSVPs or photos.** Otherwise it returns 409 and tells the admin to cancel instead. | The original plan asked for delete; Phase 2 chose cancel to protect history. This allows both: an event created by mistake can be removed, and a real one cannot be erased. |
-| D15 | Student email | New registrations must use an allowed domain, from `cpclub.auth.allowed-email-domains` (default `dau.ac.in`). A verification link (single use, 24 hours, SHA-256 hashed at rest) is emailed on signup. **Existing accounts are treated as verified** (`email_verified_at = created_at`). | Allowed domains live in config, so an alumni or faculty exception needs no code change. Forcing about 150 accepted members to re-verify at launch would cost goodwill for no security gain. |
+| D15 | Student email | **WITHDRAWN -- see amendment A2.** Google-only sign-in already proves the address is verified and on the university domain, so there is nothing left to build. Original text, for the record: new registrations must use an allowed domain, from `cpclub.auth.allowed-email-domains` (default `dau.ac.in`). A verification link (single use, 24 hours, SHA-256 hashed at rest) is emailed on signup. **Existing accounts are treated as verified** (`email_verified_at = created_at`). | Allowed domains live in config, so an alumni or faculty exception needs no code change. Forcing about 150 accepted members to re-verify at launch would cost goodwill for no security gain. |
 | D16 | What unverified accounts can do | Sign in, and edit their own profile. **Cannot** appear in the directory or on leaderboards, RSVP, comment, or write posts. | Verification is the only thing that makes the student-email restriction mean anything. |
 | D17 | Blog rendering | Markdown stays in the existing `content` column. It is rendered in the browser with `react-markdown` + `remark-gfm` + `remark-math` + `rehype-katex` + `rehype-highlight`. **Raw HTML is never enabled** (no `rehype-raw`). KaTeX CSS loads on blog routes only. | Member-written posts are untrusted input. With raw HTML off, there is no path from a post to injected script. |
 | D18 | Blog workflow | `status`: DRAFT -> PENDING_REVIEW -> PUBLISHED, or REJECTED with a reviewer note. Any verified member writes drafts; only an admin publishes. Public reads stay **published-only**, as `BlogService` already enforces today. | This keeps the existing guarantee that nobody can walk post IDs to read drafts. |
@@ -978,7 +1146,9 @@ variable in Section 12.
 
 **Read first:** `codeforces/service/CodeforcesSyncService.java`,
 `leetcode/service/LeetCodeSyncService.java`, `common/config/AppConfig.java`,
-`user/service/UserService.java`, migrations V8 to V11, Section 1.1.
+`user/service/UserService.java`, migrations V8 to V11 (these are Phase 2.5 -- the
+schema this stage extends; Phase 3's own migrations start at V12, amendment A1),
+Section 1.1, and **amendment A4 before writing any sync code**.
 
 #### 4.1 `sync/` package [NEW]
 
@@ -998,7 +1168,7 @@ A typed client for the four public methods Phase 3 needs. Every call acquires
 
 | Method | Codeforces API |
 |---|---|
-| `userStatus(handle, from, count)` | `user.status` (omit `from` and `count` for full history) |
+| `userStatus(handle, from, count)` | `user.status`. **Always page** -- `count = 500`. Omitting `from` and `count` pulls a member's entire history into a 160 MB heap; see amendment A4 |
 | `userRating(handle)` | `user.rating` |
 | `contestList(boolean gym)` | `contest.list` |
 | `problemsetProblems()` | `problemset.problems` |
