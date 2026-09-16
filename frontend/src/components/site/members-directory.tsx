@@ -46,26 +46,20 @@ function initialsOf(name: string): string {
 /**
  * The page's sections, top to bottom.
  *
- * The order here is the club hierarchy, and it is the only place it is stated on
- * the frontend. The server sorts the team the same way; this decides which posts
- * share a heading.
+ * Two, not one per post. The club reads as a core team and its batch
+ * representatives, so four headings split the committee more finely than the
+ * club actually thinks of itself -- and with a small team it left headings
+ * standing over one or two cards each.
+ *
+ * Rank still shows: the server returns the team in hierarchy order, so within
+ * the core section the Convenor comes first and the Associate Core last, and
+ * every card carries its own post as a badge.
  */
-const SECTIONS: { title: string; subtitle: string; posts: ClubRole[]; wide?: boolean }[] = [
-  {
-    title: "LEADERSHIP",
-    subtitle: "Convenor and Deputy Convenor, steering the club.",
-    posts: ["CONVENOR", "DEPUTY_CONVENOR"],
-    wide: true,
-  },
+const SECTIONS: { title: string; subtitle: string; posts: ClubRole[] }[] = [
   {
     title: "CORE TEAM",
-    subtitle: "Running contests, problem setting, and the club's technical work.",
-    posts: ["CORE"],
-  },
-  {
-    title: "ASSOCIATE CORE",
-    subtitle: "Workshops, outreach, and practice sessions.",
-    posts: ["ASSOCIATE_CORE"],
+    subtitle: "Convenor, Deputy Convenor and the core team who run the club.",
+    posts: ["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE"],
   },
   {
     title: "BATCH REPRESENTATIVES",
@@ -74,6 +68,14 @@ const SECTIONS: { title: string; subtitle: string; posts: ClubRole[]; wide?: boo
   },
 ];
 
+/**
+ * Posts whose cards are given the accent treatment.
+ *
+ * With leadership no longer having a section of its own, this is what keeps the
+ * two senior posts from reading as just the first two of a long grid.
+ */
+const HIGHLIGHTED: ClubRole[] = ["CONVENOR", "DEPUTY_CONVENOR"];
+
 const FILTERS = ["All", "Committee", "Members"] as const;
 type Filter = (typeof FILTERS)[number];
 
@@ -81,10 +83,13 @@ export function MembersDirectory({
   team,
   members,
   total,
+  unreachable = false,
 }: {
   team: PublicMember[];
   members: PublicMember[];
   total: number;
+  /** True when the server could not be reached at all, as opposed to having nobody to show. */
+  unreachable?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
@@ -169,7 +174,19 @@ export function MembersDirectory({
         </div>
       </div>
 
-      {visibleCount === 0 ? (
+      {unreachable ? (
+        /*
+          An empty list and an unreachable server are different facts, and saying
+          the first when the second is true is a lie about the club. This page is
+          public, so it says which one it is.
+        */
+        <div className="rounded-panel border border-dashed border-destructive/40 bg-destructive/5 py-12 text-center">
+          <p className="text-sm text-destructive">Could not load the member list.</p>
+          <p className="mt-1 text-xs text-fg-muted">
+            The server may be waking up. Reload in a few seconds.
+          </p>
+        </div>
+      ) : visibleCount === 0 ? (
         <div className="rounded-panel border border-dashed border-border py-12 text-center text-sm text-fg-muted">
           {total === 0
             ? "No members yet. The directory fills up as people sign in."
@@ -191,15 +208,13 @@ export function MembersDirectory({
                   subtitle={section.subtitle}
                   count={people.length}
                 >
-                  <div
-                    className={
-                      section.wide
-                        ? "grid gap-4 md:grid-cols-2"
-                        : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                    }
-                  >
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {people.map((m) => (
-                      <MemberCard key={m.id} member={m} prominent={section.wide} />
+                      <MemberCard
+                        key={m.id}
+                        member={m}
+                        prominent={m.clubRole !== null && HIGHLIGHTED.includes(m.clubRole)}
+                      />
                     ))}
                   </div>
                 </SectionGroup>

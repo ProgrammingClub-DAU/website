@@ -17,7 +17,12 @@ export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   // Axios defaults to no timeout at all. Server Components await these calls, so
   // a hung backend would hold the render open until the hosting gateway killed
-  // it. 15s is generous enough for a sleeping free-tier instance to wake.
+  // it.
+  //
+  // 15s for anything the browser does, where a spinner that long is already bad.
+  // It is NOT enough for the backend's first request after it has been idle:
+  // Render's free tier stops the instance, and a cold JVM start is 30-60s. Server
+  // Components that must survive that pass their own timeout -- see SSR_TIMEOUT_MS.
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

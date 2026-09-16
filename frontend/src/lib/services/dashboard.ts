@@ -6,6 +6,19 @@ import { mockLeaderboardEntries, getMockProfile } from "@/lib/content/mock-dashb
 // Mock mode disabled for Phase 1 completion
 const IS_MOCK = false;
 
+/**
+ * How long a server-rendered page waits for the backend.
+ *
+ * Deliberately far longer than the client default. The backend sleeps on the
+ * free tier and a cold JVM start runs 30-60 seconds, so the first visit after a
+ * quiet spell would otherwise time out and render an empty page -- which looked
+ * exactly like a club with no members.
+ *
+ * Nobody stares at a blank tab for this long in practice: it is the first
+ * request after idle that pays it, and the instance stays warm afterwards.
+ */
+const SSR_TIMEOUT_MS = 60_000;
+
 // ── Mappers: Transform backend UserResponseDto to Frontend Types ──
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,7 +110,9 @@ export const dashboardService = {
    * for that order to be wrong.
    */
   getTeam: async (): Promise<PublicMember[]> => {
-    const response = await apiClient.get<ApiResponse<PublicMember[]>>("/api/users/team");
+    const response = await apiClient.get<ApiResponse<PublicMember[]>>("/api/users/team", {
+      timeout: SSR_TIMEOUT_MS,
+    });
     return response.data.data ?? [];
   },
 
@@ -108,7 +123,7 @@ export const dashboardService = {
    * showing rather than implying the list is everyone.
    */
   getDirectory: async (size = 100): Promise<{ members: PublicMember[]; total: number }> => {
-    const response = await apiClient.get(`/api/users?size=${size}`);
+    const response = await apiClient.get(`/api/users?size=${size}`, { timeout: SSR_TIMEOUT_MS });
     const paged = response.data?.data;
     return {
       members: (paged?.content ?? []) as PublicMember[],

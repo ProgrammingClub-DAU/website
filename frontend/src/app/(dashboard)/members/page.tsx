@@ -20,25 +20,32 @@ export const metadata: Metadata = {
 
 export default async function MembersPage() {
   // Two lists: the committee in club hierarchy order, and the searchable
-  // membership. Fetched together so one being slow does not serialise the other.
+  // membership.
   //
-  // Both fall back to empty if the API is unreachable. This page renders at
-  // build time, when the backend may legitimately not be running, and a
-  // members page with no members beats a failed build.
-  let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
-  let directory: Awaited<ReturnType<typeof dashboardService.getDirectory>> = {
-    members: [],
-    total: 0,
-  };
+  // allSettled, not all. With Promise.all a failure in either call threw away
+  // both results, so one slow endpoint emptied the entire page -- and the catch
+  // then rendered "No members yet", which is a claim about the club rather than
+  // an admission that the fetch failed. Each list now stands or falls alone.
+  const [teamResult, directoryResult] = await Promise.allSettled([
+    dashboardService.getTeam(),
+    dashboardService.getDirectory(),
+  ]);
 
-  try {
-    [team, directory] = await Promise.all([
-      dashboardService.getTeam(),
-      dashboardService.getDirectory(),
-    ]);
-  } catch {
-    // API unreachable - render empty, page stays functional
+  const team = teamResult.status === "fulfilled" ? teamResult.value : [];
+  const directory =
+    directoryResult.status === "fulfilled" ? directoryResult.value : { members: [], total: 0 };
+
+  // Logged, not swallowed. This runs on the server, so it lands in the hosting
+  // logs -- the only place anyone can see why a public page came up empty.
+  if (teamResult.status === "rejected") {
+    console.error("Members page: could not load the committee:", teamResult.reason);
   }
+  if (directoryResult.status === "rejected") {
+    console.error("Members page: could not load the directory:", directoryResult.reason);
+  }
+
+  const unreachable =
+    teamResult.status === "rejected" && directoryResult.status === "rejected";
 
   return (
     <>
@@ -57,7 +64,12 @@ export default async function MembersPage() {
       </Section>
 
       <Section className="pb-10">
-        <MembersDirectory team={team} members={directory.members} total={directory.total} />
+        <MembersDirectory
+          team={team}
+          members={directory.members}
+          total={directory.total}
+          unreachable={unreachable}
+        />
       </Section>
 
       <Section className="pb-10">
