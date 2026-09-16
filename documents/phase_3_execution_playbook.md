@@ -180,6 +180,65 @@ Two consequences worth writing down:
   dies and restarts rather than limping -- self-healing, but with downtime and a
   cold start attached.
 
+### A7 -- The stage allocation no longer balances. Rebalance before Wave A.
+
+A2 removes work, and it removes it from two people rather than spreading it.
+The estimates in Section 2 no longer describe the plan.
+
+| Member | Stages | Was | Now |
+|---|---|---|---|
+| M6 (lead) | 0, 1A, 3A, 7 | 18d | 18d |
+| M5 | 1B, 3B, 5B | 17d | 17d |
+| M4 | 1C, 3C, 5A | 17d | **14d** |
+| M1 | 2A, 4A, 6A | 17d | 17d |
+| M2 | 2B, 4B, 6B | 12d | **11d** |
+| M3 | 2C, 4C, 6C | 15d | 15d |
+| | | 96d | 92d, averaging 15.3d |
+
+**Stage 1C shrinks from 5 days to about 2.** Its title -- "Student Email,
+Verification & Phase 3 Security Rules" -- describes three things, and A2
+deletes the first two. Rename it **"Phase 3 Security Rules"**: what survives is
+the matcher ordering, D16 and D30, and `Phase3SecurityOrderingTest`. Drop
+`spring-boot-starter-mail` from its file list unless a later stage sends mail
+for another reason.
+
+**Stage 2B shrinks from 4 days to about 3.** "Stats Services, Verification Flow
+& Mock Removal" loses the middle third. `emailVerified` does not go on `User`,
+because there is no unverified state to represent.
+
+#### What to do about it
+
+The imbalance is worse than the totals suggest. M2 was already the lightest
+member at 12 days and is now the lightest at 11, while M6 carries 18 **on top
+of** reviewing and merging every other PR in the phase -- the lead should sit
+below the average, not three days above it.
+
+It is also structural rather than arithmetic. M2's speciality is auth and
+client state, and Google-only sign-in has removed most of the auth work a
+Phase 3 would once have carried. That capacity has to go somewhere useful
+rather than being left as slack.
+
+Two moves, which M6 should confirm against who is actually free:
+
+1. **Frontend:** move the blog editor and comments UI out of Stage 6A into
+   Stage 6B. M1 is the heaviest frontend member at 17 days and M2 the lightest
+   at 11; this brings both to roughly 14, and the editor is state-heavy work
+   that suits M2's stage better than M1's layout work.
+2. **Backend:** move **Stage 3A** (External Contests, Calendar & Sync Health,
+   4 days) from M6 to M4. M6 drops to 14, which is the right place for someone
+   also reviewing every PR, and M4 has the runway. Sync health is monitoring
+   and alerting work, which sits closer to M4's stage than to a backfill.
+
+That gives roughly M6 14, M5 17, M4 18, M1 14, M2 14, M3 15. M4 becomes the
+peak, which is defensible only because Stage 3C is already the largest single
+stage in the plan at 7 days -- if M4 is not comfortable carrying both, move 3A
+to M5 instead and accept M6 at 18.
+
+**Do not simply leave the freed days unallocated.** Section 2's wave timeline
+is computed from these estimates, so a stage that shrinks without the schedule
+being redrawn shows up as a phase that finishes four days early and then does
+not.
+
 ### A6 -- Smaller corrections
 
 - Section 8 lists `app/(auth)/register/register-form.tsx` as a file to modify.
