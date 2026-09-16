@@ -2,10 +2,12 @@ package com.cpclub.backend.user;
 
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
+import com.cpclub.backend.user.dto.PublicUserResponseDto;
 import com.cpclub.backend.user.dto.UpdateHandleRequest;
 import com.cpclub.backend.user.dto.UpdateRoleRequest;
 import com.cpclub.backend.user.dto.UserProfileUpdateRequest;
 import com.cpclub.backend.user.dto.UserResponseDto;
+import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
@@ -15,6 +17,7 @@ import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -250,5 +253,61 @@ class UserServiceTest {
                 null,               // academicYear
                 null                // avatarUrl
         );
+    }
+    @Test
+    @DisplayName("The team comes back in club hierarchy order, not alphabetically")
+    void shouldOrderTheTeamByHierarchyThenName() {
+        // Returned deliberately jumbled. Sorting by the stored enum string would
+        // put ASSOCIATE_CORE first and CONVENOR third, which is the bug this
+        // ordering exists to avoid.
+        when(userRepository.findByClubRoleIn(any())).thenReturn(List.of(
+                teamMember(4L, "Zara", ClubRole.BATCH_REPRESENTATIVE),
+                teamMember(2L, "Bob", ClubRole.CORE),
+                teamMember(1L, "Anita", ClubRole.CONVENOR),
+                teamMember(5L, "Adam", ClubRole.CORE),
+                teamMember(3L, "Priya", ClubRole.DEPUTY_CONVENOR)));
+
+        List<PublicUserResponseDto> team = userService.getTeam(false);
+
+        assertEquals(
+                List.of("Anita", "Priya", "Adam", "Bob", "Zara"),
+                team.stream().map(PublicUserResponseDto::name).toList(),
+                "Convenor, Deputy, then Core sorted by name, then Batch Rep");
+    }
+
+    @Test
+    @DisplayName("Only serving posts are asked for, so students and past members stay off the page")
+    void shouldOnlyAskForServingPosts() {
+        when(userRepository.findByClubRoleIn(any())).thenReturn(List.of());
+
+        userService.getTeam(false);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<ClubRole>> asked = ArgumentCaptor.forClass(List.class);
+        verify(userRepository).findByClubRoleIn(asked.capture());
+
+        assertEquals(
+                List.of(ClubRole.CONVENOR, ClubRole.DEPUTY_CONVENOR, ClubRole.CORE,
+                        ClubRole.ASSOCIATE_CORE, ClubRole.BATCH_REPRESENTATIVE),
+                asked.getValue());
+    }
+
+    @Test
+    @DisplayName("The team list carries office bearers' numbers, since those posts are contact points")
+    void shouldIncludeOfficeBearerPhoneNumbers() {
+        User convenor = teamMember(1L, "Anita", ClubRole.CONVENOR);
+        convenor.setPhoneNumber("9876543210");
+        when(userRepository.findByClubRoleIn(any())).thenReturn(List.of(convenor));
+
+        // False: a signed-out visitor. The number is public because of the post,
+        // not because of who is asking.
+        assertEquals("9876543210", userService.getTeam(false).get(0).phoneNumber());
+    }
+
+    private User teamMember(Long id, String name, ClubRole post) {
+        User user = new User(name, name.toLowerCase() + "@dau.ac.in", null, Role.ROLE_USER);
+        user.setId(id);
+        user.setClubRole(post);
+        return user;
     }
 }

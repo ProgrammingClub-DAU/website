@@ -1,5 +1,8 @@
 package com.cpclub.backend.user.service;
 
+import com.cpclub.backend.user.entity.ClubRole;
+import java.util.Comparator;
+import java.util.Arrays;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
@@ -135,15 +138,17 @@ public class UserService {
      * @param query search filter matching name or Codeforces handle
      * @param page zero-indexed page number
      * @param size page size limit
+     * @param viewerIsAdmin whether the caller holds ROLE_ADMIN
      * @return standardized paginated wrapper containing public-safe user projections
      */
     @Transactional(readOnly = true)
-    public PagedResponse<PublicUserResponseDto> getMembersDirectoryPublic(String query, int page, int size) {
+    public PagedResponse<PublicUserResponseDto> getMembersDirectoryPublic(
+            String query, int page, int size, boolean viewerIsAdmin) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
         Page<User> userPage = userRepository.searchUsers(query, pageable);
 
         List<PublicUserResponseDto> content = userPage.getContent().stream()
-                .map(PublicUserResponseDto::fromEntity)
+                .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
                 .toList();
 
         return new PagedResponse<>(
@@ -161,14 +166,45 @@ public class UserService {
      * Use this for the public-facing {@code GET /api/users/{id}} endpoint.
      *
      * @param id user ID
+     * @param viewerIsAdmin whether the caller holds ROLE_ADMIN
      * @return public-safe immutable user projection
      * @throws ResourceNotFoundException if user ID does not exist
      */
     @Transactional(readOnly = true)
-    public PublicUserResponseDto getPublicUserById(Long id) {
+    public PublicUserResponseDto getPublicUserById(Long id, boolean viewerIsAdmin) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return PublicUserResponseDto.fromEntity(user);
+        return PublicUserResponseDto.fromEntity(user, viewerIsAdmin);
+    }
+
+    /**
+     * The club's serving office bearers, in hierarchy order.
+     *
+     * <p>Separate from the paginated directory rather than a filter on it, for
+     * two reasons. The members page needs the whole team at once -- a Convenor
+     * who fell onto page two because of their surname would simply be missing --
+     * and the ordering the page wants is the club's hierarchy, which is not
+     * something a JPQL {@code ORDER BY} on an enum column can express: that sorts
+     * the stored strings, putting ASSOCIATE_CORE above CONVENOR.</p>
+     *
+     * <p>Sorting in memory is safe here precisely because the list is bounded.
+     * This is the committee, a few dozen people at most, not the membership.</p>
+     *
+     * @param viewerIsAdmin whether the caller holds ROLE_ADMIN
+     * @return office bearers, Convenor first, then by name within each post
+     */
+    @Transactional(readOnly = true)
+    public List<PublicUserResponseDto> getTeam(boolean viewerIsAdmin) {
+        List<ClubRole> posts = Arrays.stream(ClubRole.values())
+                .filter(ClubRole::isOfficeBearer)
+                .toList();
+
+        return userRepository.findByClubRoleIn(posts).stream()
+                .sorted(Comparator
+                        .comparingInt((User user) -> user.getClubRole().hierarchyRank())
+                        .thenComparing(User::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
+                .toList();
     }
 
     /**
