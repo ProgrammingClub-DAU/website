@@ -1,7 +1,7 @@
 import apiClient from "@/lib/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "@/store/auth";
-import type { Event, EventAttendee, EventDetail, EventPhoto, UserLookup } from "@/types/api";
+import type { Event, EventAttendee, EventDetail, EventPhoto, EventType, UserLookup } from "@/types/api";
 
 export interface EventRequest {
   title: string;
@@ -9,6 +9,8 @@ export interface EventRequest {
   eventDate: string;
   location: string;
   coverImageUrl: string | null;
+  /** The badge on the public timeline. Null simply means no badge. */
+  eventType: EventType | null;
   /** Optional. No contest means no results section on the public page at all. */
   codeforcesContestUrl: string | null;
   /**

@@ -8,7 +8,6 @@ import type { Metadata } from "next";
 
 import { Eyebrow, PageTitle, Section, SectionHeader } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
-import { MembersPageCta } from "@/components/site/members-page-cta";
 import { credits } from "@/lib/content/members";
 import { dashboardService } from "@/lib/services/dashboard";
 
@@ -19,60 +18,41 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  // Two lists: the committee in club hierarchy order, and the searchable
-  // membership.
-  //
-  // allSettled, not all. With Promise.all a failure in either call threw away
-  // both results, so one slow endpoint emptied the entire page -- and the catch
-  // then rendered "No members yet", which is a claim about the club rather than
-  // an admission that the fetch failed. Each list now stands or falls alone.
-  const [teamResult, directoryResult] = await Promise.allSettled([
-    dashboardService.getTeam(),
-    dashboardService.getDirectory(),
-  ]);
+  // Only the committee. The page lists who runs the club, and the full
+  // membership is not that -- it was a second section of everyone who had ever
+  // signed in, which told a visitor nothing and buried the people it exists to
+  // show.
+  let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
+  let unreachable = false;
 
-  const team = teamResult.status === "fulfilled" ? teamResult.value : [];
-  const directory =
-    directoryResult.status === "fulfilled" ? directoryResult.value : { members: [], total: 0 };
-
-  // Logged, not swallowed. This runs on the server, so it lands in the hosting
-  // logs -- the only place anyone can see why a public page came up empty.
-  if (teamResult.status === "rejected") {
-    console.error("Members page: could not load the committee:", teamResult.reason);
+  try {
+    team = await dashboardService.getTeam();
+  } catch (error) {
+    // Logged, not swallowed: this runs on the server, so it lands in the
+    // hosting logs, which is the only place anyone can see why a public page
+    // came up empty.
+    console.error("Members page: could not load the committee:", error);
+    unreachable = true;
   }
-  if (directoryResult.status === "rejected") {
-    console.error("Members page: could not load the directory:", directoryResult.reason);
-  }
-
-  const unreachable =
-    teamResult.status === "rejected" && directoryResult.status === "rejected";
-
   return (
     <>
       <Section className="pt-10 pb-10 md:pt-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow>Community Directory</Eyebrow>
-            <PageTitle>
-              OUR COMMUNITY.
-            </PageTitle>
+            <Eyebrow>The committee</Eyebrow>
+            <PageTitle>Who runs the club.</PageTitle>
           </div>
         </div>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          The people building the programming culture at DAU.
+          The core team and batch representatives for this term.
         </p>
       </Section>
 
       <Section className="pb-10">
-        <MembersDirectory
-          team={team}
-          members={directory.members}
-          total={directory.total}
-          unreachable={unreachable}
-        />
+        <MembersDirectory team={team} unreachable={unreachable} />
       </Section>
 
-      <Section className="pb-10">
+      <Section className="pb-22">
         <div className="border-t border-border pt-10">
           <SectionHeader
             eyebrow="Website developer credits"
@@ -109,15 +89,6 @@ export default async function MembersPage() {
         </div>
       </Section>
 
-      <Section className="pb-22">
-        <div className="flex flex-wrap items-center justify-between gap-5 border-t border-hairline pt-8">
-          <p className="max-w-[52ch] text-body leading-[1.5] text-fg-muted text-pretty">
-            Your profile appears here once you sign in and add a photo and a line about
-            yourself.
-          </p>
-          <MembersPageCta />
-        </div>
-      </Section>
     </>
   );
 }

@@ -54,6 +54,17 @@ public class Event {
     private String coverImageUrl;
 
     /**
+     * What kind of event this is, for the badge on the public timeline.
+     *
+     * <p>Nullable: every event created before this existed has none, and a badge
+     * reading OTHER across the club's whole history would be worse than no badge
+     * (V11).</p>
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", length = 20)
+    private EventType eventType;
+
+    /**
      * The Codeforces contest this event ran on, if it ran on one.
      *
      * <p>Its presence is what makes an event a contest as far as the public

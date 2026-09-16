@@ -2,6 +2,7 @@ package com.cpclub.backend.event.dto;
 
 import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventStatus;
+import com.cpclub.backend.event.entity.EventType;
 
 import java.time.LocalDateTime;
 
@@ -25,6 +26,7 @@ public record EventResponseDto(
         String location,
         EventStatus status,
         String coverImageUrl,
+        EventType eventType,
         String codeforcesContestUrl,
         boolean showContestLink,
         boolean showWinners,
@@ -49,6 +51,7 @@ public record EventResponseDto(
                 event.getLocation(),
                 event.getStatus(),
                 event.getCoverImageUrl(),
+                event.getEventType(),
                 visibleContestUrl(event, viewerIsAdmin),
                 event.isShowContestLink(),
                 event.isShowWinners(),
