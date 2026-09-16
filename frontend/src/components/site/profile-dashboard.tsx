@@ -849,11 +849,13 @@ function ProfileDashboardContent({
               by construction as well as by this check. */}
           {isOwner && (
             <>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-fg-muted">
+              {/* gap and min-w-0 so a long university address wraps instead of
+                  crushing its label or pushing the card off a phone screen. */}
+              <div className="flex items-start justify-between gap-3">
+                <span className="flex shrink-0 items-center gap-2 text-fg-muted">
                   <Mail className="size-3.5" /> Email
                 </span>
-                <span className="font-mono text-xs">{profile.email}</span>
+                <span className="min-w-0 font-mono text-xs break-all">{profile.email}</span>
               </div>
               <Separator />
             </>
