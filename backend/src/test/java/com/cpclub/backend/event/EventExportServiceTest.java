@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -161,6 +162,63 @@ class EventExportServiceTest {
             assertEquals(0, sheet.getLastRowNum(), "only the header row should exist");
             assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
         }
+    }
+
+    // ------------------------------------------------- the same sheet, as rows
+
+    @Test
+    @DisplayName("The row grid opens with the same six headers as the workbook")
+    void toSheetRows_startsWithTheHeaderRow() {
+        List<List<String>> rows = service.toSheetRows(List.of(attendee()));
+
+        assertIterableEquals(List.of(EXPECTED_HEADERS), rows.get(0));
+    }
+
+    @Test
+    @DisplayName("Each attendee becomes one row, in column order")
+    void toSheetRows_writesTheColumnsInOrder() {
+        List<List<String>> rows = service.toSheetRows(List.of(attendee()));
+
+        assertIterableEquals(List.of(
+                "Ravi",
+                "https://codeforces.com/profile/ravi_cf",
+                "202401226@dau.ac.in",
+                "202401226",
+                "2nd year onwards",
+                "2026-03-01 10:00"
+        ), rows.get(1));
+    }
+
+    @Test
+    @DisplayName("Missing values are empty strings, never null")
+    void toSheetRows_usesEmptyStringsForMissingValues() {
+        // This grid is serialized to JSON for the browser, which hands it to the
+        // Google Sheets API. A null there is a gap the API skips, which would
+        // shift every later column left and quietly misfile the whole sheet.
+        EventAttendeeDto sparse = new EventAttendeeDto(
+                7L, "Newcomer", "new@dau.ac.in",
+                null, false, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, LocalDateTime.of(2026, 3, 1, 10, 0));
+
+        List<String> row = service.toSheetRows(List.of(sparse)).get(1);
+
+        assertEquals(EXPECTED_HEADERS.length, row.size(), "a column went missing");
+        for (int column = 0; column < row.size(); column++) {
+            assertNotNull(row.get(column), "column " + column + " was null");
+        }
+        assertEquals("", row.get(1), "no Codeforces handle");
+        assertEquals("", row.get(4), "no year");
+    }
+
+    @Test
+    @DisplayName("An event nobody attended is the header row alone")
+    void toSheetRows_handlesAnEmptyList() {
+        List<List<String>> rows = service.toSheetRows(List.of());
+
+        assertEquals(1, rows.size());
+        assertIterableEquals(List.of(EXPECTED_HEADERS), rows.get(0));
     }
 
     private EventAttendeeDto attendee() {

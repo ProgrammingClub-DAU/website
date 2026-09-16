@@ -84,6 +84,23 @@ If it returns rows, decide for each one before merging:
    Ignore the client secret. This application never uses it, and it must not be
    put in any environment variable here.
 
+### If you had to choose External: publish the app
+
+Skip this if you chose Internal.
+
+An External app starts in **Testing**, and in that state only accounts listed as
+test users can sign in at all - everyone else is refused, with a Google error
+rather than ours. For a club site that is a hard cap at 100 hand-entered
+addresses.
+
+Go to the OAuth consent screen and press **Publish app**. Because this project
+requests only non-sensitive scopes (`email`, `profile`, `openid`, and
+`drive.file` for the spreadsheet export), publishing does not send you into
+Google's verification review. It takes effect immediately.
+
+If you ever add a scope beyond those, publishing will start requiring review.
+That is the real reason the scope list is kept short.
+
 ## Step 2: Set the environment variables
 
 The same client ID goes in two places and the two must match exactly. A mismatch
@@ -141,6 +158,35 @@ Worth knowing, because it is what the club is relying on:
   account from a personal one that merely carries a similar-looking address.
 
 The browser sends a token and nothing else. It never tells the server who it is.
+
+## Enable the Sheets API, for the attendance export
+
+The admin event page has a **Google Sheets** button beside **Export to Excel**.
+It builds the same six-column attendance sheet directly in the Drive of whoever
+clicks it.
+
+One switch to flick, once per project:
+
+**APIs & Services > Library > search "Google Sheets API" > Enable**
+
+Without it the first export fails with a message telling you exactly this, so it
+is not a silent problem - but it is easier to do now.
+
+Nothing else is needed. No service-account key, no extra environment variable,
+no sharing anything with a robot account. The server never talks to Google here:
+it hands the browser the rows, and the browser creates the spreadsheet using the
+admin's own Google account.
+
+What an admin sees the first time: a Google consent window asking to "see, edit,
+create and delete only the specific Google Drive files you use with this app".
+That wording is Google's, and the "only the specific files" part is the whole
+point - the `drive.file` scope cannot read anything already in their Drive, only
+files this site itself created.
+
+The spreadsheet is owned by the admin who exported it, lives in their Drive, and
+counts against their storage. Two admins exporting the same event get one copy
+each. If the club wants a single shared copy, share the sheet from Drive as you
+would any other file.
 
 ## If you get locked out anyway
 

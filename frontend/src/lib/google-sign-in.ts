@@ -43,9 +43,38 @@ interface GoogleAccountsId {
   disableAutoSelect(): void;
 }
 
+/** What a token request comes back with. One of the two fields is set. */
+export interface GoogleTokenResponse {
+  access_token?: string;
+  error?: string;
+}
+
+export interface GoogleTokenClient {
+  requestAccessToken(): void;
+}
+
+/**
+ * The second, separate Google flow.
+ *
+ * Signing in yields an *identity* token, which says who somebody is and grants
+ * nothing. Writing a spreadsheet into their Drive needs an *access* token for a
+ * specific scope, which is a different request and a different consent prompt.
+ * Keeping them apart is the point: nobody is asked for access to their Drive in
+ * order to log in.
+ */
+export interface GoogleAccountsOauth2 {
+  initTokenClient(config: {
+    client_id: string;
+    scope: string;
+    callback: (response: GoogleTokenResponse) => void;
+    /** Fired when the popup is dismissed or blocked, where `callback` is not. */
+    error_callback?: (error: { type?: string; message?: string }) => void;
+  }): GoogleTokenClient;
+}
+
 declare global {
   interface Window {
-    google?: { accounts: { id: GoogleAccountsId } };
+    google?: { accounts: { id: GoogleAccountsId; oauth2?: GoogleAccountsOauth2 } };
   }
 }
 
