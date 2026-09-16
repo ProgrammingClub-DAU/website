@@ -46,26 +46,20 @@ function initialsOf(name: string): string {
 /**
  * The page's sections, top to bottom.
  *
- * The order here is the club hierarchy, and it is the only place it is stated on
- * the frontend. The server sorts the team the same way; this decides which posts
- * share a heading.
+ * Two, not one per post. The club reads as a core team and its batch
+ * representatives, so four headings split the committee more finely than the
+ * club actually thinks of itself -- and with a small team it left headings
+ * standing over one or two cards each.
+ *
+ * Rank still shows: the server returns the team in hierarchy order, so within
+ * the core section the Convenor comes first and the Associate Core last, and
+ * every card carries its own post as a badge.
  */
-const SECTIONS: { title: string; subtitle: string; posts: ClubRole[]; wide?: boolean }[] = [
-  {
-    title: "LEADERSHIP",
-    subtitle: "Convenor and Deputy Convenor, steering the club.",
-    posts: ["CONVENOR", "DEPUTY_CONVENOR"],
-    wide: true,
-  },
+const SECTIONS: { title: string; subtitle: string; posts: ClubRole[] }[] = [
   {
     title: "CORE TEAM",
-    subtitle: "Running contests, problem setting, and the club's technical work.",
-    posts: ["CORE"],
-  },
-  {
-    title: "ASSOCIATE CORE",
-    subtitle: "Workshops, outreach, and practice sessions.",
-    posts: ["ASSOCIATE_CORE"],
+    subtitle: "Convenor, Deputy Convenor and the core team who run the club.",
+    posts: ["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE"],
   },
   {
     title: "BATCH REPRESENTATIVES",
@@ -73,6 +67,14 @@ const SECTIONS: { title: string; subtitle: string; posts: ClubRole[]; wide?: boo
     posts: ["BATCH_REPRESENTATIVE"],
   },
 ];
+
+/**
+ * Posts whose cards are given the accent treatment.
+ *
+ * With leadership no longer having a section of its own, this is what keeps the
+ * two senior posts from reading as just the first two of a long grid.
+ */
+const HIGHLIGHTED: ClubRole[] = ["CONVENOR", "DEPUTY_CONVENOR"];
 
 const FILTERS = ["All", "Committee", "Members"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -206,15 +208,13 @@ export function MembersDirectory({
                   subtitle={section.subtitle}
                   count={people.length}
                 >
-                  <div
-                    className={
-                      section.wide
-                        ? "grid gap-4 md:grid-cols-2"
-                        : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                    }
-                  >
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {people.map((m) => (
-                      <MemberCard key={m.id} member={m} prominent={section.wide} />
+                      <MemberCard
+                        key={m.id}
+                        member={m}
+                        prominent={m.clubRole !== null && HIGHLIGHTED.includes(m.clubRole)}
+                      />
                     ))}
                   </div>
                 </SectionGroup>
