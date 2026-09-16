@@ -1,5 +1,7 @@
 package com.cpclub.backend.event.service;
 
+import com.cpclub.backend.event.entity.EventWinner;
+import com.cpclub.backend.event.dto.SetEventWinnersRequest;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.event.dto.AddEventPhotoRequest;
@@ -61,13 +63,18 @@ public class EventService {
                 .eventDate(request.eventDate())
                 .location(request.location())
                 .coverImageUrl(request.coverImageUrl())
+                .codeforcesContestUrl(trimToNull(request.codeforcesContestUrl()))
+                .showContestLink(request.showContestLink())
+                .showWinners(request.showWinners())
+                .showAttendeeCount(request.showAttendeeCount())
                 .status(EventStatus.UPCOMING)
                 .createdBy(admin)
                 .build();
 
         Event saved = eventRepository.save(event);
         log.info("Created event id {} ('{}') by {}", saved.getId(), saved.getTitle(), adminEmail);
-        return EventResponseDto.fromEntity(saved);
+        // Only an admin can reach this, so the created event comes back unredacted.
+        return EventResponseDto.fromEntity(saved, true);
     }
 
     /**
@@ -76,10 +83,10 @@ public class EventService {
      * @return upcoming events
      */
     @Transactional(readOnly = true)
-    public List<EventResponseDto> listUpcomingEvents() {
+    public List<EventResponseDto> listUpcomingEvents(boolean viewerIsAdmin) {
         return eventRepository.findByStatusOrderByEventDateAsc(EventStatus.UPCOMING)
                 .stream()
-                .map(EventResponseDto::fromEntity)
+                .map(event -> EventResponseDto.fromEntity(event, viewerIsAdmin))
                 .toList();
     }
 
@@ -93,10 +100,10 @@ public class EventService {
      * @return completed events
      */
     @Transactional(readOnly = true)
-    public List<EventResponseDto> listCompletedEvents() {
+    public List<EventResponseDto> listCompletedEvents(boolean viewerIsAdmin) {
         return eventRepository.findByStatusInOrderByEventDateDesc(List.of(EventStatus.COMPLETED))
                 .stream()
-                .map(EventResponseDto::fromEntity)
+                .map(event -> EventResponseDto.fromEntity(event, viewerIsAdmin))
                 .toList();
     }
 
@@ -107,9 +114,10 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public List<EventResponseDto> listAllEvents() {
+        // Admin-only endpoint, so nothing is withheld.
         return eventRepository.findAllByOrderByEventDateDesc()
                 .stream()
-                .map(EventResponseDto::fromEntity)
+                .map(event -> EventResponseDto.fromEntity(event, true))
                 .toList();
     }
 
@@ -121,7 +129,7 @@ public class EventService {
      * @throws ResourceNotFoundException if the event does not exist
      */
     @Transactional(readOnly = true)
-    public EventDetailDto getEventDetail(Long id) {
+    public EventDetailDto getEventDetail(Long id, boolean viewerIsAdmin) {
         Event event = requireEvent(id);
 
         List<EventPhotoDto> photos = eventPhotoRepository.findByEventIdOrderByUploadedAtAsc(id)
@@ -130,7 +138,7 @@ public class EventService {
                 .toList();
 
         long attendeeCount = eventAttendeeRepository.countByEventId(id);
-        return EventDetailDto.of(event, photos, (int) attendeeCount);
+        return EventDetailDto.of(event, photos, (int) attendeeCount, viewerIsAdmin);
     }
 
     /**
@@ -155,10 +163,14 @@ public class EventService {
         event.setEventDate(request.eventDate());
         event.setLocation(request.location());
         event.setCoverImageUrl(request.coverImageUrl());
+        event.setCodeforcesContestUrl(trimToNull(request.codeforcesContestUrl()));
+        event.setShowContestLink(request.showContestLink());
+        event.setShowWinners(request.showWinners());
+        event.setShowAttendeeCount(request.showAttendeeCount());
 
         Event saved = eventRepository.save(event);
         log.info("Updated event id {}", id);
-        return EventResponseDto.fromEntity(saved);
+        return EventResponseDto.fromEntity(saved, true);
     }
 
     /**
@@ -177,7 +189,7 @@ public class EventService {
         event.setStatus(EventStatus.COMPLETED);
         Event saved = eventRepository.save(event);
         log.info("Marked event id {} as completed", id);
-        return EventResponseDto.fromEntity(saved);
+        return EventResponseDto.fromEntity(saved, true);
     }
 
     /**
@@ -193,7 +205,7 @@ public class EventService {
         event.setStatus(EventStatus.CANCELLED);
         Event saved = eventRepository.save(event);
         log.info("Cancelled event id {}", id);
-        return EventResponseDto.fromEntity(saved);
+        return EventResponseDto.fromEntity(saved, true);
     }
 
     // ── Attendance ────────────────────────────────────────────────────────────
@@ -365,6 +377,78 @@ public class EventService {
      * @return the event
      * @throws ResourceNotFoundException if it does not exist
      */
+    /**
+     * Replaces an event's podium.
+     *
+     * <p>The whole podium is set at once because the rules worth enforcing are
+     * between the placings: no two firsts, and nobody standing in two places.
+     * Those cannot be checked one placing at a time. An empty list clears it,
+     * which is how a mistake gets undone.</p>
+     *
+     * <p>Winners must already be recorded as attending. Announcing somebody who
+     * was never marked present is nearly always a mis-click on a name that
+     * looked right in a dropdown, and it is cheap to refuse here and expensive
+     * to notice once it is on the public page.</p>
+     *
+     * @param eventId event identifier
+     * @param request the placings, at most three
+     * @return the event's detail view, unredacted
+     * @throws ResourceNotFoundException if the event does not exist
+     * @throws BadRequestException if a placing or a winner is repeated, or a
+     *                             winner did not attend
+     */
+    @Transactional
+    public EventDetailDto setWinners(Long eventId, SetEventWinnersRequest request) {
+        Event event = requireEvent(eventId);
+        List<SetEventWinnersRequest.Winner> placings = request.winners();
+
+        if (placings.stream().map(SetEventWinnersRequest.Winner::position).distinct().count()
+                != placings.size()) {
+            throw new BadRequestException("Each placing can only be awarded once.");
+        }
+
+        if (placings.stream().map(SetEventWinnersRequest.Winner::userId).distinct().count()
+                != placings.size()) {
+            throw new BadRequestException("A member cannot hold two placings in the same event.");
+        }
+
+        // Cleared and rebuilt rather than diffed. orphanRemoval turns this into
+        // the delete-then-insert it would have to be anyway, and a podium is at
+        // most three rows.
+        event.getWinners().clear();
+
+        for (SetEventWinnersRequest.Winner placing : placings) {
+            if (!eventAttendeeRepository.existsByEventIdAndUserId(eventId, placing.userId())) {
+                throw new BadRequestException(
+                        "Winners must be recorded as attending the event. Add them to the attendance list first.");
+            }
+
+            User winner = userRepository.findById(placing.userId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "User not found with id: " + placing.userId()));
+
+            event.getWinners().add(EventWinner.builder()
+                    .event(event)
+                    .user(winner)
+                    .position(placing.position())
+                    .build());
+        }
+
+        eventRepository.save(event);
+        log.info("Set {} winner(s) on event id {}", placings.size(), eventId);
+
+        return getEventDetail(eventId, true);
+    }
+
+    /** Blank input means "not set", so it is stored as absent rather than as "". */
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private Event requireEvent(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));

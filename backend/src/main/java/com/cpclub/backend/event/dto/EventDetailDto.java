@@ -7,26 +7,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Public view of a single event, with its gallery and headcount.
+ * One event's full public page.
  *
- * <p>Composes {@link EventResponseDto} rather than extending it — a record cannot
- * be extended — and builds itself from one, so the list and detail shapes cannot
- * drift apart.</p>
+ * <p>Three things are gated independently, each by its own switch, because the
+ * club announces them at different moments: the contest link often goes out as
+ * the round opens, the winners cannot exist until it closes, and the turnout
+ * figure is sometimes never published. Until a switch is on, the field is absent
+ * -- not sent and hidden, but absent.</p>
  *
- * <p>Carries the attendee <em>count</em> and not the attendees. The list includes
- * phone numbers and is admin-only; the count is what a public page shows.</p>
+ * <p>Title, date, location, description and photos are never gated. That is what
+ * an event is before it has results, and it is what a workshop stays.</p>
  *
- * @param id event identifier
- * @param title event name
- * @param description long-form details
- * @param eventDate when it runs
- * @param location where it runs
- * @param status upcoming, completed or cancelled
- * @param coverImageUrl card image
- * @param createdByName display name of the admin who created it
- * @param createdAt creation timestamp
- * @param photos the event gallery, in upload order
- * @param attendeeCount how many members attended
+ * @param winners the podium, empty when unpublished or when nobody was recorded
+ * @param attendeeCount how many attended, or null when unpublished
  */
 public record EventDetailDto(
         Long id,
@@ -36,33 +29,55 @@ public record EventDetailDto(
         String location,
         EventStatus status,
         String coverImageUrl,
+        String codeforcesContestUrl,
+        boolean showContestLink,
+        boolean showWinners,
+        boolean showAttendeeCount,
         String createdByName,
         LocalDateTime createdAt,
         List<EventPhotoDto> photos,
+        List<EventWinnerDto> winners,
         Integer attendeeCount
 ) {
+
     /**
-     * Combines an event with its gallery and headcount.
+     * Builds the detail view.
      *
-     * @param event persisted event
-     * @param photos the event photos
-     * @param attendeeCount number of attendees recorded
-     * @return detail projection
+     * @param event the event, with its winners loaded
+     * @param photos the event's gallery
+     * @param attendeeCount the real attendance figure
+     * @param viewerIsAdmin whether the caller holds ROLE_ADMIN, who sees
+     *                      everything regardless of the switches
      */
-    public static EventDetailDto of(Event event, List<EventPhotoDto> photos, Integer attendeeCount) {
-        EventResponseDto base = EventResponseDto.fromEntity(event);
+    public static EventDetailDto of(
+            Event event,
+            List<EventPhotoDto> photos,
+            Integer attendeeCount,
+            boolean viewerIsAdmin) {
+
+        List<EventWinnerDto> podium = viewerIsAdmin || event.isShowWinners()
+                ? event.getWinners().stream().map(EventWinnerDto::fromEntity).toList()
+                : List.of();
+
+        Integer visibleCount = viewerIsAdmin || event.isShowAttendeeCount() ? attendeeCount : null;
+
         return new EventDetailDto(
-                base.id(),
-                base.title(),
-                base.description(),
-                base.eventDate(),
-                base.location(),
-                base.status(),
-                base.coverImageUrl(),
-                base.createdByName(),
-                base.createdAt(),
+                event.getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getEventDate(),
+                event.getLocation(),
+                event.getStatus(),
+                event.getCoverImageUrl(),
+                EventResponseDto.visibleContestUrl(event, viewerIsAdmin),
+                event.isShowContestLink(),
+                event.isShowWinners(),
+                event.isShowAttendeeCount(),
+                event.getCreatedBy() != null ? event.getCreatedBy().getName() : null,
+                event.getCreatedAt(),
                 photos,
-                attendeeCount
+                podium,
+                visibleCount
         );
     }
 }

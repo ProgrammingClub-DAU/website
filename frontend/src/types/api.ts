@@ -170,13 +170,38 @@ export interface Event {
   location: string;
   status: EventStatus;
   coverImageUrl: string | null;
+  /**
+   * The contest this event ran on.
+   *
+   * Null means either there is no contest -- a workshop, a talk -- or there is
+   * one the club has not published yet. The public cannot tell those apart, and
+   * should not be able to: that is what the switch is for.
+   */
+  codeforcesContestUrl: string | null;
+  /** Publication state, not content. Sent to everyone; the admin panel's switches. */
+  showContestLink: boolean;
+  showWinners: boolean;
+  showAttendeeCount: boolean;
   createdByName: string;
   createdAt: string;
 }
 
+/** One placing on an event's podium. */
+export interface EventWinner {
+  position: number;
+  userId: number;
+  name: string;
+  avatarUrl: string | null;
+  codeforcesHandle: string | null;
+  rating: number | null;
+}
+
 export interface EventDetail extends Event {
   photos: EventPhoto[];
-  attendeeCount: number;
+  /** Empty when unpublished, or when no podium was recorded. */
+  winners: EventWinner[];
+  /** Null when the turnout has not been published -- not zero, which would be a claim. */
+  attendeeCount: number | null;
 }
 
 export interface EventPhoto {

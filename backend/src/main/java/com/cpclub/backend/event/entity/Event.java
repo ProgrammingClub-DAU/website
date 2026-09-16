@@ -1,6 +1,8 @@
 package com.cpclub.backend.event.entity;
 
 import com.cpclub.backend.user.entity.User;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -52,6 +54,41 @@ public class Event {
     private String coverImageUrl;
 
     /**
+     * The Codeforces contest this event ran on, if it ran on one.
+     *
+     * <p>Its presence is what makes an event a contest as far as the public
+     * page is concerned: an event with no link shows title, date, place,
+     * description and photos, and nothing about results. A workshop is not an
+     * event with an empty podium, it is an event with no podium.</p>
+     */
+    @Column(name = "codeforces_contest_url", length = 512)
+    private String codeforcesContestUrl;
+
+    /**
+     * What the public may see of the results, decided per item.
+     *
+     * <p>Three switches rather than one, because the club announces these at
+     * different moments: the contest link often goes out as the round opens,
+     * the winners cannot be known until it closes, and the turnout figure is
+     * sometimes not published at all.</p>
+     *
+     * <p>All default to false, so a new event reveals nothing until somebody
+     * decides it should. Admins always see the real values -- these gate the
+     * public projection, not the record.</p>
+     */
+    @Builder.Default
+    @Column(name = "show_contest_link", nullable = false)
+    private boolean showContestLink = false;
+
+    @Builder.Default
+    @Column(name = "show_winners", nullable = false)
+    private boolean showWinners = false;
+
+    @Builder.Default
+    @Column(name = "show_attendee_count", nullable = false)
+    private boolean showAttendeeCount = false;
+
+    /**
      * The admin who created this event. Lazy: event listings render title, date,
      * and location only, so eager-loading the creator would add one join per row
      * for a field the public pages never show.
@@ -72,6 +109,19 @@ public class Event {
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
     @Builder.Default
     private List<EventPhoto> photos = new ArrayList<>();
+
+    /**
+     * The podium, at most three rows.
+     *
+     * <p>Cascaded and orphan-removing, unlike photos: setting an event's
+     * winners is a single replace-the-podium operation, so the old rows should
+     * go when they leave this list rather than being deleted by hand.</p>
+     */
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    @Builder.Default
+    private List<EventWinner> winners = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
