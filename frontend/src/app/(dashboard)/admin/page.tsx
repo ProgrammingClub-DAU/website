@@ -28,6 +28,7 @@ import {
   Plus,
   Trash2,
   Edit2,
+  RotateCcw,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -586,6 +587,41 @@ function EventsTab() {
     }
   };
 
+  /**
+   * Puts an event back to upcoming.
+   *
+   * Warns when results are still published, rather than silently switching them
+   * off. An admin reopening an event to fix its attendance has not asked to
+   * un-announce its winners, and quietly clearing settings they would have to
+   * rebuild is the worse surprise -- but an "Upcoming" event showing a podium is
+   * a contradiction they should get to resolve deliberately.
+   */
+  const handleReopenEvent = async (event: Event) => {
+    const published = [
+      event.showContestLink && "the contest link",
+      event.showWinners && "the winners",
+      event.showAttendeeCount && "the attendance count",
+    ].filter(Boolean) as string[];
+
+    if (published.length > 0) {
+      const proceed = window.confirm(
+        `This event still publishes ${published.join(", ")}. ` +
+          "Reopening does not hide them, so the public page will show results for an " +
+          "event listed as upcoming. Reopen anyway?"
+      );
+      if (!proceed) return;
+    }
+
+    try {
+      await eventsService.reopen(event.id);
+      setStatusMessage({ type: "success", text: "Event reopened. Attendance can be edited again." });
+      await fetchEvents();
+    } catch (err) {
+      console.error("Failed to reopen event:", err);
+      setStatusMessage({ type: "error", text: "Failed to reopen event." });
+    }
+  };
+
   const handleCancelEvent = async (id: number) => {
     const confirm = window.confirm("Are you sure you want to cancel this event?");
     if (!confirm) return;
@@ -717,6 +753,17 @@ function EventsTab() {
                 <XCircle className="size-4" />
               </button>
             </>
+          )}
+          {/* Completing an event freezes its attendance, so a mis-click used to
+              be unrecoverable. Cancelled events reopen the same way. */}
+          {e.status !== "UPCOMING" && (
+            <button
+              onClick={() => handleReopenEvent(e)}
+              title="Reopen event - puts it back to upcoming and unfreezes attendance"
+              className="rounded-control p-1 text-fg-muted hover:text-emerald-400"
+            >
+              <RotateCcw className="size-4" />
+            </button>
           )}
         </div>
       ),
