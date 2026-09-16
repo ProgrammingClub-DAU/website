@@ -89,10 +89,10 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users - Should return members directory (email-safe)")
     void shouldGetMembersDirectory() throws Exception {
-        PublicUserResponseDto u1 = new PublicUserResponseDto(1L, "Alice", "alice_cf", 1600, LocalDateTime.now());
+        PublicUserResponseDto u1 = publicDto(1L, "Alice", "alice_cf", 1600);
         PagedResponse<PublicUserResponseDto> paged = new PagedResponse<>(List.of(u1), 0, 20, 1L, 1, true);
 
-        when(userService.getMembersDirectoryPublic(null, 0, 20)).thenReturn(paged);
+        when(userService.getMembersDirectoryPublic(eq(null), eq(0), eq(20), anyBoolean())).thenReturn(paged);
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -103,9 +103,9 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Should return public profile when found (no email)")
     void shouldGetUserByIdWhenFound() throws Exception {
-        PublicUserResponseDto user = new PublicUserResponseDto(5L, "Charlie", "charlie_cf", 2000, LocalDateTime.now());
+        PublicUserResponseDto user = publicDto(5L, "Charlie", "charlie_cf", 2000);
 
-        when(userService.getPublicUserById(5L)).thenReturn(user);
+        when(userService.getPublicUserById(eq(5L), anyBoolean())).thenReturn(user);
 
         mockMvc.perform(get("/api/users/5"))
                 .andExpect(status().isOk())
@@ -119,7 +119,8 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Should return 404 Not Found when user does not exist")
     void shouldReturn404WhenUserNotFound() throws Exception {
-        when(userService.getPublicUserById(999L)).thenThrow(new ResourceNotFoundException("User not found with id: 999"));
+        when(userService.getPublicUserById(eq(999L), anyBoolean()))
+                .thenThrow(new ResourceNotFoundException("User not found with id: 999"));
 
         mockMvc.perform(get("/api/users/999"))
                 .andExpect(status().isNotFound())
@@ -247,5 +248,36 @@ class UserControllerTest {
                 role,
                 LocalDateTime.now(), LocalDateTime.now()
         );
+    }
+    @Test
+    @DisplayName("GET /api/users/team - Should return office bearers in hierarchy order")
+    void shouldGetTeamInHierarchyOrder() throws Exception {
+        // The order is the endpoint's contract: the page renders the list as it
+        // arrives rather than re-sorting, so a Convenor below a Core here is a
+        // Convenor below a Core on the site.
+        when(userService.getTeam(anyBoolean())).thenReturn(List.of(
+                publicDto(1L, "Convenor Person", "conv_cf", 1900),
+                publicDto(2L, "Core Person", "core_cf", 1700)));
+
+        mockMvc.perform(get("/api/users/team"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data[0].name", is("Convenor Person")))
+                .andExpect(jsonPath("$.data[1].name", is("Core Person")));
+    }
+
+    /** A public projection with only the fields these tests assert on. */
+    private PublicUserResponseDto publicDto(Long id, String name, String handle, Integer rating) {
+        return new PublicUserResponseDto(
+                id, name,
+                null,               // avatarUrl
+                null,               // clubRole
+                null,               // academicYear
+                handle, rating,
+                null, null,         // leetcodeHandle, leetcodeRating
+                null, null,         // codechefUrl, atcoderUrl
+                null, null,         // githubUrl, linkedinUrl
+                null,               // phoneNumber
+                LocalDateTime.now());
     }
 }

@@ -105,7 +105,11 @@ public class SecurityConfig {
                         // silently publish the roster. Listing the public paths keeps the
                         // filter chain deny-by-default: a new endpoint under /api/users
                         // requires a token until someone deliberately opens it.
-                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id:[0-9]+}").permitAll()
+                        // The site reads without an account: the members page, a member's
+                        // profile and the committee list are all open. "team" is matched
+                        // before the authenticated() catch-all below, and cannot collide
+                        // with the numeric {id} pattern beside it.
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()

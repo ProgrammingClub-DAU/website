@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
@@ -52,10 +53,47 @@ public class UserController {
     public ResponseEntity<ApiResponse<PagedResponse<PublicUserResponseDto>>> getMembersDirectory(
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            Authentication authentication
     ) {
-        PagedResponse<PublicUserResponseDto> response = userService.getMembersDirectoryPublic(query, page, size);
+        PagedResponse<PublicUserResponseDto> response =
+                userService.getMembersDirectoryPublic(query, page, size, isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched members directory successfully"));
+    }
+
+    /**
+     * The club's serving office bearers, in hierarchy order.
+     *
+     * <p>Public, and unpaginated on purpose: this is the committee the members
+     * page puts at the top, Convenor first, and it is a bounded list. The
+     * paginated {@code GET /api/users} remains the searchable full membership.</p>
+     *
+     * @param authentication the caller, or null when signed out
+     * @return office bearers ordered by post, then by name
+     */
+    @GetMapping("/team")
+    @Operation(summary = "Get the club's office bearers in hierarchy order - public")
+    public ResponseEntity<ApiResponse<List<PublicUserResponseDto>>> getTeam(Authentication authentication) {
+        List<PublicUserResponseDto> team = userService.getTeam(isAdmin(authentication));
+        return ResponseEntity.ok(ApiResponse.success(team, "Fetched club team successfully"));
+    }
+
+    /**
+     * Whether the caller holds ROLE_ADMIN.
+     *
+     * <p>Read from the authorities rather than from the JWT's role claim, because
+     * the authorities are re-read from the database on every request: an admin
+     * demoted a minute ago stops seeing members' phone numbers now, not when
+     * their token happens to expire.</p>
+     *
+     * @param authentication the caller, or null when signed out
+     * @return true only for a real, current admin
+     */
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                        .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
     }
 
     /**
@@ -87,8 +125,9 @@ public class UserController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get public user profile by ID — email-safe")
-    public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(@PathVariable Long id) {
-        PublicUserResponseDto user = userService.getPublicUserById(id);
+    public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(
+            @PathVariable Long id, Authentication authentication) {
+        PublicUserResponseDto user = userService.getPublicUserById(id, isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(user, "Fetched user successfully"));
     }
 

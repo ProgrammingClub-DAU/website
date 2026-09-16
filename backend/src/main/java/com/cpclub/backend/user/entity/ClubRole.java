@@ -18,30 +18,68 @@ package com.cpclub.backend.user.entity;
  * migration will fail the insert at runtime, not at startup.</p>
  */
 public enum ClubRole {
+
     /** Club head. */
-    CONVENOR,
+    CONVENOR(1, true),
 
     /** Second to the Convenor. */
-    DEPUTY_CONVENOR,
+    DEPUTY_CONVENOR(2, true),
 
     /** Core team member, running club operations. */
-    CORE,
+    CORE(3, true),
 
     /** Associate of the core team, typically a junior appointment. */
-    ASSOCIATE_CORE,
+    ASSOCIATE_CORE(4, true),
 
     /** Represents a particular admission batch. */
-    BATCH_REPRESENTATIVE,
+    BATCH_REPRESENTATIVE(5, true),
 
     /** Former Programming Club member. */
-    EX_PC_MEMBER,
+    EX_PC_MEMBER(6, false),
 
     /** Former core team member. */
-    EX_CORE,
+    EX_CORE(7, false),
 
     /** Former Career Development Cell member. */
-    EX_CDC,
+    EX_CDC(8, false),
 
     /** Ordinary member holding no club post. */
-    STUDENT
+    STUDENT(9, false);
+
+    private final int hierarchyRank;
+    private final boolean officeBearer;
+
+    ClubRole(int hierarchyRank, boolean officeBearer) {
+        this.hierarchyRank = hierarchyRank;
+        this.officeBearer = officeBearer;
+    }
+
+    /**
+     * Where this post sits in the club, lowest number first.
+     *
+     * <p>Stated explicitly rather than taken from {@link #ordinal()}. The two
+     * agree today, but ordinal is a property of the declaration order, so
+     * inserting a constant in the middle -- the obvious way to add a new post --
+     * would silently reshuffle the public members page. This number is the
+     * club's hierarchy, and changing it should be a decision, not a side effect.</p>
+     *
+     * @return the sort key for the members page
+     */
+    public int hierarchyRank() {
+        return hierarchyRank;
+    }
+
+    /**
+     * Whether this post is a current, public position in the club.
+     *
+     * <p>Drives two things that happen to coincide: who appears on the public
+     * members page, and whose phone number is public. Both follow from the same
+     * fact -- someone holding a club post is a point of contact for it, and is
+     * listed as one. Past members and ordinary students are neither.</p>
+     *
+     * @return true for the five serving posts
+     */
+    public boolean isOfficeBearer() {
+        return officeBearer;
+    }
 }
