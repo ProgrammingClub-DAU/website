@@ -38,6 +38,27 @@ public record EventCreateRequest(
         String location,
 
         @Size(max = 512, message = "Cover image URL must be at most 512 characters")
-        String coverImageUrl
+        String coverImageUrl,
+
+        /**
+         * The Codeforces contest this event runs on, if any.
+         *
+         * <p>Optional, and its absence is meaningful: an event with no contest
+         * is a workshop or a talk, and its public page shows no results section
+         * at all rather than an empty one.</p>
+         */
+        @Size(max = 512, message = "Contest URL must be at most 512 characters")
+        String codeforcesContestUrl,
+
+        /**
+         * What the public may see, decided per item.
+         *
+         * <p>Primitive booleans, so an omitted field is false. That is the safe
+         * default in both directions: a create with no flags publishes nothing,
+         * and an update that forgets one hides rather than reveals.</p>
+         */
+        boolean showContestLink,
+        boolean showWinners,
+        boolean showAttendeeCount
 ) {
 }

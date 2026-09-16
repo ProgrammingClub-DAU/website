@@ -1,5 +1,7 @@
 package com.cpclub.backend.event.controller;
 
+import org.springframework.security.core.Authentication;
+import com.cpclub.backend.event.dto.SetEventWinnersRequest;
 import com.cpclub.backend.common.dto.ApiResponse;
 import com.cpclub.backend.event.dto.AddAttendeeRequest;
 import com.cpclub.backend.event.dto.AddEventPhotoRequest;
@@ -82,8 +84,9 @@ public class EventController {
      */
     @GetMapping("/upcoming")
     @Operation(summary = "List upcoming events")
-    public ResponseEntity<ApiResponse<List<EventResponseDto>>> listUpcomingEvents() {
-        List<EventResponseDto> events = eventService.listUpcomingEvents();
+    public ResponseEntity<ApiResponse<List<EventResponseDto>>> listUpcomingEvents(
+            Authentication authentication) {
+        List<EventResponseDto> events = eventService.listUpcomingEvents(isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(events, "Fetched upcoming events successfully"));
     }
 
@@ -94,8 +97,9 @@ public class EventController {
      */
     @GetMapping("/completed")
     @Operation(summary = "List completed events")
-    public ResponseEntity<ApiResponse<List<EventResponseDto>>> listCompletedEvents() {
-        List<EventResponseDto> events = eventService.listCompletedEvents();
+    public ResponseEntity<ApiResponse<List<EventResponseDto>>> listCompletedEvents(
+            Authentication authentication) {
+        List<EventResponseDto> events = eventService.listCompletedEvents(isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(events, "Fetched completed events successfully"));
     }
 
@@ -123,9 +127,50 @@ public class EventController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get one event with photos and attendee count")
-    public ResponseEntity<ApiResponse<EventDetailDto>> getEventDetail(@PathVariable Long id) {
-        EventDetailDto event = eventService.getEventDetail(id);
+    public ResponseEntity<ApiResponse<EventDetailDto>> getEventDetail(
+            @PathVariable Long id, Authentication authentication) {
+        EventDetailDto event = eventService.getEventDetail(id, isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(event, "Fetched event successfully"));
+    }
+
+    /**
+     * Sets an event's podium, replacing whatever was there.
+     *
+     * <p>Winners are identified by member id and must already be recorded as
+     * attending. Sending an empty list clears the podium.</p>
+     *
+     * <p>Setting winners does not publish them: that is the {@code showWinners}
+     * switch on the event itself. The club records a result as soon as it knows
+     * one and announces it when it chooses.</p>
+     *
+     * @param id event identifier
+     * @param request the placings
+     * @return the event's detail view, unredacted
+     */
+    @PutMapping("/{id}/winners")
+    @Operation(summary = "Set an event's top three (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EventDetailDto>> setWinners(
+            @PathVariable Long id,
+            @Valid @RequestBody SetEventWinnersRequest request) {
+        EventDetailDto event = eventService.setWinners(id, request);
+        return ResponseEntity.ok(ApiResponse.success(event, "Winners updated successfully"));
+    }
+
+    /**
+     * Whether the caller holds ROLE_ADMIN.
+     *
+     * <p>Read from the authorities, which the JWT filter re-reads from the
+     * database on every request, rather than from the token's role claim.</p>
+     *
+     * @param authentication the caller, or null when signed out
+     * @return true only for a real, current admin
+     */
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                        .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
     }
 
     /**
