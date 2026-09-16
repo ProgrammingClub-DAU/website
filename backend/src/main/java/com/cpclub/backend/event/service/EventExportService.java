@@ -16,14 +16,24 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * Renders an event's attendance list as an .xlsx workbook.
+ * Builds an event's attendance sheet.
  *
- * <p>The club uses this sheet outside the site — mailing lists, certificates,
- * reports to the department — so the columns are the whole member record rather
- * than the few fields the admin table shows.</p>
+ * <p>Six columns, and deliberately not the whole member record: the sheet is
+ * shared with the department and with faculty, so it carries what an attendance
+ * register needs and nothing else -- no phone numbers, no social links, no
+ * ratings.</p>
+ *
+ * <p>Two things consume this. {@link #exportToExcel} produces the .xlsx download,
+ * and {@link #toSheetRows} produces the same grid as plain text for the browser
+ * to write into Google Sheets. Both go through {@code toSheetRows}, so the two
+ * exports cannot drift into disagreeing about what the attendance sheet is --
+ * which is exactly what would happen if the Sheets version reimplemented the
+ * column rules in TypeScript.</p>
  */
 @Service
 @Slf4j
@@ -33,9 +43,9 @@ public class EventExportService {
      * Column headers, in order.
      *
      * <p>The array is the single definition of both the header row and the column
-     * count: the writer below indexes cells off it, so adding a column here and
-     * forgetting the corresponding value would be a visible blank rather than a
-     * silent misalignment of every later column.</p>
+     * count: the row builder below emits one value per header, so adding a column
+     * here and forgetting the corresponding value would be a visible blank rather
+     * than a silent misalignment of every later column.</p>
      */
     private static final String[] HEADERS = {
             "Name", "Codeforces Profile", "Email", "Student ID", "Year", "Added At"
@@ -46,24 +56,59 @@ public class EventExportService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     /**
-     * Builds the workbook.
+     * The attendance sheet as a grid of strings, header row first.
+     *
+     * <p>Everything is text, including the timestamp. A sheet that is read rather
+     * than calculated with is better off saying exactly what was stored than
+     * letting each client guess a date format.</p>
+     *
+     * <p>Missing values are the empty string, never null: this grid is serialized
+     * to JSON for the browser, and a null there becomes a gap the Google Sheets
+     * API would silently skip, shifting every later column left.</p>
+     *
+     * @param attendees the event's attendance list, in display order
+     * @return the header row followed by one row per attendee
+     */
+    public List<List<String>> toSheetRows(List<EventAttendeeDto> attendees) {
+        List<List<String>> rows = new ArrayList<>(attendees.size() + 1);
+        rows.add(Arrays.asList(HEADERS));
+
+        for (EventAttendeeDto attendee : attendees) {
+            rows.add(rowFor(attendee));
+        }
+
+        return rows;
+    }
+
+    /**
+     * Builds the .xlsx download.
      *
      * @param attendees the event's attendance list, in display order
      * @return the .xlsx file as bytes
      * @throws UncheckedIOException if the workbook cannot be serialized
      */
     public byte[] exportToExcel(List<EventAttendeeDto> attendees) {
+        List<List<String>> rows = toSheetRows(attendees);
+
         // try-with-resources on both: a workbook holds native buffers, and leaking
         // one per export is a slow memory leak in a long-running server.
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Attendees");
-            writeHeaderRow(workbook, sheet);
+            CellStyle headerStyle = boldStyle(workbook);
 
-            int rowIndex = 1;
-            for (EventAttendeeDto attendee : attendees) {
-                writeAttendeeRow(sheet.createRow(rowIndex++), attendee);
+            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+                Row row = sheet.createRow(rowIndex);
+                List<String> values = rows.get(rowIndex);
+
+                for (int column = 0; column < values.size(); column++) {
+                    Cell cell = row.createCell(column);
+                    cell.setCellValue(values.get(column));
+                    if (rowIndex == 0) {
+                        cell.setCellStyle(headerStyle);
+                    }
+                }
             }
 
             for (int i = 0; i < HEADERS.length; i++) {
@@ -84,109 +129,65 @@ public class EventExportService {
     }
 
     /**
-     * Writes the bold header row.
+     * One attendee, in column order.
      *
-     * @param workbook workbook being built, needed to create the font
-     * @param sheet sheet to write into
+     * @param attendee the attendee
+     * @return one value per header, empty strings for what is missing
      */
-    private void writeHeaderRow(Workbook workbook, Sheet sheet) {
-        Font bold = workbook.createFont();
-        bold.setBold(true);
-        CellStyle headerStyle = workbook.createCellStyle();
-        headerStyle.setFont(bold);
-
-        Row header = sheet.createRow(0);
-        for (int i = 0; i < HEADERS.length; i++) {
-            Cell cell = header.createCell(i);
-            cell.setCellValue(HEADERS[i]);
-            cell.setCellStyle(headerStyle);
-        }
+    private List<String> rowFor(EventAttendeeDto attendee) {
+        return List.of(
+                orEmpty(attendee.name()),
+                codeforcesProfile(attendee.codeforcesHandle()),
+                orEmpty(attendee.email()),
+                studentId(attendee.email()),
+                yearLabel(attendee.academicYear()),
+                attendee.addedAt() != null ? ADDED_AT_FORMAT.format(attendee.addedAt()) : ""
+        );
     }
 
-    /**
-     * Writes one attendee.
-     *
-     * <p>Nulls are written as empty cells rather than the string "null", which is
-     * what {@code setCellValue} on a null-valued getter would otherwise produce for
-     * every member who has not linked an account.</p>
-     *
-     * @param row row to fill
-     * @param attendee the attendee
-     */
-    private void writeAttendeeRow(Row row, EventAttendeeDto attendee) {
-        int column = 0;
-        writeText(row, column++, attendee.name());
-        writeText(row, column++, codeforcesProfile(attendee.codeforcesHandle()));
-        writeText(row, column++, attendee.email());
-        writeText(row, column++, studentId(attendee.email()));
-        writeText(row, column++, yearLabel(attendee.academicYear()));
-        writeText(row, column, attendee.addedAt() != null
-                ? ADDED_AT_FORMAT.format(attendee.addedAt())
-                : null);
+    private CellStyle boldStyle(Workbook workbook) {
+        Font bold = workbook.createFont();
+        bold.setBold(true);
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(bold);
+        return style;
     }
 
     /**
      * The student ID, taken from the part of the address before the @.
      *
-     * <p>Members sign up with their university address, so 202401226@dau.ac.in
+     * <p>Members sign in with their university address, so 202401226@dau.ac.in
      * carries the ID the department files attendance under. An address in another
      * shape has no student ID to report, and leaves the cell blank rather than
      * inventing one.</p>
      *
      * @param email the member's address
-     * @return the local part, or null when there is nothing usable
+     * @return the local part, or an empty string when there is nothing usable
      */
     private String studentId(String email) {
         if (email == null) {
-            return null;
+            return "";
         }
         int at = email.indexOf('@');
-        if (at <= 0) {
-            return null;
-        }
-        return email.substring(0, at);
+        return at <= 0 ? "" : email.substring(0, at);
     }
 
     /** A clickable profile rather than a bare handle, since this sheet gets shared. */
     private String codeforcesProfile(String handle) {
         return handle == null || handle.isBlank()
-                ? null
+                ? ""
                 : "https://codeforces.com/profile/" + handle.trim();
     }
 
     /** Words rather than the enum name, because people read this sheet. */
     private String yearLabel(AcademicYear year) {
         if (year == null) {
-            return null;
+            return "";
         }
         return year == AcademicYear.FIRST_YEAR ? "1st year" : "2nd year onwards";
     }
 
-    /**
-     * Writes a string, leaving the cell blank when the value is absent.
-     *
-     * @param row row to write into
-     * @param column zero-based column index
-     * @param value value, possibly null
-     */
-    private void writeText(Row row, int column, String value) {
-        Cell cell = row.createCell(column);
-        if (value != null) {
-            cell.setCellValue(value);
-        }
-    }
-
-    /**
-     * Writes a number as a number, so the sheet can sort and total it.
-     *
-     * @param row row to write into
-     * @param column zero-based column index
-     * @param value value, possibly null
-     */
-    private void writeNumber(Row row, int column, Integer value) {
-        Cell cell = row.createCell(column);
-        if (value != null) {
-            cell.setCellValue(value);
-        }
+    private String orEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

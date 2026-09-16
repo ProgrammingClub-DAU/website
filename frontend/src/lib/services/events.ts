@@ -84,6 +84,22 @@ export const eventsService = {
       responseType: "blob",
     }),
 
+  /**
+   * The attendance sheet as plain rows, header first.
+   *
+   * Comes from the server rather than being assembled here, even though the
+   * browser already has the attendee list: the column rules -- student ID out of
+   * the address, the Codeforces link, the year in words -- are defined once in
+   * EventExportService and tested there. Rebuilding them in TypeScript would let
+   * the Google Sheet and the .xlsx quietly disagree.
+   */
+  getAttendanceSheetRows: async (eventId: number): Promise<string[][]> => {
+    const response = await apiClient.get<ApiResponse<string[][]>>(
+      `/api/events/${eventId}/attendees/sheet`
+    );
+    return response.data.data;
+  },
+
   addEventPhoto: async (eventId: number, data: EventPhotoRequest): Promise<EventPhoto> => {
     const response = await apiClient.post<ApiResponse<EventPhoto>>(
       `/api/events/${eventId}/photos`,

@@ -231,6 +231,31 @@ public class EventController {
     }
 
     /**
+     * The attendance sheet as plain rows, for the browser to write into Google
+     * Sheets.
+     *
+     * <p>Same six columns as the .xlsx download, built by the same code, so the
+     * two exports cannot come to disagree about what an attendance sheet is.
+     * The first row is the header.</p>
+     *
+     * <p>The server does not talk to Google here. The admin's browser holds a
+     * short-lived token for their own Drive and creates the spreadsheet itself,
+     * which keeps a service-account key off this box and keeps Google's client
+     * libraries out of a 512 MB heap.</p>
+     *
+     * @param id event identifier
+     * @return header row followed by one row per attendee
+     */
+    @GetMapping("/{id}/attendees/sheet")
+    @Operation(summary = "Attendance rows for a Google Sheets export (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<List<String>>>> getAttendanceSheetRows(@PathVariable Long id) {
+        List<EventAttendeeDto> attendees = eventService.getAttendees(id);
+        List<List<String>> rows = eventExportService.toSheetRows(attendees);
+        return ResponseEntity.ok(ApiResponse.success(rows, "Fetched attendance rows successfully"));
+    }
+
+    /**
      * Downloads the attendance list as a spreadsheet.
      *
      * <p>Returns the bytes directly rather than wrapping them in

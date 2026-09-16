@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/auth";
 import { eventsService } from "@/lib/services/events";
+import {
+  prepareSheetExport,
+  createSpreadsheet,
+  GoogleSheetExportError,
+  type SheetExporter,
+} from "@/lib/google-sheets";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import type { EventDetail, EventAttendee, UserLookup } from "@/types/api";
@@ -14,6 +20,8 @@ import {
   Search,
   UserPlus,
   FileSpreadsheet,
+  Table2,
+  ExternalLink,
   Trash2,
   AlertTriangle,
   CheckCircle2,
@@ -45,7 +53,18 @@ export default function EventAttendeesPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingSheet, setIsExportingSheet] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  /**
+   * Google's token client, made ready on mount rather than on click.
+   *
+   * Asking for a token opens a popup, and a browser only allows that while a
+   * click is still fresh. Loading Google's script at click time would spend that
+   * allowance on the download and get the popup blocked.
+   */
+  const sheetExporterRef = useRef<SheetExporter | null>(null);
 
   // Filter attendees state
   const [attendeeFilter, setAttendeeFilter] = useState("");
@@ -155,6 +174,73 @@ export default function EventAttendeesPage() {
     } catch (err) {
       console.error("Failed to remove attendee:", err);
       setStatusMessage({ type: "error", text: "Failed to remove attendee." });
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    prepareSheetExport()
+      .then((client) => {
+        if (!cancelled) sheetExporterRef.current = client;
+      })
+      // Silent: the Excel download still works, and the Sheets button reports
+      // the problem itself if somebody actually presses it.
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * Builds the attendance sheet in the admin's own Google Drive.
+   *
+   * The rows are fetched and the token requested in the same tick, deliberately.
+   * Awaiting the rows first would let the click's popup allowance expire before
+   * Google was asked for consent.
+   */
+  const handleExportToSheets = async () => {
+    if (!eventId) return;
+
+    const exporter = sheetExporterRef.current;
+    if (!exporter) {
+      setStatusMessage({
+        type: "error",
+        text: "Google is still loading, or could not be reached. Reload the page and try again.",
+      });
+      return;
+    }
+
+    setStatusMessage(null);
+    setSheetUrl(null);
+    setIsExportingSheet(true);
+
+    try {
+      const rowsPromise = eventsService.getAttendanceSheetRows(eventId);
+      const token = await exporter.requestToken();
+      const rows = await rowsPromise;
+
+      const title = `${event?.title ?? "Event"} - Attendees`;
+      const url = await createSpreadsheet(token, title, rows);
+
+      setSheetUrl(url);
+      setStatusMessage({ type: "success", text: "Sheet created in your Google Drive." });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      // GoogleSheetExportError messages are written for the person reading them
+      // -- popup blocked, Sheets API off, consent declined -- so they are shown
+      // as they are rather than replaced with something generic.
+      const text =
+        err instanceof GoogleSheetExportError
+          ? err.message
+          : "Could not create the Google Sheet. Please try again.";
+      if (!(err instanceof GoogleSheetExportError)) {
+        console.error("Google Sheets export error:", err);
+      }
+      setStatusMessage({ type: "error", text });
+    } finally {
+      setIsExportingSheet(false);
     }
   };
 
@@ -364,6 +450,15 @@ export default function EventAttendeesPage() {
                 {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <FileSpreadsheet className="size-3.5" />}
                 Export to Excel
               </button>
+              <button
+                onClick={handleExportToSheets}
+                disabled={isExportingSheet || attendees.length === 0}
+                title="Creates a new spreadsheet in your own Google Drive"
+                className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:border-primary hover:text-primary disabled:opacity-50 transition-colors"
+              >
+                {isExportingSheet ? <Loader2 className="size-3.5 animate-spin" /> : <Table2 className="size-3.5" />}
+                Google Sheets
+              </button>
             </div>
           </div>
         ) : null}
@@ -377,7 +472,19 @@ export default function EventAttendeesPage() {
               : "border-red-500/30 bg-red-500/10 text-red-400"
           }`}
         >
-          <span>{statusMessage.text}</span>
+          <span className="flex items-center gap-3">
+            {statusMessage.text}
+            {sheetUrl && (
+              <a
+                href={sheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
+              >
+                Open it <ExternalLink className="size-3" />
+              </a>
+            )}
+          </span>
           <button onClick={() => setStatusMessage(null)}>
             <XCircle className="size-4" />
           </button>
