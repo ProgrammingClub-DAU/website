@@ -29,3 +29,8 @@ app:
     # startup guard in JwtUtils now rejects outright.
     secret: test-only-signing-key-not-used-anywhere-outside-this-suite-0123456789
     expiration-ms: 86400000
+  google:
+    # Test-only. No token is ever verified against Google in this suite: the
+    # decoder is mocked, and this value exists so the context can start.
+    client-id: test-only-client-id.apps.googleusercontent.com
+    allowed-domain: dau.ac.in

@@ -56,9 +56,17 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentialsException(BadCredentialsException ex) {
+        // The message is shown to the member. Sign-in is Google-only and the one
+        // thing that goes wrong in practice -- signing in with a personal account
+        // instead of the university one -- is only fixable if we say so. These
+        // messages are written for that, and never quote the token.
+        String message = ex.getMessage() != null && !ex.getMessage().isBlank()
+                ? ex.getMessage()
+                : "That sign-in could not be verified.";
+
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Invalid email or password!"));
+                .body(ApiResponse.error(message));
     }
 
     /**

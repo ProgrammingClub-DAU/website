@@ -36,7 +36,13 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    /**
+     * Legacy BCrypt hash, left over from the password sign-in this app used to
+     * offer. Nothing reads it: members authenticate with Google and accounts
+     * created since that change have none. Kept, and nullable, so the existing
+     * hashes are not destroyed (V9).
+     */
+    @Column
     private String password;
 
     @Column(name = "codeforces_handle", unique = true)

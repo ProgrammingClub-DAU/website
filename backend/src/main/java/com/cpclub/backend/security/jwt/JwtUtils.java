@@ -95,28 +95,6 @@ public class JwtUtils {
     }
 
     /**
-     * Issues a token from a successfully authenticated Spring Security principal.
-     *
-     * @param authentication established authentication containing {@link UserDetailsImpl}
-     * @return compact signed JWT
-     */
-    public String generateJwtToken(Authentication authentication) {
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-
-        return Jwts.builder()
-                .subject((userPrincipal.getUsername()))
-                .claim("id", userPrincipal.getId())
-                .claim("role", userPrincipal.getAuthorities().stream()
-                        .findFirst()
-                        .map(a -> a.getAuthority())
-                        .orElse("ROLE_USER"))
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), Jwts.SIG.HS256)
-                .compact();
-    }
-
-    /**
      * Issues a token directly after registration, before a login authentication exists.
      *
      * @param email user email stored as the token subject

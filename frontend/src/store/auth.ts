@@ -8,6 +8,8 @@
  * session continuity — revisit together, not one without the other.
  */
 
+import type { AcademicYear } from "@/types/api";
+
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ClubRole } from "@/types/api";
@@ -33,7 +35,7 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
-// Successful credentials validation payload matching com.cpclub.backend.auth.dto.AuthResponse
+// Successful sign-in payload matching com.cpclub.backend.auth.dto.AuthResponse
 export interface AuthResponse {
   token: string;
   id: number;
@@ -41,6 +43,11 @@ export interface AuthResponse {
   email: string;
   role: string;
   codeforcesHandle: string | null;
+  /**
+   * Null when the member has never been asked their year, which is how the
+   * sign-in page knows to send them to /welcome instead of the site.
+   */
+  academicYear: AcademicYear | null;
 }
 
 /**

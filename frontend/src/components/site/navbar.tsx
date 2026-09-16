@@ -197,25 +197,18 @@ export function Navbar() {
               </>
             ) : (
               <>
+                {/* One button, because there is one way in: signing in with a
+                    university Google account is also what creates the account.
+                    Separate Login and Join links would point at the same page. */}
                 <StarBorder
                   as={Link}
                   href="/login"
-                  color="var(--cf-specialist)"
-                  speed="7s"
-                  className="rounded-full!"
-                  innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-quiet)] px-3.5 text-fg-muted hover:text-foreground"}
-                >
-                  Login
-                </StarBorder>
-                <StarBorder
-                  as={Link}
-                  href="/register"
                   color="var(--cf-candidate)"
                   speed="6s"
                   className="rounded-full!"
                   innerClassName={NAV_STAR_INNER + " [--glass-fill:var(--glass-cta)] px-4 text-foreground"}
                 >
-                  Join
+                  Sign in
                 </StarBorder>
               </>
             )}
@@ -316,24 +309,12 @@ export function Navbar() {
                       <StarBorder
                         as={Link}
                         href="/login"
-                        color="var(--cf-specialist)"
-                        speed="7s"
-                        className="w-full rounded-full!"
-                        innerClassName={SHEET_STAR_INNER + " [--glass-fill:var(--glass-quiet)] text-fg-muted"}
-                      >
-                        Login
-                      </StarBorder>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <StarBorder
-                        as={Link}
-                        href="/register"
                         color="var(--cf-candidate)"
                         speed="6s"
                         className="w-full rounded-full!"
                         innerClassName={SHEET_STAR_INNER + " [--glass-fill:var(--glass-cta)] text-foreground"}
                       >
-                        Join the Club
+                        Sign in with Google
                       </StarBorder>
                     </SheetClose>
                   </>
