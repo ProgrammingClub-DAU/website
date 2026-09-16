@@ -153,7 +153,10 @@ export default function AdminDashboardPage() {
   return (
     <>
       <Script src="https://upload-widget.cloudinary.com/global/all.js" strategy="lazyOnload" />
-      <div className="mx-auto max-w-7xl space-y-6 pb-16 pt-6">
+      {/* Horizontal padding, which the admin pages never had. The public pages
+          get theirs from Section/container-page; these build their own container,
+          so on a phone every panel ran edge to edge with text touching the glass. */}
+      <div className="mx-auto max-w-7xl space-y-6 px-4 pb-16 pt-6 sm:px-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -754,10 +757,20 @@ function EventsTab() {
 
       <DataTable columns={columns} data={events} isLoading={loading} emptyMessage="No events created yet." />
 
-      {/* Modal for Create / Edit */}
+      {/*
+        Modal for Create / Edit.
+
+        The form is taller than a phone screen -- title, description, date,
+        location, cover, type, contest URL and three switches. Centred and
+        unscrollable, its top and bottom were cut off with no way to reach them,
+        so Save could not be pressed at all.
+
+        The backdrop scrolls, and the panel pins to the top on small screens:
+        centring a tall panel pushes its head off the top edge.
+      */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-panel border border-border bg-surface p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm sm:items-center">
+          <div className="my-auto w-full max-w-lg space-y-4 rounded-panel border border-border bg-surface p-5 shadow-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground">
                 {editingEvent ? "Edit Event" : "Create New Event"}

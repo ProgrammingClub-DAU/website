@@ -53,7 +53,7 @@ export default async function EventsPage() {
       </Section>
 
       <Section className="pb-14">
-        <BorderGlow contentClassName="grid gap-8 p-8 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-6 sm:p-8 md:grid-cols-2 md:items-center">
           {nextEvent ? (
             <>
               <div>

@@ -453,7 +453,7 @@ export default function EventAttendeesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-16 pt-6">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 pb-16 pt-6 sm:px-6">
       {/* Back button & Event header */}
       <div className="space-y-3">
         <Link
@@ -492,7 +492,7 @@ export default function EventAttendeesPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-foreground">
                 <Users className="size-3.5 text-primary" /> {attendees.length} Attendees
               </span>
@@ -520,13 +520,13 @@ export default function EventAttendeesPage() {
 
       {statusMessage && (
         <div
-          className={`flex items-center justify-between rounded-panel border p-3 text-xs ${
+          className={`flex items-start justify-between gap-3 rounded-panel border p-3 text-xs ${
             statusMessage.type === "success"
               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
               : "border-red-500/30 bg-red-500/10 text-red-400"
           }`}
         >
-          <span className="flex items-center gap-3">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {statusMessage.text}
             {sheetUrl && (
               <a

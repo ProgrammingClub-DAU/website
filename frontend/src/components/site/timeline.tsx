@@ -415,7 +415,7 @@ export function TimelineCard({
   return (
     <article
       className={cn(
-        "glass-panel flex flex-col gap-3.5 rounded-panel p-6 transition-all",
+        "glass-panel flex flex-col gap-3.5 rounded-panel p-5 transition-all sm:p-6",
         "[@media(hover:hover)]:group-hover/entry:-translate-y-0.5 [@media(hover:hover)]:group-hover/entry:border-primary",
         "group-[.tl-active]/entry:-translate-y-0.5 group-[.tl-active]/entry:border-primary",
         className
