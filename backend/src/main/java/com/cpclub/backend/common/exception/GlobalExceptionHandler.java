@@ -36,6 +36,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maps a request the resource's current state forbids to HTTP 409.
+     *
+     * @param ex conflict raised by the service layer, with a message meant for the admin
+     * @return standardized conflict response
+     */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConflictException(ConflictException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    /**
      * Maps absent domain resources to HTTP 404.
      *
      * @param ex missing-resource failure

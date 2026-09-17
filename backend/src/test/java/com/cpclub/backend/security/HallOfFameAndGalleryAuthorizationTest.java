@@ -92,4 +92,18 @@ class HallOfFameAndGalleryAuthorizationTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isForbidden());
     }
+    @Test
+    @DisplayName("A signed-out caller cannot delete an event")
+    void anonymousCannotDeleteEvents() throws Exception {
+        mockMvc.perform(delete("/api/events/1").param("force", "true"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("An ordinary member cannot delete an event, even with force")
+    void membersCannotDeleteEvents() throws Exception {
+        mockMvc.perform(delete("/api/events/1").param("force", "true"))
+                .andExpect(status().isForbidden());
+    }
 }

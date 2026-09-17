@@ -21,6 +21,7 @@ import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dash
 import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
 import { snapshotService, type SnapshotEntry } from "@/lib/services/snapshots";
 import { useAuthStore } from "@/store/auth";
+import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
@@ -242,47 +243,21 @@ function ProfileDashboardContent({
 
 
 
-  const handleOpenCloudinary = () => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
+  /** Saves a new avatar URL, whether it came from an upload or was pasted. */
+  const saveAvatar = (avatarUrl: string) => {
+    setIsUploadingAvatar(true);
+    dashboardService
+      .updateProfile(profilePayload(profile, { avatarUrl }))
+      .then(() => onUpdate())
+      .catch((err) => console.error("Failed to save avatar URL:", err))
+      .finally(() => setIsUploadingAvatar(false));
+  };
 
-    if (window.cloudinary) {
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName,
-          uploadPreset,
-          folder: "cpclub",
-          maxFiles: 1,
-          clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
-          maxFileSize: 5000000,
-        },
-        async (error, result) => {
-          if (!error && result && result.event === "success") {
-            setIsUploadingAvatar(true);
-            try {
-              await dashboardService.updateProfile(
-                profilePayload(profile, { avatarUrl: result.info.secure_url })
-              );
-              onUpdate();
-            } catch (err) {
-              console.error("Failed to save avatar URL:", err);
-            } finally {
-              setIsUploadingAvatar(false);
-            }
-          }
-        }
-      );
-      widget.open();
-    } else {
-      const manualUrl = window.prompt("Enter direct image URL for your avatar:");
-      if (manualUrl && manualUrl.trim()) {
-        setIsUploadingAvatar(true);
-        dashboardService
-          .updateProfile(profilePayload(profile, { avatarUrl: manualUrl.trim() }))
-          .then(() => onUpdate())
-          .catch((err) => console.error("Failed to update avatar:", err))
-          .finally(() => setIsUploadingAvatar(false));
-      }
+  const handleOpenCloudinary = () => {
+    const opened = openUploadWidget({ folder: "cpclub/avatars", onUpload: saveAvatar });
+    if (!opened) {
+      const manualUrl = window.prompt("Photo upload is unavailable. Paste an image URL for your avatar:");
+      if (manualUrl && manualUrl.trim()) saveAvatar(manualUrl.trim());
     }
   };
 
