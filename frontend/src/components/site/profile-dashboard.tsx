@@ -19,7 +19,7 @@ import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { ProfileLinksCard } from "@/components/site/profile-links-card";
 import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
 import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
-import { snapshotService, type SnapshotEntry } from "@/lib/services/snapshots";
+import { leetcodeService } from "@/lib/services/leetcode";
 import { useAuthStore } from "@/store/auth";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,6 @@ import {
   Code,
   Award,
   Zap,
-  Lock,
   Edit2,
   Camera,
   Phone,
@@ -116,7 +115,7 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cfInfo, setCfInfo] = useState<CfUserInfo | null>(null);
   const [cfHistory, setCfHistory] = useState<CfRatingHistoryEntry[]>([]);
-  const [lcHistory, setLcHistory] = useState<SnapshotEntry[]>([]);
+  const [lcHistory, setLcHistory] = useState<CfRatingHistoryEntry[]>([]);
   const [lcLoading, setLcLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
@@ -143,13 +142,13 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
         }
       }
 
-      if (isAuthenticated && data.id) {
+      // The member's real contest history, straight from LeetCode, for every
+      // visitor. It used to come from the site's weekly snapshots, which needed
+      // two Mondays of data and a signed-in viewer before anything showed.
+      if (data.leetcodeHandle) {
         setLcLoading(true);
         try {
-          const snapshots = await snapshotService.getLeetCodeSnapshots(data.id);
-          setLcHistory(snapshots);
-        } catch (err) {
-          console.error("Failed to load LeetCode snapshots:", err);
+          setLcHistory(await leetcodeService.getContestHistory(data.leetcodeHandle));
         } finally {
           setLcLoading(false);
         }
@@ -159,7 +158,7 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [userId, isOwner, isAuthenticated]);
+  }, [userId, isOwner]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
@@ -211,12 +210,11 @@ function ProfileDashboardContent({
   profile: Profile;
   cfInfo: CfUserInfo | null;
   cfHistory: CfRatingHistoryEntry[];
-  lcHistory: SnapshotEntry[];
+  lcHistory: CfRatingHistoryEntry[];
   lcLoading: boolean;
   onUpdate: () => void;
   isOwner: boolean;
 }) {
-  const { isAuthenticated } = useAuthStore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -342,13 +340,7 @@ function ProfileDashboardContent({
     };
   }, [eventParticipations]);
 
-  const lcPoints: RatingPoint[] = useMemo(() => {
-    return lcHistory.map((h) => ({
-      date: h.date,
-      rating: h.rating,
-      contestName: "LeetCode Weekly Snapshot",
-    }));
-  }, [lcHistory]);
+  const lcPoints: RatingPoint[] = lcHistory;
 
   /** Posts the club publishes a contact number for. */
   const isOfficeBearer =
@@ -771,33 +763,29 @@ function ProfileDashboardContent({
         </CardContent>
       </Card>
 
-      {/* ── LeetCode Rating History (Snapshots) ── */}
+      {/* ── LeetCode Rating History ── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Code className="size-4 text-amber-500" />
-            LeetCode Rating History (Weekly Snapshots)
+            LeetCode Rating History
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!isAuthenticated ? (
-            <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
-              <Lock className="size-6 text-fg-subtle" />
-              <span>Sign in to see LeetCode rating history</span>
-            </div>
-          ) : lcLoading ? (
+          {lcLoading ? (
             <div className="flex h-[200px] items-center justify-center text-xs text-fg-muted">
               <Loader2 className="mr-2 size-4 animate-spin text-primary" />
               Loading LeetCode history...
             </div>
-          ) : lcPoints.length >= 2 ? (
+          ) : lcPoints.length > 0 ? (
+            // One contest is enough to draw, as it is for Codeforces.
             <RatingGraph data={lcPoints} />
           ) : (
             <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
               <Code className="size-6 text-fg-subtle" />
               <span>
                 {profile.leetcodeHandle
-                  ? "Not enough weekly snapshot data yet. Snapshots record every Monday."
+                  ? "No rated LeetCode contests yet."
                   : "No LeetCode handle linked."}
               </span>
             </div>
