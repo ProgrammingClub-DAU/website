@@ -5,6 +5,7 @@ import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { EventsList } from "@/components/site/events-list";
+import { InDevelopment } from "@/components/site/in-development";
 import { eventsService } from "@/lib/services/events";
 import type { Event } from "@/types/api";
 
@@ -143,6 +144,18 @@ export default async function EventsPage() {
 
       <Section className="pb-10">
         <EventsList upcoming={upcoming} completed={completed} />
+      </Section>
+
+      <Section className="pb-16">
+        <InDevelopment
+          title="Registration and the club calendar"
+          items={[
+            "RSVP for events",
+            "Club calendar",
+            "Club contests",
+            "Season championship",
+          ]}
+        />
       </Section>
 
     </>

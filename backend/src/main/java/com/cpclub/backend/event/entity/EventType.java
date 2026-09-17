@@ -5,30 +5,32 @@ package com.cpclub.backend.event.entity;
  *
  * <p>Presentation, not behaviour: nothing in the application branches on this.
  * It is the badge on the public timeline, so a visitor scanning the club's
- * history can tell a flagship contest from a beginners' workshop without reading
+ * history can tell an IPC round from a lecture without reading
  * every description.</p>
  *
  * <p>Separate from {@code EventStatus}, which says whether an event is upcoming,
- * finished or cancelled. An event has both: a WORKSHOP that is COMPLETED.</p>
+ * finished or cancelled. An event has both: a LECTURE that is COMPLETED.</p>
  *
- * <p>Deliberately short. A list long enough to describe every event exactly is a
- * list nobody picks from consistently, and the badge stops being scannable --
- * which is the only thing it is for.</p>
+ * <p>The club's own names for what it runs, from its orientation deck (V13).
+ * Stored by name, so renaming a constant needs a migration.</p>
  */
 public enum EventType {
 
-    /** The campus-wide contest the club builds its year around. */
-    FLAGSHIP,
+    /** Intra College Programming Contest. */
+    IPC,
 
-    /** An ordinary rated round. */
-    CONTEST,
+    /** A contest for juniors. */
+    JUNIORS_CONTEST,
 
-    /** A teaching session. */
-    WORKSHOP,
+    /** The inter-wing competition. */
+    INTER_WING,
 
-    /** ICPC practice or preparation. */
-    ICPC,
+    /** Round Robin Relay. */
+    ROUND_ROBIN_RELAY,
 
-    /** A talk or guest session. */
-    TALK
+    /** A lecture session on competitive programming. */
+    LECTURE,
+
+    /** A post-contest discussion or editorial session. */
+    POST_CONTEST_DISCUSSION
 }
