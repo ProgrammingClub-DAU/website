@@ -108,6 +108,9 @@ export function Navbar() {
    * Access Denied is noise for everyone else. isMounted keeps the server and
    * client markup identical, since the role comes from persisted storage.
    */
+  // /profile resolves the signed-in user itself, so it is the safe target
+  // when a persisted session has no id -- never /profile/undefined.
+  const profileHref = user?.id ? `/profile/${user.id}` : "/profile";
   const isAdmin = isMounted && isAuthenticated && user?.role === "ROLE_ADMIN";
   const links = isAdmin
     ? [...navItems, { href: "/admin", label: "Admin" }]
@@ -175,7 +178,7 @@ export function Navbar() {
             ) : isAuthenticated ? (
               <>
                 <Link
-                  href={`/profile/${user?.id}`}
+                  href={profileHref}
                   className="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-3 py-1 text-xs font-medium text-foreground transition-all hover:border-border hover:bg-surface-2"
                 >
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-label font-bold text-primary">
@@ -281,7 +284,7 @@ export function Navbar() {
                   <>
                     <SheetClose asChild>
                       <Link
-                        href={`/profile/${user?.id}`}
+                        href={profileHref}
                         className="flex items-center justify-center gap-2 rounded-full border border-hairline bg-surface-2/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-2"
                       >
                         <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-label font-bold text-primary">

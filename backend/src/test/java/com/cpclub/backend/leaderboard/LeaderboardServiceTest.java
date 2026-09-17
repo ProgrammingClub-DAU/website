@@ -117,6 +117,17 @@ class LeaderboardServiceTest {
         return row(id, name, handle, rating, placement, null);
     }
 
+    @Test
+    @DisplayName("Each row carries the member's avatar, which the leaderboard renders")
+    void carriesTheAvatar() {
+        LeaderboardResponseDto dto = LeaderboardResponseDto.fromProjection(
+                row(7L, "Ravi", "ravi_cf", 1900, 1L, "CORE"));
+
+        assertEquals("https://lh3.googleusercontent.com/7", dto.avatarUrl());
+        // userId, not id -- the frontend maps this field by name.
+        assertEquals(7L, dto.userId());
+    }
+
     /** Builds a stub projection; Spring supplies the real implementation at runtime. */
     private LeaderboardEntryProjection row(Long id, String name, String handle, Integer rating,
                                            Long placement, String clubRole) {
@@ -129,6 +140,11 @@ class LeaderboardServiceTest {
             @Override
             public String getClubrole() {
                 return clubRole;
+            }
+
+            @Override
+            public String getAvatarurl() {
+                return "https://lh3.googleusercontent.com/" + id;
             }
 
             @Override

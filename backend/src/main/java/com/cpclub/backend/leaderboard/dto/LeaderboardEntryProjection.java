@@ -45,4 +45,7 @@ public interface LeaderboardEntryProjection {
      * {@code clubRole} binds to nothing and the getter silently returns null.</p>
      */
     String getClubrole();
+
+    /** Lower-case to match the native query's alias, as getClubrole does. */
+    String getAvatarurl();
 }

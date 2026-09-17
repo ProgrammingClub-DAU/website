@@ -1,7 +1,7 @@
 import apiClient from "@/lib/axios";
-import { Profile, LeaderboardEntry, PublicMember } from "@/types/api";
+import { Profile, PublicMember } from "@/types/api";
 import type { ApiResponse } from "@/store/auth";
-import { mockLeaderboardEntries, getMockProfile } from "@/lib/content/mock-dashboards";
+import { getMockProfile } from "@/lib/content/mock-dashboards";
 
 // Mock mode disabled for Phase 1 completion
 const IS_MOCK = false;
@@ -20,21 +20,6 @@ const IS_MOCK = false;
 const SSR_TIMEOUT_MS = 60_000;
 
 // ── Mappers: Transform backend UserResponseDto to Frontend Types ──
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapUserToLeaderboard(user: any): LeaderboardEntry {
-  // Backend LeaderboardResponseDto fields: rank, userId, name, codeforcesHandle, rating, tier
-  // NOTE: field is "userId" not "id" — backend uses userId to distinguish from entity id
-  return {
-    id: user.userId,
-    name: user.name,
-    codeforcesHandle: user.codeforcesHandle,
-    rating: user.rating,
-    rank: user.rank,
-    tier: user.tier,
-    clubRole: user.clubRole ?? null,
-  };
-}
 
 interface UserProfileResponse {
   id: number;
@@ -114,17 +99,6 @@ export const dashboardService = {
       timeout: SSR_TIMEOUT_MS,
     });
     return response.data.data ?? [];
-  },
-
-  // Leaderboard
-  getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
-    if (IS_MOCK) {
-      return new Promise((resolve) => setTimeout(() => resolve(mockLeaderboardEntries), 500));
-    }
-    const response = await apiClient.get("/api/leaderboard");
-    // Unwrap Spring Data PagedResponse
-    const content = response.data?.data?.content || [];
-    return content.map(mapUserToLeaderboard);
   },
 
   // Profile (requires auth)

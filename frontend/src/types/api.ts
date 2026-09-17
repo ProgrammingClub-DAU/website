@@ -144,7 +144,8 @@ export interface Profile {
 }
 
 export interface LeaderboardEntry {
-  id: number;           // maps to backend userId
+  /** The member's user id. The API calls it userId; leaderboardService renames it. */
+  id: number;
   name: string;
   // Nullable: the backend returns members who have not linked a Codeforces
   // account. Typing this as `string` previously hid a crash in the search filter.
@@ -153,9 +154,7 @@ export interface LeaderboardEntry {
   rank: number;         // backend-computed rank (1-based)
   tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"
   clubRole: ClubRole | null;
-  solvedCount?: number;
-  yearlyActivityCount?: number;
-  avatarUrl?: string | null;
+  avatarUrl: string | null;
 }
 
 export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";
