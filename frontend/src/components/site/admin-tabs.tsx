@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { Users, Calendar, Image as ImageIcon } from "lucide-react";
+import { Users, Calendar, Image as ImageIcon, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AdminTab = "members" | "events" | "galleries";
+export type AdminTab = "members" | "events" | "hallOfFame" | "galleries";
 
 interface AdminTabsProps {
   activeTab: AdminTab;
@@ -16,6 +16,7 @@ export function AdminTabs({ activeTab, onChange, className }: AdminTabsProps) {
   const tabs: { id: AdminTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "members", label: "Members", icon: Users },
     { id: "events", label: "Events", icon: Calendar },
+    { id: "hallOfFame", label: "Hall of Fame", icon: Trophy },
     { id: "galleries", label: "Galleries", icon: ImageIcon },
   ];
 

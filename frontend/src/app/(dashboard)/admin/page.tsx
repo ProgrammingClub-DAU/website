@@ -9,6 +9,8 @@ import apiClient from "@/lib/axios";
 import { eventsService, type EventRequest } from "@/lib/services/events";
 import { galleryService, type MemberGalleryPhotoRequest } from "@/lib/services/gallery";
 import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
+import { HallOfFameManager } from "@/components/admin/hall-of-fame-manager";
+import { openUploadWidget } from "@/lib/cloudinary";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
@@ -178,6 +180,7 @@ export default function AdminDashboardPage() {
 
         {activeTab === "members" && <MembersTab />}
         {activeTab === "events" && <EventsTab />}
+        {activeTab === "hallOfFame" && <HallOfFameManager />}
         {activeTab === "galleries" && <GalleriesTab />}
       </div>
     </>
@@ -1372,29 +1375,57 @@ function EventGalleryManager() {
     }
   }, [selectedEventId, loadPhotos]);
 
-  const handleOpenCloudinary = () => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
+  /**
+   * Uploads several photos in one go.
+   *
+   * Each file is attached to the event the moment it finishes uploading, rather
+   * than collected and saved at the end. A long batch on a slow connection then
+   * keeps whatever succeeded if the tab is closed half way, and one failed file
+   * does not take the rest with it.
+   *
+   * The caption box, if filled, applies to every photo in the batch.
+   */
+  const handleUploadMany = () => {
+    if (!selectedEventId) return;
+    const eventId = selectedEventId;
+    const caption = uploadCaption.trim() || null;
+    let added = 0;
+    let failed = 0;
 
-    if (window.cloudinary) {
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName,
-          uploadPreset,
-          folder: `cpclub/events/${selectedEventId}`,
-          maxFiles: 1,
-          clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
-        },
-        (error, result) => {
-          if (!error && result && result.event === "success") {
-            setUploadImageUrl(result.info.secure_url);
-          }
-        }
-      );
-      widget.open();
-    } else {
-      const url = window.prompt("Enter image URL:");
-      if (url) setUploadImageUrl(url.trim());
+    setStatusMessage(null);
+    const opened = openUploadWidget({
+      folder: `cpclub/events/${eventId}`,
+      multiple: true,
+      maxFiles: 20,
+      onUpload: (url) => {
+        setIsUploading(true);
+        eventsService
+          .addEventPhoto(eventId, { imageUrl: url, caption })
+          .then(() => {
+            added += 1;
+          })
+          .catch((err) => {
+            failed += 1;
+            console.error("Failed to attach an event photo:", err);
+          })
+          .finally(() => {
+            setIsUploading(false);
+            void loadPhotos(eventId);
+            setStatusMessage(
+              failed === 0
+                ? { type: "success", text: `${added} photo${added === 1 ? "" : "s"} added to the event.` }
+                : { type: "error", text: `${added} added, ${failed} could not be saved. Try those again.` }
+            );
+          });
+      },
+      onClose: () => setUploadCaption(""),
+    });
+
+    if (!opened) {
+      setStatusMessage({
+        type: "error",
+        text: "The uploader has not loaded yet. Reload the page, or paste an image URL below.",
+      });
     }
   };
 
@@ -1445,7 +1476,7 @@ function EventGalleryManager() {
         <div className="rounded-panel border border-border bg-surface p-5 space-y-4">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             <Upload className="size-4 text-primary" />
-            Add Event Photo
+            Add Event Photos
           </h3>
 
           <form onSubmit={handleAddPhoto} className="space-y-3">
@@ -1466,31 +1497,11 @@ function EventGalleryManager() {
 
             <div>
               <label className="block text-xs font-medium text-fg-muted mb-1">
-                Image Source <span className="text-red-400">*</span>
+                Caption <span className="text-fg-subtle">(optional, applies to every photo you pick)</span>
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  required
-                  value={uploadImageUrl}
-                  onChange={(e) => setUploadImageUrl(e.target.value)}
-                  className="flex-1 rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleOpenCloudinary}
-                  className="rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-fg-muted hover:text-foreground"
-                >
-                  Upload
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-fg-muted mb-1">Caption</label>
               <input
                 type="text"
+                maxLength={255}
                 placeholder="e.g. Problem discussion session"
                 value={uploadCaption}
                 onChange={(e) => setUploadCaption(e.target.value)}
@@ -1499,13 +1510,42 @@ function EventGalleryManager() {
             </div>
 
             <button
-              type="submit"
-              disabled={isUploading || !selectedEventId}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-control bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50"
+              type="button"
+              onClick={handleUploadMany}
+              disabled={!selectedEventId}
+              className="flex w-full flex-col items-center gap-1 rounded-panel border border-dashed border-border py-6 text-center transition-colors hover:border-primary disabled:opacity-50"
             >
-              {isUploading && <Loader2 className="size-3.5 animate-spin" />}
-              Upload to Event
+              {isUploading ? (
+                <Loader2 className="size-5 animate-spin text-primary" />
+              ) : (
+                <Upload className="size-5 text-primary" />
+              )}
+              <span className="text-xs font-semibold text-foreground">Upload photos</span>
+              <span className="text-nano text-fg-subtle">Pick up to 20 at once. JPG, PNG or WebP, 5 MB each.</span>
             </button>
+
+            {/* The fallback for a photo that is already online somewhere. */}
+            <details>
+              <summary className="cursor-pointer text-xs text-fg-muted hover:text-foreground">
+                Or add one by URL
+              </summary>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={uploadImageUrl}
+                  onChange={(e) => setUploadImageUrl(e.target.value)}
+                  className="min-w-0 flex-1 rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isUploading || !selectedEventId || !uploadImageUrl}
+                  className="shrink-0 rounded-control bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </div>
+            </details>
           </form>
         </div>
       </div>
