@@ -5,6 +5,11 @@ import com.cpclub.backend.user.entity.User;
 /**
  * Immutable DTO record representing a single ranked entry on the leaderboard.
  * Displays calculated Codeforces performance tiers.
+ *
+ * <p>The member's id is {@code userId}, not {@code id}. The frontend type once
+ * called it {@code id} and cast the response straight to that type, so every
+ * leaderboard row linked to {@code /profile/undefined}. The frontend now maps
+ * this field explicitly; renaming it here would break that mapping silently.</p>
  */
 public record LeaderboardResponseDto(
         int rank,
@@ -13,7 +18,9 @@ public record LeaderboardResponseDto(
         String codeforcesHandle,
         Integer rating,
         String tier,
-        String clubRole
+        String clubRole,
+        /** The member's photo, which the leaderboard rows were already built to show. */
+        String avatarUrl
 ) {
     /**
      * Resolves the official Codeforces rating tier based on rating thresholds.
@@ -50,7 +57,8 @@ public record LeaderboardResponseDto(
                 user.getCodeforcesHandle(),
                 user.getRating(),
                 calculateTier(user.getRating()),
-                user.getClubRole() != null ? user.getClubRole().name() : null
+                user.getClubRole() != null ? user.getClubRole().name() : null,
+                user.getAvatarUrl()
         );
     }
 
@@ -71,7 +79,8 @@ public record LeaderboardResponseDto(
                 row.getHandle(),
                 row.getRating(),
                 calculateTier(row.getRating()),
-                row.getClubrole()
+                row.getClubrole(),
+                row.getAvatarurl()
         );
     }
 }

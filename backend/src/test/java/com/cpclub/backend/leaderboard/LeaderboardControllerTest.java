@@ -32,7 +32,8 @@ class LeaderboardControllerTest {
 
     @Test
     void getLeaderboard_returnsPaginatedRankings() throws Exception {
-        LeaderboardResponseDto member = new LeaderboardResponseDto(21, 1L, "Alice", "alice_cf", 1900, "Candidate Master", "CORE");
+        LeaderboardResponseDto member = new LeaderboardResponseDto(21, 1L, "Alice", "alice_cf", 1900, "Candidate Master", "CORE",
+                "https://lh3.googleusercontent.com/alice");
         when(leaderboardService.getLeaderboard(1, 20, LeaderboardPlatform.CODEFORCES, LeaderboardFilter.ALL))
                 .thenReturn(new PagedResponse<>(List.of(member), 1, 20, 21, 2, true));
 
