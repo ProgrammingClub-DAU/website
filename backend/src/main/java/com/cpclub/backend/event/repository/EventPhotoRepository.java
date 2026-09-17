@@ -3,6 +3,7 @@ package com.cpclub.backend.event.repository;
 import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,6 +23,13 @@ public interface EventPhotoRepository extends JpaRepository<EventPhoto, Long> {
      * @return photos, earliest upload first
      */
     List<EventPhoto> findByEventIdOrderByUploadedAtAsc(Long eventId);
+
+    long countByEventId(Long eventId);
+
+    /** Removes an event's photo records. The files stay on Cloudinary. */
+    @Modifying
+    @Query("DELETE FROM EventPhoto p WHERE p.event.id = :eventId")
+    int deleteAllByEventId(@Param("eventId") Long eventId);
 
     /**
      * Every photo from an event the public can see, with its event.

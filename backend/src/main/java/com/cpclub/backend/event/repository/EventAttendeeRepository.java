@@ -2,7 +2,9 @@ package com.cpclub.backend.event.repository;
 
 import com.cpclub.backend.event.entity.EventAttendee;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -57,6 +59,17 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
      * @return number of attendees recorded
      */
     long countByEventId(Long eventId);
+
+    /**
+     * Removes an event's whole attendance list in one statement.
+     *
+     * <p>Explicit rather than left to {@code ON DELETE CASCADE}: the test schema
+     * is generated from the entities and has no cascade, and a delete that works
+     * only against one of the two databases is a delete nobody has tested.</p>
+     */
+    @Modifying
+    @Query("DELETE FROM EventAttendee a WHERE a.event.id = :eventId")
+    int deleteAllByEventId(@Param("eventId") Long eventId);
 
     /**
      * Locates one attendance row, for removal.

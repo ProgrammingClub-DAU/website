@@ -115,6 +115,7 @@ Shipped between Phase 2 and Phase 3, and live on `main`:
 | Profiles | Academic year, and a completeness badge over name, Codeforces handle, phone and year |
 | Hall of Fame | Admin-maintained entries -- heading, subheading, date, details, any number of links and photos -- at `/api/hall-of-fame`, with a public page and a detail page per entry |
 | Gallery | `GET /api/gallery/photos` merges event and Hall of Fame photos, newest first, each linking back to its source |
+| Event delete | `DELETE /api/events/{id}` -- Stage 5B's `deleteEvent` (D14) is built, with one difference: an event with attendance, photos or winners is refused with 409 **unless `force=true`**, rather than refused outright. The admin panel shows what would be lost and requires the event title typed before sending `force`. Stage 5B should extend it to count RSVPs, not rebuild it |
 
 Anything in Section 0 that traces to one of these is done. Check `main` before
 starting a stage rather than trusting the traceability table alone.

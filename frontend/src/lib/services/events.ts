@@ -82,6 +82,17 @@ export const eventsService = {
     return response.data.data;
   },
 
+  /**
+   * Deletes an event permanently.
+   *
+   * Without force, the server refuses (409) an event that has attendance,
+   * photos or winners, and says what would be lost. With force it deletes them
+   * too. Photo files stay on Cloudinary.
+   */
+  deleteEvent: async (id: number, force: boolean): Promise<void> => {
+    await apiClient.delete(`/api/events/${id}`, { params: { force } });
+  },
+
   cancel: async (id: number): Promise<Event> => {
     const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}/cancel`);
     return response.data.data;
