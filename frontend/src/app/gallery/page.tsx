@@ -31,8 +31,8 @@ export default async function GalleryPage() {
         <Eyebrow>Gallery</Eyebrow>
         <PageTitle className="max-w-[20ch]">Where we were.</PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          Photos from the club&apos;s events and achievements, newest first. Open one to see what
-          it was, and follow it through to the event or record it belongs to.
+          Drag to look around, then open a photo to see which event or achievement it was
+          from, when it happened, and where.
         </p>
       </Section>
 
