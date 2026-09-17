@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { leaderboardService } from "@/lib/services/leaderboard";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
+import { InDevelopment } from "@/components/site/in-development";
 import type { LeaderboardEntry } from "@/types/api";
 
 export const metadata: Metadata = {
@@ -44,8 +45,22 @@ export default async function LeaderboardPage() {
         </div>
       </Section>
 
-      <Section className="pb-16">
+      <Section className="pb-10">
         <LeaderboardDashboard initialEntries={leaderboard} />
+      </Section>
+
+      <Section className="pb-16">
+        <InDevelopment
+          title="More ways to rank"
+          body="Rankings built from what members solve and how they do in contests, not only from their current rating."
+          items={[
+            "Top solvers this week",
+            "Top solvers this month",
+            "Top solvers this year",
+            "Most contests",
+            "Overall score",
+          ]}
+        />
       </Section>
     </>
   );

@@ -26,6 +26,7 @@ import { howItWorks } from "@/lib/content/home";
 import { dashboardService } from "@/lib/services/dashboard";
 import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
+import { InDevelopment } from "@/components/site/in-development";
 import { cn } from "@/lib/utils";
 import type { PublicMember } from "@/types/api";
 
@@ -328,6 +329,22 @@ export default async function HomePage() {
             </li>
           ))}
         </ol>
+      </Section>
+
+      <Section className="pb-16">
+        <SectionHeader eyebrow="On the roadmap" title="What we are building next." />
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <InDevelopment
+            headingLevel="h3"
+            title="Coder of the Week"
+            body="A weekly spotlight on one member, picked from what they solved and how they did in contests that week."
+          />
+          <InDevelopment
+            headingLevel="h3"
+            title="1v1 battles"
+            body="Head-to-head timed problems against another member, with a shared verdict feed."
+          />
+        </div>
       </Section>
 
       <HallOfFameTeaser title="The people who set the bar." />
