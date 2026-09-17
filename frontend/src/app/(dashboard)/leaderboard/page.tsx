@@ -14,7 +14,8 @@ import type { LeaderboardEntry } from "@/types/api";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
-  description: "Live CP Club leaderboard, rankings, and active stats.",
+  description:
+    "Programming Club @ DAU members ranked by Codeforces and LeetCode rating, updated automatically.",
 };
 
 export default async function LeaderboardPage() {

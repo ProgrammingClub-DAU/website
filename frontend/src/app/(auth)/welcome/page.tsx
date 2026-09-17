@@ -10,6 +10,7 @@ import WelcomeForm from "./welcome-form";
 export const metadata: Metadata = {
   title: "Welcome",
   description: "Finish setting up your Programming Club account.",
+  robots: { index: false },
 };
 
 export default function WelcomePage() {

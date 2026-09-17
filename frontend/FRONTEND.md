@@ -158,8 +158,10 @@ respected.
   `lib/content/` module, keeping the shape the components already consume.
 - `ui/badge.tsx`, `ui/card.tsx`, and `ui/separator.tsx` are installed but
   unused — kept deliberately for these tasks.
-- Set `NEXT_PUBLIC_SITE_URL` in the Vercel environment so `metadataBase`
-  resolves absolute share-card URLs.
+- Set `NEXT_PUBLIC_SITE_URL` in the Vercel environment (for example
+  `https://your-domain`, no trailing slash). Share cards, `robots.txt` and
+  `sitemap.xml` use it. Without it, `lib/site-url.ts` falls back to Vercel's
+  production domain.
 
 ## Known gaps
 

@@ -14,7 +14,7 @@ import { dashboardService } from "@/lib/services/dashboard";
 export const metadata: Metadata = {
   title: "Members",
   description:
-    "Who is in the Programming Club @ DAU and what they look after, plus everyone who built this site.",
+    "The committee that runs the Programming Club @ DAU this term, and everyone who built this site.",
 };
 
 export default async function MembersPage() {

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Contests, workshops, and ICPC sessions run by the Programming Club @ DAU, plus what is coming next.",
+    "Contests and lectures run by the Programming Club @ DAU, with results and photos, plus what is coming next.",
 };
 
 
@@ -47,8 +47,8 @@ export default async function EventsPage() {
           What we run, and when.
         </PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          Contests, workshops, and ICPC sessions the club has held, plus what is coming
-          next.
+          Contests and lectures the club has held, with results and photos, plus what is
+          coming next.
         </p>
       </Section>
 

@@ -10,7 +10,7 @@ import type { GalleryPhoto } from "@/types/api";
 export const metadata: Metadata = {
   title: "Gallery",
   description:
-    "Photos from Programming Club contests, workshops and achievements at Dhirubhai Ambani University.",
+    "Photos from Programming Club @ DAU events and achievements at Dhirubhai Ambani University.",
 };
 
 // Photos added to an event this morning have to appear without a redeploy.

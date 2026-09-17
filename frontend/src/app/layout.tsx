@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
 import { FooterSlot } from "@/components/site/footer-slot";
 import { site } from "@/lib/site";
+import { siteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,11 +40,11 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const description =
-  "Weekly contests, editorials, and a leaderboard synced from Codeforces, run by students at Dhirubhai Ambani University, Gandhinagar.";
+  "Contests, lectures, and a leaderboard synced from Codeforces and LeetCode, run by students at Dhirubhai Ambani University, Gandhinagar.";
 
 export const metadata: Metadata = {
-  // Set NEXT_PUBLIC_SITE_URL at deploy time so share cards resolve absolute URLs.
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  // Share cards need absolute URLs. See lib/site-url.ts for where this comes from.
+  metadataBase: new URL(siteUrl),
   title: {
     default: `${site.fullName} — Competitive programming at DAU`,
     template: `%s — ${site.fullName}`,
