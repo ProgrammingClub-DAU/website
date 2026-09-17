@@ -7,7 +7,7 @@ import ProfileDashboard from "@/components/site/profile-dashboard";
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "A CP Club member's profile — rating history, practice streaks, and stats.",
+  description: "A Programming Club @ DAU member's Codeforces and LeetCode ratings and profile links.",
 };
 
 /**
