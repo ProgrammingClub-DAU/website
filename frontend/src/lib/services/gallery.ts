@@ -1,6 +1,6 @@
 import apiClient from "@/lib/axios";
 import type { ApiResponse } from "@/store/auth";
-import type { MemberGalleryPhoto } from "@/types/api";
+import type { GalleryPhoto, GallerySource, MemberGalleryPhoto } from "@/types/api";
 
 export interface MemberGalleryPhotoRequest {
   batchYear: number;
@@ -34,4 +34,27 @@ export const galleryService = {
     const response = await apiClient.get<ApiResponse<number[]>>("/api/gallery/members/batches");
     return response.data.data;
   },
+
+  /**
+   * Every public photo, newest first, each knowing its event or achievement.
+   *
+   * Only the gallery page calls this, and it renders on the server, so it waits
+   * long enough for a sleeping backend to wake.
+   */
+  listPhotos: async (): Promise<GalleryPhoto[]> => {
+    const response = await apiClient.get<ApiResponse<GalleryPhoto[]>>("/api/gallery/photos", {
+      timeout: 60_000,
+    });
+    return response.data.data ?? [];
+  },
 };
+
+/** Where a gallery photo's "view" link goes. */
+export function gallerySourceHref(source: GallerySource, sourceId: number): string {
+  return source === "EVENT" ? `/events/${sourceId}` : `/hall-of-fame/${sourceId}`;
+}
+
+/** The words for that link. */
+export function gallerySourceLabel(source: GallerySource): string {
+  return source === "EVENT" ? "View event" : "View in Hall of Fame";
+}

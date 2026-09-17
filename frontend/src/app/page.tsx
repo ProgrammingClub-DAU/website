@@ -15,7 +15,6 @@ import { ParticlesBackdrop } from "@/components/site/particles-backdrop";
 import { Button } from "@/components/ui/button";
 import {
   Eyebrow,
-  RankDot,
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
@@ -24,7 +23,7 @@ import { RankLadder } from "@/components/site/rank-ladder";
 import { CF_RANKS } from "@/lib/cf-ranks";
 import { howItWorks } from "@/lib/content/home";
 import { site } from "@/lib/site";
-import { hallOfFameTeaser } from "@/lib/content/hall-of-fame";
+import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { cn } from "@/lib/utils";
 
 type Feature = {
@@ -71,7 +70,12 @@ const features: Feature[] = [
 ];
 
 const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
+
 
+// Regenerated in the background at most every five minutes, so a new Hall
+// of Fame entry appears without a redeploy and without every visit waiting
+// on the backend.
+export const revalidate = 300;
 export default function HomePage() {
   return (
     <>
@@ -275,36 +279,7 @@ export default function HomePage() {
         </ol>
       </Section>
 
-      <Section className="pb-16">
-        <SectionHeader
-          eyebrow="Hall of fame"
-          title="The people who set the bar."
-          action={{ href: "/hall-of-fame", label: "All years" }}
-        />
-        {/* Cards grow to share the row rather than sitting at a fixed 280px.
-            The club has one confirmed record, and a single narrow card marooned
-            at the left edge of a wide scroller reads as content that failed to
-            load. They still scroll once there are enough to overflow. */}
-        <ul className="no-scrollbar mt-8 flex gap-4 overflow-x-auto pb-2">
-          {hallOfFameTeaser.map((entry) => (
-            <li
-              key={entry.title}
-              className="min-w-70 flex-1 rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
-                  {entry.year}
-                </span>
-                <RankDot rank={entry.cf} />
-              </div>
-              <p className="mt-11 text-lead font-semibold tracking-tight">{entry.title}</p>
-              <p className="mt-2 text-sm leading-[1.5] text-fg-muted text-pretty">
-                {entry.note}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Section>
+      <HallOfFameTeaser title="The people who set the bar." />
 
       <section
         className="border-t border-hairline"

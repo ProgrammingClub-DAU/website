@@ -44,16 +44,7 @@ import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
 
-declare global {
-  interface Window {
-    cloudinary?: {
-      createUploadWidget: (
-        options: Record<string, unknown>,
-        callback: (error: unknown, result: { event: string; info: { secure_url: string } }) => void
-      ) => { open: () => void };
-    };
-  }
-}
+// window.cloudinary is declared once, in lib/cloudinary.ts.
 
 // ── Generate achievements from event participations ──
 /**

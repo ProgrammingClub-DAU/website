@@ -34,9 +34,9 @@ amendments override the body of the document wherever they disagree with it.
 
 Two of them would stop a deploy or waste a fortnight, so they come first.
 
-### A1 -- Migration numbers V8 to V11 are taken. Renumber every Phase 3 migration.
+### A1 -- Migration numbers V8 to V12 are taken. Renumber every Phase 3 migration.
 
-`main` already has V8 through V11:
+`main` already has V8 through V12:
 
 | Applied | What it did |
 |---|---|
@@ -44,6 +44,7 @@ Two of them would stop a deploy or waste a fortnight, so they come first.
 | `V9__passwords_no_longer_required.sql` | password column relaxed, sign-in moved to Google |
 | `V10__event_results.sql` | contest URL, podium, three visibility switches |
 | `V11__event_type.sql` | Flagship / Contest / Workshop / ICPC / Talk |
+| `V12__hall_of_fame.sql` | admin-maintained Hall of Fame entries, links and photos |
 
 The plan assigns V8, V9, V10 and V12 to V15 to Phase 3 tables. Two files sharing
 a version number is not a warning: Flyway refuses to start with "Found more than
@@ -54,17 +55,21 @@ Renumber, keeping the plan's order:
 
 | In the plan | Use instead |
 |---|---|
-| `V8__create_codeforces_problems_and_solves.sql` | `V12__...` |
-| `V9__create_contest_participations.sql` | `V13__...` |
-| `V10__create_platform_daily_totals.sql` | `V14__...` |
-| `V12__create_scores_awards_and_practice.sql` | `V15__...` |
-| `V13__create_club_contests.sql` | `V16__...` |
-| `V14__blog_workflow_and_comments.sql` | `V17__...` |
-| `V15__events_registrations_calendar_and_reminders.sql` | `V18__...` |
+| `V8__create_codeforces_problems_and_solves.sql` | `V13__...` |
+| `V9__create_contest_participations.sql` | `V14__...` |
+| `V10__create_platform_daily_totals.sql` | `V15__...` |
+| `V12__create_scores_awards_and_practice.sql` | `V16__...` |
+| `V13__create_club_contests.sql` | `V17__...` |
+| `V14__blog_workflow_and_comments.sql` | `V18__...` |
+| `V15__events_registrations_calendar_and_reminders.sql` | `V19__...` |
 
-Stage 1A's "Read first" line says "migrations V8 to V11". Those are now Phase 2.5
+Stage 1A's "Read first" line refers to V8 to V12. Those are now Phase 2.5
 migrations and are worth reading for a different reason -- they are the schema
-this work extends -- but the Phase 3 tables are V12 onward.
+this work extends -- but the Phase 3 tables are V13 onward.
+
+**Check the highest applied version before adding a migration**, every time.
+This table has already had to move once, because V12 was taken by the Hall of
+Fame after it was written.
 
 ### A2 -- D15 is withdrawn. There is no email verification to build.
 
@@ -108,6 +113,8 @@ Shipped between Phase 2 and Phase 3, and live on `main`:
 | Events | Public events page driven by the API, on the club timeline; public event detail page at `/events/{id}`; contest URL, podium picked from attendees, and three independent visibility switches; event type badge; reopen a completed or cancelled event |
 | Attendance | Export is six columns -- name, Codeforces profile, email, student ID, year, added at. Also exports to Google Sheets from the browser, into the admin's own Drive |
 | Profiles | Academic year, and a completeness badge over name, Codeforces handle, phone and year |
+| Hall of Fame | Admin-maintained entries -- heading, subheading, date, details, any number of links and photos -- at `/api/hall-of-fame`, with a public page and a detail page per entry |
+| Gallery | `GET /api/gallery/photos` merges event and Hall of Fame photos, newest first, each linking back to its source |
 
 Anything in Section 0 that traces to one of these is done. Check `main` before
 starting a stage rather than trusting the traceability table alone.
@@ -1146,8 +1153,8 @@ variable in Section 12.
 
 **Read first:** `codeforces/service/CodeforcesSyncService.java`,
 `leetcode/service/LeetCodeSyncService.java`, `common/config/AppConfig.java`,
-`user/service/UserService.java`, migrations V8 to V11 (these are Phase 2.5 -- the
-schema this stage extends; Phase 3's own migrations start at V12, amendment A1),
+`user/service/UserService.java`, migrations V8 to V12 (these are Phase 2.5 -- the
+schema this stage extends; Phase 3's own migrations start at V13, amendment A1),
 Section 1.1, and **amendment A4 before writing any sync code**.
 
 #### 4.1 `sync/` package [NEW]

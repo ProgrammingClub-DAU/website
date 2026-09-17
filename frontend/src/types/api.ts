@@ -268,3 +268,49 @@ export interface MemberGalleryPhoto {
   caption: string | null;
   uploadedAt: string;
 }
+
+// ── Hall of Fame ─────────────────────────────────────────────────────────────
+
+export interface HallOfFameLink {
+  label: string;
+  url: string;
+}
+
+export interface HallOfFamePhoto {
+  id: number;
+  imageUrl: string;
+  caption: string | null;
+}
+
+/** One achievement, as HallOfFameEntryDto returns it. */
+export interface HallOfFameEntry {
+  id: number;
+  heading: string;
+  subheading: string | null;
+  details: string | null;
+  /** ISO date, "YYYY-MM-DD" -- a day, not an instant. */
+  achievedOn: string;
+  links: HallOfFameLink[];
+  photos: HallOfFamePhoto[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Gallery ──────────────────────────────────────────────────────────────────
+
+export type GallerySource = "EVENT" | "HALL_OF_FAME";
+
+/** One photo on the public gallery, and where it belongs. */
+export interface GalleryPhoto {
+  /** Unique across both sources, e.g. "event-12" or "hof-12". */
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  source: GallerySource;
+  sourceId: number;
+  sourceTitle: string;
+  /** ISO date, "YYYY-MM-DD". */
+  date: string | null;
+  /** The event's venue; null for Hall of Fame photos. */
+  location: string | null;
+}
