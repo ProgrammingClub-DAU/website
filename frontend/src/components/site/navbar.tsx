@@ -85,7 +85,7 @@ export function Navbar() {
     // the members table, and nothing tells this browser. Reading the profile
     // once per load keeps the menu honest without a logout.
     dashboardService
-      .getProfile(String(userId))
+      .getProfile()
       .then((profile) => {
         if (cancelled) return;
         syncUser({

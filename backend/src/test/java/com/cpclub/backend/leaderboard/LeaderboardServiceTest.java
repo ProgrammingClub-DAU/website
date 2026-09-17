@@ -51,10 +51,10 @@ class LeaderboardServiceTest {
         tiers.put(2299, "Master");
         tiers.put(2300, "International Master");
         tiers.put(2399, "International Master");
-        tiers.put(2400, "International Grandmaster");
-        tiers.put(2599, "International Grandmaster");
-        tiers.put(2600, "Grandmaster");
-        tiers.put(2999, "Grandmaster");
+        tiers.put(2400, "Grandmaster");
+        tiers.put(2599, "Grandmaster");
+        tiers.put(2600, "International Grandmaster");
+        tiers.put(2999, "International Grandmaster");
         tiers.put(3000, "Legendary Grandmaster");
         tiers.put(4000, "Legendary Grandmaster");
 

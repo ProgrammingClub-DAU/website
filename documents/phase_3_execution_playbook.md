@@ -45,8 +45,9 @@ Two of them would stop a deploy or waste a fortnight, so they come first.
 | `V10__event_results.sql` | contest URL, podium, three visibility switches |
 | `V11__event_type.sql` | Flagship / Contest / Workshop / ICPC / Talk |
 | `V12__hall_of_fame.sql` | admin-maintained Hall of Fame entries, links and photos |
+| `V13__club_event_types.sql` | event types renamed to the club's own: IPC, Juniors' Contest, Inter-wing, Round Robin Relay, Lecture, Post-contest Discussion |
 
-The plan assigns V8, V9, V10 and V12 to V15 to Phase 3 tables. Two files sharing
+The plan assigns V8, V9, V10 and V12 to V15 to Phase 3 tables, and V8 to V13 are taken. Two files sharing
 a version number is not a warning: Flyway refuses to start with "Found more than
 one migration with version 8", so the deploy fails outright and the service does
 not come up.
@@ -55,21 +56,21 @@ Renumber, keeping the plan's order:
 
 | In the plan | Use instead |
 |---|---|
-| `V8__create_codeforces_problems_and_solves.sql` | `V13__...` |
-| `V9__create_contest_participations.sql` | `V14__...` |
-| `V10__create_platform_daily_totals.sql` | `V15__...` |
-| `V12__create_scores_awards_and_practice.sql` | `V16__...` |
-| `V13__create_club_contests.sql` | `V17__...` |
-| `V14__blog_workflow_and_comments.sql` | `V18__...` |
-| `V15__events_registrations_calendar_and_reminders.sql` | `V19__...` |
+| `V8__create_codeforces_problems_and_solves.sql` | `V14__...` |
+| `V9__create_contest_participations.sql` | `V15__...` |
+| `V10__create_platform_daily_totals.sql` | `V16__...` |
+| `V12__create_scores_awards_and_practice.sql` | `V17__...` |
+| `V13__create_club_contests.sql` | `V18__...` |
+| `V14__blog_workflow_and_comments.sql` | `V19__...` |
+| `V15__events_registrations_calendar_and_reminders.sql` | `V20__...` |
 
-Stage 1A's "Read first" line refers to V8 to V12. Those are now Phase 2.5
+Stage 1A's "Read first" line refers to V8 to V12 (read V13 too). Those are now Phase 2.5
 migrations and are worth reading for a different reason -- they are the schema
-this work extends -- but the Phase 3 tables are V13 onward.
+this work extends -- but the Phase 3 tables are V14 onward.
 
 **Check the highest applied version before adding a migration**, every time.
-This table has already had to move once, because V12 was taken by the Hall of
-Fame after it was written.
+This table has already had to move twice: V12 was taken by the Hall of Fame and
+V13 by the club's event types after it was written.
 
 ### A2 -- D15 is withdrawn. There is no email verification to build.
 
@@ -1154,8 +1155,8 @@ variable in Section 12.
 
 **Read first:** `codeforces/service/CodeforcesSyncService.java`,
 `leetcode/service/LeetCodeSyncService.java`, `common/config/AppConfig.java`,
-`user/service/UserService.java`, migrations V8 to V12 (these are Phase 2.5 -- the
-schema this stage extends; Phase 3's own migrations start at V13, amendment A1),
+`user/service/UserService.java`, migrations V8 to V13 (these are Phase 2.5 -- the
+schema this stage extends; Phase 3's own migrations start at V14, amendment A1),
 Section 1.1, and **amendment A4 before writing any sync code**.
 
 #### 4.1 `sync/` package [NEW]
