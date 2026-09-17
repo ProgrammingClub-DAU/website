@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3,
@@ -22,9 +23,11 @@ import { PlatformMark } from "@/components/site/platform-mark";
 import { RankLadder } from "@/components/site/rank-ladder";
 import { CF_RANKS } from "@/lib/cf-ranks";
 import { howItWorks } from "@/lib/content/home";
+import { dashboardService } from "@/lib/services/dashboard";
 import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { cn } from "@/lib/utils";
+import type { PublicMember } from "@/types/api";
 
 type Feature = {
   icon: LucideIcon;
@@ -38,45 +41,70 @@ type Feature = {
 const features: Feature[] = [
   {
     icon: BarChart3,
-    title: "Live leaderboard, synced from Codeforces",
-    body: "Ratings, deltas, and rank colors update from members' Codeforces handles, so standings stay current without anyone editing a spreadsheet.",
+    title: "Live leaderboard, synced from Codeforces and LeetCode",
+    body: "Ratings and rank colours update from members' handles, so standings stay current without anyone editing a spreadsheet.",
     span: true,
-    badge: "Signed-in members",
     footer: "ranks",
   },
   {
     icon: FileText,
     title: "Editorials & blog",
-    body: "Write-ups from club contests and problem breakdowns, published by members.",
+    body: "Write-ups from club contests and problem breakdowns, written by members.",
+    badge: "In development",
   },
   {
     icon: CalendarDays,
     title: "Contests & events",
-    body: "Weekly practice rounds, ICPC prep, and beginner workshops on one calendar.",
-    badge: "Coming soon",
+    body: "Every club event on one timeline, with results, winners and photos once it is over.",
   },
   {
     icon: Swords,
     title: "1v1 battles",
     body: "Head-to-head timed problems against another member, with a shared verdict feed.",
-    badge: "Coming soon",
+    badge: "In development",
   },
   {
     icon: Users,
-    title: "Member directory",
-    body: "Handles across Codeforces, CodeChef, LeetCode, and AtCoder in one profile per member — useful for finding a team.",
+    title: "The committee",
+    body: "Who runs the club this term, with their Codeforces, LeetCode, CodeChef and AtCoder profiles.",
     footer: "avatars",
   },
 ];
 
-const avatarInitials = ["AR", "MP", "KV", "ND", "+9"];
+/** How many committee faces the card shows before "+N". */
+const AVATAR_COUNT = 4;
+
+/**
+ * Fetch budget for the committee avatars. The page regenerates in the
+ * background, and a row of faces is not worth holding it for a cold backend.
+ */
+const TEAM_TIMEOUT_MS = 10_000;
+
+/** "Madhav Thesiya" -> "MT". */
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 
 // Regenerated in the background at most every five minutes, so a new Hall
 // of Fame entry appears without a redeploy and without every visit waiting
 // on the backend.
 export const revalidate = 300;
-export default function HomePage() {
+export default async function HomePage() {
+  // Real committee members for the avatar row. When the backend cannot be
+  // reached the row is simply left out -- never filled with placeholders.
+  let team: PublicMember[] = [];
+  try {
+    team = await dashboardService.getTeam(TEAM_TIMEOUT_MS);
+  } catch {
+    team = [];
+  }
+
   return (
     <>
       {/* Aurora is full-bleed, so it hangs off this wrapper rather than off the
@@ -101,7 +129,7 @@ export default function HomePage() {
               A home for problem solvers at DAU.
             </h1>
             <p className="text-halo mx-auto mt-6 max-w-[46ch] text-base leading-6 text-fg-muted text-pretty">
-              Weekly contests, editorials, and a leaderboard synced from Codeforces — for
+              Contests, lectures, and a leaderboard synced from Codeforces and LeetCode — for
               everyone from first-time solvers to ICPC regionalists.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -157,17 +185,40 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {feature.footer === "avatars" && (
-                  <div className="mt-auto flex pt-5 pl-2" aria-hidden>
-                    {avatarInitials.map((initials) => (
+                {feature.footer === "avatars" && team.length > 0 && (
+                  <Link
+                    href="/members"
+                    className="mt-auto flex items-center pt-5 pl-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                  >
+                    <span className="sr-only">Meet the committee</span>
+                    {team.slice(0, AVATAR_COUNT).map((member) => (
                       <span
-                        key={initials}
-                        className="-ml-2 flex size-9 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-xs text-fg-muted"
+                        key={member.id}
+                        aria-hidden
+                        className="-ml-2 flex size-9 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 font-mono text-xs text-fg-muted"
                       >
-                        {initials}
+                        {member.avatarUrl ? (
+                          <Image
+                            src={member.avatarUrl}
+                            alt=""
+                            width={36}
+                            height={36}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          initials(member.name)
+                        )}
                       </span>
                     ))}
-                  </div>
+                    {team.length > AVATAR_COUNT && (
+                      <span
+                        aria-hidden
+                        className="-ml-2 flex size-9 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-xs text-fg-muted"
+                      >
+                        +{team.length - AVATAR_COUNT}
+                      </span>
+                    )}
+                  </Link>
                 )}
               </div>
             );

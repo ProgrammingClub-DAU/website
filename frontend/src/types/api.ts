@@ -1,5 +1,3 @@
-import type { CfRankKey } from "@/lib/cf-ranks";
-
 // These are the types for our backend API responses.
 // They reflect the data we expect from the backend.
 
@@ -41,26 +39,6 @@ export const CLUB_HIERARCHY: ClubRole[] = [
   "BATCH_REPRESENTATIVE",
 ];
 
-export interface Member {
-  id?: string;
-  name: string;
-  initials: string;
-  batch: string;
-  group: "Core team" | "Associate team" | "Batch representatives";
-  role: string;
-  cf: CfRankKey;
-  about: string;
-  codeforcesHandle?: string;
-  rating?: number;
-  solvedCount?: number;
-  contestCount?: number;
-  avatarUrl?: string | null;
-  isActive?: boolean;
-  degree?: string;
-  gradYear?: string;
-  clubRoleCategory?: "Leadership" | "Core" | "Associate Core" | "Batch Representative" | "Student Participant";
-}
-
 export interface RatingHistoryEntry {
   date: string;
   rating: number;
@@ -80,8 +58,6 @@ export interface PlatformStats {
 
 // ── Club Activity & Event types ──
 
-export type ClubEventType = "Contest" | "Workshop" | "ICPC" | "Flagship" | "Other";
-
 export type ClubRole =
   | "CONVENOR"
   | "DEPUTY_CONVENOR"
@@ -94,17 +70,6 @@ export type ClubRole =
   | "STUDENT";
 
 export type EventStatus = "UPCOMING" | "COMPLETED" | "CANCELLED";
-
-export interface EventParticipation {
-  eventId: string;
-  eventName: string;
-  eventType: ClubEventType;
-  eventDate: string; // ISO date string
-  rank: number | null; // null for non-ranked events (workshops, etc.)
-  totalParticipants: number;
-  status: "participated" | "registered" | "winner" | "runner-up" | "top-3";
-  achievement: string | null; // e.g. "🥇 1st Place", null if none
-}
 
 /** How far into the course a member is. Chosen once, at registration. */
 export type AcademicYear = "FIRST_YEAR" | "SECOND_YEAR_ONWARDS";
@@ -137,7 +102,6 @@ export interface Profile {
   /** Name, Codeforces handle, phone number and year all filled in. */
   profileComplete: boolean;
   maxRating: number | null;
-  eventParticipations: EventParticipation[];
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
   activityData: ActivityDay[];
@@ -162,15 +126,22 @@ export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";
 export type LeaderboardFilter = "ALL" | "CORE" | "BATCH_REP" | "STUDENTS";
 
 /** What kind of event this is. Presentation only -- nothing branches on it. */
-export type EventType = "FLAGSHIP" | "CONTEST" | "WORKSHOP" | "ICPC" | "TALK";
+export type EventType =
+  | "IPC"
+  | "JUNIORS_CONTEST"
+  | "INTER_WING"
+  | "ROUND_ROBIN_RELAY"
+  | "LECTURE"
+  | "POST_CONTEST_DISCUSSION";
 
 /** The words for each, so no screen hand-types them. */
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  FLAGSHIP: "Flagship",
-  CONTEST: "Contest",
-  WORKSHOP: "Workshop",
-  ICPC: "ICPC",
-  TALK: "Talk",
+  IPC: "IPC",
+  JUNIORS_CONTEST: "Juniors' Contest",
+  INTER_WING: "Inter-wing",
+  ROUND_ROBIN_RELAY: "Round Robin Relay",
+  LECTURE: "Lecture",
+  POST_CONTEST_DISCUSSION: "Post-contest Discussion",
 };
 
 export interface Event {

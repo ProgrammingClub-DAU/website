@@ -9,33 +9,47 @@ import {
   Section,
   SectionHeader,
 } from "@/components/site/primitives";
-import {
-  PlatformMark,
-  PLATFORM_ACCENT,
-  PLATFORM_LABEL,
-  PLATFORM_URL,
-} from "@/components/site/platform-mark";
-import {
-  calendar,
-  faq,
-  joinSteps,
-  organisation,
-  platforms,
-  whatWeDo,
-} from "@/lib/content/about";
+import { PlatformMark, PLATFORM_ACCENT } from "@/components/site/platform-mark";
+import { cpIntro, faq, joinSteps, practicePlatforms, whatWeDo } from "@/lib/content/about";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
-  description: `A student club built around practice, not prestige, at ${site.university}.`,
+  description: `What the ${site.fullName} runs, who it is for, and how to start competitive programming.`,
 };
-
 
 // Regenerated in the background at most every five minutes, so a new Hall
 // of Fame entry appears without a redeploy and without every visit waiting
 // on the backend.
 export const revalidate = 300;
+
+/**
+ * HackerRank's place in the platform list.
+ *
+ * Our own lettermark, as for AtCoder in platform-mark.tsx: a hexagon with the H
+ * cut out. It lives here rather than in PlatformMark because HackerRank is a
+ * place to practise, not a handle members link, and adding it to PlatformId
+ * would put it on every profile form.
+ */
+function HackerRankMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      fillRule="evenodd"
+      aria-hidden
+      focusable="false"
+    >
+      <path d="M12 1.5 L21.1 6.75 L21.1 17.25 L12 22.5 L2.9 17.25 L2.9 6.75 Z M8.5 7 L10.5 7 L10.5 11 L13.5 11 L13.5 7 L15.5 7 L15.5 17 L13.5 17 L13.5 13 L10.5 13 L10.5 17 L8.5 17 Z" />
+    </svg>
+  );
+}
+
+/** HackerRank borrows the pupil green; the other four have their own accents. */
+const HACKERRANK_ACCENT = "var(--cf-pupil)";
+
 export default function AboutPage() {
   return (
     <>
@@ -45,28 +59,11 @@ export default function AboutPage() {
           A student club built around practice, not prestige.
         </PageTitle>
         <p className="mt-6 max-w-[58ch] text-base leading-relaxed text-fg-muted text-pretty">
-          {site.fullName} is run by students at {site.university}. We meet to solve
-          challenging problems, run campus contests, and help each other level up in algorithmic
-          programming — while celebrating every milestone together as a campus family.
+          {site.fullName} is run by students at {site.university}. It is for anyone at DAU who
+          wants to get better at solving problems with code: first-years who have never opened
+          an online judge, students preparing for placement rounds, and seasoned contestants
+          alike.
         </p>
-        <div className="mt-8 flex flex-wrap gap-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
-            <span className="size-1.5 rounded-full bg-cf-specialist" />
-            150+ Active Solvers
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
-            <span className="size-1.5 rounded-full bg-cf-candidate" />
-            Weekly Contests & Editorials
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
-            <span className="size-1.5 rounded-full bg-cf-master" />
-            Festivals & Gatherings
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1 text-xs font-medium text-fg-muted">
-            <span className="size-1.5 rounded-full bg-cf-pupil" />
-            Zero Entry Barrier
-          </span>
-        </div>
       </Section>
 
       <Section className="pb-16">
@@ -94,294 +91,99 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      {/* Community Showcase & Culture Feature */}
       <Section className="pb-16">
-        <div className="overflow-hidden rounded-2xl border border-hairline bg-surface transition-all duration-300 hover:border-border hover:shadow-panel">
-          {/*
-            The photo half of this panel is deliberately absent. It was built
-            around /dummyImage.jpg, a placeholder, and a stock-looking filler
-            image on the About page undercuts the section it illustrates. The
-            copy stands on its own, so the story column spans the full width
-            until a real club photograph exists.
-
-            To restore it: put the photo in /public, wrap this in
-            `<div className="grid gap-0 lg:grid-cols-12">`, add the image
-            column as `lg:col-span-7`, and give this block `lg:col-span-5`.
-          */}
-          <div>
-            {/* Story & Vibe */}
-            <div className="flex flex-col justify-between p-8 lg:p-10">
-              <div>
-                <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
-                  Culture & Community
-                </div>
-                <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-                  Code hard, celebrate harder.
-                </h3>
-                <p className="mt-4 text-body leading-relaxed text-fg-muted text-pretty">
-                  We believe the best problem solvers aren&apos;t solitary grinders — they are a tight-knit family.
-                  Beyond the Codeforces leaderboards and 5-hour ICPC qualifiers, our club comes alive during
-                  festive Navratri Garba nights, Diwali celebrations, batch dinners, and late-night hostel debriefs.
-                </p>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 gap-3 border-t border-hairline pt-6">
-                <div className="rounded-xl border border-hairline bg-surface-2/50 p-3.5">
-                  <div className="text-xl font-bold text-foreground">150+</div>
-                  <div className="mt-1 text-xs text-fg-muted">Active members across batches</div>
-                </div>
-                <div className="rounded-xl border border-hairline bg-surface-2/50 p-3.5">
-                  <div className="text-xl font-bold text-foreground">100%</div>
-                  <div className="mt-1 text-xs text-fg-muted">Student-run & welcoming</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      <Section className="pb-16">
-        <div className="grid gap-8 md:grid-cols-2 md:gap-10">
-          <div className="rounded-panel border border-hairline bg-surface/50 p-8 transition-all hover:border-border">
-            <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
-              Origin Story
-            </div>
-            <h2 className="mt-2 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
-              Where the club came from
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
-              Founded in 2021 by passionate seniors who wanted to build an enduring competitive programming culture at DAU. What started as whiteboard sessions in hostel common rooms quickly grew into weekly campus rounds and structured workshops.
-            </p>
-            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
-              Today, the club is a permanent campus fixture with multiple teams qualifying for ICPC Regionals, automated rating syncs, and seniors mentoring incoming batches.
-            </p>
-          </div>
-          <div className="rounded-panel border border-hairline bg-surface/50 p-8 transition-all hover:border-border">
-            <div className="font-mono text-xs tracking-[0.12em] text-primary uppercase">
-              Inclusivity
-            </div>
-            <h2 className="mt-2 font-heading text-[clamp(1.375rem,2.8vw,1.75rem)] font-medium tracking-[-0.02em]">
-              Who it is for
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
-              Anyone at DAU who wants to get better at solving problems with code. First-years who have never opened an online judge, students preparing for placement rounds, and seasoned contestants all practice together.
-            </p>
-            <p className="mt-4 text-base leading-relaxed text-fg-muted text-pretty">
-              There is no entrance test, no cutoffs, and no gatekeeping. The only expectation is that you show up, stay curious, and attempt problems.
-            </p>
-          </div>
-        </div>
-      </Section>
-
-      <Section className="pb-16">
-        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
-          How the club is organised
-        </h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {organisation.map((item) => (
-            <div
-              key={item.role}
-              className="rounded-panel border border-hairline bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-panel"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="size-1.5 rounded-full"
-                  style={{ background: item.color }}
-                  aria-hidden
-                />
-                <span className="font-mono text-label tracking-caps text-fg-muted uppercase">
-                  {item.role}
-                </span>
-              </div>
-              <p className="mt-4 text-body leading-[1.5] text-fg-muted text-pretty">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section className="pb-16">
-        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
-          The year, roughly
-        </h2>
-        <p className="mt-4 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          The calendar repeats every academic year, so members know what is coming without
-          checking announcements.
-        </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {calendar.map((item) => (
-            <div
+        <SectionHeader eyebrow="Through the year" title="What we do." />
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {whatWeDo.map((item, i) => (
+            <li
               key={item.title}
-              className="border-t border-border pt-5 transition-all hover:-translate-y-0.5 hover:border-primary"
+              className="flex items-baseline gap-3.5 rounded-panel border border-hairline bg-surface px-5 py-4.5 transition-all hover:-translate-y-0.5 hover:border-border"
             >
-              <div className="font-mono text-xs tracking-[0.1em] text-primary uppercase">
-                {item.when}
-              </div>
-              <p className="mt-3 text-base font-semibold tracking-tight">{item.title}</p>
-              <p className="mt-2 text-body leading-[1.5] text-fg-muted text-pretty">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section className="pb-16">
-        <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
-          What we do
-        </h2>
-        <dl className="mt-8 border-t border-hairline">
-          {whatWeDo.map((item) => (
-            <div
-              key={item.title}
-              className="grid gap-2 border-b border-hairline py-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-8"
-            >
-              <dt className="font-mono text-meta tracking-caps uppercase">
+              <span className="font-mono text-xs text-primary">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="text-body leading-[1.45] font-medium text-pretty">
                 {item.title}
-              </dt>
-              <dd className="text-base leading-6 text-fg-muted text-pretty">{item.body}</dd>
-            </div>
+                {item.short ? <span className="text-fg-muted"> ({item.short})</span> : null}
+              </span>
+            </li>
           ))}
-        </dl>
-      </Section>
-
-      <Section className="pb-16">
-        <SectionHeader
-          eyebrow="Where we compete"
-          title="Four platforms, one leaderboard."
-        />
-        <p className="mt-5 max-w-[58ch] text-base leading-6 text-fg-muted text-pretty">
-          Members practise wherever they like. These are the four we organise around,
-          and the two we can track automatically.
+        </ul>
+        <p className="mt-6 text-sm text-fg-muted">
+          Dates, results and photos for each are on the{" "}
+          <Link href="/events" className="text-primary underline-offset-4 hover:underline">
+            events page
+          </Link>
+          .
         </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {platforms.map((platform) => (
-            // Each card carries its own hue at rest, not only under the cursor.
-            // `colors` drives the mesh fill, whose mask is mostly static, so a
-            // single-hue trio tints the card persistently — no `animated` sweep,
-            // which would have meant four rAF chains per card running forever
-            // for something purely decorative.
-            <BorderGlow
-              key={platform.id}
-              glowColor={PLATFORM_ACCENT[platform.id]}
-              colors={[
-                PLATFORM_ACCENT[platform.id],
-                PLATFORM_ACCENT[platform.id],
-                PLATFORM_ACCENT[platform.id],
-              ]}
-              contentClassName="p-0"
-            >
-              <a
-                href={PLATFORM_URL[platform.id]}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ "--accent": PLATFORM_ACCENT[platform.id] } as React.CSSProperties}
-                className="group block rounded-panel p-8 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-              >
-                <div className="flex items-start gap-4">
-                  {/*
-                    The mark gets a tinted tile of its own rather than sitting
-                    inline at text size. At 24px beside a heading it read as
-                    punctuation; at 30px on a 60px plate it becomes the thing
-                    the eye lands on, which is what earns the section a look.
-
-                    color-mix against the accent token keeps the tint and ring
-                    derived from one value, so a change to PLATFORM_ACCENT
-                    carries through the plate, the ring, and the glow together.
-
-                    No `title` on the mark: the platform name is rendered right
-                    beside it, so labelling the icon too would have screen
-                    readers announce the same word twice for one link.
-                  */}
-                  <span
-                    className="grid size-15 shrink-0 place-items-center rounded-2xl ring-1 transition-all duration-300 group-hover:scale-105"
-                    style={{
-                      background:
-                        "color-mix(in srgb, var(--accent) 14%, transparent)",
-                      boxShadow:
-                        "0 0 28px color-mix(in srgb, var(--accent) 22%, transparent)",
-                      "--tw-ring-color":
-                        "color-mix(in srgb, var(--accent) 30%, transparent)",
-                    } as React.CSSProperties}
-                  >
-                    <PlatformMark
-                      platform={platform.id}
-                      className="size-[30px] text-[var(--accent)]"
-                    />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                      <span className="text-lg font-semibold tracking-tight">
-                        {PLATFORM_LABEL[platform.id]}
-                      </span>
-                      {/*
-                        The synced badge borrows the accent; "link only" stays
-                        deliberately grey. The two states should not read as
-                        equal — one is a live feature of this site, the other is
-                        a plain outbound link.
-                      */}
-                      <span
-                        className={
-                          platform.syncs
-                            ? "rounded-full px-2.5 py-0.5 font-mono text-micro tracking-caps-wide text-[var(--accent)] uppercase ring-1"
-                            : "rounded-full border border-hairline px-2.5 py-0.5 font-mono text-micro tracking-caps-wide text-fg-subtle uppercase"
-                        }
-                        style={
-                          platform.syncs
-                            ? ({
-                                background:
-                                  "color-mix(in srgb, var(--accent) 12%, transparent)",
-                                "--tw-ring-color":
-                                  "color-mix(in srgb, var(--accent) 35%, transparent)",
-                              } as React.CSSProperties)
-                            : undefined
-                        }
-                      >
-                        {platform.syncs ? "Rating synced" : "Link only"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-fg-muted text-pretty">
-                      {platform.body}
-                    </p>
-                  </div>
-                </div>
-              </a>
-            </BorderGlow>
-          ))}
-        </div>
       </Section>
 
       <Section className="pb-16">
-        <div className="grid gap-4 md:grid-cols-3">
+        <SectionHeader eyebrow="Getting started" title="New to competitive programming?" />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
           {[
-            {
-              label: "Meetings",
-              body: "Weekly rounds every Wednesday 6:00 PM and weekend workshops in Lab 3 / SAC. Hybrid participation supported.",
-            },
-            {
-              label: "Team",
-              body: "Led by students across batches: coordinators, contest problem setters, and senior ICPC mentors.",
-            },
-            {
-              label: "Contact",
-              body: "Drop by our lab sessions, join our active Discord community, or reach us directly at cpclub@dau.ac.in.",
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="rounded-panel border border-hairline bg-surface p-7 transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-panel"
-            >
+            { label: "What it is", items: cpIntro.what },
+            { label: "Why do it", items: cpIntro.why },
+            { label: "What you get out of it", items: cpIntro.benefits },
+          ].map((column) => (
+            <div key={column.label} className="rounded-panel border border-hairline bg-surface p-7">
               <div className="font-mono text-xs tracking-[0.12em] text-fg-subtle uppercase">
-                {item.label}
+                {column.label}
               </div>
-              <p className="mt-4 text-base leading-6 text-fg-muted text-pretty">
-                {item.body}
-              </p>
+              <ul className="mt-4 flex flex-col gap-2.5">
+                {column.items.map((item) => (
+                  <li key={item} className="flex gap-2.5 text-body leading-[1.5] text-fg-muted">
+                    <span aria-hidden className="mt-[0.6em] size-1 shrink-0 rounded-full bg-primary" />
+                    <span className="text-pretty">{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
+
+        <h3 className="mt-12 text-lg font-semibold tracking-tight">Where to practise</h3>
+        <p className="mt-2 max-w-[58ch] text-base leading-6 text-fg-muted text-pretty">
+          All five are free. Codeforces and LeetCode ratings also feed this site&apos;s
+          leaderboard once you add your handle.
+        </p>
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {practicePlatforms.map((platform) => {
+            const accent =
+              platform.id === "hackerrank" ? HACKERRANK_ACCENT : PLATFORM_ACCENT[platform.id];
+            return (
+              <li key={platform.id}>
+                <a
+                  href={platform.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ "--accent": accent } as React.CSSProperties}
+                  className="group flex h-full items-center gap-3.5 rounded-panel border border-hairline bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring lg:flex-col lg:items-start"
+                >
+                  <span
+                    className="grid size-11 shrink-0 place-items-center rounded-xl"
+                    style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}
+                  >
+                    {platform.id === "hackerrank" ? (
+                      <HackerRankMark className="size-[22px] text-[var(--accent)]" />
+                    ) : (
+                      <PlatformMark platform={platform.id} className="size-[22px] text-[var(--accent)]" />
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold tracking-tight">
+                      {platform.label}
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </span>
+                    <span className="mt-0.5 block font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
+                      {platform.syncs ? "Rating synced" : "Practice"}
+                    </span>
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
       </Section>
 
       <Section className="pb-16">
@@ -408,22 +210,20 @@ export default function AboutPage() {
       <HallOfFameTeaser title="Past results and alumni." />
 
       <Section className="pb-22">
-        <BorderGlow contentClassName="grid gap-8 p-10 md:grid-cols-2 md:items-center">
+        <BorderGlow contentClassName="grid gap-8 p-6 sm:p-10 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="font-heading text-[clamp(1.5rem,3.2vw,2rem)] font-medium tracking-[-0.02em]">
               How to join
             </h2>
             <p className="mt-4 max-w-[44ch] text-base leading-6 text-fg-muted text-pretty">
-              Open to all DAU students, any batch, any experience level. Create an account
-              with your college email, add your Codeforces handle, and come to the next
-              round.
+              Open to all DAU students, any batch, any experience level.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild className="h-10 rounded-full px-5.5">
-                <Link href="/login">Create an account</Link>
+                <Link href="/login">Sign in</Link>
               </Button>
               <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
-                <Link href="/members">Meet the members</Link>
+                <Link href="/members">Meet the committee</Link>
               </Button>
             </div>
           </div>

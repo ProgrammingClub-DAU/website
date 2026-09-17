@@ -1,128 +1,85 @@
-export const organisation = [
-  {
-    role: "Core team",
-    color: "var(--cf-grandmaster)",
-    body: "Elected student coordinators who guide the club's contests, workshops, cultural celebrations, and campus initiatives.",
-  },
-  {
-    role: "Problem setters",
-    color: "var(--cf-master)",
-    body: "Members who write and test original problems for club rounds, curating challenges across all difficulty tiers.",
-  },
-  {
-    role: "Web team",
-    color: "var(--cf-expert)",
-    body: "Maintains this platform, automated Codeforces sync, leaderboards, and member profiles.",
-  },
-  {
-    role: "Mentors",
-    color: "var(--cf-pupil)",
-    body: "Seniors and ICPC regionalists who host doubt-solving sessions, editorial reviews, and 1-on-1 guidance.",
-  },
-];
+/**
+ * Copy for the About page.
+ *
+ * Everything here is either the club's own description of itself (the
+ * orientation deck) or a plain fact about this site. Nothing is estimated: a
+ * member count, a meeting slot or a founding year belongs here only once the
+ * club confirms it.
+ */
 
-export const calendar = [
-  {
-    when: "Semester start",
-    title: "Onboarding",
-    body: "Intro session, handle collection, and a beginner-friendly round in the first weeks.",
-  },
-  {
-    when: "Through the term",
-    title: "Weekly rounds",
-    body: "A club contest every week, with an editorial published after it.",
-  },
-  {
-    when: "Pre-ICPC",
-    title: "Team practice",
-    body: "Team formation, mock regionals, and past-set practice ahead of the prelims.",
-  },
-  {
-    when: "Breaks",
-    title: "Long contests",
-    body: "Winter and summer long contests that stay open for several days.",
-  },
-];
-
+/** What the club runs, in the club's own words (orientation deck, "What do we do"). */
 export const whatWeDo = [
-  {
-    title: "Weekly rounds",
-    body: "Club-hosted contests on a fixed weekly slot, with problems set by senior members and difficulty tiers for beginners.",
-  },
-  {
-    title: "Editorials",
-    body: "Written solutions after every round, plus deeper breakdowns of recurring topics like graphs, DP, and number theory.",
-  },
-  {
-    title: "ICPC preparation",
-    body: "Team formation, mock regionals, and practice on past problem sets through the second half of the year.",
-  },
-  {
-    title: "Beginner track",
-    body: "A structured start for first-year students: language basics, complexity, and a first hundred problems.",
-  },
-  {
-    title: "Rating tracking",
-    body: "Codeforces, CodeChef, LeetCode, and AtCoder handles collected in one directory so progress is visible over time.",
-  },
+  { title: "Intra College Programming Contests", short: "IPC" },
+  { title: "Juniors' Contests" },
+  { title: "Inter-wing Competition" },
+  { title: "Round Robin Relay" },
+  { title: "Lecture sessions on competitive programming" },
+  { title: "Post-contest discussions and editorials" },
+  { title: "Guiding juniors in their CP journey" },
 ];
+
+/** "New to competitive programming?" -- the orientation deck's introduction. */
+export const cpIntro = {
+  what: [
+    "Solving well-defined problems by writing code, within given constraints.",
+    "Built on algorithms, data structures, mathematics and logic.",
+    "A solution has to be correct and efficient in both time and memory.",
+  ],
+  why: [
+    "Sharpens analytical and problem-solving skills.",
+    "Unlimited practice material online.",
+    "The platforms are free to use.",
+    "A large community to learn from.",
+    "Coding rounds and technical interviews test the same skills.",
+  ],
+  benefits: [
+    "Exercise for the brain.",
+    "Practice at working under pressure.",
+    "Thinking out of the box.",
+    "Evolving from a working solution to an efficient one.",
+    "Knowing your language's features well.",
+    "Competitive and career opportunities.",
+  ],
+};
 
 /**
- * The platforms the club practises on.
+ * Where to practise.
  *
  * `syncs` is a factual claim about this site, not a ranking. Codeforces and
  * LeetCode expose stable public APIs, so their ratings are pulled into the
- * leaderboard automatically. CodeChef and AtCoder do not, so those are stored as
- * links only — a locked decision in Section 1 of the Phase 2 plan, taken because
- * scraping either one breaks whenever their markup changes.
- *
- * Saying so plainly is the point of the flag: a member who links a CodeChef
- * profile should not be left wondering why their rating never appears.
+ * leaderboard automatically. The others do not, so they are not tracked here --
+ * a locked decision in Section 1 of the Phase 2 plan, taken because scraping
+ * breaks whenever a site's markup changes.
  */
-export const platforms = [
-  {
-    id: "codeforces" as const,
-    body: "Our main contest platform. Ratings sync into the club leaderboard automatically, every six hours.",
-    syncs: true,
-  },
-  {
-    id: "leetcode" as const,
-    body: "Interview-style practice and weekly contests. Contest ratings sync to your profile when you link a handle.",
-    syncs: true,
-  },
-  {
-    id: "codechef" as const,
-    body: "Long and short format rounds, with a gentle on-ramp for beginners. Link your profile from your dashboard.",
-    syncs: false,
-  },
-  {
-    id: "atcoder" as const,
-    body: "Clean, carefully tested problems. The weekend Beginner Contests are a good first contest for anyone.",
-    syncs: false,
-  },
-];
+export const practicePlatforms = [
+  { id: "codeforces", label: "Codeforces", url: "https://codeforces.com", syncs: true },
+  { id: "atcoder", label: "AtCoder", url: "https://atcoder.jp", syncs: false },
+  { id: "leetcode", label: "LeetCode", url: "https://leetcode.com", syncs: true },
+  { id: "codechef", label: "CodeChef", url: "https://www.codechef.com", syncs: false },
+  { id: "hackerrank", label: "HackerRank", url: "https://www.hackerrank.com", syncs: false },
+] as const;
 
 export const faq = [
   {
     q: "Do I need contest experience to join?",
-    a: "No. The beginner track assumes you have written some code in any language and nothing more.",
+    a: "No. It helps to have written some code in any language, and that is all.",
   },
   {
     q: "Which language should I use?",
-    a: "C++ is the most common in the club, but Java and Python are fine. Bring what you are fastest in.",
+    a: "Whichever you are fastest in. C++ is the most common choice in competitive programming, and Java and Python are accepted on every platform above.",
   },
   {
-    q: "Is there a fee or a selection process?",
-    a: "No fee and no selection. Sign in with your DAU email and you are a member.",
+    q: "How do I sign in?",
+    a: "With your DAU Google account (@dau.ac.in). Other accounts are not accepted.",
   },
   {
-    q: "How much time does it take?",
-    a: "Around 2 to 3 hours weekly for the contest and post-round editorial discussion. All other practice and workshops are completely self-paced.",
+    q: "Which ratings appear on the leaderboard?",
+    a: "Codeforces and LeetCode, read from the handles on your profile. CodeChef and AtCoder profiles show as links on your profile.",
   },
 ];
 
 export const joinSteps = [
-  { n: "01", text: "Sign up with your DAU email." },
-  { n: "02", text: "Add your Codeforces handle to your profile." },
-  { n: "03", text: "Show up for the next weekly round." },
+  { n: "01", text: "Sign in with your DAU Google account." },
+  { n: "02", text: "Add your Codeforces and LeetCode handles to your profile." },
+  { n: "03", text: "Check the events page for what is next." },
 ];
