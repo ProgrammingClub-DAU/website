@@ -1,5 +1,6 @@
 package com.cpclub.backend.user;
 
+import org.springframework.data.domain.Sort;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.user.dto.PublicUserResponseDto;
@@ -50,14 +51,17 @@ class UserServiceTest {
         User u2 = new User("User Two", "two@example.com", "pass2", Role.ROLE_ADMIN);
         u2.setId(2L);
 
-        when(userRepository.findAll()).thenReturn(Arrays.asList(u1, u2));
+        // The sort is the point of the method: without it the database decides
+        // the order and the admin table reshuffles between loads.
+        Sort byId = Sort.by(Sort.Direction.ASC, "id");
+        when(userRepository.findAll(byId)).thenReturn(Arrays.asList(u1, u2));
 
         List<UserResponseDto> result = userService.getAllUsers();
 
         assertEquals(2, result.size());
         assertEquals("User One", result.get(0).name());
         assertEquals("User Two", result.get(1).name());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAll(byId);
     }
 
     @Test
