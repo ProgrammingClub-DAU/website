@@ -23,7 +23,6 @@ import {
   SPINE_X,
   Timeline,
   TimelineCard,
-  TimelineEnd,
   TimelineEntry,
   TimelineGroup,
   TimelineHeadSpine,
@@ -270,8 +269,6 @@ export function HallOfFameTimeline({ entries }: { entries: HallOfFameEntry[] }) 
             </Timeline>
           </TimelineGroup>
         ))}
-
-        <TimelineEnd label="Start of the record" />
 
         {/* Light travelling down the spine between year markers. Rendered last
             so the refs above are populated; pathOpacity 0 because the spine

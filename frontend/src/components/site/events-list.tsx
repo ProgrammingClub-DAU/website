@@ -18,7 +18,6 @@ import { ArrowUpRight } from "lucide-react";
 import {
   Timeline,
   TimelineCard,
-  TimelineEnd,
   TimelineEntry,
   TimelineGroup,
   TimelineRoot,
@@ -54,21 +53,11 @@ export function EventsList({ upcoming, completed }: { upcoming: Event[]; complet
   return (
     <div className="space-y-16">
       {upcoming.length > 0 && (
-        <EventRun
-          heading="Upcoming"
-          rootLabel="What is next"
-          endLabel="Nothing further scheduled"
-          events={upcoming}
-        />
+        <EventRun heading="Upcoming" rootLabel="What is next" events={upcoming} />
       )}
 
       {completed.length > 0 && (
-        <EventRun
-          heading="Past events"
-          rootLabel="Club timeline"
-          endLabel="Start of the record"
-          events={completed}
-        />
+        <EventRun heading="Past events" rootLabel="Club timeline" events={completed} />
       )}
     </div>
   );
@@ -77,12 +66,10 @@ export function EventsList({ upcoming, completed }: { upcoming: Event[]; complet
 function EventRun({
   heading,
   rootLabel,
-  endLabel,
   events,
 }: {
   heading: string;
   rootLabel: string;
-  endLabel: string;
   events: Event[];
 }) {
   return (
@@ -143,7 +130,6 @@ function EventRun({
           ))}
         </Timeline>
 
-        <TimelineEnd label={endLabel} />
       </TimelineGroup>
     </section>
   );
