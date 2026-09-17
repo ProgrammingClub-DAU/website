@@ -17,6 +17,16 @@ export const metadata: Metadata = {
     "Who is in the Programming Club @ DAU and what they look after, plus everyone who built this site.",
 };
 
+/** "Madhav Thesiya" -> "MT". */
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export default async function MembersPage() {
   // Only the committee. The page lists who runs the club, and the full
   // membership is not that -- it was a second section of everyone who had ever
@@ -64,25 +74,18 @@ export default async function MembersPage() {
           </p>
 
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {credits.map((credit) => (
+            {credits.map((name) => (
               <li
-                key={credit.name}
-                className="glass-panel flex items-center gap-4 rounded-panel p-5.5 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
+                key={name}
+                className="glass-panel flex items-center gap-4 rounded-panel p-4.5 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
               >
-                <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-sm text-fg-muted">
-                  {credit.initials}
+                <span
+                  aria-hidden
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 font-mono text-xs text-fg-muted"
+                >
+                  {initials(name)}
                 </span>
-                <div className="min-w-0">
-                  <p className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
-                    {credit.years}
-                  </p>
-                  <p className="mt-2 text-body font-semibold tracking-tight">
-                    {credit.name}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-5 text-fg-muted text-pretty">
-                    {credit.work}
-                  </p>
-                </div>
+                <p className="min-w-0 text-body font-semibold tracking-tight">{name}</p>
               </li>
             ))}
           </ul>

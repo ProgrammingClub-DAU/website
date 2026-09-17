@@ -31,8 +31,8 @@ public record LeaderboardResponseDto(
     public static String calculateTier(Integer rating) {
         if (rating == null) return "Unrated";
         if (rating >= 3000) return "Legendary Grandmaster";
-        if (rating >= 2600) return "Grandmaster";
-        if (rating >= 2400) return "International Grandmaster";
+        if (rating >= 2600) return "International Grandmaster";
+        if (rating >= 2400) return "Grandmaster";
         if (rating >= 2300) return "International Master";
         if (rating >= 2100) return "Master";
         if (rating >= 1900) return "Candidate Master";

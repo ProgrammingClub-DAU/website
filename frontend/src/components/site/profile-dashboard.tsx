@@ -8,10 +8,9 @@
  * - Full owner-only Edit Profile panel (Name, Phone [required], CF, LeetCode, CodeChef, AtCoder, GitHub, LinkedIn)
  * - Contest rating graphs: Codeforces rating history + LeetCode snapshot rating history
  * - Account details with masked phone for visitors
- * - Club Activity & Event Performance summary
  */
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Script from "next/script";
 import Image from "next/image";
 import { RatingGraph, type RatingPoint } from "@/components/site/rating-graph";
@@ -26,15 +25,13 @@ import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import { ACADEMIC_YEAR_LABELS, type Profile, type EventParticipation, type AcademicYear } from "@/types/api";
+import { ACADEMIC_YEAR_LABELS, type Profile, type AcademicYear } from "@/types/api";
 import {
   User,
   Trophy,
-  Code,
-  Award,
-  Zap,
+  Code,
   Edit2,
-  Camera,
+  Camera,
   Phone,
   Mail,
   AlertCircle,
@@ -47,7 +44,6 @@ import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
-// ── Generate achievements from event participations ──
 /**
  * Builds a complete profile payload.
  *
@@ -87,31 +83,6 @@ function formFromProfile(profile: Profile) {
   };
 }
 
-function generateAchievements(events: EventParticipation[]): { icon: string; label: string }[] {
-  const achievements: { icon: string; label: string }[] = [];
-
-  events.forEach((e) => {
-    if (e.achievement) {
-      achievements.push({
-        icon: e.achievement.split(" ")[0],
-        label: `${e.eventName} — ${e.achievement.substring(e.achievement.indexOf(" ") + 1)}`,
-      });
-    }
-  });
-
-  const totalEvents = events.length;
-  if (totalEvents >= 10) achievements.push({ icon: "🎯", label: "Participated in 10+ Club Events" });
-  else if (totalEvents >= 5) achievements.push({ icon: "🎯", label: "Participated in 5+ Club Events" });
-
-  const contests = events.filter(
-    (e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC"
-  );
-  const top3Count = contests.filter((e) => e.rank !== null && e.rank <= 3).length;
-  if (top3Count >= 3) achievements.push({ icon: "🏆", label: "Top 3 Finisher — 3+ Contests" });
-
-  return achievements;
-}
-
 export default function ProfileDashboard({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cfInfo, setCfInfo] = useState<CfUserInfo | null>(null);
@@ -126,7 +97,7 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   const loadProfile = useCallback(async () => {
     try {
       const data = isOwner
-        ? await dashboardService.getProfile(userId)
+        ? await dashboardService.getProfile()
         : await dashboardService.getUserProfileById(userId);
       setProfile(data);
 
@@ -321,25 +292,6 @@ function ProfileDashboardContent({
   const actualCfRank = getCfRank(currentRating ?? 0);
   const nameColor = rankColor(actualCfRank);
   const rankName = CF_RANKS.find((r) => r.key === actualCfRank)?.name ?? actualCfRank;
-
-  const eventParticipations = useMemo(() => profile.eventParticipations ?? [], [profile.eventParticipations]);
-  const clubStats = useMemo(() => {
-    const contests = eventParticipations.filter(
-      (e) => e.eventType === "Contest" || e.eventType === "Flagship" || e.eventType === "ICPC"
-    );
-    const workshops = eventParticipations.filter((e) => e.eventType === "Workshop");
-    const rankedEvents = eventParticipations.filter((e) => e.rank !== null);
-    const bestRank = rankedEvents.length > 0 ? Math.min(...rankedEvents.map((e) => e.rank!)) : null;
-    const achievements = generateAchievements(eventParticipations);
-    return {
-      totalEvents: eventParticipations.length,
-      totalContests: contests.length,
-      totalWorkshops: workshops.length,
-      bestRank,
-      achievementCount: achievements.length,
-      achievements,
-    };
-  }, [eventParticipations]);
 
   const lcPoints: RatingPoint[] = lcHistory;
 
@@ -677,70 +629,6 @@ function ProfileDashboardContent({
           { platform: "linkedin", value: profile.linkedinUrl },
         ]}
       />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Zap className="size-4 text-primary" />
-            Club Stats
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {eventParticipations.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">{clubStats.totalEvents}</div>
-                <div className="mt-1 text-xs text-fg-muted">Events Participated</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">{clubStats.totalContests}</div>
-                <div className="mt-1 text-xs text-fg-muted">Contests</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">{clubStats.totalWorkshops}</div>
-                <div className="mt-1 text-xs text-fg-muted">Workshops</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">{clubStats.bestRank !== null ? `#${clubStats.bestRank}` : "—"}</div>
-                <div className="mt-1 text-xs text-fg-muted">Best Rank</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-4 text-center">
-                <div className="text-2xl font-bold">{clubStats.achievementCount}</div>
-                <div className="mt-1 text-xs text-fg-muted">Achievements</div>
-              </div>
-            </div>
-          ) : (
-            <p className="py-4 text-center text-sm text-fg-muted">
-              No club activities recorded yet.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ── Achievements ── */}
-      {clubStats.achievements.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Award className="size-4 text-amber-400" />
-              Achievements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {clubStats.achievements.map((a, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-4 py-3"
-                >
-                  <span className="text-xl">{a.icon}</span>
-                  <span className="text-sm font-medium">{a.label}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ── Codeforces Contest Rating History ── */}
       <Card>

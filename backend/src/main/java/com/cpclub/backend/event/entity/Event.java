@@ -61,7 +61,7 @@ public class Event {
      * (V11).</p>
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", length = 20)
+    @Column(name = "event_type", length = 40)
     private EventType eventType;
 
     /**

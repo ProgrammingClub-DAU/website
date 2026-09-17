@@ -49,7 +49,7 @@ export default function WelcomeForm() {
     let cancelled = false;
 
     dashboardService
-      .getProfile(String(user?.id ?? ""))
+      .getProfile()
       .then((loaded) => {
         if (cancelled) return;
 

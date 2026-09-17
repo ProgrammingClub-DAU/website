@@ -1,10 +1,6 @@
 import apiClient from "@/lib/axios";
 import { Profile, PublicMember } from "@/types/api";
 import type { ApiResponse } from "@/store/auth";
-import { getMockProfile } from "@/lib/content/mock-dashboards";
-
-// Mock mode disabled for Phase 1 completion
-const IS_MOCK = false;
 
 /**
  * How long a server-rendered page waits for the backend.
@@ -78,7 +74,6 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     academicYear: user.academicYear ?? null,
     profileComplete: user.profileComplete ?? false,
     maxRating: user.rating,
-    eventParticipations: [], // Phase 2
     platformStats: [], // Phase 2
     ratingHistory: [], // Live fetch
     activityData: [], // Phase 2
@@ -94,28 +89,22 @@ export const dashboardService = {
    * list is small enough to send whole. Re-sorting here would be a second place
    * for that order to be wrong.
    */
-  getTeam: async (): Promise<PublicMember[]> => {
+  getTeam: async (timeout: number = SSR_TIMEOUT_MS): Promise<PublicMember[]> => {
     const response = await apiClient.get<ApiResponse<PublicMember[]>>("/api/users/team", {
-      timeout: SSR_TIMEOUT_MS,
+      timeout,
     });
     return response.data.data ?? [];
   },
 
   // Profile (requires auth)
   // Backend reads user ID securely from JWT via /api/users/profile
-  getProfile: async (_userId: string): Promise<Profile> => {
-    if (IS_MOCK) {
-      return new Promise((resolve) => setTimeout(() => resolve(getMockProfile(_userId)), 500));
-    }
+  getProfile: async (): Promise<Profile> => {
     const response = await apiClient.get("/api/users/profile");
     return mapUserToProfile(response.data?.data || response.data);
   },
 
   // Public Profile (by ID)
   getUserProfileById: async (userId: string): Promise<Profile> => {
-    if (IS_MOCK) {
-      return new Promise((resolve) => setTimeout(() => resolve(getMockProfile(userId)), 500));
-    }
     const response = await apiClient.get(`/api/users/${userId}`);
     return mapUserToProfile(response.data?.data || response.data);
   },
