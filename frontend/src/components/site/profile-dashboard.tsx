@@ -17,6 +17,7 @@ import Image from "next/image";
 import { RatingGraph, type RatingPoint } from "@/components/site/rating-graph";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { ProfileLinksCard } from "@/components/site/profile-links-card";
+import { InDevelopment } from "@/components/site/in-development";
 import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
 import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
 import { leetcodeService } from "@/lib/services/leetcode";
@@ -792,6 +793,18 @@ function ProfileDashboardContent({
           )}
         </CardContent>
       </Card>
+
+      <InDevelopment
+        headingLevel="h3"
+        title="Practice stats"
+        body="A breakdown of what this member practises, built from their Codeforces submissions."
+        items={[
+          "Problems solved",
+          "Average problem rating",
+          "Topic strength",
+          "Practice suggestions",
+        ]}
+      />
 
       {/* ── Account Details ── */}
       <Card>
