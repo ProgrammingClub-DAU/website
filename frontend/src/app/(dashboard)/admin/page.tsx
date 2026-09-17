@@ -10,6 +10,7 @@ import { eventsService, type EventRequest } from "@/lib/services/events";
 import { galleryService, type MemberGalleryPhotoRequest } from "@/lib/services/gallery";
 import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
 import { HallOfFameManager } from "@/components/admin/hall-of-fame-manager";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
@@ -509,27 +510,12 @@ function EventsTab() {
   }, [fetchEvents]);
 
   const handleOpenCloudinaryCover = () => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
-
-    if (window.cloudinary) {
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName,
-          uploadPreset,
-          folder: "cpclub/events",
-          maxFiles: 1,
-          clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
-        },
-        (error, result) => {
-          if (!error && result && result.event === "success") {
-            setFormData((prev) => ({ ...prev, coverImageUrl: result.info.secure_url }));
-          }
-        }
-      );
-      widget.open();
-    } else {
-      const url = window.prompt("Enter cover image URL:");
+    const opened = openUploadWidget({
+      folder: "cpclub/events",
+      onUpload: (url) => setFormData((prev) => ({ ...prev, coverImageUrl: url })),
+    });
+    if (!opened) {
+      const url = window.prompt("Photo upload is unavailable. Paste a cover image URL instead:");
       if (url) setFormData((prev) => ({ ...prev, coverImageUrl: url.trim() }));
     }
   };
@@ -622,6 +608,62 @@ function EventsTab() {
     } catch (err) {
       console.error("Failed to reopen event:", err);
       setStatusMessage({ type: "error", text: "Failed to reopen event." });
+    }
+  };
+
+  // ── delete ──
+  const [deleting, setDeleting] = useState<{
+    event: Event;
+    attendees: number;
+    photos: number;
+    winners: number;
+  } | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  /**
+   * Opens the delete confirmation, after finding out what the event carries.
+   *
+   * The counts come from the event's own detail -- an admin sees them whatever
+   * the publication switches say -- so the dialog can state what will be lost
+   * before anything is sent.
+   */
+  const openDelete = async (event: Event) => {
+    setDeleteError(null);
+    try {
+      const detail = await eventsService.getEventDetail(event.id);
+      setDeleting({
+        event,
+        attendees: detail.attendeeCount ?? 0,
+        photos: detail.photos.length,
+        winners: detail.winners.length,
+      });
+    } catch (err) {
+      console.error("Failed to inspect event before deleting:", err);
+      setStatusMessage({ type: "error", text: "Could not load the event to delete it." });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const { event, attendees, photos, winners } = deleting;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      // force only when the admin has been shown records and typed the name.
+      await eventsService.deleteEvent(event.id, attendees + photos + winners > 0);
+      setDeleting(null);
+      setStatusMessage({ type: "success", text: `"${event.title}" was deleted.` });
+      await fetchEvents();
+    } catch (err) {
+      // A 409 here means records were added after the dialog opened; the
+      // server's message says what, so it is shown as-is.
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Could not delete the event.";
+      setDeleteError(message);
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -768,6 +810,14 @@ function EventsTab() {
               <RotateCcw className="size-4" />
             </button>
           )}
+          <button
+            onClick={() => openDelete(e)}
+            title="Delete event permanently"
+            aria-label={`Delete ${e.title}`}
+            className="rounded-control p-1 text-fg-muted hover:text-red-400"
+          >
+            <Trash2 className="size-4" />
+          </button>
         </div>
       ),
     },
@@ -806,6 +856,48 @@ function EventsTab() {
       </div>
 
       <DataTable columns={columns} data={events} isLoading={loading} emptyMessage="No events created yet." />
+
+      <ConfirmDialog
+        open={deleting !== null}
+        title={deleting ? `Delete "${deleting.event.title}"?` : ""}
+        description={
+          deleting && deleting.attendees + deleting.photos + deleting.winners > 0 ? (
+            <>
+              <p>
+                This permanently deletes the event and everything recorded against it:{" "}
+                <strong className="text-foreground">
+                  {[
+                    deleting.attendees > 0 && `${deleting.attendees} attendance record${deleting.attendees === 1 ? "" : "s"}`,
+                    deleting.photos > 0 && `${deleting.photos} photo${deleting.photos === 1 ? "" : "s"}`,
+                    deleting.winners > 0 && `${deleting.winners} winner${deleting.winners === 1 ? "" : "s"}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </strong>
+                . It cannot be undone, and the photos leave the gallery.
+              </p>
+              <p className="mt-2">
+                To take the event down but keep its record, <strong className="text-foreground">cancel</strong> it
+                instead.
+              </p>
+            </>
+          ) : (
+            <p>Nothing is recorded against this event yet. This cannot be undone.</p>
+          )
+        }
+        confirmText={
+          deleting && deleting.attendees + deleting.photos + deleting.winners > 0
+            ? deleting.event.title
+            : undefined
+        }
+        confirmLabel="Delete event"
+        busy={deleteBusy}
+        error={deleteError}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleteBusy) setDeleting(null);
+        }}
+      />
 
       {/*
         Modal for Create / Edit.
@@ -1113,27 +1205,12 @@ function MemberGalleryManager() {
   }, [selectedYear, loadPhotos]);
 
   const handleOpenCloudinary = () => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
-
-    if (window.cloudinary) {
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName,
-          uploadPreset,
-          folder: `cpclub/batch_${uploadBatchYear}`,
-          maxFiles: 1,
-          clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
-        },
-        (error, result) => {
-          if (!error && result && result.event === "success") {
-            setUploadImageUrl(result.info.secure_url);
-          }
-        }
-      );
-      widget.open();
-    } else {
-      const url = window.prompt("Enter image URL:");
+    const opened = openUploadWidget({
+      folder: `cpclub/batch_${uploadBatchYear}`,
+      onUpload: (url) => setUploadImageUrl(url),
+    });
+    if (!opened) {
+      const url = window.prompt("Photo upload is unavailable. Paste an image URL instead:");
       if (url) setUploadImageUrl(url.trim());
     }
   };

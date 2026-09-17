@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLEncoder;
@@ -227,6 +228,27 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponseDto>> reopenEvent(@PathVariable Long id) {
         EventResponseDto event = eventService.reopenEvent(id);
         return ResponseEntity.ok(ApiResponse.success(event, "Event reopened successfully"));
+    }
+
+    /**
+     * Deletes an event permanently.
+     *
+     * <p>Refused with 409 when the event has attendance, photos or winners,
+     * unless {@code force=true}; the 409 message says what would be lost, so the
+     * admin panel can show it before asking for confirmation.</p>
+     *
+     * @param id event identifier
+     * @param force delete even though records exist
+     * @return empty success
+     */
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an event (admin); force=true to delete one with records")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteEvent(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean force) {
+        eventService.deleteEvent(id, force);
+        return ResponseEntity.ok(ApiResponse.success(null, "Event deleted"));
     }
 
     @PutMapping("/{id}/cancel")

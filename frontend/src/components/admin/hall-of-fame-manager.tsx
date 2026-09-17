@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { hallOfFameService, type HallOfFameEntryRequest } from "@/lib/services/hall-of-fame";
 import type { HallOfFameEntry } from "@/types/api";
@@ -260,17 +261,23 @@ export function HallOfFameManager() {
     }
   };
 
-  const remove = async (entry: HallOfFameEntry) => {
-    const confirmed = window.confirm(
-      `Delete "${entry.heading}" from the Hall of Fame? Its photos leave the gallery too. This cannot be undone.`
-    );
-    if (!confirmed) return;
+  const [removing, setRemoving] = useState<HallOfFameEntry | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+
+  const confirmRemove = async () => {
+    if (!removing) return;
+    setRemoveBusy(true);
+    setRemoveError(null);
     try {
-      await hallOfFameService.remove(entry.id);
-      setStatus({ type: "success", text: "Entry deleted." });
+      await hallOfFameService.remove(removing.id);
+      setStatus({ type: "success", text: `"${removing.heading}" was deleted.` });
+      setRemoving(null);
       await load();
     } catch (err) {
-      setStatus({ type: "error", text: errorMessage(err, "Could not delete the entry.") });
+      setRemoveError(errorMessage(err, "Could not delete the entry."));
+    } finally {
+      setRemoveBusy(false);
     }
   };
 
@@ -375,7 +382,10 @@ export function HallOfFameManager() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => remove(entry)}
+                  onClick={() => {
+                    setRemoveError(null);
+                    setRemoving(entry);
+                  }}
                   title="Delete"
                   className="rounded-control p-2 text-fg-muted hover:text-red-400"
                 >
@@ -386,6 +396,29 @@ export function HallOfFameManager() {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={removing !== null}
+        title={removing ? `Delete "${removing.heading}"?` : ""}
+        description={
+          <p>
+            This removes the entry from the Hall of Fame
+            {removing && removing.photos.length > 0
+              ? `, and its ${removing.photos.length} photo${removing.photos.length === 1 ? "" : "s"} from the gallery`
+              : ""}
+            . It cannot be undone.
+          </p>
+        }
+        // A record with photos is worth the extra step; an empty draft is not.
+        confirmText={removing && removing.photos.length > 0 ? removing.heading : undefined}
+        confirmLabel="Delete entry"
+        busy={removeBusy}
+        error={removeError}
+        onConfirm={confirmRemove}
+        onCancel={() => {
+          if (!removeBusy) setRemoving(null);
+        }}
+      />
 
       {/* The editor. The backdrop scrolls and the panel pins to the top on small
           screens -- the form is taller than a phone, and a centred, fixed panel

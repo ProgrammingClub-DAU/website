@@ -3,6 +3,7 @@ package com.cpclub.backend.event.service;
 import com.cpclub.backend.event.entity.EventWinner;
 import com.cpclub.backend.event.dto.SetEventWinnersRequest;
 import com.cpclub.backend.common.exception.BadRequestException;
+import com.cpclub.backend.common.exception.ConflictException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.event.dto.AddEventPhotoRequest;
 import com.cpclub.backend.event.dto.EventAttendeeDto;
@@ -227,6 +228,67 @@ public class EventService {
 
         log.info("Reopened event id {} (was {})", id, previous);
         return EventResponseDto.fromEntity(saved, true);
+    }
+
+    /**
+     * Deletes an event permanently, with everything recorded against it.
+     *
+     * <p>Events used to be undeletable -- cancelling was the only way to take one
+     * down -- which kept the attendance record safe but left admins no way to
+     * remove a test event or a duplicate. This allows deletion while keeping the
+     * safety: an event that has attendance, photos or winners is refused unless
+     * the caller passes {@code force}, and the refusal says exactly what would be
+     * lost. An empty event deletes straight away.</p>
+     *
+     * <p>Attendance and photo records are removed explicitly before the event,
+     * rather than relying on the database's cascade: the test schema has none,
+     * and a delete that only works in production is untested. Winners go with the
+     * event through their own cascade. Image files stay on Cloudinary, which this
+     * server holds no credentials for.</p>
+     *
+     * @param id event identifier
+     * @param force delete even though attendance, photos or winners exist
+     * @throws ResourceNotFoundException if the event does not exist
+     * @throws ConflictException if the event has records and force is false
+     */
+    @Transactional
+    public void deleteEvent(Long id, boolean force) {
+        Event event = requireEvent(id);
+
+        long attendees = eventAttendeeRepository.countByEventId(id);
+        long photos = eventPhotoRepository.countByEventId(id);
+        int winners = event.getWinners().size();
+
+        if (!force && (attendees > 0 || photos > 0 || winners > 0)) {
+            throw new ConflictException(describeLoss(attendees, photos, winners)
+                    + " Deleting the event removes them permanently. Cancel it instead to keep the record,"
+                    + " or confirm the deletion.");
+        }
+
+        int removedAttendees = eventAttendeeRepository.deleteAllByEventId(id);
+        int removedPhotos = eventPhotoRepository.deleteAllByEventId(id);
+        eventRepository.delete(event);
+
+        log.warn("Deleted event id {} ('{}') with {} attendee(s), {} photo(s) and {} winner(s)",
+                id, event.getTitle(), removedAttendees, removedPhotos, winners);
+    }
+
+    /** "This event has 12 attendees, 4 photos and 3 winners." */
+    private static String describeLoss(long attendees, long photos, int winners) {
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        if (attendees > 0) {
+            parts.add(attendees + (attendees == 1 ? " attendee" : " attendees"));
+        }
+        if (photos > 0) {
+            parts.add(photos + (photos == 1 ? " photo" : " photos"));
+        }
+        if (winners > 0) {
+            parts.add(winners + (winners == 1 ? " winner" : " winners"));
+        }
+        String joined = parts.size() == 1
+                ? parts.get(0)
+                : String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.get(parts.size() - 1);
+        return "This event has " + joined + ".";
     }
 
     /**

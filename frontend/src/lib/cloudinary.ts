@@ -32,12 +32,21 @@ declare global {
 
 /**
  * Public by design -- the widget posts straight to Cloudinary from the browser,
- * so neither is a secret. The fallbacks match the values the existing upload
- * code has always used, so this changes nothing for a deployment that has not
- * set the variables.
+ * so neither is a secret.
+ *
+ * No fallback values. The code used to default to a hard-coded cloud name that
+ * belonged to one contributor's personal account, so a deployment missing these
+ * variables did not fail: it quietly uploaded the club's photos into somebody
+ * else's storage. Now it declines to open the widget and the caller offers
+ * pasting a URL instead.
  */
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "stdcydx1";
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "cpclub_unsigned";
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+/** Whether uploads can work at all in this build. */
+export function isUploadConfigured(): boolean {
+  return Boolean(CLOUD_NAME && UPLOAD_PRESET);
+}
 
 export interface OpenUploadOptions {
   /** Folder under the account, e.g. `cpclub/hall-of-fame`. */
@@ -55,11 +64,21 @@ export interface OpenUploadOptions {
 /**
  * Opens the widget.
  *
- * @returns false when the widget script has not loaded -- the caller should offer
- *          a paste-a-URL fallback rather than failing silently
+ * @returns false when uploads are not configured or the widget script has not
+ *          loaded -- the caller should offer a paste-a-URL fallback rather than
+ *          failing silently
  */
 export function openUploadWidget(options: OpenUploadOptions): boolean {
   if (typeof window === "undefined" || !window.cloudinary) return false;
+
+  if (!isUploadConfigured()) {
+    // For whoever deploys the site: this names the fix.
+    console.error(
+      "Photo upload is not configured: set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and " +
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET, then rebuild."
+    );
+    return false;
+  }
 
   const multiple = options.multiple ?? false;
 
