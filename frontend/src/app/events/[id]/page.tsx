@@ -15,6 +15,7 @@ import Image from "next/image";
 import { ArrowLeft, CalendarDays, MapPin, Trophy, Users, ExternalLink } from "lucide-react";
 
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
+import { PhotoGrid } from "@/components/site/photo-grid";
 import { eventsService } from "@/lib/services/events";
 import type { EventDetail, EventWinner } from "@/types/api";
 
@@ -162,29 +163,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <h2 className="mb-4 font-mono text-xs font-bold tracking-caps-wide text-primary uppercase">
             Photos
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {event.photos.map((photo) => (
-              <figure
-                key={photo.id}
-                className="overflow-hidden rounded-panel border border-border bg-surface-2"
-              >
-                <div className="relative aspect-[4/3] w-full">
-                  <Image
-                    src={photo.imageUrl}
-                    alt={photo.caption ?? ""}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover"
-                  />
-                </div>
-                {photo.caption && (
-                  <figcaption className="px-3 py-2 text-xs text-fg-muted">
-                    {photo.caption}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
+          {/* The same grid and lightbox as the gallery, without a "view event"
+              link -- the visitor is already on the event. */}
+          <PhotoGrid
+            photos={event.photos.map((photo) => ({
+              id: photo.id,
+              imageUrl: photo.imageUrl,
+              caption: photo.caption,
+              title: event.title,
+              meta: date.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+            }))}
+          />
         </Section>
       )}
     </>

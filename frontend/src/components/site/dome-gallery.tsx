@@ -24,6 +24,12 @@ type ImageItem =
       date?: string;
       venue?: string;
       placeholder?: string;
+      // local: the photo's own caption, and where "view" goes. The gallery is
+      // one wall drawn from events and the Hall of Fame, so an opened photo
+      // has to be able to lead back to its source.
+      caption?: string;
+      href?: string;
+      hrefLabel?: string;
     };
 
 type DomeGalleryProps = {
@@ -54,6 +60,9 @@ type ItemDef = {
   venue?: string;
   /** local: shown when `src` fails to load. See the ImageItem note above. */
   placeholder?: string;
+  caption?: string;
+  href?: string;
+  hrefLabel?: string;
   x: number;
   y: number;
   sizeX: number;
@@ -140,7 +149,10 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
       title: image.title,
       date: image.date,
       venue: image.venue,
-      placeholder: image.placeholder
+      placeholder: image.placeholder,
+      caption: image.caption,
+      href: image.href,
+      hrefLabel: image.hrefLabel
     };
   });
 
@@ -170,7 +182,10 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
     // one added to ImageItem and to the normalizer still arrives as undefined
     // if it is missed here — which is how the placeholder reached the tiles as
     // nothing the first time.
-    placeholder: usedImages[i].placeholder
+    placeholder: usedImages[i].placeholder,
+    caption: usedImages[i].caption,
+    href: usedImages[i].href,
+    hrefLabel: usedImages[i].hrefLabel
   }));
 }
 
@@ -681,13 +696,47 @@ export default function DomeGallery({
     // local: name the event over the opened photo. Without this the component
     // enlarges a bare image, which does not say which contest it was, when, or
     // where — the whole point of the page.
+    //
+    // Built from text nodes, never innerHTML. These strings come from the admin
+    // panel, and interpolating them into markup would run whatever an admin --
+    // or anyone holding an admin session -- typed into a heading.
     const title = parent.dataset.title;
     if (title) {
       const caption = document.createElement('figcaption');
-      const line = [parent.dataset.date, parent.dataset.venue].filter(Boolean).join(' · ');
       caption.className = 'dg-caption';
-      caption.innerHTML =
-        `<strong>${title}</strong>` + (line ? `<span>${line}</span>` : '');
+
+      const own = parent.dataset.caption;
+      if (own) {
+        const text = document.createElement('p');
+        text.className = 'dg-caption-text';
+        text.textContent = own;
+        caption.appendChild(text);
+      }
+
+      const heading = document.createElement('strong');
+      heading.textContent = title;
+      caption.appendChild(heading);
+
+      const line = [parent.dataset.date, parent.dataset.venue].filter(Boolean).join(' · ');
+      if (line) {
+        const meta = document.createElement('span');
+        meta.textContent = line;
+        caption.appendChild(meta);
+      }
+
+      // Only same-site paths are followed: href is built by our own code from a
+      // numeric id, and this guard keeps it that way if that ever changes.
+      const href = parent.dataset.href;
+      if (href && href.startsWith('/') && !href.startsWith('//')) {
+        const link = document.createElement('a');
+        link.className = 'dg-caption-link';
+        link.href = href;
+        link.textContent = `${parent.dataset.hrefLabel || 'View'} →`;
+        // The overlay closes on any click; this one should navigate instead.
+        link.addEventListener('click', event => event.stopPropagation());
+        caption.appendChild(link);
+      }
+
       overlay.appendChild(caption);
     }
     viewerRef.current!.appendChild(overlay);
@@ -858,10 +907,33 @@ export default function DomeGallery({
       flex-direction: column;
       gap: 2px;
       padding: 28px 20px 16px;
-      background: linear-gradient(to top, rgb(0 0 0 / 0.78), rgb(0 0 0 / 0));
+      background: linear-gradient(to top, rgb(0 0 0 / 0.82), rgb(0 0 0 / 0));
       color: #fff;
+      /* local: none on the gradient itself, so a click there still closes the
+         photo; the link below turns them back on for itself. */
       pointer-events: none;
       text-align: left;
+    }
+    .dg-caption-text {
+      margin: 0 0 4px;
+      font-size: 13px;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+    .dg-caption-link {
+      pointer-events: auto;
+      align-self: flex-start;
+      margin-top: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--primary, #5e6ad2);
+      color: var(--primary-foreground, #fff);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .dg-caption-link:hover {
+      opacity: 0.9;
     }
     .dg-caption strong {
       font-size: 15px;
@@ -920,6 +992,9 @@ export default function DomeGallery({
                   data-title={it.title}
                   data-date={it.date}
                   data-venue={it.venue}
+                  data-caption={it.caption}
+                  data-href={it.href}
+                  data-href-label={it.hrefLabel}
                   data-offset-x={it.x}
                   data-offset-y={it.y}
                   data-size-x={it.sizeX}

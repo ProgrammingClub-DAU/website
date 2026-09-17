@@ -115,9 +115,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}/photos").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/gallery/members", "/api/gallery/members/batches").permitAll()
+                        // /api/gallery/photos must be matched here, before the ADMIN rule for
+                        // /api/gallery/** below, or the public gallery would demand a login.
+                        .requestMatchers(HttpMethod.GET, "/api/gallery/members", "/api/gallery/members/batches", "/api/gallery/photos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/hall-of-fame", "/api/hall-of-fame/{id:[0-9]+}").permitAll()
                         .requestMatchers("/api/events", "/api/events/**").hasRole("ADMIN")
                         .requestMatchers("/api/gallery/**").hasRole("ADMIN")
+                        // /** also matches the bare /api/hall-of-fame, so POST to the collection
+                        // is covered. GETs were let through above.
+                        .requestMatchers("/api/hall-of-fame", "/api/hall-of-fame/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/{id:[0-9]+}/lookup").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id:[0-9]+}/club-role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/snapshots/**").authenticated()
