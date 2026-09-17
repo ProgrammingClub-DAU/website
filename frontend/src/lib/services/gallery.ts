@@ -22,17 +22,26 @@ export const galleryService = {
     return response.data.data;
   },
 
-  getPhotosByBatch: async (year: number): Promise<MemberGalleryPhoto[]> => {
+  /**
+   * One batch's photos. `serverRender` waits long enough for a sleeping backend
+   * to wake, for the public page that renders on the server.
+   */
+  getPhotosByBatch: async (
+    year: number,
+    options?: { serverRender?: boolean }
+  ): Promise<MemberGalleryPhoto[]> => {
     const response = await apiClient.get<ApiResponse<MemberGalleryPhoto[]>>(
       "/api/gallery/members",
-      { params: { batch: year } }
+      { params: { batch: year }, timeout: options?.serverRender ? 60_000 : undefined }
     );
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
-  getAvailableBatchYears: async (): Promise<number[]> => {
-    const response = await apiClient.get<ApiResponse<number[]>>("/api/gallery/members/batches");
-    return response.data.data;
+  getAvailableBatchYears: async (options?: { serverRender?: boolean }): Promise<number[]> => {
+    const response = await apiClient.get<ApiResponse<number[]>>("/api/gallery/members/batches", {
+      timeout: options?.serverRender ? 60_000 : undefined,
+    });
+    return response.data.data ?? [];
   },
 
   /**

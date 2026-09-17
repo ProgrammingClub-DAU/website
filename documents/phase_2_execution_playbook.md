@@ -5,10 +5,28 @@
 **Stack:** Spring Boot 4.1 -- PostgreSQL -- Next.js 16.3 -- Cloudinary -- Apache POI
 
 > [!NOTE]
-> **Status on 14 Sep 2026 -- checked against the code on `main`, not against PR titles.**
+> **Status on 17 Sep 2026 -- checked against the code on `main`, not against PR titles.**
+>
+> **Phase 2 is complete in code.** The two items left are console settings for M6, not code.
 >
 > | Stage | Owner | Status | Evidence in the code |
 > |---|---|---|---|
+> | 0 -- Migrations + entities | M6 | **[DONE]** PR #50 | V2-V7 and every Phase 2 entity present |
+> | 1A -- Security + gallery | M4 | **[DONE]** PR #73 | `gallery/` package, lookup and club-role endpoints, SecurityConfig rules |
+> | 1B -- Profiles, LeetCode, filters, events | M5 | **[DONE]** PR #67 | `leetcode/` and `event/` packages, `UserLookupDto`, Apache POI |
+> | 1C -- Snapshots | M6 | **[DONE]** PR #62 | `snapshot/` package |
+> | 2A -- Frontend UI | M1 | **[DONE]** | Shared components PR #77; events page and event detail PR #94, on the club timeline PR #96; photo grid and lightbox PR #101; batch photo page `/gallery/batches` (this PR) |
+> | 2B -- Auth + state | M2 | **[DONE]** PR #71 | Store fields, types, `events.ts`, `gallery.ts`, mapper, leaderboard params |
+> | 2C -- Dashboards | M3 | **[DONE]** PR #77 | Avatar upload, club-role badge, platform links, full Edit Profile panel, LeetCode chart, admin members/events/galleries tabs, attendance page, leaderboard platform and club filters |
+> | 3 -- Tests + polish | M6 | **[DONE in code]** | Every planned test, Testcontainers, env docs. Two console tasks remain -- see Section 10 |
+>
+> **Beyond the original scope, also shipped:** Google-only sign-in (#88), academic year and
+> profile completeness (#86, #99), committee members page and phone privacy (#90, #93, #96),
+> event results and publication switches (#94), event type (#96), reopen and delete events
+> (#98, #103), Hall of Fame managed by admins and one gallery for every photo (#101),
+> Google Sheets attendance export (#89).
+
+---|---|---|---|
 > | 0 -- Migrations + entities | M6 | **[DONE]** PR #50 | V2-V7 and every Phase 2 entity present |
 > | 1A -- Security + gallery | M4 | **[DONE]** PR #73 | `gallery/` package, lookup and club-role endpoints, SecurityConfig rules |
 > | 1B -- Profiles, LeetCode, filters, events | M5 | **[DONE]** PR #67 | `leetcode/` and `event/` packages, `UserLookupDto`, Apache POI |
@@ -806,7 +824,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 7 -- Stage 2A: Frontend UI/UX -- [PARTLY DONE]
+## Section 7 -- Stage 2A: Frontend UI/UX -- [DONE]
 **Owner: Member 1**
 **PR: `phase2/frontend-ui`**
 **Estimated time: 3 days**
@@ -825,6 +843,20 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 | `app/events/[id]/page.tsx` | NEW | Event detail page. Shows: cover image, title, date, location, description, photo gallery grid, attendee count. Fetches `GET /api/events/{id}`. |
 | `app/gallery/members/page.tsx` | NEW | Member gallery page. Shows batch year filter dropdown. Fetches `GET /api/gallery/members/batches` for years. Fetches photos by selected year. **[DECISION NEEDED]** `app/gallery/page.tsx` already exists -- the dome gallery of event photos, built from static files. Default: keep it at `/gallery` and add this page at `/gallery/members`, linked from `/gallery`. M6 confirms before M1 builds it. |
 | `app/(dashboard)/admin/page.tsx` | CREATE SHELL | Admin dashboard shell with the tab layout. M3 fills the data. |
+
+> [!NOTE]
+> **How the rest of this stage was delivered.** Several rows above were built in a
+> different shape than described, deliberately:
+>
+> - **`event-card.tsx`** -- the events page uses the club timeline instead
+>   (`components/site/events-list.tsx`), split into upcoming and past.
+> - **`event-photo-grid.tsx` and `member-gallery-grid.tsx`** -- one shared
+>   `components/site/photo-grid.tsx` with a lightbox serves events, the Hall of
+>   Fame and batch photos.
+> - **Member gallery page** -- built at **`/gallery/batches`**, not
+>   `/gallery/members`, with a batch-year selector and a link from `/gallery`. It
+>   is separate from the dome because a batch photo has no event or entry to link
+>   to, and the dome cannot be browsed by year.
 
 > [!NOTE]
 > **`ClubRoleBadge`, `DataTable` and `AdminTabs` are already built.** M3 needed them for the
@@ -852,7 +884,7 @@ Add Apache POI XSSF: `org.apache.poi:poi-ooxml:5.3.0`.
 
 ---
 
-## Section 9 -- Stage 2C: Frontend Dashboards & Data -- [NOT STARTED]
+## Section 9 -- Stage 2C: Frontend Dashboards & Data -- [DONE - PR #77]
 **Owner: Member 3**
 **PR: `phase2/frontend-dashboards`**
 **Depends on:** M2 (merged) for the profile and leaderboard changes -- these can start now. M1's `ClubRoleBadge`, `DataTable` and `AdminTabs` for the two admin pages.
@@ -874,7 +906,16 @@ Row of icon links below CF handle. Only rendered if the URL is set: CodeChef, At
 **Change 4 -- Edit Profile panel:**
 Replace the inline CF handle edit form with a full "Edit Profile" panel (owner-only). Fields: Name (required), Phone Number (required -- cannot save without it), Codeforces Handle, LeetCode Handle, CodeChef URL, AtCoder URL, GitHub URL, LinkedIn URL. Phone shown masked (`--------`) to visitors. On save: `PUT /api/users/profile`. On success: refresh. On error: show inline error.
 
-**Change 5 -- Rating charts:**
+> [!IMPORTANT]
+> **Change 5 was revised after delivery.** The LeetCode chart is no longer drawn
+> from weekly snapshots. Snapshots record one reading every Monday, so a new member
+> -- or everyone, after the database was reset -- saw "not enough data" for at
+> least two weeks, and signed-out visitors saw nothing. It now reads the member's
+> full contest history from LeetCode through `/next-api/lc/contest-history`, the
+> same way the Codeforces chart reads `user.rating`, for every visitor. The
+> snapshot tables and endpoints remain; Phase 3 uses them for period statistics.
+
+**Change 5 -- Rating charts (original text):**
 The Codeforces graph already exists: `RatingGraph` (plain SVG), fed from the browser-side Codeforces `user.rating` proxy. Add a LeetCode graph with the same component, from `GET /api/snapshots/{userId}/leetcode`. **Do not add `recharts`** -- it was removed on purpose (about 104 kB gzipped on this route). If < 2 points: "Not enough data yet." The snapshot endpoints require sign-in, so a signed-out visitor sees "Sign in to see LeetCode history" rather than an error. Remove the "Multi-platform integration ... will be available soon" text once the chart is live.
 
 ---
@@ -953,7 +994,7 @@ In the leaderboard table, add a "Club Role" column showing `<ClubRoleBadge />` f
 
 ---
 
-## Section 10 -- Stage 3: Integration, Tests & Polish -- [PARTIAL]
+## Section 10 -- Stage 3: Integration, Tests & Polish -- [DONE in code; two console tasks]
 **Owner: Member 6**
 **PR: `phase2/integration-and-tests`**
 **Estimated time: 2-3 days**
@@ -1007,10 +1048,10 @@ remove-attendee and add-photo.
 
 **Frontend only (Vercel).** [DONE] Both are documented in `frontend/.env.example`:
 ```
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=stdcydx1
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=cpclub_unsigned
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=<the club account's cloud name>
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=<the unsigned preset's name>
 ```
-These are `NEXT_PUBLIC_*`, so they are baked in at build time -- adding them to
+Both are set on Vercel for the club's own Cloudinary account. The code has no fallback values -- it used to default to one contributor's personal cloud name (removed in #103). These are `NEXT_PUBLIC_*`, so they are baked in at build time -- adding them to
 Vercel does nothing until the site is redeployed.
 
 **Nothing goes on Render.** The browser uploads straight to Cloudinary via the
@@ -1026,12 +1067,15 @@ backend needs no Cloudinary credentials. The v3 plan listed a backend
    migration that has drifted from the entities -- a green suite proves nothing
    about the schema. Stage 0 was verified by booting against real PostgreSQL by
    hand; that should not stay a manual step.
-2. **Harden the Cloudinary upload preset.** `cpclub_unsigned` is correctly set to
+2. **[OPEN -- M6, console] Harden the Cloudinary upload preset.** Applies to the
+   club's new account and preset too. To verify: upload a `.txt` file through
+   Admin -> Hall of Fame -> Upload photos; a hardened preset rejects it. `cpclub_unsigned` is correctly set to
    Unsigned with folder `cpclub`, but `Allowed formats` and `Max file size` were
    not set. Verified consequence: a `.txt` file uploads successfully through
    `/raw/upload` using the public preset name. Set `Allowed formats` to
    `jpg,png,webp` and `Max file size` to `5000000` in the Cloudinary console.
-3. **Backfill phone numbers.** Soft campaign, since the hard block was removed
+3. **[OPEN -- M6, ongoing] Backfill phone numbers.** The profile completeness badge
+   (#86) and the first sign-in welcome step (#99) now prompt every member for it. Soft campaign, since the hard block was removed
    (Section 1). Size it with:
    `SELECT COUNT(*) AS total, COUNT(phone_number) AS have_phone FROM users;`
 
