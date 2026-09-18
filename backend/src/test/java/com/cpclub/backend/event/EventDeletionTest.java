@@ -1,5 +1,6 @@
 package com.cpclub.backend.event;
 
+import org.springframework.context.ApplicationEventPublisher;
 import com.cpclub.backend.common.exception.ConflictException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.event.entity.Event;
@@ -50,6 +51,9 @@ class EventDeletionTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private EventService eventService;

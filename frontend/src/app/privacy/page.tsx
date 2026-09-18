@@ -133,6 +133,21 @@ export default function PrivacyPage() {
           </div>
 
           <div>
+            <h2>The live attendance sheet</h2>
+            <p className="mt-3">
+              The club may keep a Google Sheet of event attendance that updates by itself. When
+              it is set up, our server writes each event&apos;s attendance list to it a few
+              seconds after an admin changes the list. It writes the same six columns as the
+              attendance export: name, Codeforces profile link, email, student ID, year, and the
+              time you were marked present. Phone numbers are not included.
+            </p>
+            <p className="mt-3">
+              The server writes as a Google service account, which can only open spreadsheets
+              the club has shared with it. The sheet itself is managed by the club&apos;s admins.
+            </p>
+          </div>
+
+          <div>
             <h2>What we do not do</h2>
             <ul>
               <li>We do not sell or share your information with anyone.</li>

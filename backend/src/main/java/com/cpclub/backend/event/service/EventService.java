@@ -15,6 +15,7 @@ import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventAttendee;
 import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
+import com.cpclub.backend.event.livesheet.AttendanceChangedEvent;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
 import com.cpclub.backend.event.repository.EventRepository;
@@ -22,6 +23,7 @@ import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,13 @@ public class EventService {
     private final EventAttendeeRepository eventAttendeeRepository;
     private final EventPhotoRepository eventPhotoRepository;
     private final UserRepository userRepository;
+
+    /**
+     * Tells the live attendance sheet an event's list changed. An event rather
+     * than a direct call, so this service does not depend on Google being set up,
+     * or reachable, to record attendance.
+     */
+    private final ApplicationEventPublisher eventPublisher;
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -173,6 +182,9 @@ public class EventService {
 
         Event saved = eventRepository.save(event);
         log.info("Updated event id {}", id);
+
+        // The sheet's tab is named after the event.
+        eventPublisher.publishEvent(new AttendanceChangedEvent(id));
         return EventResponseDto.fromEntity(saved, true);
     }
 
@@ -365,6 +377,7 @@ public class EventService {
 
         EventAttendee saved = eventAttendeeRepository.save(attendee);
         log.info("Added user {} to event {} by {}", userId, eventId, adminEmail);
+        eventPublisher.publishEvent(new AttendanceChangedEvent(eventId));
         return EventAttendeeDto.fromEntity(saved);
     }
 
@@ -382,6 +395,7 @@ public class EventService {
                         "Attendee not found for event " + eventId + " and user " + userId));
         eventAttendeeRepository.delete(attendee);
         log.info("Removed user {} from event {}", userId, eventId);
+        eventPublisher.publishEvent(new AttendanceChangedEvent(eventId));
     }
 
     /**

@@ -10,6 +10,8 @@ import com.cpclub.backend.event.dto.EventCreateRequest;
 import com.cpclub.backend.event.dto.EventDetailDto;
 import com.cpclub.backend.event.dto.EventPhotoDto;
 import com.cpclub.backend.event.dto.EventResponseDto;
+import com.cpclub.backend.event.livesheet.AttendanceLiveSheet;
+import com.cpclub.backend.event.livesheet.LiveSheetStatusDto;
 import com.cpclub.backend.event.service.EventExportService;
 import com.cpclub.backend.event.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,6 +59,7 @@ public class EventController {
 
     private final EventService eventService;
     private final EventExportService eventExportService;
+    private final AttendanceLiveSheet attendanceLiveSheet;
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -325,8 +328,8 @@ public class EventController {
      *
      * <p>The server does not talk to Google here. The admin's browser holds a
      * short-lived token for their own Drive and creates the spreadsheet itself,
-     * which keeps a service-account key off this box and keeps Google's client
-     * libraries out of a 512 MB heap.</p>
+     * so this one-off copy needs no Google credentials on the server. (The live
+     * attendance sheet, below, is the part that does.)</p>
      *
      * @param id event identifier
      * @return header row followed by one row per attendee
@@ -369,6 +372,40 @@ public class EventController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(workbook);
+    }
+
+    /**
+     * Where this event's live attendance sheet is, and how its last update went.
+     *
+     * <p>The sheet itself updates on its own a few seconds after every change to
+     * the attendance list; this only reports on it.</p>
+     *
+     * @param id event identifier
+     * @return the live sheet's status for this event
+     */
+    @GetMapping("/{id}/attendees/live-sheet")
+    @Operation(summary = "Live attendance sheet status (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<LiveSheetStatusDto>> getLiveSheetStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceLiveSheet.status(id), "Fetched live sheet status successfully"));
+    }
+
+    /**
+     * Rewrites this event's tab in the live attendance sheet now.
+     *
+     * <p>For an event whose attendance was taken before the live sheet was set
+     * up, and for retrying straight away after fixing a sharing problem.</p>
+     *
+     * @param id event identifier
+     * @return the live sheet's status after the update
+     */
+    @PostMapping("/{id}/attendees/live-sheet/sync")
+    @Operation(summary = "Update the live attendance sheet now (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<LiveSheetStatusDto>> syncLiveSheet(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceLiveSheet.syncNow(id), "Live sheet updated"));
     }
 
     // ── Photos ────────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ import {
 } from "@/lib/google-sheets";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
+import { LiveSheetPanel } from "@/components/admin/live-sheet-panel";
 import type { EventDetail, EventAttendee, UserLookup } from "@/types/api";
 import {
   ArrowLeft,
@@ -544,6 +545,8 @@ export default function EventAttendeesPage() {
           </button>
         </div>
       )}
+
+      {event && <LiveSheetPanel eventId={eventId} attendeeCount={attendees.length} />}
 
       {/* 2-Column Layout */}
       <div className="grid gap-8 lg:grid-cols-12">

@@ -1,5 +1,6 @@
 package com.cpclub.backend.event;
 
+import org.springframework.context.ApplicationEventPublisher;
 import com.cpclub.backend.common.exception.BadRequestException;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.event.dto.AddEventPhotoRequest;
@@ -12,6 +13,7 @@ import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventAttendee;
 import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
+import com.cpclub.backend.event.livesheet.AttendanceChangedEvent;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
 import com.cpclub.backend.event.repository.EventRepository;
@@ -62,6 +64,9 @@ class EventServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private EventService eventService;
 
@@ -103,6 +108,8 @@ class EventServiceTest {
         assertEquals(2L, result.userId());
         assertFalse(result.hasPhone(), "the admin panel needs to know the number is missing");
         verify(eventAttendeeRepository).save(any(EventAttendee.class));
+        // The live sheet hears about it; the listener only acts after commit.
+        verify(eventPublisher).publishEvent(new AttendanceChangedEvent(10L));
     }
 
     @Test
@@ -300,6 +307,7 @@ class EventServiceTest {
         eventService.removeAttendee(10L, 2L);
 
         verify(eventAttendeeRepository).delete(row);
+        verify(eventPublisher).publishEvent(new AttendanceChangedEvent(10L));
     }
 
     @Test
@@ -309,6 +317,8 @@ class EventServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.removeAttendee(10L, 2L));
         verify(eventAttendeeRepository, never()).delete(any());
+        // Nothing changed, so the sheet is not touched.
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
     }
 
     // -- Event photos --------------------------------------------------------

@@ -1,7 +1,15 @@
 import apiClient from "@/lib/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "@/store/auth";
-import type { Event, EventAttendee, EventDetail, EventPhoto, EventType, UserLookup } from "@/types/api";
+import type {
+  Event,
+  EventAttendee,
+  EventDetail,
+  EventPhoto,
+  EventType,
+  LiveSheetStatus,
+  UserLookup,
+} from "@/types/api";
 
 export interface EventRequest {
   title: string;
@@ -153,6 +161,22 @@ export const eventsService = {
   getAttendanceSheetRows: async (eventId: number): Promise<string[][]> => {
     const response = await apiClient.get<ApiResponse<string[][]>>(
       `/api/events/${eventId}/attendees/sheet`
+    );
+    return response.data.data;
+  },
+
+  /** Where this event's live sheet tab is, and how its last update went. */
+  getLiveSheetStatus: async (eventId: number): Promise<LiveSheetStatus> => {
+    const response = await apiClient.get<ApiResponse<LiveSheetStatus>>(
+      `/api/events/${eventId}/attendees/live-sheet`
+    );
+    return response.data.data;
+  },
+
+  /** Rewrites this event's live sheet tab now; resolves once Google has answered. */
+  syncLiveSheet: async (eventId: number): Promise<LiveSheetStatus> => {
+    const response = await apiClient.post<ApiResponse<LiveSheetStatus>>(
+      `/api/events/${eventId}/attendees/live-sheet/sync`
     );
     return response.data.data;
   },

@@ -52,6 +52,13 @@ app:
     allowed-domain: ${GOOGLE_ALLOWED_DOMAIN:dau.ac.in}
 
 cpclub:
+  live-sheet:
+    # A Google spreadsheet kept in step with every event's attendance list, one
+    # tab per event. Off unless both are set. See documents/live_attendance_sheet.md.
+    # The spreadsheet's id, or simply its URL.
+    spreadsheet-id: ${ATTENDANCE_SPREADSHEET_ID:}
+    # The service account's JSON key, as downloaded (or Base64 of it).
+    service-account-json: ${GOOGLE_SERVICE_ACCOUNT_JSON:}
   cors:
     # Set CORS_ALLOWED_ORIGINS in production to your Vercel URL.
     # Multiple origins supported as a comma-separated string.
