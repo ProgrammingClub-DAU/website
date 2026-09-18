@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
 import { DomeGalleryStage } from "@/components/site/dome-gallery-stage";
+import { GalleryTabs } from "@/components/site/gallery-tabs";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { galleryService } from "@/lib/services/gallery";
 import type { GalleryPhoto } from "@/types/api";
@@ -36,12 +34,7 @@ export default async function GalleryPage() {
           Drag to look around, then open a photo to see which event or achievement it was
           from, when it happened, and where.
         </p>
-        <Link
-          href="/gallery/batches"
-          className="mt-4 inline-flex items-center gap-1.5 font-mono text-xs tracking-caps text-primary uppercase hover:underline"
-        >
-          Batch photos <ArrowRight className="size-3.5" />
-        </Link>
+        <GalleryTabs active="events" />
       </Section>
 
       {unreachable ? (
