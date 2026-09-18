@@ -83,13 +83,19 @@ public class UserService {
     }
 
     /**
-     * Retrieves all registered users in the database.
+     * Retrieves all registered users in the database, oldest account first.
      *
-     * @return list of user details DTOs
+     * <p>Ordered explicitly. {@code findAll()} with no sort leaves the order to
+     * the database, and PostgreSQL returns rows in whatever order they happen to
+     * sit in the table -- which changes whenever a row is updated. The admin
+     * members table therefore reshuffled itself every time anyone edited a
+     * profile or a club role, and a row an admin was looking at moved.</p>
+     *
+     * @return list of user details DTOs, by id ascending
      */
     @Transactional(readOnly = true)
     public List<UserResponseDto> getAllUsers() {
-        return userRepository.findAll()
+        return userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"))
                 .stream()
                 .map(UserResponseDto::fromEntity)
                 .toList();
