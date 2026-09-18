@@ -14,8 +14,8 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
+import { GalleryTabs } from "@/components/site/gallery-tabs";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { PhotoGrid } from "@/components/site/photo-grid";
 import { galleryService } from "@/lib/services/gallery";
@@ -60,20 +60,12 @@ export default async function BatchGalleryPage({
   return (
     <>
       <Section className="pt-10 pb-8 md:pt-14">
-        <Link
-          href="/gallery"
-          className="inline-flex items-center gap-1.5 font-mono text-micro tracking-caps-wide text-fg-muted uppercase transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" /> Gallery
-        </Link>
-
-        <div className="mt-5">
-          <Eyebrow>Batch photos</Eyebrow>
-          <PageTitle className="max-w-[20ch]">Every batch, together.</PageTitle>
-        </div>
+        <Eyebrow>Gallery</Eyebrow>
+        <PageTitle className="max-w-[20ch]">Every batch, together.</PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
           Photos of the club&apos;s members, by the year they joined.
         </p>
+        <GalleryTabs active="batches" />
       </Section>
 
       <Section className="pb-22">
