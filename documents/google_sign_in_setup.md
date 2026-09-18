@@ -101,6 +101,24 @@ Google's verification review. It takes effect immediately.
 If you ever add a scope beyond those, publishing will start requiring review.
 That is the real reason the scope list is kept short.
 
+### Verify the home page in Search Console
+
+Publishing may report that the home page URL "is not registered to you". Google
+wants the site verified in Search Console by the same Google account that owns
+this Cloud project.
+
+1. Go to https://search.google.com/search-console, **Add property**, choose
+   **URL prefix** and enter the site URL (`https://<your-vercel-domain>/`). The
+   **Domain** option needs DNS access, which a `vercel.app` address does not give.
+2. Choose the **HTML tag** method and copy only the `content="..."` value.
+3. On Vercel, set `GOOGLE_SITE_VERIFICATION` to that value (Production) and
+   redeploy. `app/layout.tsx` prints it as the verification meta tag.
+4. Back in Search Console, press **Verify**. Then return to **Branding** and
+   save again, or re-submit, so Google re-checks.
+
+Keep the variable set afterwards: Search Console re-checks periodically and
+drops ownership if the tag disappears.
+
 ## Step 2: Set the environment variables
 
 The same client ID goes in two places and the two must match exactly. A mismatch
