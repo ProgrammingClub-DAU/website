@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import axios from "axios";
 import { AuthBackdrop } from "@/components/site/auth-backdrop";
+import Link from "next/link";
 import { GoogleSignInButton } from "@/components/site/google-sign-in-button";
 import { apiClient } from "@/lib/axios";
 import { useAuthStore, type ApiResponse, type AuthResponse, mapAuthResponseToUser } from "@/store/auth";
@@ -120,6 +121,11 @@ export default function LoginForm() {
               </p>
               <p className="text-xs text-fg-subtle">
                 No account needed — signing in for the first time creates one.
+              </p>
+              <p className="text-xs text-fg-subtle">
+                <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
+                  Privacy policy
+                </Link>
               </p>
             </div>
           </div>
