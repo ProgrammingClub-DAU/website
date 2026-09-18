@@ -195,6 +195,21 @@ export interface EventPhoto {
   uploadedAt: string;
 }
 
+/**
+ * An event's tab in the club's live attendance sheet (LiveSheetStatusDto).
+ *
+ * `enabled` is false when the server has no live sheet configured; then
+ * `setupProblem` says why, if it was configured but is unusable.
+ */
+export interface LiveSheetStatus {
+  enabled: boolean;
+  setupProblem: string | null;
+  sheetUrl: string | null;
+  serviceAccountEmail: string | null;
+  lastSyncedAt: string | null;
+  lastError: string | null;
+}
+
 export interface EventAttendee {
   userId: number;
   name: string;
