@@ -12,38 +12,38 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
   switch (role) {
     case "CONVENOR":
       return {
-        bg: "rgba(245, 158, 11, 0.08)",
+        bg: "rgba(245, 158, 11, 0.12)",
         text: "rgba(253, 230, 138, 0.95)",
-        border: "rgba(245, 158, 11, 0.25)",
+        border: "rgba(245, 158, 11, 0.35)",
         dot: "#f59e0b",
       };
     case "DEPUTY_CONVENOR":
       return {
-        bg: "rgba(255, 255, 255, 0.06)",
-        text: "rgba(241, 245, 249, 0.95)",
-        border: "rgba(255, 255, 255, 0.18)",
-        dot: "#cbd5e1",
+        bg: "rgba(169, 102, 255, 0.12)",
+        text: "rgba(241, 227, 255, 0.95)",
+        border: "rgba(169, 102, 255, 0.35)",
+        dot: "#a966ff",
       };
     case "CORE":
       return {
-        bg: "rgba(139, 92, 246, 0.08)",
-        text: "rgba(221, 214, 254, 0.95)",
-        border: "rgba(139, 92, 246, 0.25)",
-        dot: "#a78bfa",
+        bg: "rgba(61, 126, 255, 0.12)",
+        text: "rgba(217, 230, 255, 0.95)",
+        border: "rgba(61, 126, 255, 0.35)",
+        dot: "#3d7eff",
       };
     case "ASSOCIATE_CORE":
       return {
-        bg: "rgba(14, 165, 233, 0.08)",
-        text: "rgba(186, 230, 253, 0.95)",
-        border: "rgba(14, 165, 233, 0.25)",
-        dot: "#38bdf8",
+        bg: "rgba(24, 181, 201, 0.12)",
+        text: "rgba(203, 247, 252, 0.95)",
+        border: "rgba(24, 181, 201, 0.35)",
+        dot: "#18b5c9",
       };
     case "BATCH_REPRESENTATIVE":
       return {
-        bg: "rgba(16, 185, 129, 0.08)",
-        text: "rgba(167, 243, 208, 0.95)",
-        border: "rgba(16, 185, 129, 0.25)",
-        dot: "#34d399",
+        bg: "rgba(47, 157, 100, 0.12)",
+        text: "rgba(210, 247, 227, 0.95)",
+        border: "rgba(47, 157, 100, 0.35)",
+        dot: "#2f9d64",
       };
     case "EX_PC_MEMBER":
     case "EX_CORE":
