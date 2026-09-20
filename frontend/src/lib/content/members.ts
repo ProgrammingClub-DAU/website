@@ -16,6 +16,13 @@ export interface ContributorProfile {
 
 export const CONTRIBUTOR_PROFILES: ContributorProfile[] = [
   {
+    name: "Madhav Thesiya",
+    role: "Core Developer",
+    headline: "LeetCode GraphQL synchronization, profile APIs & batch workers",
+    tags: ["GraphQL", "Data Sync", "Spring Services", "REST APIs"],
+    badge: "Core Contributor",
+  },
+  {
     name: "Tanishq Shah",
     role: "Full Stack Developer",
     headline: "Frontend modernizations, dynamic components & UI animations",
@@ -35,13 +42,6 @@ export const CONTRIBUTOR_PROFILES: ContributorProfile[] = [
     headline: "Database migrations, Flyway schemas & core REST services",
     tags: ["Java", "Spring Boot", "PostgreSQL", "Flyway"],
     badge: "Backend Lead",
-  },
-  {
-    name: "Madhav Thesiya",
-    role: "Core Developer",
-    headline: "LeetCode GraphQL synchronization, profile APIs & batch workers",
-    tags: ["GraphQL", "Data Sync", "Spring Services", "REST APIs"],
-    badge: "Core Contributor",
   },
   {
     name: "Gaurav Rathod",
