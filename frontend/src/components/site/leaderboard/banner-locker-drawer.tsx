@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Loader2,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import { BannerGraphic } from "./banner-graphic";
 import {
@@ -30,6 +31,8 @@ import type { LeaderboardEntry } from "@/types/api";
 interface BannerLockerDrawerProps {
   member: LeaderboardEntry | null;
   isOpen: boolean;
+  /** True only when the viewer IS the member — gates all equip controls. */
+  isOwnProfile: boolean;
   onClose: () => void;
   onBannerEquipped?: (newBannerId: string) => void;
 }
@@ -37,9 +40,11 @@ interface BannerLockerDrawerProps {
 export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
   member,
   isOpen,
+  isOwnProfile,
   onClose,
   onBannerEquipped,
 }) => {
+  // selectedBannerId = banner the user has clicked to preview (not yet saved)
   const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
   const [shakingBannerId, setShakingBannerId] = useState<string | null>(null);
   const [equipping, setEquipping] = useState(false);
@@ -50,9 +55,22 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
 
   const currentOrMaxRating = member.maxRating ?? member.rating ?? 0;
   const currentEquippedBanner = member.equippedBannerId ?? "rookie";
-  const activePreviewBanner = getBannerConfig(selectedBannerId ?? currentEquippedBanner);
 
-  // Trigger shake animation for locked banner
+  // Preview shows selected banner, falls back to whatever is equipped
+  const previewBannerId = selectedBannerId ?? currentEquippedBanner;
+  const activePreviewBanner = getBannerConfig(previewBannerId);
+
+  // A selection is "pending" (needs confirm) when it's different from what's equipped
+  const hasPendingSelection =
+    isOwnProfile &&
+    selectedBannerId !== null &&
+    selectedBannerId !== currentEquippedBanner;
+
+  const selectedBannerConfig = selectedBannerId
+    ? getBannerConfig(selectedBannerId)
+    : null;
+
+  // Shake + show error for locked banner clicks
   const handleLockedClick = (bannerId: string) => {
     setShakingBannerId(bannerId);
     if (bannerId === "creator-vip") {
@@ -60,33 +78,48 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
         "This Red VIP Banner is exclusively reserved for the 6 platform engineers who built this website (featured in Members & Credits)."
       );
     } else {
-      setEquipError(`Reach ${getBannerConfig(bannerId).minRating} rating to unlock this banner.`);
+      setEquipError(
+        `Reach ${getBannerConfig(bannerId).minRating} rating to unlock this banner.`
+      );
     }
-    setTimeout(() => {
-      setShakingBannerId(null);
-    }, 600);
+    setTimeout(() => setShakingBannerId(null), 600);
   };
 
-  // Equip banner handler
-  const handleEquipBanner = async (banner: BannerConfig) => {
-    if (!isBannerUnlocked(banner, currentOrMaxRating, member)) {
+  // Called when user clicks a banner card
+  const handleBannerClick = (banner: BannerConfig, unlocked: boolean) => {
+    setEquipError(null);
+    setEquipSuccess(null);
+
+    if (!isOwnProfile) return; // Read-only for other people's lockers
+
+    if (!unlocked) {
       handleLockedClick(banner.id);
       return;
     }
+
+    // Select / deselect (toggle off if already selected)
+    setSelectedBannerId((prev) => (prev === banner.id ? null : banner.id));
+  };
+
+  // Confirmed equip — only fires from the sticky CTA
+  const handleConfirmEquip = async () => {
+    if (!selectedBannerId || !selectedBannerConfig) return;
+    if (!isBannerUnlocked(selectedBannerConfig, currentOrMaxRating, member)) return;
 
     setEquipping(true);
     setEquipError(null);
     setEquipSuccess(null);
 
     try {
-      await leaderboardService.equipBanner(banner.id);
-      setEquipSuccess(`Successfully equipped ${banner.name} banner!`);
-      onBannerEquipped?.(banner.id);
-      setSelectedBannerId(banner.id);
+      await leaderboardService.equipBanner(selectedBannerId);
+      setEquipSuccess(`"${selectedBannerConfig.name}" equipped!`);
+      onBannerEquipped?.(selectedBannerId);
+      // Keep selectedBannerId set so the card stays highlighted as "equipped"
     } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to equip banner. Check requirements.";
-      setEquipError(errorMsg);
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err instanceof Error ? err.message : "Failed to equip banner.");
+      setEquipError(msg);
     } finally {
       setEquipping(false);
     }
@@ -95,7 +128,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
-        {/* Backdrop click */}
+        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -104,7 +137,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
           onClick={onClose}
         />
 
-        {/* Modal Window */}
+        {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -112,15 +145,22 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#0e0e18] shadow-2xl p-4 sm:p-6"
         >
-          {/* Header */}
+          {/* ── Header ── */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
             <div>
               <h3 className="font-heading text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                 <Sparkles className="size-5 text-purple-400" />
                 Banner Locker
+                {!isOwnProfile && (
+                  <span className="flex items-center gap-1 text-[11px] font-normal text-amber-300 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full ml-1">
+                    <Eye className="size-3" /> View Only
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-white/60 mt-0.5">
-                Earn rating. Unlock banners. Rank banners override while in top 3.
+                {isOwnProfile
+                  ? "Click a banner to preview it, then confirm to equip."
+                  : `Viewing ${member.name}'s banner collection. Sign in as them to make changes.`}
               </p>
             </div>
             <button
@@ -131,16 +171,24 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
             </button>
           </div>
 
-          {/* Live Preview Card */}
+          {/* ── Live Preview ── */}
           <div className="my-4">
             <div className="text-xs font-semibold text-white/70 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Equipped Banner Preview</span>
+              <span>
+                {hasPendingSelection ? "Preview — not saved yet" : "Currently Equipped"}
+              </span>
               <span className="text-[11px] font-mono text-amber-400">
                 Max Rating: {currentOrMaxRating}
               </span>
             </div>
 
-            <div className="relative h-[84px] w-full rounded-xl overflow-hidden border border-white/20 p-3 shadow-lg">
+            <div
+              className={`relative h-[84px] w-full rounded-xl overflow-hidden border p-3 shadow-lg transition-all duration-300 ${
+                hasPendingSelection
+                  ? "border-blue-400/60 ring-2 ring-blue-500/30"
+                  : "border-white/20"
+              }`}
+            >
               <BannerGraphic banner={activePreviewBanner} showEffects={true} withScrim={true} />
 
               <div className="relative z-10 size-full flex items-center justify-between">
@@ -176,8 +224,11 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xs font-bold flex items-center justify-end gap-1.5" style={{ color: activePreviewBanner.colors.accent }}>
-                    {equipping && <Loader2 className="size-3 animate-spin text-purple-400" />}
+                  <div
+                    className="text-xs font-bold flex items-center justify-end gap-1.5"
+                    style={{ color: activePreviewBanner.colors.accent }}
+                  >
+                    {equipping && <Loader2 className="size-3 animate-spin text-blue-400" />}
                     {activePreviewBanner.name}
                   </div>
                   <div className="text-nano text-white/60 uppercase">
@@ -187,7 +238,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
               </div>
             </div>
 
-            {/* Error or Success notification */}
+            {/* Feedback messages */}
             {equipError && (
               <div className="mt-2 flex items-center gap-1.5 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg">
                 <AlertCircle className="size-3.5 shrink-0" />
@@ -202,7 +253,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
             )}
           </div>
 
-          {/* Section 1: Rating Banners Grid */}
+          {/* ── Rating & Special Banners Grid ── */}
           <div className="mt-6">
             <h4 className="text-xs font-bold uppercase tracking-wider text-white/80 mb-3">
               Rating &amp; Special Banners
@@ -212,6 +263,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
               {RATING_BANNERS.map((banner) => {
                 const unlocked = isBannerUnlocked(banner, currentOrMaxRating, member);
                 const isEquipped = currentEquippedBanner === banner.id;
+                const isSelected = selectedBannerId === banner.id;
                 const rarityStyle = getRarityBadgeStyle(banner.rarity, banner.id);
                 const isCreatorBanner = banner.id === "creator-vip";
                 const progressPct = Math.min(
@@ -222,38 +274,37 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                 );
                 const isShaking = shakingBannerId === banner.id;
 
+                // Border / ring priority: selected > equipped > unlocked > locked
+                const cardClass = (() => {
+                  if (isSelected) {
+                    return "border-blue-400 ring-2 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.35)] scale-[1.02]";
+                  }
+                  if (isEquipped) {
+                    return isCreatorBanner
+                      ? "border-rose-500 ring-2 ring-rose-500/50 shadow-[0_0_22px_rgba(244,63,94,0.45)]"
+                      : "border-purple-400 ring-2 ring-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)]";
+                  }
+                  if (unlocked) {
+                    return isCreatorBanner
+                      ? "border-rose-500/40 hover:border-rose-400 hover:scale-[1.01] shadow-[0_0_15px_rgba(244,63,94,0.2)]"
+                      : "border-white/20 hover:border-white/40 hover:scale-[1.01]";
+                  }
+                  return "border-white/10 opacity-70 hover:opacity-90";
+                })();
+
                 return (
                   <motion.div
                     key={banner.id}
                     animate={
                       isShaking
-                        ? {
-                            x: [-8, 8, -6, 6, -3, 3, 0],
-                            transition: { duration: 0.5 },
-                          }
+                        ? { x: [-8, 8, -6, 6, -3, 3, 0], transition: { duration: 0.5 } }
                         : {}
                     }
-                    onClick={() => {
-                      setSelectedBannerId(banner.id);
-                      if (unlocked) {
-                        handleEquipBanner(banner);
-                      } else {
-                        handleLockedClick(banner.id);
-                      }
-                    }}
-                    className={`relative rounded-xl overflow-hidden border p-3 cursor-pointer transition-all duration-200 ${
-                      isEquipped
-                        ? isCreatorBanner
-                          ? "border-rose-500 ring-2 ring-rose-500/50 shadow-[0_0_22px_rgba(244,63,94,0.45)]"
-                          : "border-purple-400 ring-2 ring-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)]"
-                        : unlocked
-                        ? isCreatorBanner
-                          ? "border-rose-500/40 hover:border-rose-400 hover:scale-[1.01] shadow-[0_0_15px_rgba(244,63,94,0.2)]"
-                          : "border-white/20 hover:border-white/40 hover:scale-[1.01]"
-                        : "border-white/10 opacity-70 hover:opacity-90"
+                    onClick={() => handleBannerClick(banner, unlocked)}
+                    className={`relative rounded-xl overflow-hidden border p-3 transition-all duration-200 ${cardClass} ${
+                      isOwnProfile && unlocked ? "cursor-pointer" : !isOwnProfile ? "cursor-default" : "cursor-not-allowed"
                     }`}
                   >
-                    {/* Background Banner Graphic */}
                     <BannerGraphic
                       banner={banner}
                       showEffects={unlocked}
@@ -261,7 +312,6 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                       className={!unlocked ? "grayscale contrast-125 brightness-50" : ""}
                     />
 
-                    {/* Content */}
                     <div className="relative z-10 flex flex-col justify-between h-full min-h-[64px]">
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -280,8 +330,12 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                           </p>
                         </div>
 
-                        {/* Status Icon */}
-                        {isEquipped ? (
+                        {/* Status badge */}
+                        {isSelected ? (
+                          <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 text-blue-300 bg-blue-500/20 border border-blue-400/50">
+                            <Check className="size-3" /> Selected
+                          </span>
+                        ) : isEquipped ? (
                           <span
                             className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                               isCreatorBanner
@@ -312,7 +366,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                         )}
                       </div>
 
-                      {/* Progress Bar or Info for Locked Banners */}
+                      {/* Progress bar for locked banners */}
                       {!unlocked && (
                         <div className="mt-2 pt-2 border-t border-white/10">
                           {isCreatorBanner ? (
@@ -351,7 +405,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Top 3 Exclusive Rank Banners */}
+          {/* ── Top 3 Rank Banners ── */}
           <div className="mt-8 pt-6 border-t border-white/10">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
@@ -376,22 +430,16 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                     }`}
                   >
                     <BannerGraphic banner={rankBanner} showEffects={holdsRank} withScrim={true} />
-
                     <div className="relative z-10 flex flex-col justify-between h-full min-h-[60px]">
                       <div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white">
-                            {rankBanner.name}
-                          </span>
+                          <span className="text-xs font-bold text-white">{rankBanner.name}</span>
                           <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
                             #{rankBanner.rank}
                           </span>
                         </div>
-                        <p className="text-[10px] text-white/60 mt-1">
-                          {rankBanner.description}
-                        </p>
+                        <p className="text-[10px] text-white/60 mt-1">{rankBanner.description}</p>
                       </div>
-
                       <div className="mt-2 text-[10px] font-mono font-semibold">
                         {holdsRank ? (
                           <span className="text-amber-300 flex items-center gap-1">
@@ -410,21 +458,63 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
             </div>
           </div>
 
-          {/* Modal Footer / Profile link */}
-          <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-            <Link
-              href={`/profile/${member.id}`}
-              className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
-            >
-              Go to Full Profile <ExternalLink className="size-3" />
-            </Link>
-            <button
-              onClick={onClose}
-              className="rounded-lg px-4 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-              Close Locker
-            </button>
-          </div>
+          {/* ── Sticky Equip CTA (only when own profile + pending selection) ── */}
+          <AnimatePresence>
+            {hasPendingSelection && selectedBannerConfig && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="mt-6 pt-4 border-t border-blue-500/30 flex items-center justify-between gap-3 bg-blue-950/40 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 rounded-b-2xl"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-blue-300 truncate">
+                    Equip &quot;{selectedBannerConfig.name}&quot;?
+                  </p>
+                  <p className="text-[11px] text-white/50">This will update your banner across the leaderboard.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => { setSelectedBannerId(null); setEquipError(null); }}
+                    className="px-3 py-1.5 text-xs font-semibold text-white/60 hover:text-white border border-white/20 hover:border-white/40 rounded-lg transition-colors"
+                    disabled={equipping}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmEquip}
+                    disabled={equipping}
+                    className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg transition-colors shadow-lg shadow-blue-900/40"
+                  >
+                    {equipping ? (
+                      <><Loader2 className="size-3.5 animate-spin" /> Equipping…</>
+                    ) : (
+                      <><Check className="size-3.5" /> Equip Banner</>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Footer ── */}
+          {!hasPendingSelection && (
+            <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+              <Link
+                href={`/profile/${member.id}`}
+                className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+              >
+                Go to Full Profile <ExternalLink className="size-3" />
+              </Link>
+              <button
+                onClick={onClose}
+                className="rounded-lg px-4 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                Close Locker
+              </button>
+            </div>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>
