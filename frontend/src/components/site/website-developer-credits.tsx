@@ -1,6 +1,5 @@
 import {
   ExternalLink,
-  Sparkles,
 } from "lucide-react";
 
 import { GitHubMark } from "@/components/site/github-mark";
