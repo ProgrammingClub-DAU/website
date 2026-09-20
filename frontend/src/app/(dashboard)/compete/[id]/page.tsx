@@ -391,7 +391,11 @@ export default function MatchPage() {
 
           const teamsFromServer = pollData.teams ?? [];
           (pollData.solveLog || []).forEach((entry: SolveLog) => {
-            const key = `${entry.contestId}-${entry.index}`;
+            const contestId = entry.problem?.contestId;
+            const index = entry.problem?.index;
+            if (!contestId || !index) return;
+
+            const key = `${contestId}-${index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
             solvedMap[key] = { team: teamKey };
 
@@ -399,8 +403,8 @@ export default function MatchPage() {
               posOwners[entry.problem.position] = teamKey;
             }
 
-            const problemName = entry.problem?.name ?? `Problem ${entry.index}`;
-            const contestAndIndex = `${entry.contestId}${entry.index}`;
+            const problemName = entry.problem?.name ?? `Problem ${index}`;
+            const contestAndIndex = `${contestId}${index}`;
             const solveTime = entry.timestamp;
             newLogEntries.push({
               key,
