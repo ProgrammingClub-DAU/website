@@ -5,7 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Confetti from "react-confetti";
-import axios from "axios";
+import axios from 'axios';
+import apiClient from '@/lib/axios';
 import type { Match, ProblemCell, Team } from "@/components/compete/types";
 
 type SolveLog = {
@@ -206,7 +207,7 @@ export default function MatchPage() {
 
     const fetchMatch = async () => {
       try {
-        const res = await axios.get(`/api/compete/matches/${id}`);
+        const res = await apiClient.get(`/api/compete/matches/${id}`);
         const matchObj = res.data;
         setMatch(matchObj);
 
@@ -302,7 +303,7 @@ export default function MatchPage() {
         return;
       }
       try {
-        const pollRes = await axios.get(`/api/compete/matches/${match.id}`);
+        const pollRes = await apiClient.post(`/api/compete/matches/${match.id}/poll`);
         const pollData = pollRes.data;
 
         const oldlength = Array.isArray(match?.problems) ? match!.problems!.length : 0;
