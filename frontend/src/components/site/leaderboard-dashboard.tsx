@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { leaderboardService } from "@/lib/services/leaderboard";
+import { MOCK_LEADERBOARD_ENTRIES } from "@/lib/mock-leaderboard";
 import { PodiumSection } from "./leaderboard/podium-section";
 import { RankingRow } from "./leaderboard/ranking-row";
 import { BannerLockerDrawer } from "./leaderboard/banner-locker-drawer";
@@ -31,7 +32,8 @@ interface LeaderboardDashboardProps {
 export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
   const [platform, setPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>("ALL");
-  const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
+  // ── [DUMMY PREVIEW DATA]: change to initialEntries to use real data ──
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD_ENTRIES);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
@@ -40,6 +42,12 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
   useEffect(() => {
     let ignore = false;
+
+    // ── [DUMMY RANKINGS PREVIEW MODE] ──
+    // To switch to LIVE BACKEND DATA: Uncomment the block below and comment out `setEntries(MOCK_LEADERBOARD_ENTRIES)`.
+    setEntries(MOCK_LEADERBOARD_ENTRIES);
+
+    /*
     leaderboardService
       .getLeaderboard(platform, roleFilter)
       .then((data) => {
@@ -58,6 +66,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
           setLoading(false);
         }
       });
+    */
 
     return () => {
       ignore = true;
@@ -139,7 +148,6 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       {/* ── SECTION 1: HERO & CONTROLS ── */}
       <div className="relative rounded-2xl border border-white/[0.08] bg-[#0b0b14]/80 p-4 md:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
         {/* Ambient background glow */}
-        <div className="absolute -top-32 -left-32 size-80 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 size-80 rounded-full bg-cyan-600/15 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">

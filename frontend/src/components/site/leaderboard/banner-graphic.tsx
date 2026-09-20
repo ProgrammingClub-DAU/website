@@ -70,6 +70,26 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
         />
 
         {/* Animation & Theme-specific artwork */}
+        {id === "creator-vip" && (
+          <g>
+            {/* Pulsing crimson flame pillars & embers */}
+            <g fill={colors.accent} opacity="0.38">
+              <path d="M 320 120 Q 335 50, 350 120 Z" />
+              <path d="M 355 120 Q 375 35, 395 120 Z" />
+              <path d="M 400 120 Q 425 20, 445 120 Z" />
+              <path d="M 450 120 Q 465 55, 480 120 Z" />
+            </g>
+            {/* VIP Crown watermark rays */}
+            <g stroke={colors.accent} strokeWidth="2" fill="none" opacity="0.4">
+              <polygon points="410,35 425,15 440,35 455,15 470,35 440,48" fill={colors.accent} fillOpacity="0.25" />
+            </g>
+            {/* Ruby stardust particles */}
+            <circle cx="340" cy="40" r="3" fill="#ff4d6d" opacity="0.8" className="animate-ping" style={{ animationDuration: "3s" }} />
+            <circle cx="390" cy="25" r="2.5" fill="#ff758f" opacity="0.9" className="animate-pulse" />
+            <circle cx="450" cy="65" r="3.5" fill="#ff4d6d" opacity="0.75" className="animate-pulse" />
+          </g>
+        )}
+
         {animation === "sunburst" && (
           <g opacity="0.28">
             {/* Sunburst rays emanating from top right */}
@@ -115,7 +135,7 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
           </g>
         )}
 
-        {animation === "flames" && (
+        {animation === "flames" && id !== "creator-vip" && (
           <g fill={colors.accent} opacity="0.25">
             <path d="M 360 120 Q 375 70, 390 120 Z" />
             <path d="M 400 120 Q 420 50, 435 120 Z" />
@@ -123,8 +143,8 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
           </g>
         )}
 
-        {/* Twinkling star sparkle polygons for ranks & high tiers */}
-        {(showEffects || banner.isRankBanner || banner.minRating >= 1600) && (
+        {/* Twinkling star sparkle polygons for ranks, creator-vip & high tiers */}
+        {(showEffects || banner.isRankBanner || banner.id === "creator-vip" || banner.minRating >= 1600) && (
           <g fill={colors.accent}>
             {/* Sparkle 1 */}
             <polygon

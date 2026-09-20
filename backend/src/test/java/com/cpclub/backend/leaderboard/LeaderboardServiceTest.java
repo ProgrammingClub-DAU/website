@@ -166,6 +166,16 @@ class LeaderboardServiceTest {
             public Long getPlacement() {
                 return placement;
             }
+
+            @Override
+            public String getEquippedbannerid() {
+                return "rookie";
+            }
+
+            @Override
+            public Integer getMaxrating() {
+                return rating;
+            }
         };
     }
 }

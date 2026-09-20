@@ -472,11 +472,39 @@ public class UserService {
         }
     }
 
+    public static final java.util.Set<String> CREATOR_NAMES = java.util.Set.of(
+            "madhav thesiya",
+            "tanishq shah",
+            "raj patel",
+            "shane christian",
+            "gaurav rathod",
+            "mahek kanani"
+    );
+
+    public static final java.util.Set<String> CREATOR_HANDLES = java.util.Set.of(
+            "madhav_t",
+            "king-t",
+            "raj_patel",
+            "raze07",
+            "gaurav_r",
+            "mahek_k"
+    );
+
+    private boolean isWebsiteCreator(User user) {
+        if (user.getName() != null && CREATOR_NAMES.contains(user.getName().trim().toLowerCase())) {
+            return true;
+        }
+        if (user.getCodeforcesHandle() != null && CREATOR_HANDLES.contains(user.getCodeforcesHandle().trim().toLowerCase())) {
+            return true;
+        }
+        return false;
+    }
+
     /**
-     * Equips a rating banner for a member, enforcing server-side rating threshold validation.
+     * Equips a rating or exclusive banner for a user.
      *
-     * @param userId ID of member equipping banner
-     * @param bannerId candidate rating banner
+     * @param userId user requesting the banner
+     * @param bannerId candidate banner ID
      * @return equipped banner ID
      */
     @Transactional
@@ -489,16 +517,23 @@ public class UserService {
         }
 
         BannerConfig banner = BannerConfig.getBanner(bannerId);
-        int effectiveMaxRating = Math.max(
-                user.getMaxRating() != null ? user.getMaxRating() : 0,
-                user.getRating() != null ? user.getRating() : 0
-        );
 
-        if (effectiveMaxRating < banner.minRating()) {
-            throw new BadRequestException(String.format(
-                    "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
-                    banner.name(), banner.minRating(), effectiveMaxRating
-            ));
+        if ("creator-vip".equalsIgnoreCase(bannerId)) {
+            if (!isWebsiteCreator(user)) {
+                throw new BadRequestException("The Red VIP banner is exclusively reserved for the 6 platform creators.");
+            }
+        } else {
+            int effectiveMaxRating = Math.max(
+                    user.getMaxRating() != null ? user.getMaxRating() : 0,
+                    user.getRating() != null ? user.getRating() : 0
+            );
+
+            if (effectiveMaxRating < banner.minRating()) {
+                throw new BadRequestException(String.format(
+                        "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
+                        banner.name(), banner.minRating(), effectiveMaxRating
+                ));
+            }
         }
 
         user.setEquippedBannerId(banner.id());
