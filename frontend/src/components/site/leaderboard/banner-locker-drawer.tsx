@@ -275,7 +275,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                               {isCreatorBanner ? "RED VIP" : banner.rarity}
                             </span>
                           </div>
-                          <p className="text-[10px] text-white/70 line-clamp-1 mt-0.5">
+                          <p className="text-[10px] text-white/70 line-clamp-2 mt-0.5">
                             {banner.description}
                           </p>
                         </div>

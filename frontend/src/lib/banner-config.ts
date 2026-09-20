@@ -95,7 +95,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 0,
     rarity: "Common",
     animation: "geometric",
-    description: "Graphite geometric grid. Standard issue for all club initiate coders.",
+    description: "Available to every member. No rating requirement.",
     colors: {
       primary: "#222533",
       accent: "#4a516d",
@@ -112,7 +112,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 1200,
     rarity: "Common",
     animation: "waves",
-    description: "Emerald matrix signal. Unlocked upon reaching 1200 rating.",
+    description: "Requirement: maximum Codeforces rating ≥ 1200.",
     colors: {
       primary: "#143323",
       accent: "#2f9d64",
@@ -129,7 +129,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 1400,
     rarity: "Rare",
     animation: "waves",
-    description: "Cybernetic cyan waves. Unlocked upon reaching 1400 rating.",
+    description: "Requirement: maximum Codeforces rating ≥ 1400.",
     colors: {
       primary: "#0f343e",
       accent: "#18b5c9",
@@ -146,7 +146,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 1600,
     rarity: "Rare",
     animation: "circuits",
-    description: "Electric sapphire circuits. Unlocked upon reaching 1600 rating.",
+    description: "Requirement: maximum Codeforces rating ≥ 1600.",
     colors: {
       primary: "#142854",
       accent: "#3d7eff",
@@ -163,7 +163,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 1900,
     rarity: "Epic",
     animation: "particles",
-    description: "Cosmic violet nebula with floating stardust. Unlocked upon reaching 1900 rating.",
+    description: "Requirement: maximum Codeforces rating ≥ 1900.",
     colors: {
       primary: "#321d58",
       accent: "#a966ff",
@@ -180,7 +180,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     minRating: 2100,
     rarity: "Legendary",
     animation: "flames",
-    description: "Solar flare ignition with incandescent embers. Unlocked upon reaching 2100 rating.",
+    description: "Requirement: maximum Codeforces rating ≥ 2100.",
     colors: {
       primary: "#4a2406",
       accent: "#ff9426",
@@ -192,29 +192,12 @@ export const RATING_BANNERS: BannerConfig[] = [
     },
   },
   {
-    id: "club-founder",
-    name: "Club Founder",
-    minRating: 0,
-    rarity: "Special",
-    animation: "shimmer",
-    description: "Honorary badge reserved for founding members and executive convenors.",
-    colors: {
-      primary: "#40132b",
-      accent: "#ff3d94",
-      border: "#e02677",
-      glow: "rgba(255, 61, 148, 0.45)",
-      text: "#ffe0ee",
-      gradient: "linear-gradient(135deg, #2a0b1c 0%, #521937 60%, #1e0613 100%)",
-      scrim: "linear-gradient(90deg, rgba(20, 4, 13, 0.92) 0%, rgba(20, 4, 13, 0.6) 60%, transparent 100%)",
-    },
-  },
-  {
     id: "contest-winner",
     name: "Contest Winner",
     minRating: 0,
     rarity: "Special",
     animation: "sparks",
-    description: "Conferred to champions of official college programming tournaments.",
+    description: "Currently available to every member. No rating requirement.",
     colors: {
       primary: "#332244",
       accent: "#f4a261",
@@ -232,7 +215,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Exclusive",
     animation: "flames",
     iconName: "crown",
-    description: "Ultra-exclusive Red VIP Banner reserved for the 6 engineers who designed and built this website platform.",
+    description: "Granted only to the six engineers who built this website; it cannot be earned by rating.",
     colors: {
       primary: "#2e0508",
       accent: "#ff1e42",
@@ -416,4 +399,3 @@ export function getRarityBadgeStyle(
       };
   }
 }
-

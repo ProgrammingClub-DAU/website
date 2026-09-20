@@ -80,6 +80,14 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(team, "Fetched club team successfully"));
     }
 
+    /** Public profiles of the registered website builders, for the credits section. */
+    @GetMapping("/platform-creators")
+    @Operation(summary = "Get website creators - public")
+    public ResponseEntity<ApiResponse<List<PublicUserResponseDto>>> getPlatformCreators(Authentication authentication) {
+        List<PublicUserResponseDto> creators = userService.getPlatformCreators(isAdmin(authentication));
+        return ResponseEntity.ok(ApiResponse.success(creators, "Fetched website creators successfully"));
+    }
+
     /**
      * Whether the caller holds ROLE_ADMIN.
      *
@@ -309,4 +317,3 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
     }
 }
-
