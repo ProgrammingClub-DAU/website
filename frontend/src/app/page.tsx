@@ -62,7 +62,6 @@ const features: Feature[] = [
     icon: Swords,
     title: "1v1 battles",
     body: "Head-to-head timed problems against another member, with a shared verdict feed.",
-    badge: "In development",
   },
   {
     icon: Users,
@@ -418,3 +417,4 @@ function cnFeature(span?: boolean) {
     span && "sm:col-span-2"
   );
 }
+
