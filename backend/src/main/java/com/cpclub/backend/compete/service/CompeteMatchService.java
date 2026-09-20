@@ -44,7 +44,7 @@ public class CompeteMatchService {
         Set<String> solvedSet = new HashSet<>();
         for (String handle : handles) {
             try {
-                List<CfSubmission> submissions = codeforcesApiClient.userStatus(handle, 1, 10000);
+                List<CfSubmission> submissions = codeforcesApiClient.userStatus(handle, 1, 2000);
                 for (CfSubmission sub : submissions) {
                     if ("OK".equals(sub.getVerdict()) && sub.getProblem() != null && sub.getProblem().getContestId() != null)
                         solvedSet.add(sub.getProblem().getContestId() + "-" + sub.getProblem().getIndex());

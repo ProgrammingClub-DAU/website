@@ -152,7 +152,7 @@ export function MatchCreationForm() {
 
     setIsSubmitting(true);
     try {
-      const res = await apiClient.post("/api/compete/matches", matchData);
+      const res = await apiClient.post("/api/compete/matches", matchData, { timeout: 60000 });
       const created = res.data;
       const newMatchId = created?.id ?? created?.match?.id;
       if (!newMatchId) {
