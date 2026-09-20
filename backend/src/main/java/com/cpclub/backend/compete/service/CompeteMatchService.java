@@ -11,6 +11,10 @@ public class CompeteMatchService {
 
     private final MatchRepository matchRepository;
 
+    public Match getMatch(String matchId) {
+        return null;
+    }
+
     public Match createMatch() {
         // Placeholder
         return null;

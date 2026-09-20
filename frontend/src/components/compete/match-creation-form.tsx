@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import { TeamsForm, TeamInput } from "./teams-form";
 
 export function MatchCreationForm() {
@@ -151,7 +152,7 @@ export function MatchCreationForm() {
 
     setIsSubmitting(true);
     try {
-      const res = await axios.post("/api/compete/matches", matchData);
+      const res = await apiClient.post("/api/compete/matches", matchData);
       const created = res.data;
       const newMatchId = created?.id ?? created?.match?.id;
       if (!newMatchId) {

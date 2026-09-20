@@ -14,7 +14,13 @@ public class CompeteController {
 
     @PostMapping
     public ResponseEntity<?> createMatch() {
+
         return ResponseEntity.ok(competeMatchService.createMatch());
+    }
+
+    @GetMapping("/{matchId}")
+    public ResponseEntity<?> getMatch(@PathVariable String matchId) {
+        return ResponseEntity.ok(competeMatchService.getMatch(matchId));
     }
 
     @PostMapping("/{matchId}/poll")
