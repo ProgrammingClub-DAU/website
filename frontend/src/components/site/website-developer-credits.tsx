@@ -27,15 +27,6 @@ const AVATAR_GRADIENTS = [
   "from-blue-600 via-indigo-600 to-violet-700",
 ];
 
-const CONTRIBUTOR_LINKEDIN: Record<string, string> = {
-  "tanishq shah": "https://linkedin.com/in/tanishq-shah",
-  "raj patel": "https://linkedin.com/in/raj-patel",
-  "shane christian": "https://linkedin.com/in/shane-christian",
-  "madhav thesiya": "https://linkedin.com/in/madhav-thesiya",
-  "gaurav rathod": "https://linkedin.com/in/gaurav-rathod",
-  "mahek kanani": "https://linkedin.com/in/mahek-kanani",
-};
-
 export function WebsiteDeveloperCredits() {
 
   return (
@@ -76,24 +67,17 @@ export function WebsiteDeveloperCredits() {
       <div className="relative z-10 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 pb-4">
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
-          const linkedinUrl =
-            CONTRIBUTOR_LINKEDIN[contributor.name.trim().toLowerCase()] ||
-            "https://linkedin.com";
 
           return (
-            <a
+            <div
               key={contributor.name}
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="group relative flex flex-col items-center w-full focus:outline-none"
               style={{
                 animation: "subtle-float 5s ease-in-out infinite",
                 animationDelay: `${index * 0.5}s`,
               }}
-              title={contributor.name}
             >
-              <article className="relative w-full rounded-2xl p-[2px] overflow-hidden transition-all duration-300 group-hover:-translate-y-2.5 group-hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.9)]">
+              <article className="relative w-full rounded-2xl p-[2px] overflow-hidden transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]">
                 {/* ── Continuous Rotating Border Beam Animation ── */}
                 <div
                   aria-hidden="true"
@@ -105,21 +89,21 @@ export function WebsiteDeveloperCredits() {
                 />
 
                 {/* ── Inner Dark Glass Card Body ── */}
-                <div className="relative z-10 flex flex-col items-center justify-center min-h-[280px] rounded-[16px] bg-[#0c0f1a]/95 p-6 pb-6 backdrop-blur-xl border border-white/[0.05]">
+                <div className="relative z-10 flex flex-col items-center justify-center min-h-[180px] rounded-[16px] bg-[#0c0f1a]/95 p-5 pb-5 backdrop-blur-xl border border-white/[0.05]">
                   {/* Diagonal shimmer sweep on hover */}
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute -inset-full -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-1000 group-hover:translate-x-full"
                   />
 
-                  {/* ── Centered Photo (120px) ── */}
+                  {/* ── Centered Photo (80px) ── */}
                   <div
-                    className="relative shrink-0 overflow-hidden rounded-full p-[3px] bg-white/15 transition-all duration-300 group-hover:scale-105 group-hover:bg-white/30 shadow-xl"
-                    style={{ width: "120px", height: "120px" }}
+                    className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/15 transition-all duration-300 group-hover:scale-105 group-hover:bg-white/30 shadow-xl"
+                    style={{ width: "80px", height: "80px" }}
                   >
                     <div className="size-full overflow-hidden rounded-full bg-[#111318]">
                         <div
-                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-2xl text-white shadow-inner`}
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
                         >
                           {getInitials(contributor.name)}
                         </div>
@@ -127,22 +111,22 @@ export function WebsiteDeveloperCredits() {
                   </div>
 
                   {/* ── Name ── */}
-                  <div className="mt-5 text-center px-1">
-                    <h3 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white transition-colors group-hover:text-white leading-tight">
+                  <div className="mt-4 text-center px-1">
+                    <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white transition-colors group-hover:text-white leading-tight">
                       {contributor.name}
                     </h3>
 
                     {/* ── Tag: Core Contributor for everyone ── */}
-                    <div className="mt-3 flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-3.5 py-1 text-xs font-medium tracking-wide text-violet-200/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.12)] backdrop-blur-md transition-colors group-hover:border-violet-500/35 group-hover:bg-violet-500/[0.12]">
-                        <span className="size-1.5 rounded-full bg-violet-400 opacity-85 ring-2 ring-violet-400/25 shrink-0" aria-hidden="true" />
+                    <div className="mt-2 flex items-center justify-center">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-violet-200/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.12)] backdrop-blur-md transition-colors group-hover:border-violet-500/35 group-hover:bg-violet-500/[0.12]">
+                        <span className="size-1 rounded-full bg-violet-400 opacity-85 ring-2 ring-violet-400/25 shrink-0" aria-hidden="true" />
                         <span>Core Contributor</span>
                       </span>
                     </div>
                   </div>
                 </div>
               </article>
-            </a>
+            </div>
           );
         })}
       </div>
