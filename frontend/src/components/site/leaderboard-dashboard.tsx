@@ -24,12 +24,14 @@ import { BannerLockerDrawer } from "./leaderboard/banner-locker-drawer";
 import { SpotlightTopCard } from "./leaderboard/spotlight-top-card";
 import { RatingDistributionChart } from "./leaderboard/rating-distribution-chart";
 import type { LeaderboardEntry, LeaderboardFilter, LeaderboardPlatform } from "@/types/api";
+import { useAuthStore } from "@/store/auth";
 
 interface LeaderboardDashboardProps {
   initialEntries?: LeaderboardEntry[];
 }
 
 export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
+  const { user: currentUser } = useAuthStore();
   const [platform, setPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>("ALL");
   // ── [LIVE / DUMMY DATA TOGGLE]: Switch between `initialEntries` and `MOCK_LEADERBOARD_ENTRIES` ──
@@ -427,6 +429,10 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       <BannerLockerDrawer
         member={selectedMemberForLocker}
         isOpen={isLockerOpen}
+        isOwnProfile={
+          !!currentUser && !!selectedMemberForLocker &&
+          currentUser.id === selectedMemberForLocker.id
+        }
         onClose={() => setIsLockerOpen(false)}
         onBannerEquipped={handleBannerEquipped}
       />
