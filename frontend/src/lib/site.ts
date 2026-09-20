@@ -21,6 +21,7 @@ export const navItems = [
   { href: "/hall-of-fame", label: "Hall of Fame" },
   { href: "/gallery", label: "Gallery" },
   { href: "/blog", label: "Blog" },
+  { href: "/compete", label: "Compete" },
   { href: "/members", label: "Members" },
   { href: "/leaderboard", label: "Leaderboard" },
 ] as const;
