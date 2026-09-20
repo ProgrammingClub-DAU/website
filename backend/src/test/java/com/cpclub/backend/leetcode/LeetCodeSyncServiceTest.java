@@ -67,7 +67,7 @@ class LeetCodeSyncServiceTest {
 
     private static LeetCodeGraphQLResponse rated(double rating) {
         return new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(
-                new LeetCodeGraphQLResponse.UserContestRanking(rating)));
+                new LeetCodeGraphQLResponse.UserContestRanking(rating), null));
     }
 
     private void respondWith(LeetCodeGraphQLResponse response) {
@@ -129,7 +129,7 @@ class LeetCodeSyncServiceTest {
         // LeetCode answers a valid handle with no contest history by returning
         // data with a null userContestRanking. That is a real answer, so it
         // writes 0 rather than leaving the old rating in place.
-        respondWith(new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(null)));
+        respondWith(new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(null, null)));
 
         leetCodeSyncService.syncSingleUser(alice);
 

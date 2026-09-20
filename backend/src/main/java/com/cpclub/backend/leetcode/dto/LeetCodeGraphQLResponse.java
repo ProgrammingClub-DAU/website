@@ -39,7 +39,19 @@ public record LeetCodeGraphQLResponse(Data data) {
      * @param userContestRanking contest standing, null when the member has never contested
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Data(UserContestRanking userContestRanking) {
+    public record Data(UserContestRanking userContestRanking, MatchedUser matchedUser) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MatchedUser(SubmitStats submitStats) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SubmitStats(java.util.List<AcSubmissionNum> acSubmissionNum) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record AcSubmissionNum(String difficulty, Integer count) {
     }
 
     /**

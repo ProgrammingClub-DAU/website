@@ -18,6 +18,9 @@ import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
+import com.cpclub.backend.codeforces.repository.CfSolveRepository;
+import com.cpclub.backend.stats.repository.ContestParticipationRepository;
+import com.cpclub.backend.common.model.Platform;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +44,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final CodeforcesSyncService codeforcesSyncService;
     private final LeetCodeSyncService leetCodeSyncService;
+    private final CfSolveRepository cfSolveRepository;
+    private final ContestParticipationRepository contestParticipationRepository;
 
     /**
      * Resolves a user profile by database primary key.
@@ -233,7 +238,13 @@ public class UserService {
             throw new BadRequestException("Codeforces handle '" + handle + "' is already in use by another user!");
         }
 
+        boolean handleChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
         user.setCodeforcesHandle(handle);
+        if (handleChanged) {
+            user.setCfLastSubmissionId(null);
+            cfSolveRepository.deleteByUser(user);
+            contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+        }
         User savedUser = userRepository.save(user);
         codeforcesSyncService.syncSingleUser(savedUser);
         log.info("Updated Codeforces handle for user id {} to '{}'", userId, handle);
@@ -285,6 +296,11 @@ public class UserService {
             }
             codeforcesChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
             user.setCodeforcesHandle(handle);
+            if (codeforcesChanged) {
+                user.setCfLastSubmissionId(null);
+                cfSolveRepository.deleteByUser(user);
+                contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+            }
         }
 
         boolean leetcodeChanged = false;

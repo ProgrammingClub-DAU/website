@@ -50,6 +50,14 @@ public class LeetCodeSyncService {
               userContestRanking(username: $username) {
                 rating
               }
+              matchedUser(username: $username) {
+                submitStats {
+                  acSubmissionNum {
+                    difficulty
+                    count
+                  }
+                }
+              }
             }
             """;
 
@@ -84,13 +92,10 @@ public class LeetCodeSyncService {
         if (user == null || user.getLeetcodeHandle() == null || user.getLeetcodeHandle().isBlank()) {
             return;
         }
-        Integer rating = fetchRating(user.getLeetcodeHandle());
-        if (rating == null) {
-            return;
+        if (fetchAndApply(user)) {
+            userRepository.save(user);
+            log.info("Synced LeetCode for '{}'", user.getLeetcodeHandle());
         }
-        user.setLeetcodeRating(rating);
-        userRepository.save(user);
-        log.info("Synced LeetCode rating for '{}': {}", user.getLeetcodeHandle(), rating);
     }
 
     /**
@@ -115,13 +120,10 @@ public class LeetCodeSyncService {
         log.info("Starting LeetCode rating synchronization for {} member(s)...", users.size());
         int updated = 0;
         for (User user : users) {
-            Integer rating = fetchRating(user.getLeetcodeHandle());
-            if (rating == null) {
-                continue;
+            if (fetchAndApply(user)) {
+                userRepository.save(user);
+                updated++;
             }
-            user.setLeetcodeRating(rating);
-            userRepository.save(user);
-            updated++;
         }
         log.info("LeetCode rating synchronization finished. Updated {} of {} member(s).",
                 updated, users.size());
@@ -135,15 +137,12 @@ public class LeetCodeSyncService {
      *         contested, or null when nothing could be determined and the stored
      *         value should be left alone
      */
-    private Integer fetchRating(String handle) {
-        // Blocks until a permit is free. Separate from the Codeforces gate (D23),
-        // so a long CF backfill no longer delays LeetCode calls.
+    private boolean fetchAndApply(User user) {
         leetcodeRateLimiter.acquire();
-
+        String handle = user.getLeetcodeHandle();
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            // LeetCode returns 403 to requests without a browser-ish Referer.
             headers.set(HttpHeaders.REFERER, "https://leetcode.com");
 
             Map<String, Object> body = Map.of(
@@ -157,31 +156,37 @@ public class LeetCodeSyncService {
                     LeetCodeGraphQLResponse.class
             );
 
-            if (response == null) {
+            if (response == null || response.data() == null) {
                 log.warn("LeetCode sync: empty response for handle '{}'.", handle);
-                return null;
+                return false;
             }
 
             Double rating = response.extractRating();
             if (rating != null) {
-                return (int) Math.round(rating);
+                user.setLeetcodeRating((int) Math.round(rating));
+            } else if (response.isUnratedMember()) {
+                user.setLeetcodeRating(UNRATED);
+            } else {
+                log.warn("LeetCode sync: no contest data in response for handle '{}'.", handle);
+                return false;
             }
 
-            if (response.isUnratedMember()) {
-                // A real answer, not a failure: the handle exists and has never
-                // been in a rated contest. Recording zero distinguishes that from
-                // "we do not know", which is what leaving the field null means.
-                return UNRATED;
+            if (response.data().matchedUser() != null && response.data().matchedUser().submitStats() != null) {
+                for (LeetCodeGraphQLResponse.AcSubmissionNum ac : response.data().matchedUser().submitStats().acSubmissionNum()) {
+                    if (ac.count() == null) continue;
+                    if ("All".equals(ac.difficulty())) user.setLeetcodeTotalSolved(ac.count());
+                    else if ("Easy".equals(ac.difficulty())) user.setLeetcodeEasySolved(ac.count());
+                    else if ("Medium".equals(ac.difficulty())) user.setLeetcodeMediumSolved(ac.count());
+                    else if ("Hard".equals(ac.difficulty())) user.setLeetcodeHardSolved(ac.count());
+                }
             }
-
-            log.warn("LeetCode sync: no contest data in response for handle '{}'.", handle);
-            return null;
+            
+            user.setLeetcodeSyncedAt(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC));
+            return true;
 
         } catch (RestClientException e) {
-            // Deliberately swallowed. See the class javadoc: this runs inside a
-            // member's own profile save, and a LeetCode outage must not stop it.
             log.warn("LeetCode sync failed for handle '{}': {}", handle, e.getMessage());
-            return null;
+            return false;
         }
     }
 }
