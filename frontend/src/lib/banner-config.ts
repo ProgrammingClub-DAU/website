@@ -303,10 +303,10 @@ export const LC_BANNERS: BannerConfig[] = [
 ];
 
 export function isWebsiteCreator(
-  member?: { isPlatformCreator?: boolean } | null
+  member?: { isPlatformCreator?: boolean; platformCreator?: boolean } | null
 ): boolean {
   if (!member) return false;
-  return !!member.isPlatformCreator;
+  return !!(member.isPlatformCreator ?? member.platformCreator);
 }
 
 export const ALL_BANNERS: Record<string, BannerConfig> = {

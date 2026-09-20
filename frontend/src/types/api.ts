@@ -128,6 +128,7 @@ export interface LeaderboardEntry {
   contestHistory?: number[];
   ratingChange?: number;
   isPlatformCreator?: boolean;
+  platformCreator?: boolean;
 }
 
 export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";

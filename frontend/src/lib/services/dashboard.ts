@@ -40,6 +40,7 @@ interface UserProfileResponse {
   maxRating?: number | null;
   equippedBannerId?: string | null;
   isPlatformCreator?: boolean;
+  platformCreator?: boolean;
 }
 
 export interface ProfileUpdateRequest {
@@ -78,7 +79,7 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     profileComplete: user.profileComplete ?? false,
     maxRating: user.maxRating ?? user.rating,
     equippedBannerId: user.equippedBannerId ?? "rookie",
-    isPlatformCreator: user.isPlatformCreator ?? false,
+    isPlatformCreator: user.isPlatformCreator ?? user.platformCreator ?? false,
     platformStats: [], // Phase 2
     ratingHistory: [], // Live fetch
     activityData: [], // Phase 2
