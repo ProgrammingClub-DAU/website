@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, react-hooks/immutability, react-hooks/purity */
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -607,7 +607,7 @@ export default function MatchPage() {
         {matchHasEnded && <p className="text-red-400 font-medium">Match has ended.</p>}
         {matchOngoing && match && (
           <p className="text-green-400 font-medium">
-            Match ends in {formatDuration(matchEnd.getTime() - Date.now())}
+            Match ends in {formatDuration(matchEnd.getTime() - now.getTime())}
           </p>
         )}
       </div>
