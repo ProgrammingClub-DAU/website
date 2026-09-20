@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Immutable request DTO for updating an existing blog post.
- * Tags and published status are optional — only non-null values are applied.
+ * Tags and published status are optional â€” only non-null values are applied.
  */
 public record BlogUpdateRequest(
         @NotBlank(message = "Title is required")

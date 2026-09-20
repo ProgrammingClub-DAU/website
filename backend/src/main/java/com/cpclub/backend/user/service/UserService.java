@@ -111,7 +111,7 @@ public class UserService {
      */
     /**
      * Searches and paginates members directory sorted alphabetically by name.
-     * Returns full DTO including email — for admin/authenticated use only.
+     * Returns full DTO including email â€” for admin/authenticated use only.
      *
      * @param query search filter matching name or Codeforces handle
      * @param page zero-indexed page number
@@ -168,7 +168,7 @@ public class UserService {
     }
 
     /**
-     * Public-safe profile lookup by ID — omits email, role, and updatedAt.
+     * Public-safe profile lookup by ID â€” omits email, role, and updatedAt.
      * Use this for the public-facing {@code GET /api/users/{id}} endpoint.
      *
      * @param id user ID
@@ -249,8 +249,8 @@ public class UserService {
      * unchanged profile is not rejected as a duplicate of itself.</p>
      *
      * <p>An external sync runs only when the handle it belongs to actually
-     * changed. Syncing unconditionally meant every profile save — a name edit, a
-     * new LinkedIn URL — spent a permit on the shared rate limiter that the
+     * changed. Syncing unconditionally meant every profile save â€” a name edit, a
+     * new LinkedIn URL â€” spent a permit on the shared rate limiter that the
      * scheduled jobs also queue behind.</p>
      *
      * <p>The link-only fields are stored as given. CodeChef and AtCoder publish no

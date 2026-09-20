@@ -62,7 +62,7 @@ class LeetCodeSyncServiceTest {
         // @InjectMocks bypasses Spring, so the limiter field stays null. An
         // unthrottled real limiter keeps the acquire() call on the tested path.
         ReflectionTestUtils.setField(
-                leetCodeSyncService, "codeforcesRateLimiter", RateLimiter.create(Double.MAX_VALUE));
+                leetCodeSyncService, "leetcodeRateLimiter", RateLimiter.create(Double.MAX_VALUE));
     }
 
     private static LeetCodeGraphQLResponse rated(double rating) {

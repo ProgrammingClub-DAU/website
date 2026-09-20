@@ -52,7 +52,7 @@ public record EventAttendeeDto(
     /**
      * Maps an attendance row into its admin representation.
      *
-     * <p>Reads the {@code user} association, which is lazy — the repository query
+     * <p>Reads the {@code user} association, which is lazy â€” the repository query
      * that loads attendees joins it in for this reason.</p>
      *
      * @param attendee persisted attendance row

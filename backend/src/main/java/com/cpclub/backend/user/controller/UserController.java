@@ -49,7 +49,7 @@ public class UserController {
      * @return paginated response containing user profiles
      */
     @GetMapping
-    @Operation(summary = "Get members directory — public, email-safe (paginated & searchable)")
+    @Operation(summary = "Get members directory â€” public, email-safe (paginated & searchable)")
     public ResponseEntity<ApiResponse<PagedResponse<PublicUserResponseDto>>> getMembersDirectory(
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -124,7 +124,7 @@ public class UserController {
      * @return user profile details
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get public user profile by ID — email-safe")
+    @Operation(summary = "Get public user profile by ID â€” email-safe")
     public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(
             @PathVariable Long id, Authentication authentication) {
         PublicUserResponseDto user = userService.getPublicUserById(id, isAdmin(authentication));

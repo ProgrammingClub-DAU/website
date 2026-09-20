@@ -31,7 +31,7 @@ public class LeaderboardService {
      * <p>Ranking is done by the database in the same query that fetches the page.
      * The previous implementation issued one {@code COUNT} per row, so rendering a
      * default page of 20 members cost 22 round trips and grew linearly with page
-     * size — up to 102 at the maximum permitted size of 100.</p>
+     * size â€” up to 102 at the maximum permitted size of 100.</p>
      *
      * <p>Ranking semantics are unchanged: tied ratings share a position, the next
      * distinct rating skips the gap, and unrated members tie on a single rank at

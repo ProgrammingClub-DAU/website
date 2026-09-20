@@ -52,10 +52,10 @@ public class SnapshotService {
      * through a narrower query. That is deliberate: the narrower query would belong
      * on {@code UserRepository}, which M5 is editing in Stage 1B, and a second
      * parallel branch touching the same file invites a merge conflict for no real
-     * gain — this runs once a week over a club-sized table. Worth revisiting once
+     * gain â€” this runs once a week over a club-sized table. Worth revisiting once
      * Stage 1 is merged.</p>
      */
-    @Scheduled(cron = "${cpclub.snapshot.cron:0 0 0 * * MON}")
+    @Scheduled(cron = "${cpclub.snapshot.cron:0 0 0 * * MON}", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     @Transactional
     public void recordWeeklySnapshots() {
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
@@ -110,7 +110,7 @@ public class SnapshotService {
     /**
      * Loads and maps one platform's history for a member.
      *
-     * <p>A member with no snapshots yet returns an empty list, not a 404 — the
+     * <p>A member with no snapshots yet returns an empty list, not a 404 â€” the
      * chart renders as empty rather than as an error. An unknown member id is a
      * genuine 404, so a mistyped URL is distinguishable from a new account.</p>
      */

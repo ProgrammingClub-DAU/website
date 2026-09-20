@@ -6,7 +6,7 @@ package com.cpclub.backend.leaderboard.dto;
  * <p>An enum rather than a raw query string so an unrecognized value is rejected
  * as a 400 by parameter binding, before it can reach the repository.</p>
  *
- * <p>The groupings are club positions, not authorization roles — see
+ * <p>The groupings are club positions, not authorization roles â€” see
  * {@link com.cpclub.backend.user.entity.ClubRole}. Filtering to {@code CORE} does
  * not select the admins.</p>
  */

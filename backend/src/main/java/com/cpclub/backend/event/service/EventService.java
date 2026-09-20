@@ -44,7 +44,7 @@ public class EventService {
     private final EventPhotoRepository eventPhotoRepository;
     private final UserRepository userRepository;
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Creates an event, owned by the admin who created it.
@@ -307,7 +307,7 @@ public class EventService {
         return EventResponseDto.fromEntity(saved, true);
     }
 
-    // ── Attendance ────────────────────────────────────────────────────────────
+    // â”€â”€ Attendance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Records that a member attended an event.
@@ -318,7 +318,7 @@ public class EventService {
      *
      * <p>A missing phone number is deliberately <em>not</em> a guard. Every account
      * created before Phase 2 has a null phone number, and only the member
-     * themselves can set one — {@code PUT /api/users/profile} is self-only. Blocking
+     * themselves can set one â€” {@code PUT /api/users/profile} is self-only. Blocking
      * here would mean an admin standing at an event could add nobody and had no way
      * to fix it. Losing the attendance record is worse than a sparse phone column,
      * so the add proceeds and {@code EventAttendeeDto.hasPhone} carries the warning
@@ -404,7 +404,7 @@ public class EventService {
                 .toList();
     }
 
-    // ── Photos ────────────────────────────────────────────────────────────────
+    // â”€â”€ Photos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Attaches a photo to an event.
@@ -436,7 +436,7 @@ public class EventService {
      * Deletes one photo.
      *
      * <p>Removes the row only. The image itself stays in Cloudinary, which this
-     * server has no credentials to delete from — the upload goes browser-side.</p>
+     * server has no credentials to delete from â€” the upload goes browser-side.</p>
      *
      * @param photoId photo to delete
      * @throws ResourceNotFoundException if the photo does not exist
@@ -467,7 +467,7 @@ public class EventService {
                 .toList();
     }
 
-    // ── Shared lookups ────────────────────────────────────────────────────────
+    // â”€â”€ Shared lookups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Loads an event or fails with a 404.

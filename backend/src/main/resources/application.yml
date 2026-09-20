@@ -57,3 +57,43 @@ cpclub:
     # Multiple origins supported as a comma-separated string.
     # Example: https://cpclub.vercel.app,http://localhost:3000
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+  # ── Phase 3 additions ────────────────────────────────────────────────────────
+  # All feature flags default to false. Stage 7 sets them to true in production.
+
+  scheduling:
+    # All @Scheduled crons use this zone (D1). UTC on Render without this setting
+    # means the Monday snapshot fires at 05:30 IST instead of 00:00 IST.
+    zone: ${CPCLUB_SCHEDULING_ZONE:Asia/Kolkata}
+
+  codeforces:
+    api-key: ${CF_API_KEY:}
+    api-secret: ${CF_API_SECRET:}
+    # Stage 1A submission sync. Off until Stage 7 enables it for production.
+    submissions-enabled: ${CPCLUB_CF_SUBMISSIONS_ENABLED:false}
+
+  leetcode:
+    # Cron for the daily solved-total baseline snapshot. Default = 00:05 IST.
+    totals-cron: "0 5 0 * * *"
+
+  external-contests:
+    # Stage 3A calendar sync. Off until Stage 7.
+    enabled: ${CPCLUB_EXTERNAL_CONTESTS_ENABLED:false}
+    # Fallback key for the clist.by API (D26). Not required while AtCoder/CodeChef
+    # scrapers are working.
+    clist-api-key: ${CLIST_API_KEY:}
+
+  auth:
+    allowed-email-domains: ${CPCLUB_AUTH_ALLOWED_EMAIL_DOMAINS:dau.ac.in}
+    # Google-only sign-in (A2) already verifies the domain, so this flag is
+    # informational only for Stage 0. Stage 1C may read it.
+    require-email-verification: ${CPCLUB_AUTH_REQUIRE_EMAIL_VERIFICATION:false}
+
+  mail:
+    # Stage 5A/5B email reminders. Off until Stage 7.
+    enabled: ${CPCLUB_MAIL_ENABLED:false}
+    from: ${CPCLUB_MAIL_FROM:no-reply@localhost}
+    # Signs one-click unsubscribe links (D29). Generate with: openssl rand -hex 32
+    unsubscribe-secret: ${CPCLUB_UNSUBSCRIBE_SECRET:}
+
+  public-site-url: ${CPCLUB_PUBLIC_SITE_URL:http://localhost:3000}

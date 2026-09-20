@@ -55,7 +55,7 @@ public class User {
     @Builder.Default
     private Role role = Role.ROLE_USER;
 
-    // ── Phase 2 profile fields ────────────────────────────────────────────────
+    // â”€â”€ Phase 2 profile fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Every field below is nullable. Phase 1 rows already exist in production,
     // so V2 could not add NOT NULL columns to a populated table. Fields the UI
     // treats as mandatory (phoneNumber) are enforced in the service layer.
@@ -121,6 +121,45 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // â”€â”€ Phase 3 fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    /** Live LeetCode solved totals, refreshed by every sync (D6). */
+    @Column(name = "leetcode_total_solved")
+    private Integer leetcodeTotalSolved;
+
+    @Column(name = "leetcode_easy_solved")
+    private Integer leetcodeEasySolved;
+
+    @Column(name = "leetcode_medium_solved")
+    private Integer leetcodeMediumSolved;
+
+    @Column(name = "leetcode_hard_solved")
+    private Integer leetcodeHardSolved;
+
+    /** Incremental sync cursor: highest CF submission id already processed. */
+    @Column(name = "cf_last_submission_id")
+    private Long cfLastSubmissionId;
+
+    /** Timestamps of the most recent successful sync per platform (UTC, D31). */
+    @Column(name = "cf_synced_at")
+    private LocalDateTime cfSyncedAt;
+
+    @Column(name = "leetcode_synced_at")
+    private LocalDateTime leetcodeSyncedAt;
+
+    /** Sign-in is Google-only, so existing accounts are implicitly verified. */
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+
+    /** Opt-in notification preferences (D29). */
+    @Column(name = "notify_events", nullable = false)
+    @Builder.Default
+    private boolean notifyEvents = false;
+
+    @Column(name = "notify_contests", nullable = false)
+    @Builder.Default
+    private boolean notifyContests = false;
+
     /**
      * Convenience constructor used by tests and simple creation flows.
      *
@@ -138,5 +177,9 @@ public class User {
         this.password = password;
         this.role = role != null ? role : Role.ROLE_USER;
         this.rating = null;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
     }
 }
