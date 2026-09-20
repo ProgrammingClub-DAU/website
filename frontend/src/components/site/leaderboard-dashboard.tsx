@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import CountUp from "react-countup";
 import {
@@ -38,23 +38,31 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   const [isLockerOpen, setIsLockerOpen] = useState(false);
   const [lastUpdatedMin, setLastUpdatedMin] = useState(4);
 
-  // Fetch leaderboard data
-  const fetchLeaderboard = useCallback(async (p: LeaderboardPlatform, f: LeaderboardFilter) => {
-    setLoading(true);
-    try {
-      const data = await leaderboardService.getLeaderboard(p, f);
-      setEntries(data);
-      setLastUpdatedMin(Math.floor(Math.random() * 8) + 2);
-    } catch (err) {
-      console.error("Failed to load leaderboard data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchLeaderboard(platform, roleFilter);
-  }, [platform, roleFilter, fetchLeaderboard]);
+    let ignore = false;
+    leaderboardService
+      .getLeaderboard(platform, roleFilter)
+      .then((data) => {
+        if (!ignore) {
+          setEntries(data);
+          setLastUpdatedMin(Math.floor(Math.random() * 8) + 2);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          console.error("Failed to load leaderboard data:", err);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [platform, roleFilter]);
 
   // Client-side search filtering
   const filteredEntries = useMemo(() => {

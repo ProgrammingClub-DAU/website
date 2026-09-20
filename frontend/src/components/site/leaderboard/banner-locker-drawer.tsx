@@ -10,9 +10,7 @@ import {
   Check,
   Sparkles,
   Crown,
-  Trophy,
   User,
-  Shield,
   ExternalLink,
   Loader2,
   AlertCircle,
@@ -172,7 +170,8 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xs font-bold" style={{ color: activePreviewBanner.colors.accent }}>
+                  <div className="text-xs font-bold flex items-center justify-end gap-1.5" style={{ color: activePreviewBanner.colors.accent }}>
+                    {equipping && <Loader2 className="size-3 animate-spin text-purple-400" />}
                     {activePreviewBanner.name}
                   </div>
                   <div className="text-nano text-white/60 uppercase">

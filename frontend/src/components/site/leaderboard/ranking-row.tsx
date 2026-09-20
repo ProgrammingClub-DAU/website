@@ -2,9 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "motion/react";
-import { User, TrendingUp, TrendingDown, Minus, ExternalLink } from "lucide-react";
+import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 import { BannerGraphic } from "./banner-graphic";
 import { getActiveBannerForMember } from "@/lib/banner-config";

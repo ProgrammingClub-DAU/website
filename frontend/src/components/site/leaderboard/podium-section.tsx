@@ -42,7 +42,7 @@ export const PodiumSection: React.FC<PodiumSectionProps> = ({
         // Safe fallback if canvas is restricted
       }
     }
-  }, [top1?.id, platform]);
+  }, [top1, platform]);
 
   const podiumEntries = [
     { place: 2 as const, entry: top2, pillarHeight: "h-16 md:h-20", delay: 0.2 },
@@ -203,13 +203,15 @@ export const PodiumSection: React.FC<PodiumSectionProps> = ({
                             "—"
                           )}
                         </div>
-                        <div
-                          className="text-[10px] uppercase font-bold tracking-wider mt-0.5 flex items-center gap-1"
+                        <button
+                          type="button"
+                          onClick={() => onOpenLocker?.(entry)}
+                          className="text-[10px] uppercase font-bold tracking-wider mt-1 flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
                           style={{ color: banner.colors.accent }}
                         >
                           <Sparkles className="size-2.5" />
                           {entry.tier || (platform === "LEETCODE" ? "LeetCode" : "Codeforces")}
-                        </div>
+                        </button>
                       </div>
 
 
