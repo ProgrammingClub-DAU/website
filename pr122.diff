@@ -1,0 +1,703 @@
+﻿diff --git a/backend/src/main/java/com/cpclub/backend/leaderboard/dto/BannerConfig.java b/backend/src/main/java/com/cpclub/backend/leaderboard/dto/BannerConfig.java
+index 83225e6..9151a50 100644
+--- a/backend/src/main/java/com/cpclub/backend/leaderboard/dto/BannerConfig.java
++++ b/backend/src/main/java/com/cpclub/backend/leaderboard/dto/BannerConfig.java
+@@ -27,6 +27,7 @@ public record BannerConfig(
+         map.put("master", new BannerConfig("master", "Master", 2100, "Legendary", "#5a3210,#f0a040", "flames"));
+         map.put("club-founder", new BannerConfig("club-founder", "Club Founder", 0, "Special", "#401828,#e04888", "shimmer"));
+         map.put("contest-winner", new BannerConfig("contest-winner", "Contest Winner", 0, "Special", "#302040,#d09030", "sparks"));
++        map.put("creator-vip", new BannerConfig("creator-vip", "Website Architect (VIP)", 0, "Exclusive", "#2e0508,#ff1e42", "flames"));
+         RATING_BANNERS = Collections.unmodifiableMap(map);
+     }
+ 
+diff --git a/backend/src/main/java/com/cpclub/backend/leaderboard/dto/LeaderboardEntryProjection.java b/backend/src/main/java/com/cpclub/backend/leaderboard/dto/LeaderboardEntryProjection.java
+index ff3e0b0..b62000f 100644
+--- a/backend/src/main/java/com/cpclub/backend/leaderboard/dto/LeaderboardEntryProjection.java
++++ b/backend/src/main/java/com/cpclub/backend/leaderboard/dto/LeaderboardEntryProjection.java
+@@ -50,12 +50,9 @@ public interface LeaderboardEntryProjection {
+     String getAvatarurl();
+ 
+     /** Member's currently equipped rating banner. */
+-    default String getEquippedbannerid() {
+-        return "rookie";
+-    }
++    String getEquippedbannerid();
+ 
+     /** Highest rating attained. */
+-    default Integer getMaxrating() {
+-        return getRating();
+-    }
++    Integer getMaxrating();
+ }
++
+diff --git a/backend/src/main/java/com/cpclub/backend/user/service/UserService.java b/backend/src/main/java/com/cpclub/backend/user/service/UserService.java
+index ee88719..b4d3f3b 100644
+--- a/backend/src/main/java/com/cpclub/backend/user/service/UserService.java
++++ b/backend/src/main/java/com/cpclub/backend/user/service/UserService.java
+@@ -472,11 +472,39 @@ private void requireAnAdminRemains(User user, Role newRole) {
+         }
+     }
+ 
++    public static final java.util.Set<String> CREATOR_NAMES = java.util.Set.of(
++            "madhav thesiya",
++            "tanishq shah",
++            "raj patel",
++            "shane christian",
++            "gaurav rathod",
++            "mahek kanani"
++    );
++
++    public static final java.util.Set<String> CREATOR_HANDLES = java.util.Set.of(
++            "madhav_t",
++            "king-t",
++            "raj_patel",
++            "raze07",
++            "gaurav_r",
++            "mahek_k"
++    );
++
++    private boolean isWebsiteCreator(User user) {
++        if (user.getName() != null && CREATOR_NAMES.contains(user.getName().trim().toLowerCase())) {
++            return true;
++        }
++        if (user.getCodeforcesHandle() != null && CREATOR_HANDLES.contains(user.getCodeforcesHandle().trim().toLowerCase())) {
++            return true;
++        }
++        return false;
++    }
++
+     /**
+-     * Equips a rating banner for a member, enforcing server-side rating threshold validation.
++     * Equips a rating or exclusive banner for a user.
+      *
+-     * @param userId ID of member equipping banner
+-     * @param bannerId candidate rating banner
++     * @param userId user requesting the banner
++     * @param bannerId candidate banner ID
+      * @return equipped banner ID
+      */
+     @Transactional
+@@ -489,16 +517,23 @@ public String equipBanner(Long userId, String bannerId) {
+         }
+ 
+         BannerConfig banner = BannerConfig.getBanner(bannerId);
+-        int effectiveMaxRating = Math.max(
+-                user.getMaxRating() != null ? user.getMaxRating() : 0,
+-                user.getRating() != null ? user.getRating() : 0
+-        );
+ 
+-        if (effectiveMaxRating < banner.minRating()) {
+-            throw new BadRequestException(String.format(
+-                    "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
+-                    banner.name(), banner.minRating(), effectiveMaxRating
+-            ));
++        if ("creator-vip".equalsIgnoreCase(bannerId)) {
++            if (!isWebsiteCreator(user)) {
++                throw new BadRequestException("The Red VIP banner is exclusively reserved for the 6 platform creators.");
++            }
++        } else {
++            int effectiveMaxRating = Math.max(
++                    user.getMaxRating() != null ? user.getMaxRating() : 0,
++                    user.getRating() != null ? user.getRating() : 0
++            );
++
++            if (effectiveMaxRating < banner.minRating()) {
++                throw new BadRequestException(String.format(
++                        "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
++                        banner.name(), banner.minRating(), effectiveMaxRating
++                ));
++            }
+         }
+ 
+         user.setEquippedBannerId(banner.id());
+diff --git a/backend/src/test/java/com/cpclub/backend/leaderboard/LeaderboardServiceTest.java b/backend/src/test/java/com/cpclub/backend/leaderboard/LeaderboardServiceTest.java
+index 5ac55bf..2e34d2c 100644
+--- a/backend/src/test/java/com/cpclub/backend/leaderboard/LeaderboardServiceTest.java
++++ b/backend/src/test/java/com/cpclub/backend/leaderboard/LeaderboardServiceTest.java
+@@ -166,6 +166,16 @@ public Integer getRating() {
+             public Long getPlacement() {
+                 return placement;
+             }
++
++            @Override
++            public String getEquippedbannerid() {
++                return "rookie";
++            }
++
++            @Override
++            public Integer getMaxrating() {
++                return rating;
++            }
+         };
+     }
+ }
+diff --git a/backend/src/test/java/com/cpclub/backend/user/UserServiceTest.java b/backend/src/test/java/com/cpclub/backend/user/UserServiceTest.java
+index e45eb3e..114e8b9 100644
+--- a/backend/src/test/java/com/cpclub/backend/user/UserServiceTest.java
++++ b/backend/src/test/java/com/cpclub/backend/user/UserServiceTest.java
+@@ -318,4 +318,27 @@ private User teamMember(Long id, String name, ClubRole post) {
+         user.setClubRole(post);
+         return user;
+     }
++
++    @Test
++    @DisplayName("A website creator can equip the creator-vip banner")
++    void creatorCanEquipCreatorVipBanner() {
++        User creator = teamMember(1L, "Tanishq Shah", ClubRole.CORE);
++        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(creator));
++
++        String bannerId = userService.equipBanner(1L, "creator-vip");
++        assertEquals("creator-vip", bannerId);
++        assertEquals("creator-vip", creator.getEquippedBannerId());
++    }
++
++    @Test
++    @DisplayName("A non-creator is rejected when attempting to equip creator-vip banner")
++    void nonCreatorCannotEquipCreatorVipBanner() {
++        User student = teamMember(99L, "Random User", ClubRole.STUDENT);
++        when(userRepository.findById(99L)).thenReturn(java.util.Optional.of(student));
++
++        org.junit.jupiter.api.Assertions.assertThrows(
++                BadRequestException.class,
++                () -> userService.equipBanner(99L, "creator-vip")
++        );
++    }
+ }
+diff --git a/frontend/src/app/(dashboard)/leaderboard/page.tsx b/frontend/src/app/(dashboard)/leaderboard/page.tsx
+index 308d350..87943a4 100644
+--- a/frontend/src/app/(dashboard)/leaderboard/page.tsx
++++ b/frontend/src/app/(dashboard)/leaderboard/page.tsx
+@@ -41,7 +41,7 @@ export default async function LeaderboardPage() {
+       />
+ 
+       {/* Atmospheric Aurora Glow Blobs */}
+-      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-purple-600/10 via-cyan-500/10 to-transparent blur-[120px] rounded-full" />
++      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-cyan-500/10 via-slate-500/5 to-transparent blur-[120px] rounded-full" />
+ 
+       <Section className="relative z-10 pt-10 md:pt-14 pb-8">
+         <LeaderboardDashboard initialEntries={leaderboard} />
+diff --git a/frontend/src/components/site/leaderboard-dashboard.tsx b/frontend/src/components/site/leaderboard-dashboard.tsx
+index 92c1f2d..c186898 100644
+--- a/frontend/src/components/site/leaderboard-dashboard.tsx
++++ b/frontend/src/components/site/leaderboard-dashboard.tsx
+@@ -17,6 +17,7 @@ import {
+ } from "lucide-react";
+ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+ import { leaderboardService } from "@/lib/services/leaderboard";
++import { MOCK_LEADERBOARD_ENTRIES } from "@/lib/mock-leaderboard";
+ import { PodiumSection } from "./leaderboard/podium-section";
+ import { RankingRow } from "./leaderboard/ranking-row";
+ import { BannerLockerDrawer } from "./leaderboard/banner-locker-drawer";
+@@ -31,7 +32,9 @@ interface LeaderboardDashboardProps {
+ export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
+   const [platform, setPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
+   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>("ALL");
++  // ΓöÇΓöÇ [LIVE / DUMMY DATA TOGGLE]: Switch between `initialEntries` and `MOCK_LEADERBOARD_ENTRIES` ΓöÇΓöÇ
+   const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
++  // const [entries, setEntries] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD_ENTRIES);
+   const [loading, setLoading] = useState(false);
+   const [searchQuery, setSearchQuery] = useState("");
+   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
+@@ -40,6 +43,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
+ 
+   useEffect(() => {
+     let ignore = false;
++
++    // ΓöÇΓöÇ [DUMMY RANKINGS PREVIEW MODE] (Uncomment below to preview dummy rankings) ΓöÇΓöÇ
++    // setEntries(MOCK_LEADERBOARD_ENTRIES);
++
++    // ΓöÇΓöÇ [LIVE BACKEND DATA] (Default) ΓöÇΓöÇ
+     leaderboardService
+       .getLeaderboard(platform, roleFilter)
+       .then((data) => {
+@@ -139,7 +147,6 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
+       {/* ΓöÇΓöÇ SECTION 1: HERO & CONTROLS ΓöÇΓöÇ */}
+       <div className="relative rounded-2xl border border-white/[0.08] bg-[#0b0b14]/80 p-4 md:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
+         {/* Ambient background glow */}
+-        <div className="absolute -top-32 -left-32 size-80 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+         <div className="absolute -bottom-32 -right-32 size-80 rounded-full bg-cyan-600/15 blur-3xl pointer-events-none" />
+ 
+         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+diff --git a/frontend/src/components/site/leaderboard/banner-graphic.tsx b/frontend/src/components/site/leaderboard/banner-graphic.tsx
+index 7546068..ea64817 100644
+--- a/frontend/src/components/site/leaderboard/banner-graphic.tsx
++++ b/frontend/src/components/site/leaderboard/banner-graphic.tsx
+@@ -70,6 +70,26 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
+         />
+ 
+         {/* Animation & Theme-specific artwork */}
++        {id === "creator-vip" && (
++          <g>
++            {/* Pulsing crimson flame pillars & embers */}
++            <g fill={colors.accent} opacity="0.38">
++              <path d="M 320 120 Q 335 50, 350 120 Z" />
++              <path d="M 355 120 Q 375 35, 395 120 Z" />
++              <path d="M 400 120 Q 425 20, 445 120 Z" />
++              <path d="M 450 120 Q 465 55, 480 120 Z" />
++            </g>
++            {/* VIP Crown watermark rays */}
++            <g stroke={colors.accent} strokeWidth="2" fill="none" opacity="0.4">
++              <polygon points="410,35 425,15 440,35 455,15 470,35 440,48" fill={colors.accent} fillOpacity="0.25" />
++            </g>
++            {/* Ruby stardust particles */}
++            <circle cx="340" cy="40" r="3" fill="#ff4d6d" opacity="0.8" className="animate-ping" style={{ animationDuration: "3s" }} />
++            <circle cx="390" cy="25" r="2.5" fill="#ff758f" opacity="0.9" className="animate-pulse" />
++            <circle cx="450" cy="65" r="3.5" fill="#ff4d6d" opacity="0.75" className="animate-pulse" />
++          </g>
++        )}
++
+         {animation === "sunburst" && (
+           <g opacity="0.28">
+             {/* Sunburst rays emanating from top right */}
+@@ -115,7 +135,7 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
+           </g>
+         )}
+ 
+-        {animation === "flames" && (
++        {animation === "flames" && id !== "creator-vip" && (
+           <g fill={colors.accent} opacity="0.25">
+             <path d="M 360 120 Q 375 70, 390 120 Z" />
+             <path d="M 400 120 Q 420 50, 435 120 Z" />
+@@ -123,8 +143,8 @@ export const BannerGraphic: React.FC<BannerGraphicProps> = ({
+           </g>
+         )}
+ 
+-        {/* Twinkling star sparkle polygons for ranks & high tiers */}
+-        {(showEffects || banner.isRankBanner || banner.minRating >= 1600) && (
++        {/* Twinkling star sparkle polygons for ranks, creator-vip & high tiers */}
++        {(showEffects || banner.isRankBanner || banner.id === "creator-vip" || banner.minRating >= 1600) && (
+           <g fill={colors.accent}>
+             {/* Sparkle 1 */}
+             <polygon
+diff --git a/frontend/src/components/site/leaderboard/banner-locker-drawer.tsx b/frontend/src/components/site/leaderboard/banner-locker-drawer.tsx
+index 685e526..dd9fba5 100644
+--- a/frontend/src/components/site/leaderboard/banner-locker-drawer.tsx
++++ b/frontend/src/components/site/leaderboard/banner-locker-drawer.tsx
+@@ -55,7 +55,13 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+   // Trigger shake animation for locked banner
+   const handleLockedClick = (bannerId: string) => {
+     setShakingBannerId(bannerId);
+-    setEquipError(`Reach ${getBannerConfig(bannerId).minRating} rating to unlock this banner.`);
++    if (bannerId === "creator-vip") {
++      setEquipError(
++        "This Red VIP Banner is exclusively reserved for the 6 platform engineers who built this website (featured in Members & Credits)."
++      );
++    } else {
++      setEquipError(`Reach ${getBannerConfig(bannerId).minRating} rating to unlock this banner.`);
++    }
+     setTimeout(() => {
+       setShakingBannerId(null);
+     }, 600);
+@@ -63,7 +69,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+ 
+   // Equip banner handler
+   const handleEquipBanner = async (banner: BannerConfig) => {
+-    if (!isBannerUnlocked(banner, currentOrMaxRating)) {
++    if (!isBannerUnlocked(banner, currentOrMaxRating, member)) {
+       handleLockedClick(banner.id);
+       return;
+     }
+@@ -199,14 +205,15 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+           {/* Section 1: Rating Banners Grid */}
+           <div className="mt-6">
+             <h4 className="text-xs font-bold uppercase tracking-wider text-white/80 mb-3">
+-              Rating Banners (Earned by Max Rating)
++              Rating &amp; Special Banners
+             </h4>
+ 
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               {RATING_BANNERS.map((banner) => {
+-                const unlocked = isBannerUnlocked(banner, currentOrMaxRating);
++                const unlocked = isBannerUnlocked(banner, currentOrMaxRating, member);
+                 const isEquipped = currentEquippedBanner === banner.id;
+-                const rarityStyle = getRarityBadgeStyle(banner.rarity);
++                const rarityStyle = getRarityBadgeStyle(banner.rarity, banner.id);
++                const isCreatorBanner = banner.id === "creator-vip";
+                 const progressPct = Math.min(
+                   100,
+                   banner.minRating === 0
+@@ -236,9 +243,13 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+                     }}
+                     className={`relative rounded-xl overflow-hidden border p-3 cursor-pointer transition-all duration-200 ${
+                       isEquipped
+-                        ? "border-purple-400 ring-2 ring-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)]"
++                        ? isCreatorBanner
++                          ? "border-rose-500 ring-2 ring-rose-500/50 shadow-[0_0_22px_rgba(244,63,94,0.45)]"
++                          : "border-purple-400 ring-2 ring-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)]"
+                         : unlocked
+-                        ? "border-white/20 hover:border-white/40 hover:scale-[1.01]"
++                        ? isCreatorBanner
++                          ? "border-rose-500/40 hover:border-rose-400 hover:scale-[1.01] shadow-[0_0_15px_rgba(244,63,94,0.2)]"
++                          : "border-white/20 hover:border-white/40 hover:scale-[1.01]"
+                         : "border-white/10 opacity-70 hover:opacity-90"
+                     }`}
+                   >
+@@ -261,7 +272,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+                             <span
+                               className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${rarityStyle.border} ${rarityStyle.bg} ${rarityStyle.text}`}
+                             >
+-                              {banner.rarity}
++                              {isCreatorBanner ? "RED VIP" : banner.rarity}
+                             </span>
+                           </div>
+                           <p className="text-[10px] text-white/70 line-clamp-1 mt-0.5">
+@@ -271,13 +282,29 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+ 
+                         {/* Status Icon */}
+                         {isEquipped ? (
+-                          <span className="flex items-center gap-1 text-[10px] font-bold text-purple-300 bg-purple-500/20 border border-purple-400/40 px-2 py-0.5 rounded-full shrink-0">
++                          <span
++                            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
++                              isCreatorBanner
++                                ? "text-rose-300 bg-rose-500/25 border border-rose-400/50"
++                                : "text-purple-300 bg-purple-500/20 border border-purple-400/40"
++                            }`}
++                          >
+                             <Check className="size-3" /> Equipped
+                           </span>
+                         ) : unlocked ? (
+-                          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-full shrink-0">
+-                            Unlocked
++                          <span
++                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
++                              isCreatorBanner
++                                ? "text-rose-300 bg-rose-500/20 border border-rose-400/40"
++                                : "text-emerald-400 bg-emerald-500/15 border border-emerald-400/30"
++                            }`}
++                          >
++                            {isCreatorBanner ? "VIP Unlocked" : "Unlocked"}
+                           </span>
++                        ) : isCreatorBanner ? (
++                          <div className="flex items-center gap-1 text-[10px] font-semibold text-rose-300/80 bg-rose-950/60 border border-rose-500/30 px-2 py-0.5 rounded-full shrink-0">
++                            <Crown className="size-3 text-rose-400" /> 6 Creators Only
++                          </div>
+                         ) : (
+                           <div className="flex items-center gap-1 text-[10px] font-semibold text-white/50 bg-black/40 px-2 py-0.5 rounded-full shrink-0">
+                             <Lock className="size-3 text-white/60" /> Reach {banner.minRating}
+@@ -285,21 +312,36 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
+                         )}
+                       </div>
+ 
+-                      {/* Progress Bar for Locked Banners */}
++                      {/* Progress Bar or Info for Locked Banners */}
+                       {!unlocked && (
+                         <div className="mt-2 pt-2 border-t border-white/10">
+-                          <div className="flex justify-between text-[10px] text-white/60 font-mono mb-1">
+-                            <span>Progress</span>
+-                            <span>
+-                              {currentOrMaxRating} / {banner.minRating} ({progressPct}%)
+-                            </span>
+-                          </div>
+-                          <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+-                            <div
+-                              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-500"
+-                              style={{ width: `${progressPct}%` }}
+-                            />
+-                          </div>
++                          {isCreatorBanner ? (
++                            <div className="flex items-center justify-between text-[10px] text-rose-300/80 font-mono">
++                              <span>Platform Engineers</span>
++                              <Link
++                                href="/members"
++                                onClick={(e) => e.stopPropagation()}
++                                className="underline hover:text-rose-200"
++                              >
++                                View 6 Creators
++                              </Link>
++                            </div>
++                          ) : (
++                            <>
++                              <div className="flex justify-between text-[10px] text-white/60 font-mono mb-1">
++                                <span>Progress</span>
++                                <span>
++                                  {currentOrMaxRating} / {banner.minRating} ({progressPct}%)
++                                </span>
++                              </div>
++                              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
++                                <div
++                                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-500"
++                                  style={{ width: `${progressPct}%` }}
++                                />
++                              </div>
++                            </>
++                          )}
+                         </div>
+                       )}
+                     </div>
+diff --git a/frontend/src/components/site/website-developer-credits.tsx b/frontend/src/components/site/website-developer-credits.tsx
+index 61fca2b..2084781 100644
+--- a/frontend/src/components/site/website-developer-credits.tsx
++++ b/frontend/src/components/site/website-developer-credits.tsx
+@@ -27,24 +27,23 @@ const AVATAR_GRADIENTS = [
+ ];
+ 
+ export function WebsiteDeveloperCredits() {
+-
+   return (
+-    <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
++    <section id="credits" className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
+       {/* Header section */}
+       <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+         <div className="max-w-2xl">
+-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1 font-mono text-micro font-medium uppercase tracking-caps text-white/75">
++          {/* <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1 font-mono text-micro font-medium uppercase tracking-caps text-white/75">
+             <Sparkles className="size-3 text-amber-300 animate-pulse" />
+             <span>Engineered by Students ΓÇó 6 Contributors</span>
+-          </div>
++          </div> */}
+ 
+           <h2 className="mt-3 font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+             Who Built This Website
+           </h2>
+ 
+-          <p className="mt-2 text-base leading-relaxed text-fg-muted text-pretty">
++          {/* <p className="mt-2 text-base leading-relaxed text-fg-muted text-pretty">
+             Meet the engineering team who designed and built this platform from scratch.
+-          </p>
++          </p> */}
+         </div>
+ 
+         {/* GitHub repository link pill */}
+@@ -77,48 +76,48 @@ export function WebsiteDeveloperCredits() {
+               }}
+             >
+               <article className="relative w-full rounded-2xl p-[2px] overflow-hidden transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]">
+-                {/* ΓöÇΓöÇ Continuous Rotating Border Beam Animation ΓöÇΓöÇ */}
++                {/* ΓöÇΓöÇ Continuous Rotating Border Beam Animation with Ruby/Crimson Light ΓöÇΓöÇ */}
+                 <div
+                   aria-hidden="true"
+                   className="pointer-events-none absolute -inset-[150%] animate-[spin_5s_linear_infinite]"
+                   style={{
+                     background:
+-                      "conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, rgba(255,255,255,0.7) 320deg, rgba(165,180,252,0.6) 345deg, transparent 360deg)",
++                      "conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, rgba(255,30,66,0.85) 320deg, rgba(255,140,160,0.7) 345deg, transparent 360deg)",
+                   }}
+                 />
+ 
+                 {/* ΓöÇΓöÇ Inner Dark Glass Card Body ΓöÇΓöÇ */}
+-                <div className="relative z-10 flex flex-col items-center justify-center min-h-[180px] rounded-[16px] bg-[#0c0f1a]/95 p-5 pb-5 backdrop-blur-xl border border-white/[0.05]">
++                <div className="relative z-10 flex flex-col items-center justify-center min-h-[180px] rounded-[16px] bg-[#0c0f1a]/95 p-5 pb-5 backdrop-blur-xl border border-white/[0.06] group-hover:border-rose-500/30 transition-colors">
+                   {/* Diagonal shimmer sweep on hover */}
+                   <div
+                     aria-hidden="true"
+                     className="pointer-events-none absolute -inset-full -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+                   />
+ 
+-                  {/* ΓöÇΓöÇ Centered Photo (80px) ΓöÇΓöÇ */}
++                  {/* ΓöÇΓöÇ Centered Photo (80px) with Ruby Glow ΓöÇΓöÇ */}
+                   <div
+-                    className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/15 transition-all duration-300 group-hover:scale-105 group-hover:bg-white/30 shadow-xl"
++                    className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-rose-500/30 transition-all duration-300 group-hover:scale-105 group-hover:bg-rose-500/60 shadow-[0_0_18px_rgba(244,63,94,0.35)]"
+                     style={{ width: "80px", height: "80px" }}
+                   >
+                     <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+-                        <div
+-                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
+-                        >
+-                          {getInitials(contributor.name)}
+-                        </div>
++                      <div
++                        className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
++                      >
++                        {getInitials(contributor.name)}
++                      </div>
+                     </div>
+                   </div>
+ 
+                   {/* ΓöÇΓöÇ Name ΓöÇΓöÇ */}
+                   <div className="mt-4 text-center px-1">
+-                    <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white transition-colors group-hover:text-white leading-tight">
++                    <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white transition-colors group-hover:text-rose-100 leading-tight">
+                       {contributor.name}
+                     </h3>
+ 
+                     {/* ΓöÇΓöÇ Tag: Core Contributor for everyone ΓöÇΓöÇ */}
+                     <div className="mt-2 flex items-center justify-center">
+-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-violet-200/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.12)] backdrop-blur-md transition-colors group-hover:border-violet-500/35 group-hover:bg-violet-500/[0.12]">
+-                        <span className="size-1 rounded-full bg-violet-400 opacity-85 ring-2 ring-violet-400/25 shrink-0" aria-hidden="true" />
++                      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/[0.08] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-rose-200/95 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)] backdrop-blur-md transition-colors group-hover:border-rose-500/45 group-hover:bg-rose-500/[0.15]">
++                        <span className="size-1 rounded-full bg-rose-400 opacity-90 ring-2 ring-rose-400/30 shrink-0" aria-hidden="true" />
+                         <span>Core Contributor</span>
+                       </span>
+                     </div>
+diff --git a/frontend/src/lib/banner-config.ts b/frontend/src/lib/banner-config.ts
+index 9ed2cb0..e0140bf 100644
+--- a/frontend/src/lib/banner-config.ts
++++ b/frontend/src/lib/banner-config.ts
+@@ -225,6 +225,24 @@ export const RATING_BANNERS: BannerConfig[] = [
+       scrim: "linear-gradient(90deg, rgba(16, 9, 23, 0.92) 0%, rgba(16, 9, 23, 0.6) 60%, transparent 100%)",
+     },
+   },
++  {
++    id: "creator-vip",
++    name: "Website Architect (VIP)",
++    minRating: 0,
++    rarity: "Exclusive",
++    animation: "flames",
++    iconName: "crown",
++    description: "Ultra-exclusive Red VIP Banner reserved for the 6 engineers who designed and built this website platform.",
++    colors: {
++      primary: "#2e0508",
++      accent: "#ff1e42",
++      border: "#ff2e51",
++      glow: "rgba(255, 30, 66, 0.55)",
++      text: "#fff0f2",
++      gradient: "linear-gradient(135deg, #1f0305 0%, #460910 50%, #150204 100%)",
++      scrim: "linear-gradient(90deg, rgba(20, 2, 4, 0.94) 0%, rgba(20, 2, 4, 0.65) 60%, transparent 100%)",
++    },
++  },
+ ];
+ 
+ // ΓöÇΓöÇ LAYER 3: LEETCODE TIER BANNERS ΓöÇΓöÇ
+@@ -284,6 +302,37 @@ export const LC_BANNERS: BannerConfig[] = [
+   },
+ ];
+ 
++export const CREATOR_NAMES = [
++  "Madhav Thesiya",
++  "Tanishq Shah",
++  "Raj Patel",
++  "Shane Christian",
++  "Gaurav Rathod",
++  "Mahek Kanani",
++];
++
++export const CREATOR_HANDLES = [
++  "madhav_t",
++  "king-t",
++  "raj_patel",
++  "raze07",
++  "gaurav_r",
++  "mahek_k",
++];
++
++export function isWebsiteCreator(
++  member?: { name?: string | null; codeforcesHandle?: string | null } | null
++): boolean {
++  if (!member) return false;
++  const nameMatch = member.name
++    ? CREATOR_NAMES.some((c) => c.toLowerCase() === member.name?.trim().toLowerCase())
++    : false;
++  const handleMatch = member.codeforcesHandle
++    ? CREATOR_HANDLES.some((h) => h.toLowerCase() === member.codeforcesHandle?.trim().toLowerCase())
++    : false;
++  return nameMatch || handleMatch;
++}
++
+ export const ALL_BANNERS: Record<string, BannerConfig> = {
+   ...RANK_BANNERS,
+   ...Object.fromEntries(RATING_BANNERS.map((b) => [b.id, b])),
+@@ -324,18 +373,33 @@ export function getActiveBannerForMember(
+ 
+ export function isBannerUnlocked(
+   banner: BannerConfig,
+-  currentOrMaxRating: number | null | undefined
++  currentOrMaxRating: number | null | undefined,
++  member?: { name?: string | null; codeforcesHandle?: string | null } | null
+ ): boolean {
+   if (banner.isRankBanner) return false; // Rank banners cannot be equipped manually
++  if (banner.id === "creator-vip") {
++    return isWebsiteCreator(member);
++  }
+   const rating = currentOrMaxRating ?? 0;
+   return rating >= banner.minRating;
+ }
+ 
+-export function getRarityBadgeStyle(rarity: BannerRarity): {
++export function getRarityBadgeStyle(
++  rarity: BannerRarity,
++  bannerId?: string
++): {
+   bg: string;
+   text: string;
+   border: string;
+ } {
++  if (bannerId === "creator-vip") {
++    return {
++      bg: "bg-rose-500/20",
++      text: "text-rose-300 font-black tracking-wide",
++      border: "border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.3)]",
++    };
++  }
++
+   switch (rarity) {
+     case "Exclusive":
+       return {
+@@ -376,3 +440,4 @@ export function getRarityBadgeStyle(rarity: BannerRarity): {
+       };
+   }
+ }
++
+diff --git a/frontend/src/lib/mock-leaderboard.ts b/frontend/src/lib/mock-leaderboard.ts
+index d25b0f6..6d53520 100644
+--- a/frontend/src/lib/mock-leaderboard.ts
++++ b/frontend/src/lib/mock-leaderboard.ts
+@@ -10,7 +10,7 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Candidate Master",
+     clubRole: "CONVENOR",
+     avatarUrl: null,
+-    equippedBannerId: "candidate-master",
++    equippedBannerId: "creator-vip",
+     rankBannerId: "rank-gold",
+     activeBannerId: "rank-gold",
+     maxRating: 1840,
+@@ -58,9 +58,9 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Expert",
+     clubRole: "ASSOCIATE_CORE",
+     avatarUrl: null,
+-    equippedBannerId: "expert",
++    equippedBannerId: "creator-vip",
+     rankBannerId: null,
+-    activeBannerId: "expert",
++    activeBannerId: "creator-vip",
+     maxRating: 1670,
+     contestHistory: [1450, 1500, 1540, 1520, 1570, 1610, 1600, 1630, 1620, 1643],
+     ratingChange: 23,
+@@ -90,9 +90,9 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Specialist",
+     clubRole: "CORE",
+     avatarUrl: null,
+-    equippedBannerId: "specialist",
++    equippedBannerId: "creator-vip",
+     rankBannerId: null,
+-    activeBannerId: "specialist",
++    activeBannerId: "creator-vip",
+     maxRating: 1605,
+     contestHistory: [1420, 1460, 1490, 1520, 1550, 1530, 1570, 1560, 1595, 1588],
+     ratingChange: -7,
+@@ -106,9 +106,9 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Specialist",
+     clubRole: "CORE",
+     avatarUrl: null,
+-    equippedBannerId: "specialist",
++    equippedBannerId: "creator-vip",
+     rankBannerId: null,
+-    activeBannerId: "specialist",
++    activeBannerId: "creator-vip",
+     maxRating: 1560,
+     contestHistory: [1380, 1410, 1440, 1470, 1500, 1490, 1520, 1510, 1530, 1540],
+     ratingChange: 10,
+@@ -122,9 +122,9 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Specialist",
+     clubRole: "STUDENT",
+     avatarUrl: null,
+-    equippedBannerId: "specialist",
++    equippedBannerId: "creator-vip",
+     rankBannerId: null,
+-    activeBannerId: "specialist",
++    activeBannerId: "creator-vip",
+     maxRating: 1510,
+     contestHistory: [1320, 1360, 1390, 1420, 1450, 1440, 1470, 1460, 1480, 1495],
+     ratingChange: 15,
+@@ -138,9 +138,9 @@ export const MOCK_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
+     tier: "Specialist",
+     clubRole: "CORE",
+     avatarUrl: null,
+-    equippedBannerId: "specialist",
++    equippedBannerId: "creator-vip",
+     rankBannerId: null,
+-    activeBannerId: "specialist",
++    activeBannerId: "creator-vip",
+     maxRating: 1450,
+     contestHistory: [1280, 1310, 1340, 1370, 1400, 1390, 1410, 1400, 1420, 1430],
+     ratingChange: 10,
