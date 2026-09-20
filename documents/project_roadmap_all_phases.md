@@ -68,10 +68,15 @@ This document serves as the long-term master plan for the Competitive Programmin
     *   An automated system that posts a "Problem of the Day" across different difficulty levels (fetched from LeetCode or manually posted).
     *   **Daily Challenge Winner:** Automatically highlights the first person (or fastest solver) of the POTD.
     *   Users earn points and maintain daily login/solve streaks.
-*   **Real-Time 1v1 Battles:**
-    *   A competitive arena powered by WebSockets (e.g., Spring WebSockets/STOMP).
-    *   Users can invite a friend to a virtual room. The system fetches a random problem of an agreed-upon rating.
-    *   Real-time tracking of who solves it first to declare a winner, updating win/loss records on their profiles.
+*   **Real-Time 1v1 Battles (Lockout Duels):**
+    *   **Architecture:** A competitive arena powered by WebSockets (Spring WebSockets/STOMP) for real-time lobby state sync.
+    *   **Logic:** Users can invite a friend to a virtual room. The backend leverages Phase 3's `cf_problems` and `cf_solves` tables to instantly find a random problem matching the desired rating that *neither* user has solved yet.
+    *   **Execution:** The timer starts. Since `CodeforcesSubmissionSyncService` paginates natively, a dedicated fast-polling background job checks Codeforces for the users' specific handles to detect the first `Accepted` verdict.
+    *   **Rewards:** Declares a winner, distributes "Duel Rating Points" (an Elo system), and awards profile badges (e.g., "Duel Master").
+*   **CP Bingo:**
+    *   **Architecture:** A 5x5 Grid generator where each square represents a specific algorithmic topic or problem rating criteria.
+    *   **Logic:** Heavily relies on the Phase 3 `cf_problems`, `cf_problem_tags`, and `cf_solves` local database tables. This allows the backend to instantly compute and color-code bingo squares based on the user's local sync history without hammering the Codeforces API with hundreds of requests.
+    *   **Execution:** Daily, Weekly, and Monthly Bingo cards. Users race to get 5-in-a-row (horizontal, vertical, or diagonal) to win Gamification Points.
 *   **Native Discord-Type Community:**
     *   **Channels:** Topic-specific real-time chat rooms built natively into the website (e.g., `#general`, `#web-dev`, `#codeforces-help`).
     *   **Threads:** Forum-style ability to create discussion threads for specific algorithms or tough problems.
