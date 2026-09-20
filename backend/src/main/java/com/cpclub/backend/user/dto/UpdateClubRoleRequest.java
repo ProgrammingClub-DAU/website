@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * Admin request to change a member's position in the club.
  *
- * <p>Distinct from {@link UpdateRoleRequest}, which changes {@code Role} — the
+ * <p>Distinct from {@link UpdateRoleRequest}, which changes {@code Role} â€” the
  * API authorization level. This changes {@link ClubRole}, which is a title and
  * drives the leaderboard filter and the badge beside a member's name. Granting
  * someone the Convenor title does not grant them admin access, and that

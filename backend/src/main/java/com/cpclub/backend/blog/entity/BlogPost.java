@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.cpclub.backend.user.entity.User;
 
 import java.time.LocalDateTime;
 
@@ -51,4 +52,42 @@ public class BlogPost {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // â”€â”€ Phase 3 workflow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private BlogStatus status = BlogStatus.DRAFT;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id")
+    private User author;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewer_id")
+    private User reviewer;
+
+    @Column(name = "review_note", length = 500)
+    private String reviewNote;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    /**
+     * Keeps the legacy boolean in step with the new status enum during rollout.
+     * The legacy boolean is dropped in a Phase 4 cleanup.
+     */
+    @PrePersist
+    @PreUpdate
+    public void syncPublishedFlag() {
+        this.published = (this.status == BlogStatus.PUBLISHED);
+        if (this.published && this.publishedAt == null) {
+            this.publishedAt = LocalDateTime.now();
+        }
+    }
 }
+

@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * JPA repository for {@link Event}.
  *
- * <p>The ordering differs by status on purpose. Upcoming events read forwards —
- * the next one first — while completed events read backwards, most recent first.
+ * <p>The ordering differs by status on purpose. Upcoming events read forwards â€”
+ * the next one first â€” while completed events read backwards, most recent first.
  * A single ordering would put either the furthest-off event or the oldest one at
  * the top of its list.</p>
  */

@@ -28,13 +28,13 @@ import java.util.Objects;
  * <p>Every outbound HTTP call goes through {@link #fetch(List)}, which acquires one
  * permit from the shared {@link RateLimiter} before sending. That limiter is the sole
  * gate: it covers the scheduled job, the admin manual trigger, and every step of the
- * bisect fallback — there is no way to bypass it by adding a new call site.</p>
+ * bisect fallback â€” there is no way to bypass it by adding a new call site.</p>
  *
  * <h2>Fault isolation</h2>
  * <p>When a batch fails, the code bisects it rather than retrying each handle
  * individually. Bisecting costs O(log N) requests to isolate one bad handle among N;
  * sequential retry costs O(N). With the 2-second gate and 100 members, bisect takes
- * ≤28 seconds and sequential would take ≥200 seconds — long enough to be throttled
+ * â‰¤28 seconds and sequential would take â‰¥200 seconds â€” long enough to be throttled
  * itself and misdiagnose valid handles as broken.</p>
  */
 @Service
@@ -47,7 +47,7 @@ public class CodeforcesSyncService {
     /**
      * Handles per request. Codeforces accepts a semicolon-separated list, but a
      * single unbounded list eventually exceeds the request-line limit, and the
-     * endpoint is all-or-nothing — so smaller batches also shrink the blast
+     * endpoint is all-or-nothing â€” so smaller batches also shrink the blast
      * radius of one bad handle.
      */
     private static final int BATCH_SIZE = 100;
@@ -74,7 +74,7 @@ public class CodeforcesSyncService {
      * <p>Blank handles are excluded before the external call. Provider errors are logged
      * and intentionally not rethrown because the next scheduled execution can retry.</p>
      */
-    @Scheduled(cron = "${cpclub.codeforces.sync-cron:0 0 */6 * * *}")
+    @Scheduled(cron = "${cpclub.codeforces.sync-cron:0 0 */6 * * *}", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     @Transactional
     public void syncCodeforcesRatings() {
         syncCodeforcesHandles();
@@ -154,7 +154,7 @@ public class CodeforcesSyncService {
      * Syncs one batch, bisecting on failure to isolate the bad handle(s) in O(log N) requests.
      *
      * <p>The Codeforces {@code user.info} endpoint is all-or-nothing: a single
-     * invalid handle — a typo, a renamed or deleted account — makes the whole
+     * invalid handle â€” a typo, a renamed or deleted account â€” makes the whole
      * response {@code FAILED} with a null result.</p>
      *
      * <p>When a batch fails, this method splits it in half and retries each half
@@ -181,14 +181,14 @@ public class CodeforcesSyncService {
         // requests. Stop this run; the next scheduled execution will retry cleanly.
         if (isThrottled(response)) {
             log.warn("Codeforces rate-limited this server's IP on a batch of {} handles. "
-                    + "Stopping this sync run — the rate limiter will space requests correctly "
+                    + "Stopping this sync run â€” the rate limiter will space requests correctly "
                     + "on the next execution.", batch.size());
             return 0;
         }
 
         // Base case: a single handle failed. This is the actual bad handle.
         if (batch.size() == 1) {
-            log.warn("Codeforces rejected handle '{}' — leaving its rating unchanged. "
+            log.warn("Codeforces rejected handle '{}' â€” leaving its rating unchanged. "
                     + "The member should correct it on their profile. "
                     + "CF comment: {}", batch.get(0), response != null ? response.comment() : "no response");
             return 0;
@@ -218,7 +218,7 @@ public class CodeforcesSyncService {
 
     /**
      * Single outbound call. Acquires one permit from the global rate limiter before
-     * sending — this is the single choke point for every Codeforces HTTP request in
+     * sending â€” this is the single choke point for every Codeforces HTTP request in
      * the application. Never throws: a provider failure must not abort the run.
      */
     private CodeforcesResponse fetch(List<String> handles) {

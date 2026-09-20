@@ -21,7 +21,7 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
      *
      * <p>Fetches the attendee's user in the same statement. Every field of
      * {@code EventAttendeeDto} comes off that association, so without the join
-     * this is one query for the list and one per row to populate it — the export
+     * this is one query for the list and one per row to populate it â€” the export
      * of a well-attended event would issue hundreds.</p>
      *
      * @param eventId event to list

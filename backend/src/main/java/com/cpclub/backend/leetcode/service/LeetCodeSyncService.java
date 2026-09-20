@@ -3,6 +3,7 @@ package com.cpclub.backend.leetcode.service;
 import com.cpclub.backend.leetcode.dto.LeetCodeGraphQLResponse;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ import java.util.Map;
  * Keeps members' LeetCode contest ratings up to date.
  *
  * <p>LeetCode publishes no REST API. The only public surface is the same GraphQL
- * endpoint the website itself uses, which is undocumented and unversioned — so
+ * endpoint the website itself uses, which is undocumented and unversioned â€” so
  * this service is written to degrade rather than to trust it. Every failure path
  * logs and returns; none of them throw.</p>
  *
@@ -59,15 +60,15 @@ public class LeetCodeSyncService {
     private final RestTemplate restTemplate;
 
     /**
-     * Shared outbound gate, injected from
-     * {@link com.cpclub.backend.common.config.AppConfig}.
+     * Dedicated LeetCode outbound gate (D23).
      *
-     * <p>This is the Codeforces limiter, reused deliberately. It is the single
-     * throttle on this application's outbound sync traffic, and both jobs run on
-     * the same schedule — giving LeetCode its own limiter would let the two fire
-     * concurrently and double the burst this instance produces.</p>
+     * <p>Previously this service shared {@code codeforcesRateLimiter}, which meant
+     * a long CF submission backfill blocked all LeetCode calls. Each host now has
+     * its own limiter so the two syncs are independent.</p>
      */
-    private final RateLimiter codeforcesRateLimiter;
+    @Qualifier("leetcodeRateLimiter")
+    private final RateLimiter leetcodeRateLimiter;
+
 
     /**
      * Refreshes one member's rating, on demand.
@@ -97,7 +98,7 @@ public class LeetCodeSyncService {
      *
      * <p>Called by the Codeforces cron once its own sync finishes, rather than
      * carrying a second {@code @Scheduled} annotation. Two independent schedules
-     * would drift into overlapping, and both share one rate limiter — the second
+     * would drift into overlapping, and both share one rate limiter â€” the second
      * job would spend its time blocked on the first.</p>
      *
      * <p>One member's failure does not stop the run: {@link #fetchRating} absorbs
@@ -135,9 +136,9 @@ public class LeetCodeSyncService {
      *         value should be left alone
      */
     private Integer fetchRating(String handle) {
-        // Blocks until a permit is free. Shared with the Codeforces sync, so the
-        // two jobs cannot combine into a burst against either provider.
-        codeforcesRateLimiter.acquire();
+        // Blocks until a permit is free. Separate from the Codeforces gate (D23),
+        // so a long CF backfill no longer delays LeetCode calls.
+        leetcodeRateLimiter.acquire();
 
         try {
             HttpHeaders headers = new HttpHeaders();
