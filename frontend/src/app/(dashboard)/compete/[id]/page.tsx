@@ -216,7 +216,7 @@ export default function MatchPage() {
         setMatch(matchObj);
 
         try {
-          const solvedMap: Record<number, SolvedInfo> = {};
+          const solvedMap: Record<string, SolvedInfo> = {};
           const newLogEntries: LogEntry[] = [];
           const posOwners: Record<number, string> = {};
 
@@ -225,8 +225,8 @@ export default function MatchPage() {
           (matchObj.solveLog ?? []).forEach((entry: SolveLog) => {
             const key = `${entry.contestId}-${entry.index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            
-            solvedMap[entry.problem.position] = { team: teamKey };
+            // Bug #7 fix: use same string key format as poll handler so cells color on initial load
+            solvedMap[key] = { team: teamKey };
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
             }
@@ -445,6 +445,10 @@ export default function MatchPage() {
       
       // Update duration locally
       setMatch((prev) => (prev ? { ...prev, durationMinutes: 1 } : prev));
+      // Bug #10 fix: propagate win to server so all other clients see match end on next poll
+      if (match?.id) {
+        apiClient.patch(`/api/compete/matches/${match.id}/duration`, { durationMinutes: 1 }).catch(() => {});
+      }
     }
   }, [solved, problems, winner, positionOwners, match, matchLocked, gridSize]);
 

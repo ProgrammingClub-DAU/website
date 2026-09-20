@@ -2,12 +2,12 @@ package com.cpclub.backend.compete.dto;
 
 import com.cpclub.backend.compete.entity.MatchMode;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
 public class MatchCreationDto {
-    private LocalDateTime startTime;
+    private Instant startTime;
     private Integer durationMinutes;
     private Integer minRating;
     private Integer maxRating;
