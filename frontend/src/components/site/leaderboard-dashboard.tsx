@@ -74,6 +74,23 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     };
   }, [platform, roleFilter]);
 
+  useEffect(() => {
+    const handleBannerChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<{ bannerId: string }>;
+      if (customEvt.detail?.bannerId && currentUser) {
+        setEntries((prev) =>
+          prev.map((item) =>
+            item.id === currentUser.id
+              ? { ...item, equippedBannerId: customEvt.detail.bannerId }
+              : item
+          )
+        );
+      }
+    };
+    window.addEventListener("equipped-banner-changed", handleBannerChanged);
+    return () => window.removeEventListener("equipped-banner-changed", handleBannerChanged);
+  }, [currentUser]);
+
   // Client-side search filtering
   const filteredEntries = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();

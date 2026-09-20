@@ -148,6 +148,17 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
     loadProfile();
   }, [loadProfile]);
 
+  useEffect(() => {
+    const handleBannerChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<{ bannerId: string }>;
+      if (customEvt.detail?.bannerId) {
+        setProfile((prev) => (prev ? { ...prev, equippedBannerId: customEvt.detail.bannerId } : null));
+      }
+    };
+    window.addEventListener("equipped-banner-changed", handleBannerChanged);
+    return () => window.removeEventListener("equipped-banner-changed", handleBannerChanged);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center font-mono text-sm tracking-wider text-fg-muted uppercase animate-pulse">
