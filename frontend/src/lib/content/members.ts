@@ -23,18 +23,18 @@ export const CONTRIBUTOR_PROFILES: ContributorProfile[] = [
     badge: "Core Contributor",
   },
   {
-    name: "Tanishq Shah",
-    role: "Full Stack Developer",
-    headline: "Frontend modernizations, dynamic components & UI animations",
-    tags: ["Next.js 16", "TypeScript", "Tailwind CSS", "Framer Motion"],
-    badge: "Core Contributor",
-  },
-  {
     name: "Raj Patel",
     role: "Full Stack Engineer",
     headline: "Platform security, JWT auth pipelines & core architecture",
     tags: ["Spring Boot", "JWT Auth", "Next.js", "Security"],
     badge: "System Architect",
+  },
+  {
+    name: "Tanishq Shah",
+    role: "Full Stack Developer",
+    headline: "Frontend modernizations, dynamic components & UI animations",
+    tags: ["Next.js 16", "TypeScript", "Tailwind CSS", "Framer Motion"],
+    badge: "Core Contributor",
   },
   {
     name: "Shane Christian",

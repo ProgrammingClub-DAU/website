@@ -31,8 +31,8 @@ const AVATAR_GRADIENTS = [
 /** Hardcoded creator emails list as specified */
 export const CREATOR_EMAILS = [
   "202401152@dau.ac.in",
-  "202401474@dau.ac.in",
   "202401226@dau.ac.in",
+  "202401474@dau.ac.in",
   "202401041@dau.ac.in",
   "202401178@dau.ac.in",
   "202403019@dau.ac.in",
