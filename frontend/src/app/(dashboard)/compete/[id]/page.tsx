@@ -179,6 +179,8 @@ export default function MatchPage() {
 
   const { width, height } = useWindowSize();
   const notifiedRef = useRef<Set<string>>(new Set());
+  const problemsRef = useRef<ProblemCell[]>([]);
+  const solvedRef = useRef<Record<string, SolvedInfo>>({});
 
   function persistNotified(matchId: string) {
     const key = `notified_${matchId}`;
@@ -276,8 +278,12 @@ export default function MatchPage() {
     }
     const normalized = normalizeProblemsFromServer(match.problems || []);
     setProblems(normalized);
+    problemsRef.current = normalized;
     setLoading(false);
   }, [match]);
+
+  // Keep refs in sync with state for use in polling callback
+  useEffect(() => { solvedRef.current = solved; }, [solved]);
 
   function resolveTeamDisplayAndKey(teamIdentifier: string | undefined, teamsListParam?: Team[]) {
     const teamsList = teamsListParam ?? (match?.teams ?? []);
@@ -301,16 +307,22 @@ export default function MatchPage() {
     const matchStart = new Date(match.startTime);
     const matchEnd = new Date(matchStart.getTime() + match.durationMinutes * 60 * 1000);
 
+    let isPolling = false;
+
     const clientSidePoll = async () => {
       const currentTime = new Date();
-      if (currentTime < matchStart || currentTime > matchEnd) {
-        return;
-      }
+      if (currentTime < matchStart || currentTime > matchEnd) return;
+      if (isPolling) return;
+      isPolling = true;
+
+      try {
 
       // Step 1: Poll Codeforces directly from the browser for each player
       const allHandles = (match.teams ?? []).flatMap((t) => t.members ?? []);
+      const currentProblems = problemsRef.current;
+      const currentSolved = solvedRef.current;
       const boardKeys = new Set(
-        problems.map((p) => `${p.contestId}-${p.index}`)
+        currentProblems.map((p) => `${p.contestId}-${p.index}`)
       );
 
       let reportedAnySolve = false;
@@ -328,7 +340,7 @@ export default function MatchPage() {
 
             const key = `${sub.problem.contestId}-${sub.problem.index}`;
             if (!boardKeys.has(key)) continue; // Not on our board
-            if (solved[key]) continue; // Already solved
+            if (currentSolved[key]) continue; // Already solved
 
             // Check submission is after match start
             if (sub.creationTimeSeconds) {
@@ -352,6 +364,8 @@ export default function MatchPage() {
         } catch (cfErr) {
           console.warn(`Failed to poll CF for ${handle}`, cfErr);
         }
+        // Small delay to respect Codeforces API limit (5 requests per second)
+        await new Promise(r => setTimeout(r, 200));
       }
 
       // Step 2: Fetch latest match state from backend (to sync across all clients)
@@ -396,9 +410,11 @@ export default function MatchPage() {
           if (pollData.problems && Array.isArray(pollData.problems)) {
             const normalized = normalizeProblemsFromServer(pollData.problems);
             setProblems(normalized);
+            problemsRef.current = normalized;
           }
 
           setSolved(solvedMap);
+          solvedRef.current = solvedMap;
           setPositionOwners(posOwners);
 
           setLog((prevLog) => {
@@ -423,12 +439,14 @@ export default function MatchPage() {
         }
       } catch (err) {
         console.error("Failed to fetch match state", err);
+      } finally {
+        isPolling = false;
       }
     };
 
     const interval = setInterval(clientSidePoll, 20000);
     return () => clearInterval(interval);
-  }, [match?.id, match?.startTime, match?.durationMinutes, matchLocked, problems, solved]);
+  }, [match?.id, match?.startTime, match?.durationMinutes, matchLocked]);
 
   useEffect(() => {
     const interval = setInterval(() => {
