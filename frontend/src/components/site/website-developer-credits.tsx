@@ -105,21 +105,21 @@ export function WebsiteDeveloperCredits() {
                 />
 
                 {/* ── Inner Dark Glass Card Body ── */}
-                <div className="relative z-10 flex flex-col items-center justify-center min-h-[360px] rounded-[16px] bg-[#0c0f1a]/95 p-8 pb-9 backdrop-blur-xl border border-white/[0.05]">
+                <div className="relative z-10 flex flex-col items-center justify-center min-h-[280px] rounded-[16px] bg-[#0c0f1a]/95 p-6 pb-6 backdrop-blur-xl border border-white/[0.05]">
                   {/* Diagonal shimmer sweep on hover */}
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute -inset-full -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-1000 group-hover:translate-x-full"
                   />
 
-                  {/* ── Centered Photo (180px) ── */}
+                  {/* ── Centered Photo (120px) ── */}
                   <div
                     className="relative shrink-0 overflow-hidden rounded-full p-[3px] bg-white/15 transition-all duration-300 group-hover:scale-105 group-hover:bg-white/30 shadow-xl"
-                    style={{ width: "180px", height: "180px" }}
+                    style={{ width: "120px", height: "120px" }}
                   >
                     <div className="size-full overflow-hidden rounded-full bg-[#111318]">
                         <div
-                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-3xl text-white shadow-inner`}
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-2xl text-white shadow-inner`}
                         >
                           {getInitials(contributor.name)}
                         </div>
@@ -128,7 +128,7 @@ export function WebsiteDeveloperCredits() {
 
                   {/* ── Name ── */}
                   <div className="mt-5 text-center px-1">
-                    <h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white transition-colors group-hover:text-white leading-tight">
+                    <h3 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white transition-colors group-hover:text-white leading-tight">
                       {contributor.name}
                     </h3>
 
