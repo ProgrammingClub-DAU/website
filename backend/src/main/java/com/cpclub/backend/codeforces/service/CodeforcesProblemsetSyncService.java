@@ -30,7 +30,12 @@ public class CodeforcesProblemsetSyncService {
     private final CfProblemRepository cfProblemRepository;
     private final SyncRunRecorder syncRunRecorder;
 
-    @Scheduled(cron = "0 0 3 * * *", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
+    @org.springframework.context.event.EventListener(condition = "#event.job.name() == 'CF_PROBLEMSET'")
+    public void handleManualTrigger(com.cpclub.backend.sync.event.SyncTriggerEvent event) {
+        syncProblemset();
+    }
+
+    @Scheduled(cron = "0 0 3 * * SUN", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     @Transactional
     public void syncProblemset() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_PROBLEMSET);

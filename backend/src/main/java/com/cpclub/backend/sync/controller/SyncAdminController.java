@@ -23,21 +23,13 @@ public class SyncAdminController {
     private final ApplicationEventPublisher eventPublisher;
     private final com.cpclub.backend.sync.service.SyncHealthService syncHealthService;
 
+    private final com.cpclub.backend.sync.service.SyncJobDispatcher syncJobDispatcher;
+
     @PostMapping("/{job}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Long> startJob(@PathVariable SyncJob job) {
-        // The playbook says POST /api/admin/sync/{job} -- starts that job asynchronously and returns 202 with the sync_runs id.
-        // We'll create a dummy run to get an ID for the 202 response, then dispatch it.
-        // The actual sync service will start its own run or update this.
-        // Actually, the playbook says: SyncRunRecorder.java -- start(SyncJob) returns a run handle...
-        // Let's just publish an event, the event listener can use the SyncRunRecorder.
-        // But how to get the sync_runs id? The event listener runs asynchronously.
-        // We can just create a record here and pass it, but SyncRunRecorder creates the run.
-        
-        // As a simple solution for now, we'll just return 0L and implement async properly if needed,
-        // or just rely on a SyncRunRecorder.
-        
-        return ResponseEntity.accepted().body(0L); // Placeholder
+        Long runId = syncJobDispatcher.dispatch(job);
+        return ResponseEntity.accepted().body(runId);
     }
 
     @GetMapping("/runs")
