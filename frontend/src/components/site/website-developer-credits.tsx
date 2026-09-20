@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Globe } from "lucide-react";
+import { ArrowUpRight, Globe, Sparkles, Crown } from "lucide-react";
 
 import { GitHubMark } from "@/components/site/github-mark";
 import { PlatformGlyph } from "@/components/site/platform-glyph";
@@ -18,14 +18,14 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-/** Subtle gradient palette — one per card slot, avoids neon overload */
+/** Pre-computed rich gradient palettes for avatar rings */
 const AVATAR_GRADIENTS = [
-  "from-indigo-600 via-violet-600 to-purple-700",
-  "from-blue-600 via-indigo-600 to-violet-700",
-  "from-violet-600 via-purple-600 to-fuchsia-700",
-  "from-sky-500 via-blue-600 to-indigo-700",
-  "from-indigo-500 via-blue-600 to-cyan-700",
-  "from-purple-600 via-violet-700 to-indigo-800",
+  "from-rose-500 via-purple-600 to-indigo-600",
+  "from-indigo-500 via-blue-600 to-cyan-500",
+  "from-violet-600 via-fuchsia-600 to-rose-500",
+  "from-cyan-400 via-blue-600 to-indigo-700",
+  "from-amber-500 via-rose-600 to-purple-600",
+  "from-emerald-400 via-teal-600 to-indigo-700",
 ];
 
 /** Hardcoded creator emails list as specified */
@@ -44,25 +44,33 @@ interface WebsiteDeveloperCreditsProps {
 
 export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCreditsProps) {
   return (
-    <section id="credits" className="relative overflow-hidden rounded-2xl border border-border/40 bg-surface/40 backdrop-blur-xl shadow-2xl">
-      {/* Subtle ambient background */}
+    <section
+      id="credits"
+      className="relative overflow-hidden rounded-3xl border border-rose-500/25 bg-[#090912]/90 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)]"
+    >
+      {/* ── Ambient Background Lighting ── */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(99,102,241,0.07),transparent)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_90%_70%_at_50%_-10%,rgba(244,63,94,0.12),rgba(99,102,241,0.06),transparent)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-0 right-0 -z-10 size-96 rounded-full bg-rose-600/10 blur-3xl"
       />
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-border/40 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-8">
+      {/* ── Header Section ── */}
+      <div className="flex flex-col gap-4 border-b border-white/10 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-10">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-indigo-400 mb-3">
-            <Globe className="size-3" />
-            Open Source
+          <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/35 bg-gradient-to-r from-rose-500/15 to-purple-500/15 px-3.5 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.25)]">
+            <Crown className="size-3.5 text-rose-400" />
+            <span>Platform Creators • VIP Showcase</span>
           </div>
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+
+          <h2 className="mt-3 font-heading text-3xl font-black tracking-tight text-white sm:text-4xl bg-gradient-to-r from-white via-rose-100 to-purple-200 bg-clip-text text-transparent">
             Who Built This Website
           </h2>
-          <p className="mt-1.5 text-sm text-fg-muted">
-            The engineers who designed and developed this platform.
+          <p className="mt-2 text-sm md:text-base text-white/70 max-w-2xl">
+            The 6 platform engineers who designed, architected, and built this entire web application.
           </p>
         </div>
 
@@ -70,16 +78,16 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
           href="https://github.com/ProgrammingClub-DAU/website"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border/50 bg-surface/60 px-4 py-2.5 font-mono text-xs text-foreground/80 transition-all duration-200 hover:border-border hover:bg-surface hover:text-foreground hover:shadow-lg"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.05] px-5 py-3 font-mono text-xs font-semibold text-white transition-all duration-300 hover:border-rose-500/50 hover:bg-rose-500/10 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)]"
         >
           <GitHubMark className="size-4" />
-          <span>View on GitHub</span>
-          <ArrowUpRight className="size-3.5 opacity-60" />
+          <span>View Source on GitHub</span>
+          <ArrowUpRight className="size-4 opacity-70" />
         </a>
       </div>
 
-      {/* Developer Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border/30 p-px">
+      {/* ── VIP Creators Grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-6 sm:p-8">
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
@@ -107,55 +115,79 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
           return (
             <div
               key={contributor.name}
-              className={`group relative flex flex-col gap-4 bg-surface/60 p-6 transition-all duration-200 hover:bg-surface/90 first:rounded-tl-[11px] last:rounded-br-[11px] ${
-                profileHref ? "cursor-pointer hover:border-indigo-500/30" : ""
+              className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#12121e]/80 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-rose-500/50 hover:bg-[#161626] hover:shadow-[0_20px_40px_-10px_rgba(244,63,94,0.3)] ${
+                profileHref ? "cursor-pointer" : ""
               }`}
             >
-              {/* Top row: avatar + name + badge */}
-              <div className="flex items-center gap-4">
-                {/* Avatar */}
-                <div
-                  className="relative shrink-0 overflow-hidden rounded-full ring-2 ring-white/10 transition-all duration-300 group-hover:ring-indigo-500/40 group-hover:shadow-[0_0_16px_rgba(99,102,241,0.25)]"
-                  style={{ width: "64px", height: "64px" }}
-                >
-                  {matchedCreator?.avatarUrl ? (
-                    <Image
-                      src={matchedCreator.avatarUrl}
-                      alt={displayName}
-                      width={64}
-                      height={64}
-                      className="size-full rounded-full object-cover"
-                    />
-                  ) : (
+              {/* Glowing top border beam on hover */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-400 opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+              />
+
+              {/* ── Top Row: Avatar + Name + Equal Builder Role ── */}
+              <div>
+                <div className="flex items-center gap-4">
+                  {/* Avatar Container with Gradient Ring & VIP Badge */}
+                  <div className="relative shrink-0">
                     <div
-                      className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-lg text-white`}
+                      className={`relative size-16 rounded-full p-[2.5px] bg-gradient-to-br ${avatarGradient} shadow-md transition-transform duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]`}
                     >
-                      {getInitials(displayName)}
+                      <div className="size-full overflow-hidden rounded-full bg-[#0b0b14]">
+                        {matchedCreator?.avatarUrl ? (
+                          <Image
+                            src={matchedCreator.avatarUrl}
+                            alt={displayName}
+                            width={64}
+                            height={64}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-extrabold text-lg text-white`}
+                          >
+                            {getInitials(displayName)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                    {/* VIP Crown Overlay */}
+                    <div className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-[#0b0b14]">
+                      <Crown className="size-3" />
+                    </div>
+                  </div>
+
+                  {/* Name + Equal Builder Title */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-heading text-lg font-bold tracking-tight text-white leading-tight truncate transition-colors duration-200 group-hover:text-rose-300">
+                      {profileHref ? (
+                        <Link href={profileHref} className="after:absolute after:inset-0">
+                          {displayName}
+                        </Link>
+                      ) : (
+                        displayName
+                      )}
+                    </h3>
+
+                    {/* Equal Builder Title — No hierarchy, all builders are equal */}
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-gradient-to-r from-rose-500/15 to-purple-500/15 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                      <Sparkles className="size-3 text-rose-400 shrink-0" />
+                      <span>Website Creator</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Name + role tag */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-heading text-base font-bold tracking-tight text-foreground leading-tight truncate group-hover:text-indigo-300 transition-colors duration-200">
-                    {profileHref ? (
-                      <Link href={profileHref} className="after:absolute after:inset-0">
-                        {displayName}
-                      </Link>
-                    ) : (
-                      displayName
-                    )}
-                  </h3>
-                  <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-indigo-400">
-                    <span className="size-1 rounded-full bg-indigo-400 shrink-0" aria-hidden="true" />
-                    {contributor.role || "Website Architect"}
-                  </span>
-                </div>
+                {/* Optional headline preview if desired */}
+                {contributor.headline && (
+                  <p className="mt-4 text-xs text-white/60 line-clamp-2 leading-relaxed">
+                    {contributor.headline}
+                  </p>
+                )}
               </div>
 
-              {/* Bottom row: platform links + profile CTA */}
-              <div className="relative z-10 flex items-center justify-between border-t border-white/[0.06] pt-4">
-                {/* Platform icon links */}
+              {/* ── Bottom Row: Platform Icon Links + View Profile CTA ── */}
+              <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/10 pt-4">
+                {/* Platform Links */}
                 <div className="flex items-center gap-2">
                   {links.length > 0 ? (
                     links.slice(0, 4).map((link) => (
@@ -167,29 +199,29 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         aria-label={`${displayName} on ${link.label}`}
                         title={link.label}
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-all duration-200 hover:scale-110 hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-300"
+                        className="inline-flex size-7 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/60 transition-all duration-200 hover:scale-110 hover:border-rose-400 hover:bg-rose-500/20 hover:text-white hover:shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                       >
                         <PlatformGlyph platform={link.platform} className="size-3.5" />
                       </a>
                     ))
                   ) : (
-                    <span className="font-mono text-[9px] text-white/25 uppercase tracking-wider">
-                      No profiles
+                    <span className="font-mono text-[9px] text-white/30 uppercase tracking-wider">
+                      No profiles linked
                     </span>
                   )}
                 </div>
 
-                {/* Profile link CTA */}
+                {/* View Profile Link */}
                 {profileHref ? (
                   <Link
                     href={profileHref}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 transition-all duration-200 hover:border-indigo-500/50 hover:bg-indigo-500/20 hover:text-indigo-200"
+                    className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-3 py-1 font-mono text-xs font-semibold text-rose-300 transition-all duration-200 hover:border-rose-400 hover:bg-rose-500/30 hover:text-white hover:shadow-[0_0_12px_rgba(244,63,94,0.35)]"
                   >
                     View Profile
                     <ArrowUpRight className="size-3" />
                   </Link>
                 ) : (
-                  <span className="font-mono text-[9px] text-white/20 uppercase tracking-wider">
+                  <span className="font-mono text-[9px] text-white/30 uppercase tracking-wider">
                     Profile unavailable
                   </span>
                 )}
@@ -201,3 +233,4 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
     </section>
   );
 }
+
