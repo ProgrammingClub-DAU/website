@@ -328,7 +328,6 @@ function ProfileDashboardContent({
 
   const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
   const equippedBanner = getBannerConfig(profile.equippedBannerId || "rookie");
-  const selectedBanner = getBannerConfig(formData.bannerId);
   const effectiveMaxRating = profile.maxRating ?? profile.rating ?? 0;
 
   const leaderboardMember = {
@@ -353,12 +352,27 @@ function ProfileDashboardContent({
         style={{ borderColor: equippedBanner.colors.border }}
       >
         {/* Colorful Banner Graphic Header */}
-        <div className="relative h-32 sm:h-44 w-full overflow-hidden">
+        <div 
+          className={`relative h-32 sm:h-44 w-full overflow-hidden group ${isOwner ? 'cursor-pointer' : ''}`}
+          onClick={() => isOwner && setIsBannerLockerOpen(true)}
+          role={isOwner ? "button" : undefined}
+          tabIndex={isOwner ? 0 : undefined}
+        >
           <BannerGraphic banner={equippedBanner} showEffects={true} withScrim={true} />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent pointer-events-none" />
+
+          {/* Owner Hover Overlay */}
+          {isOwner && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/40 opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:opacity-100">
+              <div className="flex items-center gap-2 rounded-full bg-background/80 px-4 py-2 text-sm font-medium text-foreground shadow-xl border border-border">
+                <Sparkles className="size-4 text-amber-400" />
+                Click to Equip Banner
+              </div>
+            </div>
+          )}
 
           {/* Active Banner Badge Tag */}
-          <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          <div className="absolute top-3 right-3 flex items-center gap-2 z-10 pointer-events-none">
             <span
               className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-md shadow-lg"
               style={{
@@ -413,15 +427,6 @@ function ProfileDashboardContent({
             {/* Action Buttons (Owner Only) */}
             {isOwner && (
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsBannerLockerOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 shadow-xs"
-                >
-                  <Sparkles className="size-3.5 text-amber-400" />
-                  Change Banner
-                </button>
-
                 <button
                   type="button"
                   onClick={() => (isEditingProfile ? setIsEditingProfile(false) : openEditor())}
@@ -644,59 +649,7 @@ function ProfileDashboardContent({
                   </div>
                 </div>
 
-                <div className="rounded-panel border border-border bg-surface-2/50 p-4">
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <label htmlFor="profile-banner" className="block text-xs font-medium text-foreground">
-                        Profile banner
-                      </label>
-                      <p className="mt-1 text-[11px] text-fg-muted">
-                        Choose from banners unlocked by your maximum Codeforces rating or special achievements.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsBannerLockerOpen(true)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 shrink-0 shadow-xs"
-                    >
-                      <Sparkles className="size-3 text-amber-400" />
-                      Open Banner Locker
-                    </button>
-                  </div>
-
-                  <div className="relative mb-3 h-20 overflow-hidden rounded-control border border-border p-3">
-                    <BannerGraphic banner={selectedBanner} showEffects={false} withScrim />
-                    <div className="relative z-10 flex h-full items-center justify-between">
-                      <span className="text-sm font-semibold" style={{ color: selectedBanner.colors.text }}>
-                        {selectedBanner.name}
-                      </span>
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${getRarityBadgeStyle(selectedBanner.rarity, selectedBanner.id).text} ${getRarityBadgeStyle(selectedBanner.rarity, selectedBanner.id).border}`}
-                      >
-                        {selectedBanner.rarity}
-                      </span>
-                    </div>
-                  </div>
-
-                  <select
-                    id="profile-banner"
-                    value={formData.bannerId}
-                    onChange={(e) => setFormData({ ...formData, bannerId: e.target.value })}
-                    className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
-                  >
-                    {RATING_BANNERS.map((banner) => {
-                      const unlocked = isBannerUnlocked(banner, effectiveMaxRating, profile);
-                      return (
-                        <option key={banner.id} value={banner.id} disabled={!unlocked}>
-                          {unlocked ? banner.name : `${banner.name} - locked (${banner.minRating} rating)`}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <p className="mt-2 text-[11px] text-fg-muted">
-                    Special banners are only selectable when your account has been granted access.
-                  </p>
-                </div>
+                  {/* Removed Banner Selection from form, as it is now intuitively handled by clicking the Hero Banner itself */}
 
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
