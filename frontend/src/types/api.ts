@@ -119,6 +119,12 @@ export interface LeaderboardEntry {
   tier: string;         // backend-computed CF tier e.g. "Expert", "Newbie"
   clubRole: ClubRole | null;
   avatarUrl: string | null;
+  equippedBannerId?: string;
+  rankBannerId?: string | null;
+  activeBannerId?: string;
+  maxRating?: number | null;
+  contestHistory?: number[];
+  ratingChange?: number;
 }
 
 export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";

@@ -77,7 +77,9 @@ function notifyBrowser(title: string, body?: string) {
   if (Notification.permission === "granted") {
     try {
       new Notification(title, { body });
-    } catch (e) {}
+    } catch {
+      // Ignored
+    }
     return;
   }
   if (Notification.permission !== "denied") {
@@ -85,7 +87,9 @@ function notifyBrowser(title: string, body?: string) {
       if (permission === "granted") {
         try {
           new Notification(title, { body });
-        } catch (e) {}
+        } catch {
+          // Ignored
+        }
       }
     });
   }
@@ -103,7 +107,7 @@ function normalizeProblemsFromServer(raw: ProblemCell[]) {
     }
     return Array.from(byPos.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([_, p]) => p);
+      .map(([, p]) => p);
   }
 
   const seen = new Set<string>();
@@ -158,7 +162,7 @@ export default function MatchPage() {
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
-  const [showLog, setShowLog] = useState(true);
+  const [showLog] = useState(true);
   const [problems, setProblems] = useState<ProblemCell[]>([]);
   const [loading, setLoading] = useState(true);
   const [gridSize, setGridSize] = useState<GridSize>(5);

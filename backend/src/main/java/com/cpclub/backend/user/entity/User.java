@@ -50,6 +50,13 @@ public class User {
 
     private Integer rating;
 
+    @Column(name = "max_rating")
+    private Integer maxRating;
+
+    @Column(name = "equipped_banner_id", length = 50)
+    @Builder.Default
+    private String equippedBannerId = "rookie";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
