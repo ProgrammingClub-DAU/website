@@ -326,7 +326,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                             </span>
                           </div>
                           <p className="text-[10px] text-white/70 line-clamp-1 mt-0.5">
-                            {banner.description}
+                            {banner.howToAchieve}
                           </p>
                         </div>
 
@@ -438,7 +438,7 @@ export const BannerLockerDrawer: React.FC<BannerLockerDrawerProps> = ({
                             #{rankBanner.rank}
                           </span>
                         </div>
-                        <p className="text-[10px] text-white/60 mt-1">{rankBanner.description}</p>
+                        <p className="text-[10px] text-white/60 mt-1">{rankBanner.howToAchieve}</p>
                       </div>
                       <div className="mt-2 text-[10px] font-mono font-semibold">
                         {holdsRank ? (
