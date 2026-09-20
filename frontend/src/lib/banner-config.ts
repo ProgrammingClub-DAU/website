@@ -20,6 +20,7 @@ export interface BannerConfig {
   isRankBanner?: boolean;
   rank?: 1 | 2 | 3;
   description: string;
+  howToAchieve: string;
   iconName?: "crown" | "medal" | "trophy" | "sparkles" | "flame" | "shield";
 }
 
@@ -34,6 +35,7 @@ export const RANK_BANNERS: Record<string, BannerConfig> = {
     rank: 1,
     iconName: "crown",
     description: "Exclusive to Rank #1. Features an animated crown, sunburst rays, diagonal shimmer, and celestial star dust.",
+    howToAchieve: "Achieve Rank #1 on the leaderboard",
     animation: "sunburst",
     colors: {
       primary: "#3a2a0a",
@@ -54,6 +56,7 @@ export const RANK_BANNERS: Record<string, BannerConfig> = {
     rank: 2,
     iconName: "medal",
     description: "Exclusive to Rank #2. Cool metallic platinum-silver with slow shimmer sweep and star glints.",
+    howToAchieve: "Achieve Rank #2 on the leaderboard",
     animation: "shimmer",
     colors: {
       primary: "#262c37",
@@ -74,6 +77,7 @@ export const RANK_BANNERS: Record<string, BannerConfig> = {
     rank: 3,
     iconName: "medal",
     description: "Exclusive to Rank #3. Warm copper banner with ember glow and gentle metallic shimmer.",
+    howToAchieve: "Achieve Rank #3 on the leaderboard",
     animation: "shimmer",
     colors: {
       primary: "#3a2416",
@@ -96,6 +100,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Common",
     animation: "geometric",
     description: "Graphite geometric grid. Standard issue for all club initiate coders.",
+    howToAchieve: "Default issue for all club members",
     colors: {
       primary: "#222533",
       accent: "#4a516d",
@@ -113,6 +118,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Common",
     animation: "waves",
     description: "Emerald matrix signal. Unlocked upon reaching 1200 rating.",
+    howToAchieve: "Reach 1200+ rating on Codeforces",
     colors: {
       primary: "#143323",
       accent: "#2f9d64",
@@ -130,6 +136,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Rare",
     animation: "waves",
     description: "Cybernetic cyan waves. Unlocked upon reaching 1400 rating.",
+    howToAchieve: "Reach 1400+ rating on Codeforces",
     colors: {
       primary: "#0f343e",
       accent: "#18b5c9",
@@ -147,6 +154,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Rare",
     animation: "circuits",
     description: "Electric sapphire circuits. Unlocked upon reaching 1600 rating.",
+    howToAchieve: "Reach 1600+ rating on Codeforces",
     colors: {
       primary: "#142854",
       accent: "#3d7eff",
@@ -164,6 +172,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Epic",
     animation: "particles",
     description: "Cosmic violet nebula with floating stardust. Unlocked upon reaching 1900 rating.",
+    howToAchieve: "Reach 1900+ rating on Codeforces",
     colors: {
       primary: "#321d58",
       accent: "#a966ff",
@@ -181,6 +190,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     rarity: "Legendary",
     animation: "flames",
     description: "Solar flare ignition with incandescent embers. Unlocked upon reaching 2100 rating.",
+    howToAchieve: "Reach 2100+ rating on Codeforces",
     colors: {
       primary: "#4a2406",
       accent: "#ff9426",
@@ -192,40 +202,6 @@ export const RATING_BANNERS: BannerConfig[] = [
     },
   },
   {
-    id: "club-founder",
-    name: "Club Founder",
-    minRating: 0,
-    rarity: "Special",
-    animation: "shimmer",
-    description: "Honorary badge reserved for founding members and executive convenors.",
-    colors: {
-      primary: "#40132b",
-      accent: "#ff3d94",
-      border: "#e02677",
-      glow: "rgba(255, 61, 148, 0.45)",
-      text: "#ffe0ee",
-      gradient: "linear-gradient(135deg, #2a0b1c 0%, #521937 60%, #1e0613 100%)",
-      scrim: "linear-gradient(90deg, rgba(20, 4, 13, 0.92) 0%, rgba(20, 4, 13, 0.6) 60%, transparent 100%)",
-    },
-  },
-  {
-    id: "contest-winner",
-    name: "Contest Winner",
-    minRating: 0,
-    rarity: "Special",
-    animation: "sparks",
-    description: "Conferred to champions of official college programming tournaments.",
-    colors: {
-      primary: "#332244",
-      accent: "#f4a261",
-      border: "#e76f51",
-      glow: "rgba(244, 162, 97, 0.42)",
-      text: "#fff0e6",
-      gradient: "linear-gradient(135deg, #22162e 0%, #442d5c 60%, #180e22 100%)",
-      scrim: "linear-gradient(90deg, rgba(16, 9, 23, 0.92) 0%, rgba(16, 9, 23, 0.6) 60%, transparent 100%)",
-    },
-  },
-  {
     id: "creator-vip",
     name: "Website Architect (VIP)",
     minRating: 0,
@@ -233,6 +209,7 @@ export const RATING_BANNERS: BannerConfig[] = [
     animation: "flames",
     iconName: "crown",
     description: "Ultra-exclusive Red VIP Banner reserved for the 6 engineers who designed and built this website platform.",
+    howToAchieve: "Exclusively reserved for the 6 website creators",
     colors: {
       primary: "#2e0508",
       accent: "#ff1e42",
@@ -256,6 +233,7 @@ export const LC_BANNERS: BannerConfig[] = [
     rarity: "Common",
     animation: "geometric",
     description: "LeetCode unrated — the first step on the grinding path.",
+    howToAchieve: "Default issue for LeetCode coders",
     colors: {
       primary: "#1a1f2e",
       accent: "#6b7a99",
@@ -273,6 +251,7 @@ export const LC_BANNERS: BannerConfig[] = [
     rarity: "Epic",
     animation: "circuits",
     description: "LeetCode Knight — elite solver who dominates contests and hard problems alike.",
+    howToAchieve: "Reach 1850+ rating on LeetCode",
     colors: {
       primary: "#1c2a50",
       accent: "#7c9eff",
@@ -290,6 +269,7 @@ export const LC_BANNERS: BannerConfig[] = [
     rarity: "Legendary",
     animation: "particles",
     description: "LeetCode Guardian — the top 0.1%. A mythic banner wreathed in violet starfire.",
+    howToAchieve: "Reach 2100+ rating on LeetCode",
     colors: {
       primary: "#2e1a5c",
       accent: "#c084fc",

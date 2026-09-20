@@ -24,7 +24,7 @@ export async function generateMetadata({
   const { id } = await params;
   const name = await fetchName(id);
   return {
-    title: name ? `${name} — Profile` : "Profile",
+    title: name ?? "Member Profile",
     description: name
       ? `${name}'s Codeforces and LeetCode ratings and profile at Programming Club @ DAU.`
       : "A Programming Club @ DAU member's Codeforces and LeetCode ratings and profile links.",

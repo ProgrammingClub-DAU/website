@@ -47,8 +47,8 @@ export const metadata: Metadata = {
   // Share cards need absolute URLs. See lib/site-url.ts for where this comes from.
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${site.fullName} — Competitive programming at DAU`,
-    template: `%s — ${site.fullName}`,
+    default: `${site.fullName} | Competitive Programming at DAU`,
+    template: `%s | ${site.fullName}`,
   },
   description,
   applicationName: site.fullName,

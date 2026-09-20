@@ -202,7 +202,7 @@ export function MembersDirectory({
 
 /**
  * Uniform dark-glass member card — no neon, no role-based colors.
- * Centered 128px avatar, name, role badge, 4 platform links at bottom.
+ * Compact design with 104px avatar, name, role badge, and platform links at bottom.
  */
 function MemberCard({
   member,
@@ -227,11 +227,11 @@ function MemberCard({
       className={`
         group relative flex flex-col items-center
         rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl
-        p-6 sm:p-7 pb-8 min-h-[360px]
+        p-4 sm:p-5 pb-5 min-h-[270px]
         w-full sm:w-[calc(50%-14px)] lg:w-[calc(25%-18px)]
         transition-all duration-300 cursor-pointer
-        hover:-translate-y-2 hover:border-white/[0.18] hover:bg-white/[0.07]
-        hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]
+        hover:-translate-y-1.5 hover:border-white/[0.18] hover:bg-white/[0.07]
+        hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.7)]
       `}
     >
       {/* Subtle top edge highlight on hover */}
@@ -240,24 +240,24 @@ function MemberCard({
         className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
       />
 
-      {/* ─── Centered Avatar (152px) ─── */}
-      <div className="mt-2 flex flex-col items-center gap-3.5 flex-1 w-full">
+      {/* ─── Centered Avatar (104px) ─── */}
+      <div className="mt-1 flex flex-col items-center gap-3 flex-1 w-full">
         <div
-          className="relative shrink-0 overflow-hidden rounded-full p-[2.5px] bg-white/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/25 shadow-lg"
-          style={{ width: "152px", height: "152px" }}
+          className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/25 shadow-md"
+          style={{ width: "104px", height: "104px" }}
         >
           <div className="size-full overflow-hidden rounded-full bg-[#111318]">
             {member.avatarUrl ? (
               <Image
                 src={member.avatarUrl}
                 alt={member.name}
-                width={152}
-                height={152}
+                width={104}
+                height={104}
                 className="size-full object-cover"
               />
             ) : (
               <div
-                className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-2xl text-white`}
+                className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
               >
                 {initialsOf(member.name)}
               </div>
@@ -267,22 +267,22 @@ function MemberCard({
 
         {/* Name */}
         <div className="text-center px-1">
-          <h3 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white/90 transition-colors group-hover:text-white leading-tight line-clamp-2">
+          <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/90 transition-colors group-hover:text-white leading-tight line-clamp-2">
             <Link href={`/profile/${member.id}`} className="after:absolute after:inset-0">
               {member.name}
             </Link>
           </h3>
 
-          {/* Role badge (tag only, no academic year) */}
-          <div className="mt-2.5 flex items-center justify-center">
+          {/* Role badge */}
+          <div className="mt-2 flex items-center justify-center">
             <ClubRoleBadge clubRole={member.clubRole} />
           </div>
         </div>
       </div>
 
       {/* ─── Bottom: Platform Links ─── */}
-      <div className="relative z-10 mt-auto pt-4 w-full border-t border-white/[0.08]">
-        <div className="flex items-center justify-center gap-2.5">
+      <div className="relative z-10 mt-auto pt-3 w-full border-t border-white/[0.08]">
+        <div className="flex items-center justify-center gap-2">
           {links.length > 0 ? (
             links.slice(0, 4).map((link) => (
               <a
