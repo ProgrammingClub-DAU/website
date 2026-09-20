@@ -35,23 +35,24 @@ public class CodeforcesProblemsetSyncService {
         syncProblemset();
     }
 
-    @Scheduled(cron = "0 0 3 * * SUN", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
+    // Disabled automated cron to save Render memory. Admin must trigger manually via POST /api/admin/sync/CF_PROBLEMSET
+    // @Scheduled(cron = "0 0 3 * * SUN", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     @Transactional
     public void syncProblemset() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_PROBLEMSET);
         try {
             ProblemsetResult result = apiClient.problemsetProblems();
             List<CfProblem> problems = result.getProblems();
-            List<JsonNode> stats = result.getProblemStatistics();
+            List<java.util.Map<String, Object>> stats = (List<java.util.Map<String, Object>>) result.getProblemStatistics();
             
             Map<String, Integer> solveCounts = stats.stream()
                 .collect(Collectors.toMap(
                     node -> {
-                        JsonNode contestId = node.get("contestId");
-                        String index = node.get("index").asText();
-                        return contestId != null ? contestId.asInt() + "/" + index : "null/" + index;
+                        Object contestId = node.get("contestId");
+                        String index = String.valueOf(node.get("index"));
+                        return contestId != null ? contestId.toString() + "/" + index : "null/" + index;
                     },
-                    node -> node.has("solvedCount") ? node.get("solvedCount").asInt() : 0,
+                    node -> node.containsKey("solvedCount") ? ((Number) node.get("solvedCount")).intValue() : 0,
                     (v1, v2) -> v1 // In case of duplicate keys
                 ));
 
