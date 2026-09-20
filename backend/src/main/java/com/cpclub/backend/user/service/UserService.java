@@ -472,32 +472,8 @@ public class UserService {
         }
     }
 
-    public static final java.util.Set<String> CREATOR_NAMES = java.util.Set.of(
-            "madhav thesiya",
-            "tanishq shah",
-            "raj patel",
-            "shane christian",
-            "gaurav rathod",
-            "mahek kanani"
-    );
-
-    public static final java.util.Set<String> CREATOR_HANDLES = java.util.Set.of(
-            "madhav_t",
-            "king-t",
-            "raj_patel",
-            "raze07",
-            "gaurav_r",
-            "mahek_k"
-    );
-
     private boolean isWebsiteCreator(User user) {
-        if (user.getName() != null && CREATOR_NAMES.contains(user.getName().trim().toLowerCase())) {
-            return true;
-        }
-        if (user.getCodeforcesHandle() != null && CREATOR_HANDLES.contains(user.getCodeforcesHandle().trim().toLowerCase())) {
-            return true;
-        }
-        return false;
+        return user.isPlatformCreator();
     }
 
     /**

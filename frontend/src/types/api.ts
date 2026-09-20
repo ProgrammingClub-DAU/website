@@ -125,6 +125,7 @@ export interface LeaderboardEntry {
   maxRating?: number | null;
   contestHistory?: number[];
   ratingChange?: number;
+  isPlatformCreator?: boolean;
 }
 
 export type LeaderboardPlatform = "CODEFORCES" | "LEETCODE";

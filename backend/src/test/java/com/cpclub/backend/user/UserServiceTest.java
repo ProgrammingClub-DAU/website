@@ -323,6 +323,7 @@ class UserServiceTest {
     @DisplayName("A website creator can equip the creator-vip banner")
     void creatorCanEquipCreatorVipBanner() {
         User creator = teamMember(1L, "Tanishq Shah", ClubRole.CORE);
+        creator.setPlatformCreator(true);
         when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(creator));
 
         String bannerId = userService.equipBanner(1L, "creator-vip");

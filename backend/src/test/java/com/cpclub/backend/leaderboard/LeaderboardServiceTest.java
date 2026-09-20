@@ -176,6 +176,11 @@ class LeaderboardServiceTest {
             public Integer getMaxrating() {
                 return rating;
             }
+
+            @Override
+            public Boolean getIsplatformcreator() {
+                return false;
+            }
         };
     }
 }

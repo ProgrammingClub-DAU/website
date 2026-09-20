@@ -302,35 +302,11 @@ export const LC_BANNERS: BannerConfig[] = [
   },
 ];
 
-export const CREATOR_NAMES = [
-  "Madhav Thesiya",
-  "Tanishq Shah",
-  "Raj Patel",
-  "Shane Christian",
-  "Gaurav Rathod",
-  "Mahek Kanani",
-];
-
-export const CREATOR_HANDLES = [
-  "madhav_t",
-  "king-t",
-  "raj_patel",
-  "raze07",
-  "gaurav_r",
-  "mahek_k",
-];
-
 export function isWebsiteCreator(
-  member?: { name?: string | null; codeforcesHandle?: string | null } | null
+  member?: { isPlatformCreator?: boolean } | null
 ): boolean {
   if (!member) return false;
-  const nameMatch = member.name
-    ? CREATOR_NAMES.some((c) => c.toLowerCase() === member.name?.trim().toLowerCase())
-    : false;
-  const handleMatch = member.codeforcesHandle
-    ? CREATOR_HANDLES.some((h) => h.toLowerCase() === member.codeforcesHandle?.trim().toLowerCase())
-    : false;
-  return nameMatch || handleMatch;
+  return !!member.isPlatformCreator;
 }
 
 export const ALL_BANNERS: Record<string, BannerConfig> = {
@@ -374,7 +350,7 @@ export function getActiveBannerForMember(
 export function isBannerUnlocked(
   banner: BannerConfig,
   currentOrMaxRating: number | null | undefined,
-  member?: { name?: string | null; codeforcesHandle?: string | null } | null
+  member?: { isPlatformCreator?: boolean } | null
 ): boolean {
   if (banner.isRankBanner) return false; // Rank banners cannot be equipped manually
   if (banner.id === "creator-vip") {

@@ -162,6 +162,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                    u.avatar_url AS avatarurl,
                    COALESCE(u.equipped_banner_id, 'rookie') AS equippedbannerid,
                    COALESCE(u.max_rating, CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE' THEN u.leetcode_rating ELSE u.rating END) AS maxrating,
+                   u.is_platform_creator AS isplatformcreator,
                    RANK() OVER (
                        ORDER BY CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
                                      THEN u.leetcode_rating ELSE u.rating END DESC NULLS LAST

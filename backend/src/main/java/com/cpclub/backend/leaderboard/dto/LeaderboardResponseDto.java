@@ -18,7 +18,8 @@ public record LeaderboardResponseDto(
         String equippedBannerId,
         String rankBannerId,
         String activeBannerId,
-        Integer maxRating
+        Integer maxRating,
+        boolean isPlatformCreator
 ) {
     /** Backwards-compatible constructor for existing callers and tests. */
     public LeaderboardResponseDto(
@@ -43,7 +44,8 @@ public record LeaderboardResponseDto(
                 "rookie",
                 calculateRankBanner(rank),
                 calculateActiveBanner(rank, "rookie"),
-                rating
+                rating,
+                false
         );
     }
 
@@ -105,7 +107,8 @@ public record LeaderboardResponseDto(
                 equipped,
                 rankBanner,
                 rankBanner != null ? rankBanner : equipped,
-                maxR
+                maxR,
+                user.isPlatformCreator()
         );
     }
 
@@ -132,7 +135,8 @@ public record LeaderboardResponseDto(
                 equipped,
                 rankBanner,
                 rankBanner != null ? rankBanner : equipped,
-                maxR
+                maxR,
+                row.getIsplatformcreator() != null ? row.getIsplatformcreator() : false
         );
     }
 }

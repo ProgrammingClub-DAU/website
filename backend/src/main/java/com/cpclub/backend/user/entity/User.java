@@ -62,6 +62,10 @@ public class User {
     @Builder.Default
     private Role role = Role.ROLE_USER;
 
+    @Column(name = "is_platform_creator", nullable = false)
+    @Builder.Default
+    private boolean isPlatformCreator = false;
+
     // â”€â”€ Phase 2 profile fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Every field below is nullable. Phase 1 rows already exist in production,
     // so V2 could not add NOT NULL columns to a populated table. Fields the UI

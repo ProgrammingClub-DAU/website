@@ -54,5 +54,8 @@ public interface LeaderboardEntryProjection {
 
     /** Highest rating attained. */
     Integer getMaxrating();
+
+    /** Is the member a platform creator? */
+    Boolean getIsplatformcreator();
 }
 

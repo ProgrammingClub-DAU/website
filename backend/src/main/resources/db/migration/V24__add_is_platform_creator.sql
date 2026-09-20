@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN is_platform_creator BOOLEAN DEFAULT FALSE NOT NULL;
+UPDATE users SET is_platform_creator = TRUE WHERE lower(name) IN ('madhav thesiya', 'tanishq shah', 'raj patel', 'shane christian', 'gaurav rathod', 'mahek kanani');
