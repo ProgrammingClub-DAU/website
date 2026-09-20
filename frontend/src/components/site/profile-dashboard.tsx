@@ -20,6 +20,14 @@ import { InDevelopment } from "@/components/site/in-development";
 import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
 import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
 import { leetcodeService } from "@/lib/services/leetcode";
+import { leaderboardService } from "@/lib/services/leaderboard";
+import {
+  RATING_BANNERS,
+  getBannerConfig,
+  getRarityBadgeStyle,
+  isBannerUnlocked,
+} from "@/lib/banner-config";
+import { BannerGraphic } from "@/components/site/leaderboard/banner-graphic";
 import { useAuthStore } from "@/store/auth";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +88,7 @@ function formFromProfile(profile: Profile) {
     github: usernameFrom("github", profile.githubUrl),
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
     academicYear: (profile.academicYear ?? "") as AcademicYear | "",
+    bannerId: profile.equippedBannerId || "rookie",
   };
 }
 
@@ -203,6 +212,7 @@ function ProfileDashboardContent({
     github: usernameFrom("github", profile.githubUrl),
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
     academicYear: (profile.academicYear ?? "") as AcademicYear | "",
+    bannerId: profile.equippedBannerId || "rookie",
   });
 
   const openEditor = () => {
@@ -266,6 +276,9 @@ function ProfileDashboardContent({
         avatarUrl: profile.avatarUrl,
       };
       await dashboardService.updateProfile(payload);
+      if (formData.bannerId !== profile.equippedBannerId) {
+        await leaderboardService.equipBanner(formData.bannerId);
+      }
       setIsEditingProfile(false);
       onUpdate();
     } catch (err: unknown) {
@@ -311,6 +324,8 @@ function ProfileDashboardContent({
   ].filter(Boolean) as string[];
 
   const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
+  const selectedBanner = getBannerConfig(formData.bannerId);
+  const effectiveMaxRating = profile.maxRating ?? profile.rating ?? 0;
 
 
   return (
@@ -576,6 +591,55 @@ function ProfileDashboardContent({
                       className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
+                </div>
+
+                <div className="rounded-panel border border-border bg-surface-2/50 p-4">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <label htmlFor="profile-banner" className="block text-xs font-medium text-foreground">
+                        Profile banner
+                      </label>
+                      <p className="mt-1 text-[11px] text-fg-muted">
+                        Choose from banners unlocked by your maximum Codeforces rating.
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-mono text-fg-muted">
+                      Max rating: {effectiveMaxRating}
+                    </span>
+                  </div>
+
+                  <div className="relative mb-3 h-20 overflow-hidden rounded-control border border-border p-3">
+                    <BannerGraphic banner={selectedBanner} showEffects={false} withScrim />
+                    <div className="relative z-10 flex h-full items-center justify-between">
+                      <span className="text-sm font-semibold" style={{ color: selectedBanner.colors.text }}>
+                        {selectedBanner.name}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] ${getRarityBadgeStyle(selectedBanner.rarity, selectedBanner.id).text} ${getRarityBadgeStyle(selectedBanner.rarity, selectedBanner.id).border}`}
+                      >
+                        {selectedBanner.rarity}
+                      </span>
+                    </div>
+                  </div>
+
+                  <select
+                    id="profile-banner"
+                    value={formData.bannerId}
+                    onChange={(e) => setFormData({ ...formData, bannerId: e.target.value })}
+                    className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                  >
+                    {RATING_BANNERS.map((banner) => {
+                      const unlocked = isBannerUnlocked(banner, effectiveMaxRating, profile);
+                      return (
+                        <option key={banner.id} value={banner.id} disabled={!unlocked}>
+                          {unlocked ? banner.name : `${banner.name} - locked (${banner.minRating} rating)`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="mt-2 text-[11px] text-fg-muted">
+                    Special banners are only selectable when your account has been granted access.
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">

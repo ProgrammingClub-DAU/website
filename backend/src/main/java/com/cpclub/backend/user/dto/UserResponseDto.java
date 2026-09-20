@@ -40,6 +40,9 @@ import java.time.LocalDateTime;
  * @param role application authorization role
  * @param createdAt profile creation timestamp
  * @param updatedAt most recent persistence update timestamp
+ * @param maxRating highest Codeforces rating reached
+ * @param equippedBannerId currently selected leaderboard banner
+ * @param isPlatformCreator whether the member may use the creator VIP banner
  */
 public record UserResponseDto(
         Long id,
@@ -67,7 +70,10 @@ public record UserResponseDto(
         boolean profileComplete,
         Role role,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer maxRating,
+        String equippedBannerId,
+        boolean isPlatformCreator
 ) {
     /**
      * Maps the stable, public fields of a user entity into its API representation.
@@ -96,7 +102,10 @@ public record UserResponseDto(
                 isProfileComplete(user),
                 user.getRole(),
                 user.getCreatedAt(),
-                user.getUpdatedAt()
+                user.getUpdatedAt(),
+                user.getMaxRating(),
+                user.getEquippedBannerId(),
+                user.isPlatformCreator()
         );
     }
 

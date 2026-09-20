@@ -102,6 +102,8 @@ export interface Profile {
   /** Name, Codeforces handle, phone number and year all filled in. */
   profileComplete: boolean;
   maxRating: number | null;
+  equippedBannerId: string;
+  isPlatformCreator: boolean;
   platformStats: PlatformStats[];
   ratingHistory: RatingHistoryEntry[];
   activityData: ActivityDay[];

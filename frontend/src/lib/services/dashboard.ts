@@ -37,6 +37,9 @@ interface UserProfileResponse {
   batchYear?: number | null;
   academicYear?: Profile["academicYear"];
   profileComplete?: boolean;
+  maxRating?: number | null;
+  equippedBannerId?: string | null;
+  isPlatformCreator?: boolean;
 }
 
 export interface ProfileUpdateRequest {
@@ -73,7 +76,9 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     batchYear: user.batchYear ?? null,
     academicYear: user.academicYear ?? null,
     profileComplete: user.profileComplete ?? false,
-    maxRating: user.rating,
+    maxRating: user.maxRating ?? user.rating,
+    equippedBannerId: user.equippedBannerId ?? "rookie",
+    isPlatformCreator: user.isPlatformCreator ?? false,
     platformStats: [], // Phase 2
     ratingHistory: [], // Live fetch
     activityData: [], // Phase 2
