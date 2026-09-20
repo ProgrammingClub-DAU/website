@@ -25,7 +25,10 @@ export default async function MembersPage() {
   try {
     [team, creators] = await Promise.all([
       dashboardService.getTeam(),
-      dashboardService.getPlatformCreators(),
+      dashboardService.getPlatformCreators().catch((err) => {
+        console.error("Failed to load platform creators:", err);
+        return [];
+      }),
     ]);
   } catch (error) {
     console.error("Members page: could not load the committee:", error);
