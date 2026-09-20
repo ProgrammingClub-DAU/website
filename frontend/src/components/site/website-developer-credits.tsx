@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Globe, Shield } from "lucide-react";
+import { ArrowUpRight, Globe, Sparkles } from "lucide-react";
 
 import { GitHubMark } from "@/components/site/github-mark";
 import { PlatformGlyph } from "@/components/site/platform-glyph";
@@ -20,12 +20,12 @@ function getInitials(name: string): string {
 
 /** Pre-computed subtle avatar gradient combinations */
 const AVATAR_GRADIENTS = [
-  "from-indigo-600 via-purple-600 to-pink-500",
-  "from-cyan-500 via-blue-600 to-indigo-700",
-  "from-emerald-500 via-teal-600 to-cyan-700",
-  "from-amber-500 via-orange-600 to-rose-600",
-  "from-fuchsia-600 via-purple-600 to-blue-600",
-  "from-blue-600 via-indigo-600 to-violet-700",
+  "from-rose-500 via-purple-600 to-indigo-600",
+  "from-indigo-500 via-blue-600 to-cyan-500",
+  "from-violet-600 via-fuchsia-600 to-rose-500",
+  "from-cyan-400 via-blue-600 to-indigo-700",
+  "from-amber-500 via-rose-600 to-purple-600",
+  "from-emerald-400 via-teal-600 to-indigo-700",
 ];
 
 /** Hardcoded creator emails list as specified */
@@ -48,7 +48,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
       {/* ── Section Header (matching Core Team style) ── */}
       <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+          <div className="flex size-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.2)]">
             <Globe className="size-4" />
           </div>
           <div>
@@ -58,13 +58,13 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
           </div>
         </div>
 
-        <div className="hidden sm:block h-px flex-1 mx-6 bg-gradient-to-r from-white/15 to-transparent" />
+        <div className="hidden sm:block h-px flex-1 mx-6 bg-gradient-to-r from-rose-500/20 via-white/15 to-transparent" />
 
         <a
           href="https://github.com/ProgrammingClub-DAU/website"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-white/80 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-white/80 transition-all duration-200 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-white"
         >
           <GitHubMark className="size-4" />
           <span>View on GitHub</span>
@@ -72,8 +72,8 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
         </a>
       </div>
 
-      {/* ── Developer Cards Grid (Matching MemberCard style) ── */}
-      <div className="flex flex-wrap justify-center gap-6">
+      {/* ── Developer Cards Grid: 3 cards per row (6 cards across 2 rows) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
@@ -103,48 +103,53 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
               key={contributor.name}
               className={`
                 group relative flex flex-col items-center
-                rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl
-                p-4 sm:p-5 pb-5 min-h-[250px]
-                w-full sm:w-[calc(50%-14px)] lg:w-[calc(25%-18px)]
+                rounded-2xl border border-white/[0.1] bg-white/[0.04] backdrop-blur-xl
+                p-5 pb-5 min-h-[260px] w-full
                 transition-all duration-300 cursor-pointer
-                hover:-translate-y-1.5 hover:border-rose-500/30 hover:bg-white/[0.07]
-                hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.7)]
+                hover:-translate-y-1.5 hover:border-rose-500/40 hover:bg-white/[0.07]
+                hover:shadow-[0_20px_40px_-10px_rgba(244,63,94,0.25)]
               `}
             >
-              {/* Subtle top edge highlight on hover */}
+              {/* Top gradient highlight on hover */}
               <div
                 aria-hidden="true"
-                className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-rose-500/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-rose-500/50 via-purple-500/50 to-indigo-500/50 opacity-40 transition-opacity duration-300 group-hover:opacity-100"
               />
 
-              {/* ── Centered Avatar (104px) ── */}
+              {/* ── Centered Avatar (104px) with Subtle VIP Badge Overlay ── */}
               <div className="mt-1 flex flex-col items-center gap-3 flex-1 w-full">
-                <div
-                  className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-rose-500/30 shadow-md"
-                  style={{ width: "104px", height: "104px" }}
-                >
-                  <div className="size-full overflow-hidden rounded-full bg-[#111318]">
-                    {matchedCreator?.avatarUrl ? (
-                      <Image
-                        src={matchedCreator.avatarUrl}
-                        alt={displayName}
-                        width={104}
-                        height={104}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
-                      >
-                        {getInitials(displayName)}
-                      </div>
-                    )}
+                <div className="relative shrink-0">
+                  <div
+                    className="relative shrink-0 overflow-hidden rounded-full p-[2.5px] bg-gradient-to-br from-rose-500/50 via-purple-500/40 to-indigo-500/50 transition-all duration-300 group-hover:scale-105 group-hover:from-rose-500 group-hover:to-indigo-500 shadow-md"
+                    style={{ width: "104px", height: "104px" }}
+                  >
+                    <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+                      {matchedCreator?.avatarUrl ? (
+                        <Image
+                          src={matchedCreator.avatarUrl}
+                          alt={displayName}
+                          width={104}
+                          height={104}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
+                        >
+                          {getInitials(displayName)}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {/* Subtle VIP Creator Sparkle Icon */}
+                  <span className="absolute -top-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-[#111318]">
+                    <Sparkles className="size-3" />
+                  </span>
                 </div>
 
                 {/* Name */}
                 <div className="text-center px-1">
-                  <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/90 transition-colors group-hover:text-white leading-tight line-clamp-2">
+                  <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/95 transition-colors group-hover:text-rose-200 leading-tight line-clamp-2">
                     {profileHref ? (
                       <Link href={profileHref} className="after:absolute after:inset-0">
                         {displayName}
@@ -168,8 +173,8 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         rel="noopener noreferrer"
                         aria-label={`${displayName} on ${link.label}`}
                         title={link.label}
-                        className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5
-                          text-white/50 transition-all duration-200 hover:scale-110 hover:border-white/25 hover:text-white hover:bg-white/10"
+                        className="inline-flex size-7.5 items-center justify-center rounded-lg border border-white/10 bg-white/5
+                          text-white/60 transition-all duration-200 hover:scale-110 hover:border-rose-400/50 hover:text-white hover:bg-rose-500/20"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <PlatformGlyph platform={link.platform} className="size-3.5" />
@@ -189,5 +194,6 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
     </section>
   );
 }
+
 
 
