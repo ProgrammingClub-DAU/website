@@ -30,6 +30,8 @@ interface LeaderboardRow {
   rankBannerId?: string | null;
   activeBannerId?: string;
   maxRating?: number | null;
+  isPlatformCreator?: boolean;
+  platformCreator?: boolean;
 }
 
 interface PagedLeaderboardResponse {
@@ -71,6 +73,7 @@ function toEntry(row: LeaderboardRow): LeaderboardEntry {
     maxRating: row.maxRating ?? row.rating,
     contestHistory: pseudoHistory,
     ratingChange: (row.userId % 3 === 0 ? -1 : 1) * (12 + (row.userId % 28)),
+    isPlatformCreator: row.isPlatformCreator ?? row.platformCreator ?? false,
   };
 }
 
