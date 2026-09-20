@@ -28,6 +28,16 @@ const AVATAR_GRADIENTS = [
   "from-purple-600 via-violet-700 to-indigo-800",
 ];
 
+/** Hardcoded creator emails list as specified */
+export const CREATOR_EMAILS = [
+  "202401152@dau.ac.in",
+  "202401474@dau.ac.in",
+  "202401226@dau.ac.in",
+  "202401041@dau.ac.in",
+  "202401178@dau.ac.in",
+  "202403019@dau.ac.in",
+];
+
 interface WebsiteDeveloperCreditsProps {
   creators?: PublicMember[];
 }
@@ -73,13 +83,15 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
+          // Match by name or index from backend creators array
           const matchedCreator = creators.find(
             (c) =>
               c.name.toLowerCase().trim().includes(contributor.name.toLowerCase().trim()) ||
               contributor.name.toLowerCase().trim().includes(c.name.toLowerCase().trim()),
-          );
+          ) ?? creators[index];
 
           const profileHref = matchedCreator?.id ? `/profile/${matchedCreator.id}` : undefined;
+          const displayName = matchedCreator?.name || contributor.name;
 
           const PLATFORMS = [
             { platform: "codeforces" as const, value: matchedCreator?.codeforcesHandle, label: "Codeforces" },
@@ -95,7 +107,9 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
           return (
             <div
               key={contributor.name}
-              className="group relative flex flex-col gap-4 bg-surface/60 p-6 transition-all duration-200 hover:bg-surface/90 first:rounded-tl-[11px] last:rounded-br-[11px]"
+              className={`group relative flex flex-col gap-4 bg-surface/60 p-6 transition-all duration-200 hover:bg-surface/90 first:rounded-tl-[11px] last:rounded-br-[11px] ${
+                profileHref ? "cursor-pointer hover:border-indigo-500/30" : ""
+              }`}
             >
               {/* Top row: avatar + name + badge */}
               <div className="flex items-center gap-4">
@@ -107,7 +121,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                   {matchedCreator?.avatarUrl ? (
                     <Image
                       src={matchedCreator.avatarUrl}
-                      alt={contributor.name}
+                      alt={displayName}
                       width={64}
                       height={64}
                       className="size-full rounded-full object-cover"
@@ -116,7 +130,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                     <div
                       className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-lg text-white`}
                     >
-                      {getInitials(contributor.name)}
+                      {getInitials(displayName)}
                     </div>
                   )}
                 </div>
@@ -124,17 +138,23 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                 {/* Name + role tag */}
                 <div className="min-w-0 flex-1">
                   <h3 className="font-heading text-base font-bold tracking-tight text-foreground leading-tight truncate group-hover:text-indigo-300 transition-colors duration-200">
-                    {contributor.name}
+                    {profileHref ? (
+                      <Link href={profileHref} className="after:absolute after:inset-0">
+                        {displayName}
+                      </Link>
+                    ) : (
+                      displayName
+                    )}
                   </h3>
                   <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-indigo-400">
                     <span className="size-1 rounded-full bg-indigo-400 shrink-0" aria-hidden="true" />
-                    Website Architect
+                    {contributor.role || "Website Architect"}
                   </span>
                 </div>
               </div>
 
               {/* Bottom row: platform links + profile CTA */}
-              <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
+              <div className="relative z-10 flex items-center justify-between border-t border-white/[0.06] pt-4">
                 {/* Platform icon links */}
                 <div className="flex items-center gap-2">
                   {links.length > 0 ? (
@@ -144,8 +164,9 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         href={link.href!}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label={`${contributor.name} on ${link.label}`}
+                        aria-label={`${displayName} on ${link.label}`}
                         title={link.label}
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-all duration-200 hover:scale-110 hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-300"
                       >
                         <PlatformGlyph platform={link.platform} className="size-3.5" />
