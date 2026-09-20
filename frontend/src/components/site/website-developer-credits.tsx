@@ -2,9 +2,11 @@ import {
   ExternalLink,
   Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 
 import { GitHubMark } from "@/components/site/github-mark";
 import { CONTRIBUTOR_PROFILES } from "@/lib/content/members";
+import type { PublicMember } from "@/types/api";
 
 function getInitials(name: string): string {
   return name
@@ -26,7 +28,7 @@ const AVATAR_GRADIENTS = [
   "from-blue-600 via-indigo-600 to-violet-700",
 ];
 
-export function WebsiteDeveloperCredits() {
+export function WebsiteDeveloperCredits({ creators }: { creators: PublicMember[] }) {
   return (
     <section id="credits" className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
       {/* Header section */}
@@ -65,6 +67,7 @@ export function WebsiteDeveloperCredits() {
       <div className="relative z-10 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 pb-4">
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
+          const liveCreator = creators?.find((c) => c.name.toLowerCase() === contributor.name.toLowerCase());
 
           return (
             <div
@@ -100,11 +103,21 @@ export function WebsiteDeveloperCredits() {
                     style={{ width: "80px", height: "80px" }}
                   >
                     <div className="size-full overflow-hidden rounded-full bg-[#111318]">
-                      <div
-                        className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
-                      >
-                        {getInitials(contributor.name)}
-                      </div>
+                      {liveCreator?.avatarUrl ? (
+                        <Image
+                          src={liveCreator.avatarUrl}
+                          alt={contributor.name}
+                          width={80}
+                          height={80}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
+                        >
+                          {getInitials(contributor.name)}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -118,7 +131,7 @@ export function WebsiteDeveloperCredits() {
                     <div className="mt-2 flex items-center justify-center">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/[0.08] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-rose-200/95 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)] backdrop-blur-md transition-colors group-hover:border-rose-500/45 group-hover:bg-rose-500/[0.15]">
                         <span className="size-1 rounded-full bg-rose-400 opacity-90 ring-2 ring-rose-400/30 shrink-0" aria-hidden="true" />
-                        <span>Core Contributor</span>
+                        <span>{contributor.badge || "Core Contributor"}</span>
                       </span>
                     </div>
                   </div>
