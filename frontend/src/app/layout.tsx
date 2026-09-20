@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
 import { FooterSlot } from "@/components/site/footer-slot";
+import { CommandPalette } from "@/components/site/command-palette";
 import { site } from "@/lib/site";
 import { siteUrl } from "@/lib/site-url";
 
@@ -109,6 +110,7 @@ export default function RootLayout({
             {children}
           </main>
           <FooterSlot />
+          <CommandPalette />
         </ThemeProvider>
       </body>
     </html>
