@@ -48,4 +48,14 @@ public interface LeaderboardEntryProjection {
 
     /** Lower-case to match the native query's alias, as getClubrole does. */
     String getAvatarurl();
+
+    /** Member's currently equipped rating banner. */
+    default String getEquippedbannerid() {
+        return "rookie";
+    }
+
+    /** Highest rating attained. */
+    default Integer getMaxrating() {
+        return getRating();
+    }
 }

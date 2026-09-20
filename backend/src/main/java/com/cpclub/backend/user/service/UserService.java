@@ -21,6 +21,7 @@ import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.codeforces.repository.CfSolveRepository;
 import com.cpclub.backend.stats.repository.ContestParticipationRepository;
 import com.cpclub.backend.common.model.Platform;
+import com.cpclub.backend.leaderboard.dto.BannerConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -469,5 +470,39 @@ public class UserService {
             throw new BadRequestException(
                     "At least one administrator must remain. Promote another member first.");
         }
+    }
+
+    /**
+     * Equips a rating banner for a member, enforcing server-side rating threshold validation.
+     *
+     * @param userId ID of member equipping banner
+     * @param bannerId candidate rating banner
+     * @return equipped banner ID
+     */
+    @Transactional
+    public String equipBanner(Long userId, String bannerId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (!BannerConfig.isValidRatingBanner(bannerId)) {
+            throw new BadRequestException("Invalid banner ID: " + bannerId);
+        }
+
+        BannerConfig banner = BannerConfig.getBanner(bannerId);
+        int effectiveMaxRating = Math.max(
+                user.getMaxRating() != null ? user.getMaxRating() : 0,
+                user.getRating() != null ? user.getRating() : 0
+        );
+
+        if (effectiveMaxRating < banner.minRating()) {
+            throw new BadRequestException(String.format(
+                    "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
+                    banner.name(), banner.minRating(), effectiveMaxRating
+            ));
+        }
+
+        user.setEquippedBannerId(banner.id());
+        userRepository.save(user);
+        return banner.id();
     }
 }

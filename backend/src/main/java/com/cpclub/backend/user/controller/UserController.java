@@ -22,10 +22,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.cpclub.backend.user.dto.EquipBannerRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for managing student profiles and retrieving member lists.
@@ -210,6 +212,25 @@ public class UserController {
         UserResponseDto currentUser = userService.getUserByEmail(userDetails.getUsername());
         UserResponseDto updatedUser = userService.updateProfile(currentUser.id(), request);
         return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));
+    }
+
+    /**
+     * Equips a rating banner for the authenticated member after server-side validation.
+     *
+     * @param userDetails injected authentication details
+     * @param request candidate banner ID
+     * @return equipped banner payload
+     */
+    @PutMapping("/banner")
+    @Operation(summary = "Equip rating banner for current user (authenticated)")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, String>>> equipBanner(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody EquipBannerRequest request
+    ) {
+        UserResponseDto currentUser = userService.getUserByEmail(userDetails.getUsername());
+        String equippedBanner = userService.equipBanner(currentUser.id(), request.bannerId());
+        return ResponseEntity.ok(ApiResponse.success(Map.of("equippedBannerId", equippedBanner), "Banner equipped successfully"));
     }
 
     /**
