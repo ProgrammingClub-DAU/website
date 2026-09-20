@@ -73,6 +73,7 @@ public record UserResponseDto(
         LocalDateTime updatedAt,
         Integer maxRating,
         String equippedBannerId,
+        @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
         boolean isPlatformCreator
 ) {
     /**
