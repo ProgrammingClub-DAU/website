@@ -41,7 +41,7 @@ export default async function LeaderboardPage() {
       />
 
       {/* Atmospheric Aurora Glow Blobs */}
-      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-purple-600/10 via-cyan-500/10 to-transparent blur-[120px] rounded-full" />
+      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-cyan-500/10 via-slate-500/5 to-transparent blur-[120px] rounded-full" />
 
       <Section className="relative z-10 pt-10 md:pt-14 pb-8">
         <LeaderboardDashboard initialEntries={leaderboard} />

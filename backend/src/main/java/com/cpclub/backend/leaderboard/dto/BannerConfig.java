@@ -27,6 +27,7 @@ public record BannerConfig(
         map.put("master", new BannerConfig("master", "Master", 2100, "Legendary", "#5a3210,#f0a040", "flames"));
         map.put("club-founder", new BannerConfig("club-founder", "Club Founder", 0, "Special", "#401828,#e04888", "shimmer"));
         map.put("contest-winner", new BannerConfig("contest-winner", "Contest Winner", 0, "Special", "#302040,#d09030", "sparks"));
+        map.put("creator-vip", new BannerConfig("creator-vip", "Website Architect (VIP)", 0, "Exclusive", "#2e0508,#ff1e42", "flames"));
         RATING_BANNERS = Collections.unmodifiableMap(map);
     }
 

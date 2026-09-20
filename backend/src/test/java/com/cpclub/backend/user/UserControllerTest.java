@@ -227,7 +227,7 @@ class UserControllerTest {
      * Builds a {@link UserResponseDto} carrying only the fields these tests assert
      * on, leaving the Phase 2 profile fields null.
      *
-     * <p>The record has eighteen components. Constructing it inline made every
+     * <p>The record has twenty-three components. Constructing it inline made every
      * test that touched it a wall of nulls, and adding a field meant editing five
      * call sites that did not care about it.</p>
      */
@@ -246,7 +246,10 @@ class UserControllerTest {
                 null,               // academicYear
                 false,              // profileComplete
                 role,
-                LocalDateTime.now(), LocalDateTime.now()
+                LocalDateTime.now(), LocalDateTime.now(),
+                null,               // maxRating
+                "rookie",           // equippedBannerId
+                false               // isPlatformCreator
         );
     }
     @Test

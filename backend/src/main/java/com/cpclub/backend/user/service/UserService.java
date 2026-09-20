@@ -472,11 +472,15 @@ public class UserService {
         }
     }
 
+    private boolean isWebsiteCreator(User user) {
+        return user.isPlatformCreator();
+    }
+
     /**
-     * Equips a rating banner for a member, enforcing server-side rating threshold validation.
+     * Equips a rating or exclusive banner for a user.
      *
-     * @param userId ID of member equipping banner
-     * @param bannerId candidate rating banner
+     * @param userId user requesting the banner
+     * @param bannerId candidate banner ID
      * @return equipped banner ID
      */
     @Transactional
@@ -489,16 +493,23 @@ public class UserService {
         }
 
         BannerConfig banner = BannerConfig.getBanner(bannerId);
-        int effectiveMaxRating = Math.max(
-                user.getMaxRating() != null ? user.getMaxRating() : 0,
-                user.getRating() != null ? user.getRating() : 0
-        );
 
-        if (effectiveMaxRating < banner.minRating()) {
-            throw new BadRequestException(String.format(
-                    "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
-                    banner.name(), banner.minRating(), effectiveMaxRating
-            ));
+        if ("creator-vip".equalsIgnoreCase(bannerId)) {
+            if (!isWebsiteCreator(user)) {
+                throw new BadRequestException("The Red VIP banner is exclusively reserved for the 6 platform creators.");
+            }
+        } else {
+            int effectiveMaxRating = Math.max(
+                    user.getMaxRating() != null ? user.getMaxRating() : 0,
+                    user.getRating() != null ? user.getRating() : 0
+            );
+
+            if (effectiveMaxRating < banner.minRating()) {
+                throw new BadRequestException(String.format(
+                        "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
+                        banner.name(), banner.minRating(), effectiveMaxRating
+                ));
+            }
         }
 
         user.setEquippedBannerId(banner.id());

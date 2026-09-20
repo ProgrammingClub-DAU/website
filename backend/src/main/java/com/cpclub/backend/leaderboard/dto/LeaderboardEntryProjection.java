@@ -50,12 +50,12 @@ public interface LeaderboardEntryProjection {
     String getAvatarurl();
 
     /** Member's currently equipped rating banner. */
-    default String getEquippedbannerid() {
-        return "rookie";
-    }
+    String getEquippedbannerid();
 
     /** Highest rating attained. */
-    default Integer getMaxrating() {
-        return getRating();
-    }
+    Integer getMaxrating();
+
+    /** Is the member a platform creator? */
+    Boolean getIsplatformcreator();
 }
+

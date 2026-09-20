@@ -225,6 +225,24 @@ export const RATING_BANNERS: BannerConfig[] = [
       scrim: "linear-gradient(90deg, rgba(16, 9, 23, 0.92) 0%, rgba(16, 9, 23, 0.6) 60%, transparent 100%)",
     },
   },
+  {
+    id: "creator-vip",
+    name: "Website Architect (VIP)",
+    minRating: 0,
+    rarity: "Exclusive",
+    animation: "flames",
+    iconName: "crown",
+    description: "Ultra-exclusive Red VIP Banner reserved for the 6 engineers who designed and built this website platform.",
+    colors: {
+      primary: "#2e0508",
+      accent: "#ff1e42",
+      border: "#ff2e51",
+      glow: "rgba(255, 30, 66, 0.55)",
+      text: "#fff0f2",
+      gradient: "linear-gradient(135deg, #1f0305 0%, #460910 50%, #150204 100%)",
+      scrim: "linear-gradient(90deg, rgba(20, 2, 4, 0.94) 0%, rgba(20, 2, 4, 0.65) 60%, transparent 100%)",
+    },
+  },
 ];
 
 // ── LAYER 3: LEETCODE TIER BANNERS ──
@@ -284,6 +302,13 @@ export const LC_BANNERS: BannerConfig[] = [
   },
 ];
 
+export function isWebsiteCreator(
+  member?: { isPlatformCreator?: boolean } | null
+): boolean {
+  if (!member) return false;
+  return !!member.isPlatformCreator;
+}
+
 export const ALL_BANNERS: Record<string, BannerConfig> = {
   ...RANK_BANNERS,
   ...Object.fromEntries(RATING_BANNERS.map((b) => [b.id, b])),
@@ -324,18 +349,33 @@ export function getActiveBannerForMember(
 
 export function isBannerUnlocked(
   banner: BannerConfig,
-  currentOrMaxRating: number | null | undefined
+  currentOrMaxRating: number | null | undefined,
+  member?: { isPlatformCreator?: boolean } | null
 ): boolean {
   if (banner.isRankBanner) return false; // Rank banners cannot be equipped manually
+  if (banner.id === "creator-vip") {
+    return isWebsiteCreator(member);
+  }
   const rating = currentOrMaxRating ?? 0;
   return rating >= banner.minRating;
 }
 
-export function getRarityBadgeStyle(rarity: BannerRarity): {
+export function getRarityBadgeStyle(
+  rarity: BannerRarity,
+  bannerId?: string
+): {
   bg: string;
   text: string;
   border: string;
 } {
+  if (bannerId === "creator-vip") {
+    return {
+      bg: "bg-rose-500/20",
+      text: "text-rose-300 font-black tracking-wide",
+      border: "border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.3)]",
+    };
+  }
+
   switch (rarity) {
     case "Exclusive":
       return {
@@ -376,3 +416,4 @@ export function getRarityBadgeStyle(rarity: BannerRarity): {
       };
   }
 }
+
