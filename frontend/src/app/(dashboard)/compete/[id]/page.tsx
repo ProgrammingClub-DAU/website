@@ -439,6 +439,7 @@ export default function MatchPage() {
         }
       } catch (err) {
         console.error("Failed to fetch match state", err);
+      }
       } finally {
         isPolling = false;
       }
