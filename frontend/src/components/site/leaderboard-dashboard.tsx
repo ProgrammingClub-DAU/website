@@ -32,8 +32,9 @@ interface LeaderboardDashboardProps {
 export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
   const [platform, setPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>("ALL");
-  // ── [DUMMY PREVIEW DATA]: change to initialEntries to use real data ──
-  const [entries, setEntries] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD_ENTRIES);
+  // ── [LIVE / DUMMY DATA TOGGLE]: Switch between `initialEntries` and `MOCK_LEADERBOARD_ENTRIES` ──
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
+  // const [entries, setEntries] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD_ENTRIES);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
@@ -43,11 +44,10 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   useEffect(() => {
     let ignore = false;
 
-    // ── [DUMMY RANKINGS PREVIEW MODE] ──
-    // To switch to LIVE BACKEND DATA: Uncomment the block below and comment out `setEntries(MOCK_LEADERBOARD_ENTRIES)`.
-    setEntries(MOCK_LEADERBOARD_ENTRIES);
+    // ── [DUMMY RANKINGS PREVIEW MODE] (Uncomment below to preview dummy rankings) ──
+    // setEntries(MOCK_LEADERBOARD_ENTRIES);
 
-    /*
+    // ── [LIVE BACKEND DATA] (Default) ──
     leaderboardService
       .getLeaderboard(platform, roleFilter)
       .then((data) => {
@@ -66,7 +66,6 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
           setLoading(false);
         }
       });
-    */
 
     return () => {
       ignore = true;
