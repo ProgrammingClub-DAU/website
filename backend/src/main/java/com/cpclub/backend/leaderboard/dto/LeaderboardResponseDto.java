@@ -19,6 +19,7 @@ public record LeaderboardResponseDto(
         String rankBannerId,
         String activeBannerId,
         Integer maxRating,
+        @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
         boolean isPlatformCreator
 ) {
     /** Backwards-compatible constructor for existing callers and tests. */
