@@ -19,10 +19,14 @@ export const metadata: Metadata = {
 
 export default async function MembersPage() {
   let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
+  let creators: Awaited<ReturnType<typeof dashboardService.getPlatformCreators>> = [];
   let unreachable = false;
 
   try {
-    team = await dashboardService.getTeam();
+    [team, creators] = await Promise.all([
+      dashboardService.getTeam(),
+      dashboardService.getPlatformCreators(),
+    ]);
   } catch (error) {
     console.error("Members page: could not load the committee:", error);
     unreachable = true;
@@ -96,9 +100,8 @@ export default async function MembersPage() {
 
       {/* Website Developer Credits Showcase: Who Built This Website */}
       <Section className="!max-w-[94rem] pb-24">
-        <WebsiteDeveloperCredits />
+        <WebsiteDeveloperCredits creators={creators} />
       </Section>
     </div>
   );
 }
-

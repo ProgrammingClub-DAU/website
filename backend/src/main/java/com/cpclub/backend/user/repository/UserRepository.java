@@ -80,6 +80,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     List<User> findByCodeforcesHandleIsNotNull();
 
+    /** Returns the registered builders of this website for the public credits section. */
+    List<User> findByIsPlatformCreatorTrueOrderByNameAsc();
+
     /**
      * Returns members eligible for LeetCode synchronization.
      *

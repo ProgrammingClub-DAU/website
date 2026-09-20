@@ -219,6 +219,14 @@ public class UserService {
                 .toList();
     }
 
+    /** Public, email-safe profiles for the website credits section. */
+    @Transactional(readOnly = true)
+    public List<PublicUserResponseDto> getPlatformCreators(boolean viewerIsAdmin) {
+        return userRepository.findByIsPlatformCreatorTrueOrderByNameAsc().stream()
+                .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
+                .toList();
+    }
+
     /**
      * Updates the Codeforces handle of a user.
      * Ensures handle is not registered to another user to maintain unique mapping.

@@ -1,10 +1,10 @@
 import {
   ExternalLink,
-  Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 
 import { GitHubMark } from "@/components/site/github-mark";
-import { CONTRIBUTOR_PROFILES } from "@/lib/content/members";
+import type { PublicMember } from "@/types/api";
 
 function getInitials(name: string): string {
   return name
@@ -26,7 +26,7 @@ const AVATAR_GRADIENTS = [
   "from-blue-600 via-indigo-600 to-violet-700",
 ];
 
-export function WebsiteDeveloperCredits() {
+export function WebsiteDeveloperCredits({ creators }: { creators: PublicMember[] }) {
   return (
     <section id="credits" className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
       {/* Header section */}
@@ -63,12 +63,12 @@ export function WebsiteDeveloperCredits() {
 
       {/* Developers Grid — 3-3 division spanning full width */}
       <div className="relative z-10 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 pb-4">
-        {CONTRIBUTOR_PROFILES.map((contributor, index) => {
+        {creators.map((creator, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
           return (
             <div
-              key={contributor.name}
+              key={creator.id}
               className="group relative flex flex-col items-center w-full focus:outline-none"
               style={{
                 animation: "subtle-float 5s ease-in-out infinite",
@@ -100,25 +100,35 @@ export function WebsiteDeveloperCredits() {
                     style={{ width: "80px", height: "80px" }}
                   >
                     <div className="size-full overflow-hidden rounded-full bg-[#111318]">
-                      <div
-                        className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
-                      >
-                        {getInitials(contributor.name)}
-                      </div>
+                      {creator.avatarUrl ? (
+                        <Image
+                          src={creator.avatarUrl}
+                          alt={creator.name}
+                          width={80}
+                          height={80}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white shadow-inner`}
+                        >
+                          {getInitials(creator.name)}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* ── Name ── */}
                   <div className="mt-4 text-center px-1">
                     <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white transition-colors group-hover:text-rose-100 leading-tight">
-                      {contributor.name}
+                      {creator.name}
                     </h3>
 
                     {/* ── Tag: Core Contributor for everyone ── */}
                     <div className="mt-2 flex items-center justify-center">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/[0.08] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-rose-200/95 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)] backdrop-blur-md transition-colors group-hover:border-rose-500/45 group-hover:bg-rose-500/[0.15]">
                         <span className="size-1 rounded-full bg-rose-400 opacity-90 ring-2 ring-rose-400/30 shrink-0" aria-hidden="true" />
-                        <span>Core Contributor</span>
+                        <span>Website Architect (VIP)</span>
                       </span>
                     </div>
                   </div>
@@ -127,10 +137,14 @@ export function WebsiteDeveloperCredits() {
             </div>
           );
         })}
+        {creators.length === 0 && (
+          <p className="col-span-full text-center text-sm text-white/60">
+            Website creator profiles will appear after their first sign-in.
+          </p>
+        )}
       </div>
     </section>
   );
 }
-
 
 
