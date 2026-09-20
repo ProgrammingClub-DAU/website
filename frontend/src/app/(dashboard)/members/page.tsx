@@ -19,17 +19,23 @@ export const metadata: Metadata = {
 
 export default async function MembersPage() {
   let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
+  let creators: Awaited<ReturnType<typeof dashboardService.getPlatformCreators>> = [];
   let unreachable = false;
 
   try {
-    team = await dashboardService.getTeam();
+    const [teamData, creatorsData] = await Promise.all([
+      dashboardService.getTeam(),
+      dashboardService.getPlatformCreators().catch(() => []),
+    ]);
+    team = teamData;
+    creators = creatorsData;
   } catch (error) {
     console.error("Members page: could not load the committee:", error);
     unreachable = true;
   }
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#090b10]">
+    <div className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
 
       {/* ── 3D Perspective Grid Floor ── */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[65vh] overflow-hidden">
@@ -96,7 +102,7 @@ export default async function MembersPage() {
 
       {/* Website Developer Credits Showcase: Who Built This Website */}
       <Section className="!max-w-[94rem] pb-24">
-        <WebsiteDeveloperCredits />
+        <WebsiteDeveloperCredits creators={creators} />
       </Section>
     </div>
   );

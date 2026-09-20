@@ -102,6 +102,14 @@ export const dashboardService = {
     return response.data.data ?? [];
   },
 
+  /** Public profiles of registered website creators */
+  getPlatformCreators: async (timeout: number = SSR_TIMEOUT_MS): Promise<PublicMember[]> => {
+    const response = await apiClient.get<ApiResponse<PublicMember[]>>("/api/users/platform-creators", {
+      timeout,
+    });
+    return response.data.data ?? [];
+  },
+
   // Profile (requires auth)
   // Backend reads user ID securely from JWT via /api/users/profile
   getProfile: async (): Promise<Profile> => {
