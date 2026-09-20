@@ -5,6 +5,7 @@ import com.cpclub.backend.codeforces.dto.CfSubmission;
 import com.cpclub.backend.codeforces.repository.CfProblemRepository;
 import com.cpclub.backend.compete.dto.MatchCreationDto;
 import com.cpclub.backend.compete.dto.MatchResponseDto;
+import com.cpclub.backend.compete.dto.SolveReportDto;
 import com.cpclub.backend.compete.entity.*;
 import com.cpclub.backend.compete.repository.MatchRepository;
 import lombok.RequiredArgsConstructor;
@@ -103,8 +104,8 @@ public class CompeteMatchService {
         }
         match.setTeams(teams);
 
-        // Bug #3: Filter solved AND *special problems (query already excludes *special via CfProblemRepository)
-        Set<String> solvedKeys = fetchSolvedProblemKeys(allHandles);
+        // Use frontend-provided solvedKeys instead of calling Codeforces API from the server
+        Set<String> solvedKeys = dto.getSolvedKeys() != null ? new HashSet<>(dto.getSolvedKeys()) : new HashSet<>();
 
         int problemCount = dto.getGridSize() * dto.getGridSize();
         List<com.cpclub.backend.codeforces.entity.CfProblem> pool =
@@ -275,6 +276,112 @@ public class CompeteMatchService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
         match.setDurationMinutes(durationMinutes);
         matchRepository.save(match);
+    }
+
+    /**
+     * Accepts a solve report from the frontend.
+     * The browser polls Codeforces directly and reports detected solves here.
+     * This eliminates backend Codeforces API calls during live gameplay.
+     */
+    @Transactional
+    public MatchResponseDto reportSolve(String matchId, SolveReportDto dto) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (match.getSolveLogs() == null) match.setSolveLogs(new ArrayList<>());
+
+        // Validate match is still active
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+        if (nowUtc.isAfter(match.getStartTime().plusMinutes(match.getDurationMinutes()))) {
+            return mapToDto(match); // Match ended, ignore solve
+        }
+
+        // Validate the handle belongs to a team in this match
+        Team team = match.getTeams().stream()
+            .filter(t -> t.getMembers().stream().anyMatch(m -> m.getHandle().equalsIgnoreCase(dto.getHandle())))
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Handle not in this match"));
+
+        // Validate the problem is on the active board
+        String solveKey = dto.getContestId() + "-" + dto.getIndex();
+        Problem matched = match.getProblems().stream()
+            .filter(p -> Boolean.TRUE.equals(p.getActive())
+                && p.getId().getContestId().equals(dto.getContestId())
+                && p.getId().getIndex().equals(dto.getIndex()))
+            .findFirst()
+            .orElse(null);
+
+        if (matched == null) return mapToDto(match); // Problem not on board or already inactive
+
+        // Validate submission timestamp is after match start
+        if (dto.getCreationTimeSeconds() != null) {
+            LocalDateTime subTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(dto.getCreationTimeSeconds()), ZoneOffset.UTC);
+            if (subTime.isBefore(match.getStartTime())) return mapToDto(match);
+        }
+
+        // Check for duplicate solve (idempotent)
+        boolean alreadySolved = match.getSolveLogs().stream()
+            .anyMatch(l -> l.getContestId().equals(dto.getContestId()) && l.getIndex().equals(dto.getIndex()));
+        if (alreadySolved) return mapToDto(match);
+
+        try {
+            SolveLog sl = new SolveLog();
+            sl.setHandle(dto.getHandle());
+            sl.setTeam(team.getColor());
+            sl.setTimestamp(dto.getCreationTimeSeconds() != null
+                ? LocalDateTime.ofInstant(Instant.ofEpochSecond(dto.getCreationTimeSeconds()), ZoneOffset.UTC)
+                : nowUtc);
+            sl.setContestId(dto.getContestId());
+            sl.setIndex(dto.getIndex());
+            sl.setMatch(match);
+            sl.setProblem(matched);
+            match.getSolveLogs().add(sl);
+
+            // Handle Replace mode
+            if (match.getMode() == MatchMode.replace) {
+                matched.setActive(false);
+
+                int increment = match.getReplaceIncrement() != null ? match.getReplaceIncrement() : 100;
+                int newTarget = Math.min(3500, (matched.getRating() != null ? matched.getRating() : 0) + increment);
+
+                // Use frontend-provided solvedKeys for replacement filtering
+                Set<String> solvedKeys = dto.getSolvedKeys() != null ? new HashSet<>(dto.getSolvedKeys()) : new HashSet<>();
+                List<com.cpclub.backend.codeforces.entity.CfProblem> pool =
+                    cfProblemRepository.findRandomProblemsByRatingRange(newTarget, newTarget, 20);
+                Set<String> existingKeys = match.getProblems().stream()
+                    .map(p -> p.getId().getContestId() + "-" + p.getId().getIndex())
+                    .collect(Collectors.toSet());
+
+                com.cpclub.backend.codeforces.entity.CfProblem replacement = pool.stream()
+                    .filter(p -> p.getContestId() != null &&
+                                 !existingKeys.contains(p.getContestId() + "-" + p.getProblemIndex()) &&
+                                 !solvedKeys.contains(p.getContestId() + "-" + p.getProblemIndex()))
+                    .findFirst()
+                    .orElseGet(() -> pool.stream()
+                        .filter(p -> p.getContestId() != null && !existingKeys.contains(p.getContestId() + "-" + p.getProblemIndex()))
+                        .findFirst().orElse(null));
+
+                if (replacement != null) {
+                    Problem newP = new Problem();
+                    newP.setId(new ProblemId(replacement.getContestId(), replacement.getProblemIndex(), matchId));
+                    newP.setMatch(match);
+                    newP.setName(replacement.getName());
+                    newP.setRating(replacement.getRating());
+                    newP.setPosition(matched.getPosition());
+                    newP.setActive(true);
+                    match.getProblems().add(newP);
+                } else {
+                    log.warn("No replacement found for position {}, reactivating original", matched.getPosition());
+                    matched.setActive(true);
+                    match.getSolveLogs().remove(sl);
+                }
+            }
+        } catch (DataIntegrityViolationException e) {
+            log.debug("Duplicate solve detected for {}/{} — skipping", dto.getContestId(), dto.getIndex());
+        }
+
+        matchRepository.save(match);
+        return mapToDto(match);
     }
 
     private MatchResponseDto mapToDto(Match match) {

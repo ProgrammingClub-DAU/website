@@ -23,6 +23,37 @@ export function MatchCreationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeoutMinutes, setTimeoutMinutes] = useState("0:00");
   const [showRatings, setShowRatings] = useState<boolean>(true);
+  const [fetchProgress, setFetchProgress] = useState("");
+
+  // Fetch solved problem keys directly from Codeforces via the browser
+  // This distributes API load across user IPs instead of hitting Render's single IP
+  async function fetchSolvedKeys(handles: string[]): Promise<string[]> {
+    const solvedSet = new Set<string>();
+    for (let i = 0; i < handles.length; i++) {
+      const handle = handles[i];
+      setFetchProgress(`Fetching solved problems for ${handle} (${i + 1}/${handles.length})...`);
+      try {
+        const res = await axios.get(
+          `https://codeforces.com/api/user.status?handle=${handle}&from=1&count=5000`
+        );
+        if (res.data.status === "OK") {
+          for (const sub of res.data.result) {
+            if (sub.verdict === "OK" && sub.problem?.contestId) {
+              solvedSet.add(`${sub.problem.contestId}-${sub.problem.index}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch submissions for ${handle}`, err);
+      }
+      // Small delay between users to be polite to CF API
+      if (i < handles.length - 1) {
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+    setFetchProgress("");
+    return Array.from(solvedSet);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,29 +166,36 @@ export function MatchCreationForm() {
       return;
     }
 
-    const matchData = {
-      startTime: startTime.toISOString(),
-      durationMinutes,
-      minRating,
-      maxRating,
-      mode: selectedMode,
-      gridSize: selectedGridSize,
-      replaceIncrement: selectedMode === "replace" ? replaceIncrement : undefined,
-      teams: teams,
-      timeoutMinutes: timeoutMinutesValue,
-      problems: [],
-      solveLog: [],
-      showRatings,
-    };
-
     setIsSubmitting(true);
     try {
-      const res = await apiClient.post("/api/compete/matches", matchData);
+      // Fetch solved problem keys from Codeforces directly via the browser
+      const allHandles = teams.flatMap((team) => team.members.map((h) => h.trim()));
+      const solvedKeys = await fetchSolvedKeys(allHandles);
+
+      const matchData = {
+        startTime: startTime.toISOString(),
+        durationMinutes,
+        minRating,
+        maxRating,
+        mode: selectedMode,
+        gridSize: selectedGridSize,
+        replaceIncrement: selectedMode === "replace" ? replaceIncrement : undefined,
+        teams: teams,
+        timeoutMinutes: timeoutMinutesValue,
+        problems: [],
+        solveLog: [],
+        showRatings,
+        solvedKeys,
+      };
+
+      setFetchProgress("Creating match...");
+      const res = await apiClient.post("/api/compete/matches", matchData, { timeout: 60000 });
       const created = res.data;
       const newMatchId = created?.id ?? created?.match?.id;
       if (!newMatchId) {
         alert("Could not create match, no id returned");
         setIsSubmitting(false);
+        setFetchProgress("");
         return;
       }
       router.push(`/compete/${newMatchId}`);
@@ -165,6 +203,7 @@ export function MatchCreationForm() {
       console.error("Error creating match", err);
       alert("Error creating match: " + (axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : (err as Error).message));
       setIsSubmitting(false);
+      setFetchProgress("");
     }
   };
 
@@ -320,6 +359,9 @@ export function MatchCreationForm() {
           </div>
 
           <div className="pt-4 mt-4 border-t border-white/10">
+            {fetchProgress && (
+              <p className="text-sm text-indigo-400 mb-3 text-center animate-pulse">{fetchProgress}</p>
+            )}
             <button
               type="submit"
               disabled={isSubmitting}

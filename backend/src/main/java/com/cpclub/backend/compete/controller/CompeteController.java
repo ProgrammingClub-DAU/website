@@ -1,6 +1,7 @@
 package com.cpclub.backend.compete.controller;
 
 import com.cpclub.backend.compete.dto.MatchCreationDto;
+import com.cpclub.backend.compete.dto.SolveReportDto;
 import com.cpclub.backend.compete.service.CompeteMatchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,5 +44,11 @@ public class CompeteController {
         competeMatchService.setMatchDuration(matchId, duration);
         return ResponseEntity.ok(Map.of("durationMinutes", duration));
     }
-}
 
+    // Frontend-driven solve reporting: browser polls Codeforces directly and reports solves here
+    @PostMapping("/{matchId}/report-solve")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> reportSolve(@PathVariable String matchId, @RequestBody SolveReportDto dto) {
+        return ResponseEntity.ok(competeMatchService.reportSolve(matchId, dto));
+    }
+}
