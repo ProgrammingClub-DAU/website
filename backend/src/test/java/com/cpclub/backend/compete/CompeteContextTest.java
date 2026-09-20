@@ -66,6 +66,7 @@ class CompeteContextTest {
         dto.setGridSize(3); // 3x3 = 9 problems
         dto.setShowRatings(true);
         dto.setTeams(List.of(team1, team2));
+        dto.setSolvedKeys(List.of()); // Frontend now provides pre-computed solved keys
 
         MatchResponseDto res = competeMatchService.createMatch(dto);
 

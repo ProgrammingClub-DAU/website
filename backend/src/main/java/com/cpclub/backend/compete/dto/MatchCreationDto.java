@@ -17,6 +17,7 @@ public class MatchCreationDto {
     private List<TeamDto> teams;
     private Integer timeoutMinutes;
     private Boolean showRatings;
+    private List<String> solvedKeys;  // Pre-computed by frontend: ["1234-A", "567-B"]
 
     @Data
     public static class TeamDto {
