@@ -109,7 +109,7 @@ public class SecurityConfig {
                         // profile and the committee list are all open. "team" is matched
                         // before the authenticated() catch-all below, and cannot collide
                         // with the numeric {id} pattern beside it.
-                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/{id:[0-9]+}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/platform-creators", "/api/users/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()

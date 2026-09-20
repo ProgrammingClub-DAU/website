@@ -184,6 +184,12 @@ public class AuthService {
             }
         }
 
+        boolean shouldBeCreator = PlatformCreatorAccounts.contains(user.getEmail());
+        if (user.isPlatformCreator() != shouldBeCreator) {
+            user.setPlatformCreator(shouldBeCreator);
+            changed = true;
+        }
+
         return changed ? userRepository.save(user) : user;
     }
 
