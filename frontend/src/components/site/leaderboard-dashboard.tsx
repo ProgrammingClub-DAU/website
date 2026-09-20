@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { leaderboardService } from "@/lib/services/leaderboard";
-import { MOCK_LEADERBOARD_ENTRIES } from "@/lib/mock-leaderboard";
+
 import { PodiumSection } from "./leaderboard/podium-section";
 import { RankingRow } from "./leaderboard/ranking-row";
 import { BannerLockerDrawer } from "./leaderboard/banner-locker-drawer";
