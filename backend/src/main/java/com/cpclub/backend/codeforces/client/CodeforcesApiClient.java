@@ -107,7 +107,7 @@ public class CodeforcesApiClient {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ProblemsetResult {
         private List<CfProblem> problems;
-        private List<JsonNode> problemStatistics;
+        private Object problemStatistics;
     }
 
     public ProblemsetResult problemsetProblems() {

@@ -5,7 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Confetti from "react-confetti";
-import axios from "axios";
+import axios from 'axios';
+import apiClient from '@/lib/axios';
 import type { Match, ProblemCell, Team } from "@/components/compete/types";
 
 type SolveLog = {
@@ -210,12 +211,12 @@ export default function MatchPage() {
 
     const fetchMatch = async () => {
       try {
-        const res = await axios.get(`/api/compete/matches/${id}`);
+        const res = await apiClient.get(`/api/compete/matches/${id}`);
         const matchObj = res.data;
         setMatch(matchObj);
 
         try {
-          const solvedMap: Record<number, SolvedInfo> = {};
+          const solvedMap: Record<string, SolvedInfo> = {};
           const newLogEntries: LogEntry[] = [];
           const posOwners: Record<number, string> = {};
 
@@ -224,8 +225,8 @@ export default function MatchPage() {
           (matchObj.solveLog ?? []).forEach((entry: SolveLog) => {
             const key = `${entry.contestId}-${entry.index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            
-            solvedMap[entry.problem.position] = { team: teamKey };
+            // Bug #7 fix: use same string key format as poll handler so cells color on initial load
+            solvedMap[key] = { team: teamKey };
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
             }
@@ -306,7 +307,7 @@ export default function MatchPage() {
         return;
       }
       try {
-        const pollRes = await axios.get(`/api/compete/matches/${match.id}`);
+        const pollRes = await apiClient.post(`/api/compete/matches/${match.id}/poll`);
         const pollData = pollRes.data;
 
         const oldlength = Array.isArray(match?.problems) ? match!.problems!.length : 0;
@@ -444,6 +445,10 @@ export default function MatchPage() {
       
       // Update duration locally
       setMatch((prev) => (prev ? { ...prev, durationMinutes: 1 } : prev));
+      // Bug #10 fix: propagate win to server so all other clients see match end on next poll
+      if (match?.id) {
+        apiClient.patch(`/api/compete/matches/${match.id}/duration`, { durationMinutes: 1 }).catch(() => {});
+      }
     }
   }, [solved, problems, winner, positionOwners, match, matchLocked, gridSize]);
 
