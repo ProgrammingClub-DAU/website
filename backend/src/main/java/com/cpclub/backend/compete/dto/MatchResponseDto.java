@@ -3,14 +3,14 @@ package com.cpclub.backend.compete.dto;
 import com.cpclub.backend.compete.entity.MatchMode;
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
 @Builder
 public class MatchResponseDto {
     private String id;
-    private LocalDateTime startTime;
+    private Instant startTime;
     private Integer durationMinutes;
     private MatchMode mode;
     private Integer replaceIncrement;
@@ -51,7 +51,7 @@ public class MatchResponseDto {
     public static class SolveEntryDto {
         private String handle;
         private String team;
-        private LocalDateTime timestamp;
+        private Instant timestamp;
         private ProblemRefDto problem;
     }
 
