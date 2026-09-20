@@ -281,6 +281,8 @@ class UserControllerTest {
                 null, null,         // codechefUrl, atcoderUrl
                 null, null,         // githubUrl, linkedinUrl
                 null,               // phoneNumber
-                LocalDateTime.now());
+                LocalDateTime.now(),
+                "rookie",
+                false);
     }
 }

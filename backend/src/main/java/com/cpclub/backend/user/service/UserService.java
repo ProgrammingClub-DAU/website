@@ -222,7 +222,9 @@ public class UserService {
     /** Public, email-safe profiles for the website credits section. */
     @Transactional(readOnly = true)
     public List<PublicUserResponseDto> getPlatformCreators(boolean viewerIsAdmin) {
-        return userRepository.findByIsPlatformCreatorTrueOrderByNameAsc().stream()
+        return userRepository.findAll().stream()
+                .filter(user -> user.isPlatformCreator() || PlatformCreatorAccounts.contains(user.getEmail()))
+                .sorted(Comparator.comparing(User::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
                 .toList();
     }
@@ -481,7 +483,7 @@ public class UserService {
     }
 
     private boolean isWebsiteCreator(User user) {
-        return user.isPlatformCreator();
+        return user.isPlatformCreator() || PlatformCreatorAccounts.contains(user.getEmail());
     }
 
     /**

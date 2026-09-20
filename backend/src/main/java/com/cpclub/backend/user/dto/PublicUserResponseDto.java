@@ -39,7 +39,9 @@ public record PublicUserResponseDto(
         String githubUrl,
         String linkedinUrl,
         String phoneNumber,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String equippedBannerId,
+        boolean isPlatformCreator
 ) {
 
     /**
@@ -70,7 +72,9 @@ public record PublicUserResponseDto(
                 user.getGithubUrl(),
                 user.getLinkedinUrl(),
                 visiblePhone(user, viewerIsAdmin),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getEquippedBannerId() != null ? user.getEquippedBannerId() : "rookie",
+                user.isPlatformCreator()
         );
     }
 
