@@ -28,6 +28,7 @@ import {
   isBannerUnlocked,
 } from "@/lib/banner-config";
 import { BannerGraphic } from "@/components/site/leaderboard/banner-graphic";
+import { BannerLockerDrawer } from "@/components/site/leaderboard/banner-locker-drawer";
 import { useAuthStore } from "@/store/auth";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
@@ -200,6 +202,7 @@ function ProfileDashboardContent({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBannerLockerOpen, setIsBannerLockerOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -324,21 +327,60 @@ function ProfileDashboardContent({
   ].filter(Boolean) as string[];
 
   const displayAvatar = profile.avatarUrl || cfInfo?.titlePhoto || cfInfo?.avatar;
+  const equippedBanner = getBannerConfig(profile.equippedBannerId || "rookie");
   const selectedBanner = getBannerConfig(formData.bannerId);
   const effectiveMaxRating = profile.maxRating ?? profile.rating ?? 0;
 
+  const leaderboardMember = {
+    id: profile.id,
+    name: profile.name,
+    codeforcesHandle: profile.codeforcesHandle,
+    rating: profile.rating ?? 0,
+    maxRating: profile.maxRating ?? profile.rating ?? 0,
+    equippedBannerId: profile.equippedBannerId || "rookie",
+    isPlatformCreator: profile.isPlatformCreator,
+    avatarUrl: displayAvatar ?? null,
+    rank: 0,
+    tier: rankName,
+    clubRole: profile.clubRole,
+  };
 
   return (
     <div className="space-y-8">
-      {/* ── Profile Header ── */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+      {/* ── Profile Header with Active Banner Showcase ── */}
+      <Card
+        className="relative overflow-hidden transition-colors shadow-lg"
+        style={{ borderColor: equippedBanner.colors.border }}
+      >
+        {/* Colorful Banner Graphic Header */}
+        <div className="relative h-32 sm:h-44 w-full overflow-hidden">
+          <BannerGraphic banner={equippedBanner} showEffects={true} withScrim={true} />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+
+          {/* Active Banner Badge Tag */}
+          <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-md shadow-lg"
+              style={{
+                backgroundColor: `${equippedBanner.colors.primary}cc`,
+                borderColor: equippedBanner.colors.border,
+                color: equippedBanner.colors.text,
+              }}
+            >
+              <Sparkles className="size-3.5" />
+              {equippedBanner.name} Banner
+            </span>
+          </div>
+        </div>
+
+        <CardContent className="relative pt-0 pb-6 px-6">
+          {/* Avatar + Actions Bar */}
+          <div className="-mt-14 mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             {/* Avatar with Cloudinary Upload Option */}
             <div className="relative group">
               <div
-                className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 bg-surface-2 overflow-hidden"
-                style={{ borderColor: nameColor }}
+                className="flex size-24 shrink-0 items-center justify-center rounded-full border-4 bg-surface shadow-xl overflow-hidden"
+                style={{ borderColor: equippedBanner.colors.border }}
               >
                 {displayAvatar ? (
                   <Image
@@ -368,86 +410,95 @@ function ProfileDashboardContent({
               )}
             </div>
 
-            {/* Name + handle + rank + club role */}
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight" style={{ color: nameColor }}>
-                    {profile.name}
-                  </h2>
-                  <p className="mt-0.5 text-sm text-fg-muted">
-                    {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "No Codeforces handle linked"}
-                    {profile.leetcodeHandle && (
-                      <span className="ml-3 text-fg-subtle">
-                        LC: <strong className="text-foreground">@{profile.leetcodeHandle}</strong>
-                      </span>
-                    )}
-                  </p>
-                </div>
-
-                {isOwner && (
-                  <button
-                    onClick={() => (isEditingProfile ? setIsEditingProfile(false) : openEditor())}
-                    className="inline-flex items-center self-center sm:self-start gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-hairline-strong hover:bg-surface-3"
-                  >
-                    <Edit2 className="size-3.5" />
-                    {isEditingProfile ? "Cancel Editing" : "Edit Profile"}
-                  </button>
-                )}
-              </div>
-
-              {/* Badges row */}
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium capitalize"
-                  style={{ color: nameColor, borderColor: nameColor }}
+            {/* Action Buttons (Owner Only) */}
+            {isOwner && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBannerLockerOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 shadow-xs"
                 >
-                  <Trophy className="size-3" />
-                  {rankName}
-                </span>
+                  <Sparkles className="size-3.5 text-amber-400" />
+                  Change Banner
+                </button>
 
-                <ClubRoleBadge clubRole={profile.clubRole} />
-
-                {profile.profileComplete ? (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400"
-                    title="Name, Codeforces handle, phone number and year are all filled in"
-                  >
-                    <CheckCircle2 className="size-3" />
-                    Profile complete
-                  </span>
-                ) : isOwner ? (
-                  // Only the owner can fix it, so only the owner is told.
-                  <button
-                    type="button"
-                    onClick={openEditor}
-                    title={`Still missing: ${missingProfileFields.join(", ")}`}
-                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/20"
-                  >
-                    <AlertCircle className="size-3" />
-                    Finish your profile ({missingProfileFields.length} left)
-                  </button>
-                ) : null}
-
-                {profile.batchYear && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-fg-muted">
-                    Batch {profile.batchYear}
-                  </span>
-                )}
-
-                <span className="text-xs text-fg-muted">
-                  CF Rating: <strong className="text-foreground">{currentRating ?? "Unrated"}</strong>
-                  {cfInfo?.maxRating && currentRating !== cfInfo.maxRating && (
-                    <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>
-                  )}
-                </span>
-                {profile.leetcodeRating !== null && profile.leetcodeRating > 0 && (
-                  <span className="text-xs text-fg-muted">
-                    LeetCode: <strong className="text-foreground">{profile.leetcodeRating}</strong>
-                  </span>
-                )}
+                <button
+                  type="button"
+                  onClick={() => (isEditingProfile ? setIsEditingProfile(false) : openEditor())}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-foreground transition-all hover:border-hairline-strong hover:bg-surface-3 shadow-xs"
+                >
+                  <Edit2 className="size-3.5" />
+                  {isEditingProfile ? "Cancel Editing" : "Edit Profile"}
+                </button>
               </div>
+            )}
+          </div>
 
+          {/* Name + handle + rank + club role */}
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight" style={{ color: nameColor }}>
+                {profile.name}
+              </h2>
+              <p className="mt-0.5 text-sm text-fg-muted">
+                {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "No Codeforces handle linked"}
+                {profile.leetcodeHandle && (
+                  <span className="ml-3 text-fg-subtle">
+                    LC: <strong className="text-foreground">@{profile.leetcodeHandle}</strong>
+                  </span>
+                )}
+              </p>
+            </div>
+
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium capitalize"
+                style={{ color: nameColor, borderColor: nameColor }}
+              >
+                <Trophy className="size-3" />
+                {rankName}
+              </span>
+
+              <ClubRoleBadge clubRole={profile.clubRole} />
+
+              {profile.profileComplete ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400"
+                  title="Name, Codeforces handle, phone number and year are all filled in"
+                >
+                  <CheckCircle2 className="size-3" />
+                  Profile complete
+                </span>
+              ) : isOwner ? (
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  title={`Still missing: ${missingProfileFields.join(", ")}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/20"
+                >
+                  <AlertCircle className="size-3" />
+                  Finish your profile ({missingProfileFields.length} left)
+                </button>
+              ) : null}
+
+              {profile.batchYear && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-fg-muted">
+                  Batch {profile.batchYear}
+                </span>
+              )}
+
+              <span className="text-xs text-fg-muted">
+                CF Rating: <strong className="text-foreground">{currentRating ?? "Unrated"}</strong>
+                {cfInfo?.maxRating && currentRating !== cfInfo.maxRating && (
+                  <span className="text-fg-subtle"> (max {cfInfo.maxRating})</span>
+                )}
+              </span>
+              {profile.leetcodeRating !== null && profile.leetcodeRating > 0 && (
+                <span className="text-xs text-fg-muted">
+                  LeetCode: <strong className="text-foreground">{profile.leetcodeRating}</strong>
+                </span>
+              )}
             </div>
           </div>
 
@@ -600,12 +651,17 @@ function ProfileDashboardContent({
                         Profile banner
                       </label>
                       <p className="mt-1 text-[11px] text-fg-muted">
-                        Choose from banners unlocked by your maximum Codeforces rating.
+                        Choose from banners unlocked by your maximum Codeforces rating or special achievements.
                       </p>
                     </div>
-                    <span className="text-[11px] font-mono text-fg-muted">
-                      Max rating: {effectiveMaxRating}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsBannerLockerOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 shrink-0 shadow-xs"
+                    >
+                      <Sparkles className="size-3 text-amber-400" />
+                      Open Banner Locker
+                    </button>
                   </div>
 
                   <div className="relative mb-3 h-20 overflow-hidden rounded-control border border-border p-3">
@@ -811,6 +867,21 @@ function ProfileDashboardContent({
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Banner Locker Drawer – strictly owner-only for equipping ── */}
+      {isOwner && (
+        <BannerLockerDrawer
+          member={leaderboardMember}
+          isOpen={isBannerLockerOpen}
+          isOwnProfile={true}
+          onClose={() => setIsBannerLockerOpen(false)}
+          onBannerEquipped={(newBannerId) => {
+            setFormData((prev) => ({ ...prev, bannerId: newBannerId }));
+            setIsBannerLockerOpen(false);
+            onUpdate();
+          }}
+        />
+      )}
     </div>
   );
 }
