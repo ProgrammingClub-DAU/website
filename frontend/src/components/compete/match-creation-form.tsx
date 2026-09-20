@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
-import apiClient from '@/lib/api-client';
+import apiClient from '@/lib/axios';
 import { TeamsForm, TeamInput } from "./teams-form";
 
 export function MatchCreationForm() {

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Confetti from "react-confetti";
 import axios from 'axios';
-import apiClient from '@/lib/api-client';
+import apiClient from '@/lib/axios';
 import type { Match, ProblemCell, Team } from "@/components/compete/types";
 
 type SolveLog = {
