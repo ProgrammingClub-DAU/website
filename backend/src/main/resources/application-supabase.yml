@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+    username: postgres.owklpztyappygxzgiqqz
+    password: Xu+BMT/4_.DkRS@
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+app:
+  jwt:
+    secret: this_is_a_dummy_secret_key_just_so_the_spring_boot_context_can_start_up_properly_for_sync
+  google:
+    client-id: dummy-google-client-id-so-it-starts-up-fine
