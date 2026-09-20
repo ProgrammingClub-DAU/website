@@ -6,7 +6,6 @@ import type {
   LeaderboardFilter,
   LeaderboardPlatform,
 } from "@/types/api";
-import { getMockLeaderboard } from "@/lib/mock-leaderboard";
 
 /**
  * One row exactly as LeaderboardResponseDto sends it.
@@ -80,19 +79,12 @@ export const leaderboardService = {
     platform: LeaderboardPlatform = "CODEFORCES",
     filter: LeaderboardFilter = "ALL"
   ): Promise<LeaderboardEntry[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<PagedLeaderboardResponse>>(
-        "/api/leaderboard",
-        { params: { platform, filter } }
-      );
-      const content = response.data.data?.content ?? [];
-      if (content.length > 0) {
-        return content.map(toEntry);
-      }
-    } catch {
-      // Backend not running or unreachable — fallback to realistic dummy data
-    }
-    return getMockLeaderboard(platform, filter);
+    const response = await apiClient.get<ApiResponse<PagedLeaderboardResponse>>(
+      "/api/leaderboard",
+      { params: { platform, filter } }
+    );
+    const content = response.data.data?.content ?? [];
+    return content.map(toEntry);
   },
 
   equipBanner: async (bannerId: string): Promise<{ equippedBannerId: string }> => {
