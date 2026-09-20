@@ -31,7 +31,7 @@ export default async function GalleryPage() {
         <Eyebrow>Gallery</Eyebrow>
         <PageTitle className="max-w-[20ch]">Where we were.</PageTitle>
         <p className="mt-6 max-w-[52ch] text-base leading-6 text-fg-muted text-pretty">
-          Drag to look around, then open a photo to see which event or achievement it was
+          Swipe or drag to look around, then open a photo to see which event or achievement it was
           from, when it happened, and where.
         </p>
         <GalleryTabs active="events" />

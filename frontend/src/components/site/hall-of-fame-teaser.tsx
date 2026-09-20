@@ -56,34 +56,46 @@ export async function HallOfFameTeaser({ title }: { title: string }) {
           return (
             <li
               key={entry.id}
-              className="group relative min-w-70 flex-1 overflow-hidden rounded-panel border border-hairline bg-surface transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
+              className="group relative min-w-64 max-w-80 flex-1 overflow-hidden rounded-panel border border-hairline bg-surface transition-all hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel"
             >
-              {photo && (
-                <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-2">
-                  <Image
-                    src={photo.imageUrl}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 90vw, 25vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-              )}
-              <div className="p-6">
-                <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
-                  {monthYear(entry.achievedOn)}
-                </span>
-                <p className={`${photo ? "mt-3" : "mt-11"} text-lead font-semibold tracking-tight text-pretty`}>
-                  <Link href={`/hall-of-fame/${entry.id}`} className="after:absolute after:inset-0">
-                    {entry.heading}
-                  </Link>
-                </p>
-                {entry.subheading && (
-                  <p className="mt-2 line-clamp-2 text-sm leading-[1.5] text-fg-muted text-pretty">
-                    {entry.subheading}
-                  </p>
+              <div className="flex items-start gap-4 p-5">
+                {/* Compact square thumbnail — no giant aspect-ratio block */}
+                {photo ? (
+                  <span className="relative block size-14 shrink-0 overflow-hidden rounded-md border border-hairline bg-surface-2">
+                    <Image
+                      src={photo.imageUrl}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </span>
+                ) : (
+                  /* Placeholder icon when no photo */
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-md border border-hairline bg-surface-2 text-2xl">
+                    🏆
+                  </span>
                 )}
+
+                <div className="min-w-0 flex-1">
+                  <span className="font-mono text-label tracking-caps text-fg-subtle uppercase">
+                    {monthYear(entry.achievedOn)}
+                  </span>
+                  <p className="mt-1.5 text-sm font-semibold leading-[1.4] tracking-tight text-pretty">
+                    <Link href={`/hall-of-fame/${entry.id}`} className="after:absolute after:inset-0">
+                      {entry.heading}
+                    </Link>
+                  </p>
+                  {entry.subheading && (
+                    <p className="mt-1 line-clamp-2 text-xs leading-[1.5] text-fg-muted text-pretty">
+                      {entry.subheading}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {/* Subtle bottom strip that grows on hover */}
+              <div className="h-0.5 w-0 bg-primary transition-all duration-300 group-hover:w-full" aria-hidden />
             </li>
           );
         })}
