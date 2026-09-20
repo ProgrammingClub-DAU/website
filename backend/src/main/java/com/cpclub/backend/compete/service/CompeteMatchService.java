@@ -29,6 +29,14 @@ public class CompeteMatchService {
 
     private static final int POLL_COOLDOWN_SECONDS = 20;
 
+    /** Returns the effective match duration in minutes, honoring timeoutMinutes when set. */
+    private int effectiveLimit(Match match) {
+        if (match.getTimeoutMinutes() != null && match.getTimeoutMinutes() > 0) {
+            return match.getTimeoutMinutes();
+        }
+        return match.getDurationMinutes();
+    }
+
     private final MatchRepository matchRepository;
     private final CfProblemRepository cfProblemRepository;
     private final CodeforcesApiClient codeforcesApiClient;
@@ -159,7 +167,7 @@ public class CompeteMatchService {
         // Bug #11 fix: all time comparisons in UTC
         LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
 
-        if (nowUtc.isAfter(match.getStartTime().plusMinutes(match.getDurationMinutes()))) return;
+        if (nowUtc.isAfter(match.getStartTime().plusMinutes(effectiveLimit(match)))) return;
 
         // Bug #9 fix: 20-second Codeforces rate-limit cooldown (ref: poll-submissions.ts)
         if (match.getLastPolledAt() != null && match.getLastPolledAt().plusSeconds(POLL_COOLDOWN_SECONDS).isAfter(nowUtc)) {
@@ -269,14 +277,6 @@ public class CompeteMatchService {
         matchRepository.save(match);
     }
 
-    // Bug #10 fix: allow winning client to propagate match end to all other clients
-    @Transactional
-    public void setMatchDuration(String matchId, int durationMinutes) {
-        Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
-        match.setDurationMinutes(durationMinutes);
-        matchRepository.save(match);
-    }
 
     /**
      * Accepts a solve report from the frontend.
@@ -285,14 +285,20 @@ public class CompeteMatchService {
      */
     @Transactional
     public MatchResponseDto reportSolve(String matchId, SolveReportDto dto) {
+        // Input validation — prevent null keys corrupting solve log
+        if (dto.getContestId() == null || dto.getIndex() == null || dto.getHandle() == null
+                || dto.getHandle().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required fields: handle, contestId, index");
+        }
+
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
 
         if (match.getSolveLogs() == null) match.setSolveLogs(new ArrayList<>());
 
-        // Validate match is still active
+        // Validate match is still active (honor timeoutMinutes if set)
         LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
-        if (nowUtc.isAfter(match.getStartTime().plusMinutes(match.getDurationMinutes()))) {
+        if (nowUtc.isAfter(match.getStartTime().plusMinutes(effectiveLimit(match)))) {
             return mapToDto(match); // Match ended, ignore solve
         }
 
@@ -376,6 +382,15 @@ public class CompeteMatchService {
                     match.getSolveLogs().remove(sl);
                 }
             }
+
+            // SERVER-SIDE WINNER DETECTION — check after every solve
+            // This prevents any client from cheating by calling PATCH /duration
+            String winnerTeam = detectWinner(match);
+            if (winnerTeam != null) {
+                log.info("Match {} won by team {} — locking match", matchId, winnerTeam);
+                match.setDurationMinutes(1); // Set duration so the match appears ended to all clients
+            }
+
         } catch (DataIntegrityViolationException e) {
             log.debug("Duplicate solve detected for {}/{} — skipping", dto.getContestId(), dto.getIndex());
         }
@@ -383,6 +398,82 @@ public class CompeteMatchService {
         matchRepository.save(match);
         return mapToDto(match);
     }
+
+    /**
+     * Detects a winner by checking rows, columns, and both diagonals.
+     * Returns the winning team color, or null if no winner yet.
+     */
+    private String detectWinner(Match match) {
+        int size = match.getGridSize() != null ? match.getGridSize() : 5;
+
+        // Build position -> team map from active solve logs
+        Map<Integer, String> positionToTeam = new HashMap<>();
+        List<Problem> activeProblems = match.getProblems().stream()
+            .filter(p -> Boolean.TRUE.equals(p.getActive()) || p.getPosition() != null)
+            .collect(Collectors.toList());
+
+        for (SolveLog sl : match.getSolveLogs()) {
+            // Find problem by contestId+index to get its position
+            activeProblems.stream()
+                .filter(p -> p.getId().getContestId().equals(sl.getContestId())
+                          && p.getId().getIndex().equals(sl.getIndex()))
+                .findFirst()
+                .ifPresent(p -> positionToTeam.put(p.getPosition(), sl.getTeam()));
+        }
+        // Also check inactive (replaced) problems that were solved
+        match.getProblems().stream()
+            .filter(p -> !Boolean.TRUE.equals(p.getActive()))
+            .forEach(p -> match.getSolveLogs().stream()
+                .filter(sl -> sl.getContestId().equals(p.getId().getContestId())
+                           && sl.getIndex().equals(p.getId().getIndex()))
+                .findFirst()
+                .ifPresent(sl -> positionToTeam.putIfAbsent(p.getPosition(), sl.getTeam())));
+
+        // Check rows
+        for (int row = 0; row < size; row++) {
+            String rowTeam = positionToTeam.get(row * size);
+            if (rowTeam == null) continue;
+            boolean wins = true;
+            for (int col = 1; col < size; col++) {
+                if (!rowTeam.equals(positionToTeam.get(row * size + col))) { wins = false; break; }
+            }
+            if (wins) return rowTeam;
+        }
+
+        // Check columns
+        for (int col = 0; col < size; col++) {
+            String colTeam = positionToTeam.get(col);
+            if (colTeam == null) continue;
+            boolean wins = true;
+            for (int row = 1; row < size; row++) {
+                if (!colTeam.equals(positionToTeam.get(row * size + col))) { wins = false; break; }
+            }
+            if (wins) return colTeam;
+        }
+
+        // Check main diagonal (top-left to bottom-right)
+        String diagTeam = positionToTeam.get(0);
+        if (diagTeam != null) {
+            boolean wins = true;
+            for (int i = 1; i < size; i++) {
+                if (!diagTeam.equals(positionToTeam.get(i * size + i))) { wins = false; break; }
+            }
+            if (wins) return diagTeam;
+        }
+
+        // Check anti-diagonal (top-right to bottom-left)
+        String antiTeam = positionToTeam.get(size - 1);
+        if (antiTeam != null) {
+            boolean wins = true;
+            for (int i = 1; i < size; i++) {
+                if (!antiTeam.equals(positionToTeam.get(i * size + (size - 1 - i)))) { wins = false; break; }
+            }
+            if (wins) return antiTeam;
+        }
+
+        return null;
+    }
+
 
     private MatchResponseDto mapToDto(Match match) {
         // Bug #6/#11 fix: emit startTime as ISO Instant string so frontend new Date() works correctly
@@ -409,7 +500,11 @@ public class CompeteMatchService {
                 .handle(l.getHandle()).team(l.getTeam())
                 .timestamp(l.getTimestamp() != null ? l.getTimestamp().toInstant(ZoneOffset.UTC) : null)
                 .problem(MatchResponseDto.ProblemRefDto.builder()
-                    .contestId(l.getContestId()).index(l.getIndex()).build())
+                    .contestId(l.getContestId())
+                    .index(l.getIndex())
+                    .name(l.getProblem() != null ? l.getProblem().getName() : null)
+                    .position(l.getProblem() != null ? l.getProblem().getPosition() : null)
+                    .build())
                 .build()).toList());
 
         b.problems((match.getProblems() == null) ? List.of() : match.getProblems().stream().map(p -> {

@@ -10,6 +10,7 @@ import apiClient from '@/lib/axios';
 import type { Match, ProblemCell, Team } from "@/components/compete/types";
 
 type SolveLog = {
+  handle?: string;
   team: string;
   problem: { contestId: number; index: string; name?: string; position?: number };
   timestamp?: string | number;
@@ -46,10 +47,12 @@ type LogEntry = {
   key: string;
   message: string;
   team: string;
+  timestamp: number;
 };
 
 type SolvedInfo = {
   team: string;
+  handle?: string;
 };
 
 type Winner = {
@@ -186,6 +189,9 @@ export default function MatchPage() {
   const notifiedRef = useRef<Set<string>>(new Set());
   const problemsRef = useRef<ProblemCell[]>([]);
   const solvedRef = useRef<Record<string, SolvedInfo>>({});
+  const matchRef = useRef<Match | null>(null);
+
+  useEffect(() => { matchRef.current = match; }, [match]);
 
   function persistNotified(matchId: string) {
     const key = `notified_${matchId}`;
@@ -236,8 +242,7 @@ export default function MatchPage() {
             
             const key = `${contestId}-${index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            // Bug #7 fix: use same string key format as poll handler so cells color on initial load
-            solvedMap[key] = { team: teamKey };
+            solvedMap[key] = { team: teamKey, handle: entry.handle };
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
             }
@@ -245,10 +250,12 @@ export default function MatchPage() {
             const problemName = entry.problem?.name ?? `Problem ${index}`;
             const contestAndIndex = `${contestId}${index}`;
             const solveTime = entry.timestamp;
+            const solverName = entry.handle ? `${entry.handle} (${displayName})` : displayName;
             newLogEntries.push({
               key,
-              message: `${displayName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
+              message: `${solverName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
               team: teamKey,
+              timestamp: solveTime ? new Date(solveTime).getTime() : Date.now(),
             });
           });
           setPositionOwners(posOwners);
@@ -259,7 +266,7 @@ export default function MatchPage() {
             for (const e of combined) {
               if (!uniqueMap.has(e.key)) uniqueMap.set(e.key, e);
             }
-            return Array.from(uniqueMap.values());
+            return Array.from(uniqueMap.values()).sort((a, b) => b.timestamp - a.timestamp);
           });
           setSolved(solvedMap);
         } catch (e) {
@@ -319,6 +326,9 @@ export default function MatchPage() {
     let isPolling = false;
 
     const clientSidePoll = async () => {
+      const currentMatch = matchRef.current;
+      if (!currentMatch) return;
+
       const currentTime = new Date();
       if (currentTime < matchStart || currentTime > matchEnd) return;
       if (isPolling) return;
@@ -327,7 +337,7 @@ export default function MatchPage() {
       try {
 
       // Step 1: Poll Codeforces directly from the browser for each player
-      const allHandles = (match.teams ?? []).flatMap((t) => t.members ?? []);
+      const allHandles = (currentMatch.teams ?? []).flatMap((t) => t.members ?? []);
       const currentProblems = problemsRef.current;
       const currentSolved = solvedRef.current;
       const boardKeys = new Set(
@@ -404,7 +414,7 @@ export default function MatchPage() {
 
             const key = `${contestId}-${index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            solvedMap[key] = { team: teamKey };
+            solvedMap[key] = { team: teamKey, handle: entry.handle };
 
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
@@ -413,10 +423,12 @@ export default function MatchPage() {
             const problemName = entry.problem?.name ?? `Problem ${index}`;
             const contestAndIndex = `${contestId}${index}`;
             const solveTime = entry.timestamp;
+            const solverName = entry.handle ? `${entry.handle} (${displayName})` : displayName;
             newLogEntries.push({
               key,
-              message: `${displayName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
+              message: `${solverName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
               team: teamKey,
+              timestamp: solveTime ? new Date(solveTime).getTime() : Date.now(),
             });
           });
 
@@ -436,7 +448,7 @@ export default function MatchPage() {
             for (const entry of combined) {
               if (!uniqueMap.has(entry.key)) uniqueMap.set(entry.key, entry);
             }
-            const deduped = Array.from(uniqueMap.values());
+            const deduped = Array.from(uniqueMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
             const prevMessages = new Set(prevLog.map((x) => x.message));
             newLogEntries.forEach((ne) => {
@@ -511,15 +523,11 @@ export default function MatchPage() {
           w.type === "row" ? "a row" : w.type === "col" ? "a column" : w.type === "diag" ? "the main diagonal" : "the anti-diagonal"
         } and won the match!`;
         notifyBrowser(`${displayName} won!`, finalMsg);
-        return [{ message: finalMsg, team: w.team.toLowerCase(), key: "winner-msg" }, ...prev];
+        return [{ message: finalMsg, team: w.team.toLowerCase(), key: "winner-msg", timestamp: Date.now() }, ...prev];
       });
       
       // Update duration locally
       setMatch((prev) => (prev ? { ...prev, durationMinutes: 1 } : prev));
-      // Bug #10 fix: propagate win to server so all other clients see match end on next poll
-      if (match?.id) {
-        apiClient.patch(`/api/compete/matches/${match.id}/duration`, { durationMinutes: 1 }).catch(() => {});
-      }
     }
   }, [solved, problems, winner, positionOwners, match, matchLocked, gridSize]);
 
@@ -601,9 +609,44 @@ export default function MatchPage() {
   const matchHasEnded = currentTime >= matchEnd;
   const matchOngoing = matchHasStarted && !matchHasEnded && !matchLocked;
 
+  const scoreboard = (() => {
+    const scores: Record<string, { name: string; count: number }> = {};
+    (match.teams || []).forEach((t) => {
+      scores[t.color] = { name: t.name, count: 0 };
+    });
+    problems.forEach((problem, idx) => {
+      const key = `${problem.contestId}-${problem.index}`;
+      const ownerTeam = solved[key]?.team ?? positionOwners[problem.position ?? idx];
+      if (ownerTeam && scores[ownerTeam]) {
+        scores[ownerTeam].count++;
+      }
+    });
+    return Object.entries(scores).sort((a, b) => b[1].count - a[1].count);
+  })();
+
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col items-center">
-      {winner && confettiActive && <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />}
+      {winner && confettiActive && (
+        <>
+          <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+            <div className={`p-8 rounded-2xl shadow-2xl border text-center animate-in zoom-in-95 duration-300 ${teamColors[winner.team] || "bg-card text-foreground"}`}>
+              <h2 className="text-4xl font-extrabold mb-4 drop-shadow-md">
+                🏆 Winner!
+              </h2>
+              <p className="text-xl font-semibold opacity-90">
+                Team {match?.teams?.find(t => t.color.toLowerCase() === winner.team.toLowerCase())?.name || winner.team} won the match!
+              </p>
+              <button
+                onClick={() => setConfettiActive(false)}
+                className="mt-6 px-6 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <header className="w-full border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-4">
@@ -634,6 +677,20 @@ export default function MatchPage() {
       </div>
 
       {matchHasStarted && (
+        <div className="flex flex-wrap justify-center gap-2 mb-6 px-4">
+          {scoreboard.map(([color, data]) => {
+            const teamStyle = teamColors[color] || "bg-secondary text-foreground border-border";
+            return (
+              <div key={color} className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border ${teamStyle}`}>
+                {data.name}: {data.count}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+
+      {matchHasStarted && (
         <div className="flex-1 w-full flex justify-center pb-32 px-4">
           <div className={`w-full ${gridWidths[gridSize as keyof typeof gridWidths] || 'max-w-5xl'} mx-auto`}>
             <div className={`grid ${gridClasses[gridSize as keyof typeof gridClasses]} gap-2 sm:gap-3 justify-items-center`}>
@@ -661,6 +718,11 @@ export default function MatchPage() {
                     <div className={`text-xs sm:text-sm font-medium line-clamp-3 leading-snug ${showRatings ? "opacity-90" : ""}`}>
                       {problem.name}
                     </div>
+                    {(solvedInfo?.handle || problem.claimedBy) && (
+                      <div className="absolute bottom-1 right-2 text-[9px] sm:text-[10px] opacity-75 font-semibold">
+                        ✓ {solvedInfo?.handle || problem.claimedBy}
+                      </div>
+                    )}
                   </div>
                 );
               })}

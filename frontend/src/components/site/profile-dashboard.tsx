@@ -22,10 +22,10 @@ import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-prof
 import { leetcodeService } from "@/lib/services/leetcode";
 import { leaderboardService } from "@/lib/services/leaderboard";
 import {
-
+  RATING_BANNERS,
   getBannerConfig,
-
-
+  getRarityBadgeStyle,
+  isBannerUnlocked,
 } from "@/lib/banner-config";
 import { BannerGraphic } from "@/components/site/leaderboard/banner-graphic";
 import { BannerLockerDrawer } from "@/components/site/leaderboard/banner-locker-drawer";
