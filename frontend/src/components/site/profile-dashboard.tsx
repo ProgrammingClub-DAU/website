@@ -729,8 +729,18 @@ function ProfileDashboardContent({
         isOwner={isOwner}
         onAddClick={openEditor}
         links={[
-          { platform: "codeforces", value: profile.codeforcesHandle, rating: currentRating },
-          { platform: "leetcode", value: profile.leetcodeHandle, rating: profile.leetcodeRating },
+          { 
+            platform: "codeforces", 
+            value: profile.codeforcesHandle, 
+            rating: currentRating,
+            history: cfHistory.length > 0 ? cfHistory.map(p => ({ value: p.rating })) : null 
+          },
+          { 
+            platform: "leetcode", 
+            value: profile.leetcodeHandle, 
+            rating: profile.leetcodeRating,
+            history: lcPoints.length > 0 ? lcPoints.map(p => ({ value: p.rating })) : null 
+          },
           { platform: "codechef", value: profile.codechefUrl },
           { platform: "atcoder", value: profile.atcoderUrl },
           { platform: "github", value: profile.githubUrl },

@@ -13,6 +13,7 @@
  */
 
 import { ExternalLink, Plus } from "lucide-react";
+import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { PlatformGlyph, PROFILE_ACCENT } from "@/components/site/platform-glyph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,8 @@ export interface ProfileLink {
   value: string | null;
   /** Shown beside the username when the platform has a rating. */
   rating?: number | null;
+  /** Rating history data points for sparkline */
+  history?: { value: number }[] | null;
 }
 
 /**
@@ -67,7 +70,7 @@ export function ProfileLinksCard({
       </CardHeader>
       <CardContent>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {linked.map(({ platform, value, rating }) => {
+          {linked.map(({ platform, value, rating, history }) => {
             const username = usernameFrom(platform, value);
             const href = profileUrl(platform, value);
             const accent = PROFILE_ACCENT[platform];
@@ -83,13 +86,32 @@ export function ProfileLinksCard({
                 // border only. Every word stays on a normal text colour.
                 style={{ ["--accent" as string]: accent }}
                 className={cn(
-                  "group flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-3.5 py-3",
+                  "group relative overflow-hidden flex items-center gap-3 rounded-panel border border-border bg-surface-2 px-3.5 py-3",
                   "transition-all hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_55%,transparent)]",
                   "hover:shadow-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 )}
               >
+                {/* ── Sparkline Background ── */}
+                {history && history.length > 1 && (
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1/2 opacity-[0.15] transition-opacity duration-300 group-hover:opacity-[0.25]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={history}>
+                        <YAxis domain={["dataMin", "dataMax"]} hide />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke={accent}
+                          strokeWidth={2}
+                          dot={false}
+                          isAnimationActive={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
                 <span
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-hairline"
+                  className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full border border-hairline"
                   style={{
                     color: accent,
                     background: "color-mix(in srgb, var(--accent) 12%, transparent)",
@@ -98,23 +120,23 @@ export function ProfileLinksCard({
                   <PlatformGlyph platform={platform} className="size-4" />
                 </span>
 
-                <span className="min-w-0 flex-1">
+                <span className="relative z-10 min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="text-meta tracking-caps text-fg-subtle uppercase">
                       {PROFILE_PLATFORMS[platform].label}
                     </span>
                     {typeof rating === "number" && rating > 0 && (
-                      <span className="rounded-full border border-hairline px-1.5 font-mono text-nano text-fg-muted">
+                      <span className="rounded-full border border-hairline px-1.5 font-mono text-nano text-fg-muted shadow-sm backdrop-blur-sm">
                         {rating}
                       </span>
                     )}
                   </span>
-                  <span className="block truncate text-body font-medium text-foreground">
+                  <span className="block truncate text-body font-medium text-foreground drop-shadow-sm">
                     @{username}
                   </span>
                 </span>
 
-                <ExternalLink className="size-3.5 shrink-0 text-fg-subtle transition-colors group-hover:text-foreground" />
+                <ExternalLink className="relative z-10 size-3.5 shrink-0 text-fg-subtle transition-colors group-hover:text-foreground" />
               </a>
             );
           })}
