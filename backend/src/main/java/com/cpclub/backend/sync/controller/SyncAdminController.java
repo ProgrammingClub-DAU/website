@@ -21,6 +21,7 @@ public class SyncAdminController {
 
     private final SyncRunRepository syncRunRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final com.cpclub.backend.sync.service.SyncHealthService syncHealthService;
 
     @PostMapping("/{job}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -49,5 +50,11 @@ public class SyncAdminController {
             return syncRunRepository.findByJobOrderByStartedAtDesc(job, page);
         }
         return syncRunRepository.findAllByOrderByStartedAtDesc(page);
+    }
+
+    @GetMapping("/health")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<com.cpclub.backend.sync.dto.SyncHealthDto> getHealth() {
+        return syncHealthService.getHealth();
     }
 }

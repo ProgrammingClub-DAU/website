@@ -41,4 +41,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
      * @return matching events, latest date first
      */
     List<Event> findByStatusInOrderByEventDateDesc(List<EventStatus> statuses);
+
+    /**
+     * Events in a date range and specific statuses.
+     */
+    List<Event> findByEventDateBetweenAndStatusIn(java.time.LocalDateTime from, java.time.LocalDateTime to, List<EventStatus> statuses);
 }
