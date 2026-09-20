@@ -38,6 +38,24 @@ public class CompeteMatchService {
         }
         return sb.toString();
     }
+    
+    private Set<String> fetchSolvedProblemKeys(List<String> handles) {
+        Set<String> solvedSet = new HashSet<>();
+        for (String handle : handles) {
+            try {
+                // Fetch up to 10000 submissions to be safe
+                List<CfSubmission> submissions = codeforcesApiClient.userStatus(handle, 1, 10000);
+                for (CfSubmission sub : submissions) {
+                    if ("OK".equals(sub.getVerdict()) && sub.getProblem() != null && sub.getProblem().getContestId() != null) {
+                        solvedSet.add(sub.getProblem().getContestId() + "-" + sub.getProblem().getIndex());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch submissions for handle {} during problem generation", handle, e);
+            }
+        }
+        return solvedSet;
+    }
 
     @Transactional
     public MatchResponseDto createMatch(MatchCreationDto dto) {
@@ -59,6 +77,7 @@ public class CompeteMatchService {
         match = matchRepository.save(match);
         
         List<Team> teams = new ArrayList<>();
+        List<String> allHandles = new ArrayList<>();
         for (MatchCreationDto.TeamDto tDto : dto.getTeams()) {
             Team t = new Team();
             t.setName(tDto.getName());
@@ -71,27 +90,40 @@ public class CompeteMatchService {
                 m.setHandle(h);
                 m.setTeam(t);
                 members.add(m);
+                allHandles.add(h);
             }
             t.setMembers(members);
             teams.add(t);
         }
         match.setTeams(teams);
         
+        // Exact logic from bingo-cp: filter out already solved problems by checking codeforces live
+        Set<String> solvedKeys = fetchSolvedProblemKeys(allHandles);
+        
         int problemCount = dto.getGridSize() * dto.getGridSize();
+        // Pull extra problems from DB to ensure we have enough after filtering
         List<com.cpclub.backend.codeforces.entity.CfProblem> pool = 
             cfProblemRepository.findRandomProblemsByRatingRange(
                 dto.getMinRating(), 
                 dto.getMaxRating(), 
-                problemCount * 2
+                problemCount * 10
             );
             
         List<com.cpclub.backend.codeforces.entity.CfProblem> valid = pool.stream()
-            .filter(p -> p.getContestId() != null)
+            .filter(p -> p.getContestId() != null && !solvedKeys.contains(p.getContestId() + "-" + p.getProblemIndex()))
             .limit(problemCount)
             .toList();
             
+        // If we really couldn't find enough unsolved problems, fallback to whatever we found (same as bingo-cp)
         if (valid.size() < problemCount) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough problems found in this rating range");
+             List<com.cpclub.backend.codeforces.entity.CfProblem> fallback = pool.stream()
+                .filter(p -> p.getContestId() != null)
+                .limit(problemCount)
+                .toList();
+             if (fallback.size() < problemCount) {
+                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough problems found in this rating range");
+             }
+             valid = fallback;
         }
         
         List<Problem> problems = new ArrayList<>();
@@ -182,28 +214,33 @@ public class CompeteMatchService {
                                 
                                 newSolve = true;
                                 
-                                // REPLACE MODE LOGIC
+                                // EXACT REPLACE MODE LOGIC
                                 if (match.getMode() == MatchMode.replace) {
                                     matchedProblem.setActive(false);
                                     
                                     int increment = match.getReplaceIncrement() != null ? match.getReplaceIncrement() : 100;
                                     int newRatingTarget = Math.min(3500, (matchedProblem.getRating() != null ? matchedProblem.getRating() : 0) + increment);
                                     
+                                    Set<String> solvedKeys = fetchSolvedProblemKeys(handles);
+                                    
                                     List<com.cpclub.backend.codeforces.entity.CfProblem> pool = 
                                         cfProblemRepository.findRandomProblemsByRatingRange(
                                             newRatingTarget, 
                                             newRatingTarget, 
-                                            10
+                                            20
                                         );
                                         
-                                    // filter problems already in this match
                                     Set<String> existingKeys = match.getProblems().stream()
                                         .map(p -> p.getId().getContestId() + "-" + p.getId().getIndex())
                                         .collect(Collectors.toSet());
                                         
                                     com.cpclub.backend.codeforces.entity.CfProblem replacement = pool.stream()
+                                        .filter(p -> p.getContestId() != null && 
+                                                     !existingKeys.contains(p.getContestId() + "-" + p.getProblemIndex()) &&
+                                                     !solvedKeys.contains(p.getContestId() + "-" + p.getProblemIndex()))
+                                        .findFirst().orElseGet(() -> pool.stream()
                                         .filter(p -> p.getContestId() != null && !existingKeys.contains(p.getContestId() + "-" + p.getProblemIndex()))
-                                        .findFirst().orElse(null);
+                                        .findFirst().orElse(null));
                                         
                                     if (replacement != null) {
                                         Problem p = new Problem();
