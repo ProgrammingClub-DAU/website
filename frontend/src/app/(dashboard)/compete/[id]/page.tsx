@@ -303,7 +303,7 @@ export default function MatchPage() {
         return;
       }
       try {
-        const pollRes = await apiClient.get(`/api/compete/matches/${match.id}`);
+        const pollRes = await apiClient.post(`/api/compete/matches/${match.id}/poll`);
         const pollData = pollRes.data;
 
         const oldlength = Array.isArray(match?.problems) ? match!.problems!.length : 0;
