@@ -146,7 +146,7 @@ export default async function EventsPage() {
         <EventsList upcoming={upcoming} completed={completed} />
       </Section>
 
-      <Section className="pb-16">
+      <Section className="border-t border-hairline pb-16 pt-14">
         <InDevelopment
           title="Registration and the club calendar"
           items={[

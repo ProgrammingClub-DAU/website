@@ -434,18 +434,6 @@ function ProfileDashboardContent({
               </div>
 
             </div>
-
-            {/* Quick stats cards */}
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{profile.leetcodeRating ?? "—"}</div>
-                <div className="text-label text-fg-muted">LeetCode</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 px-4 py-3">
-                <div className="text-2xl font-bold">{cfHistory.length}</div>
-                <div className="text-label text-fg-muted">CF Contests</div>
-              </div>
-            </div>
           </div>
 
           {/* ── Edit Profile Form (Owner Only) ── */}
@@ -746,18 +734,6 @@ function ProfileDashboardContent({
               <Separator />
             </>
           )}
-          <div className="flex items-center justify-between">
-            <span className="text-fg-muted">Codeforces Handle</span>
-            <span style={{ color: nameColor }}>
-              {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "None"}
-            </span>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <span className="text-fg-muted">LeetCode Handle</span>
-            <span>{profile.leetcodeHandle ? `@${profile.leetcodeHandle}` : "None"}</span>
-          </div>
-          <Separator />
           <div className="flex items-center justify-between">
             <span className="text-fg-muted">Member Since</span>
             <span>
