@@ -62,4 +62,9 @@ public class AppConfig {
     public RateLimiter leetcodeRateLimiter() {
         return RateLimiter.create(0.5); // polite rate for an unofficial endpoint
     }
+
+    @Bean
+    public java.time.Clock clock(@org.springframework.beans.factory.annotation.Value("${cpclub.scheduling.zone:Asia/Kolkata}") String zone) {
+        return java.time.Clock.system(java.time.ZoneId.of(zone));
+    }
 }

@@ -34,13 +34,17 @@ class UserServiceTest {
     private UserService userService;
     private CodeforcesSyncService codeforcesSyncService;
     private LeetCodeSyncService leetCodeSyncService;
+    private com.cpclub.backend.codeforces.repository.CfSolveRepository cfSolveRepository;
+    private com.cpclub.backend.stats.repository.ContestParticipationRepository contestParticipationRepository;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         codeforcesSyncService = mock(CodeforcesSyncService.class);
         leetCodeSyncService = mock(LeetCodeSyncService.class);
-        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService);
+        cfSolveRepository = mock(com.cpclub.backend.codeforces.repository.CfSolveRepository.class);
+        contestParticipationRepository = mock(com.cpclub.backend.stats.repository.ContestParticipationRepository.class);
+        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService, cfSolveRepository, contestParticipationRepository);
     }
 
     @Test
