@@ -35,7 +35,7 @@ public class CodeforcesProblemsetSyncService {
         syncProblemset();
     }
 
-    @Scheduled(cron = "0 0 3 * * *", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
+    @Scheduled(cron = "0 0 3 * * SUN", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     @Transactional
     public void syncProblemset() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_PROBLEMSET);
