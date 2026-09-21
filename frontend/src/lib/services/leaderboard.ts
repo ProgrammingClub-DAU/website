@@ -95,6 +95,14 @@ export const leaderboardService = {
       "/api/users/banner",
       { bannerId }
     );
-    return response.data.data ?? { equippedBannerId: bannerId };
+    const result = response.data.data ?? { equippedBannerId: bannerId };
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("equipped-banner-changed", {
+          detail: { bannerId: result.equippedBannerId },
+        })
+      );
+    }
+    return result;
   },
 };

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Globe } from "lucide-react";
+import { ArrowUpRight, Globe, Sparkles } from "lucide-react";
 
 import { GitHubMark } from "@/components/site/github-mark";
 import { PlatformGlyph } from "@/components/site/platform-glyph";
@@ -18,14 +18,24 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-/** Subtle gradient palette — one per card slot, avoids neon overload */
+/** Pre-computed subtle avatar gradient combinations */
 const AVATAR_GRADIENTS = [
-  "from-indigo-600 via-violet-600 to-purple-700",
-  "from-blue-600 via-indigo-600 to-violet-700",
-  "from-violet-600 via-purple-600 to-fuchsia-700",
-  "from-sky-500 via-blue-600 to-indigo-700",
-  "from-indigo-500 via-blue-600 to-cyan-700",
-  "from-purple-600 via-violet-700 to-indigo-800",
+  "from-rose-500 via-purple-600 to-indigo-600",
+  "from-indigo-500 via-blue-600 to-cyan-500",
+  "from-violet-600 via-fuchsia-600 to-rose-500",
+  "from-cyan-400 via-blue-600 to-indigo-700",
+  "from-amber-500 via-rose-600 to-purple-600",
+  "from-emerald-400 via-teal-600 to-indigo-700",
+];
+
+/** Hardcoded creator emails list as specified */
+export const CREATOR_EMAILS = [
+  "202401152@dau.ac.in",
+  "202401226@dau.ac.in",
+  "202401474@dau.ac.in",
+  "202401041@dau.ac.in",
+  "202401178@dau.ac.in",
+  "202403019@dau.ac.in",
 ];
 
 interface WebsiteDeveloperCreditsProps {
@@ -34,33 +44,27 @@ interface WebsiteDeveloperCreditsProps {
 
 export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCreditsProps) {
   return (
-    <section id="credits" className="relative overflow-hidden rounded-2xl border border-border/40 bg-surface/40 backdrop-blur-xl shadow-2xl">
-      {/* Subtle ambient background */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(99,102,241,0.07),transparent)]"
-      />
-
-      {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-border/40 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-8">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-indigo-400 mb-3">
-            <Globe className="size-3" />
-            Open Source
+    <section id="credits">
+      {/* ── Section Header (matching Core Team style) ── */}
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.2)]">
+            <Globe className="size-4" />
           </div>
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Who Built This Website
-          </h2>
-          <p className="mt-1.5 text-sm text-fg-muted">
-            The engineers who designed and developed this platform.
-          </p>
+          <div>
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Who Built This Website
+            </h2>
+          </div>
         </div>
+
+        <div className="hidden sm:block h-px flex-1 mx-6 bg-gradient-to-r from-rose-500/20 via-white/15 to-transparent" />
 
         <a
           href="https://github.com/ProgrammingClub-DAU/website"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border/50 bg-surface/60 px-4 py-2.5 font-mono text-xs text-foreground/80 transition-all duration-200 hover:border-border hover:bg-surface hover:text-foreground hover:shadow-lg"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-white/80 transition-all duration-200 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-white"
         >
           <GitHubMark className="size-4" />
           <span>View on GitHub</span>
@@ -68,23 +72,25 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
         </a>
       </div>
 
-      {/* Developer Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border/30 p-px">
+      {/* ── Developer Cards Grid: 3 cards per row (6 cards across 2 rows) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {CONTRIBUTOR_PROFILES.map((contributor, index) => {
           const avatarGradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
+          // Match by name or index from backend creators array
           const matchedCreator = creators.find(
             (c) =>
               c.name.toLowerCase().trim().includes(contributor.name.toLowerCase().trim()) ||
               contributor.name.toLowerCase().trim().includes(c.name.toLowerCase().trim()),
-          );
+          ) ?? creators[index];
 
           const profileHref = matchedCreator?.id ? `/profile/${matchedCreator.id}` : undefined;
+          const displayName = matchedCreator?.name || contributor.name;
 
           const PLATFORMS = [
             { platform: "codeforces" as const, value: matchedCreator?.codeforcesHandle, label: "Codeforces" },
-            { platform: "github" as const, value: matchedCreator?.githubUrl, label: "GitHub" },
             { platform: "linkedin" as const, value: matchedCreator?.linkedinUrl, label: "LinkedIn" },
+            { platform: "github" as const, value: matchedCreator?.githubUrl, label: "GitHub" },
             { platform: "leetcode" as const, value: matchedCreator?.leetcodeHandle, label: "LeetCode" },
           ] as const;
 
@@ -93,50 +99,71 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
             .filter((l) => l.href !== null);
 
           return (
-            <div
+            <article
               key={contributor.name}
-              className="group relative flex flex-col gap-4 bg-surface/60 p-6 transition-all duration-200 hover:bg-surface/90 first:rounded-tl-[11px] last:rounded-br-[11px]"
+              className={`
+                group relative flex flex-col items-center
+                rounded-2xl border border-white/[0.1] bg-white/[0.04] backdrop-blur-xl
+                p-5 pb-5 min-h-[260px] w-full
+                transition-all duration-300 cursor-pointer
+                hover:-translate-y-1.5 hover:border-rose-500/40 hover:bg-white/[0.07]
+                hover:shadow-[0_20px_40px_-10px_rgba(244,63,94,0.25)]
+              `}
             >
-              {/* Top row: avatar + name + badge */}
-              <div className="flex items-center gap-4">
-                {/* Avatar */}
-                <div
-                  className="relative shrink-0 overflow-hidden rounded-full ring-2 ring-white/10 transition-all duration-300 group-hover:ring-indigo-500/40 group-hover:shadow-[0_0_16px_rgba(99,102,241,0.25)]"
-                  style={{ width: "64px", height: "64px" }}
-                >
-                  {matchedCreator?.avatarUrl ? (
-                    <Image
-                      src={matchedCreator.avatarUrl}
-                      alt={contributor.name}
-                      width={64}
-                      height={64}
-                      className="size-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-lg text-white`}
-                    >
-                      {getInitials(contributor.name)}
+              {/* Top gradient highlight on hover */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-rose-500/50 via-purple-500/50 to-indigo-500/50 opacity-40 transition-opacity duration-300 group-hover:opacity-100"
+              />
+
+              {/* ── Centered Avatar (104px) with Subtle VIP Badge Overlay ── */}
+              <div className="mt-1 flex flex-col items-center gap-3 flex-1 w-full">
+                <div className="relative shrink-0">
+                  <div
+                    className="relative shrink-0 overflow-hidden rounded-full p-[2.5px] bg-gradient-to-br from-rose-500/50 via-purple-500/40 to-indigo-500/50 transition-all duration-300 group-hover:scale-105 group-hover:from-rose-500 group-hover:to-indigo-500 shadow-md"
+                    style={{ width: "104px", height: "104px" }}
+                  >
+                    <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+                      {matchedCreator?.avatarUrl ? (
+                        <Image
+                          src={matchedCreator.avatarUrl}
+                          alt={displayName}
+                          width={104}
+                          height={104}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
+                        >
+                          {getInitials(displayName)}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  {/* Subtle VIP Creator Sparkle Icon */}
+                  <span className="absolute -top-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-[#111318]">
+                    <Sparkles className="size-3" />
+                  </span>
                 </div>
 
-                {/* Name + role tag */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-heading text-base font-bold tracking-tight text-foreground leading-tight truncate group-hover:text-indigo-300 transition-colors duration-200">
-                    {contributor.name}
+                {/* Name */}
+                <div className="text-center px-1">
+                  <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/95 transition-colors group-hover:text-rose-200 leading-tight line-clamp-2">
+                    {profileHref ? (
+                      <Link href={profileHref} className="after:absolute after:inset-0">
+                        {displayName}
+                      </Link>
+                    ) : (
+                      displayName
+                    )}
                   </h3>
-                  <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-indigo-400">
-                    <span className="size-1 rounded-full bg-indigo-400 shrink-0" aria-hidden="true" />
-                    Website Architect
-                  </span>
                 </div>
               </div>
 
-              {/* Bottom row: platform links + profile CTA */}
-              <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
-                {/* Platform icon links */}
-                <div className="flex items-center gap-2">
+              {/* ── Bottom: Platform Links ── */}
+              <div className="relative z-10 mt-auto pt-3 w-full border-t border-white/[0.08]">
+                <div className="flex items-center justify-center gap-2">
                   {links.length > 0 ? (
                     links.slice(0, 4).map((link) => (
                       <a
@@ -144,39 +171,29 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         href={link.href!}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label={`${contributor.name} on ${link.label}`}
+                        aria-label={`${displayName} on ${link.label}`}
                         title={link.label}
-                        className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-all duration-200 hover:scale-110 hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-300"
+                        className="inline-flex size-7.5 items-center justify-center rounded-lg border border-white/10 bg-white/5
+                          text-white/60 transition-all duration-200 hover:scale-110 hover:border-rose-400/50 hover:text-white hover:bg-rose-500/20"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <PlatformGlyph platform={link.platform} className="size-3.5" />
                       </a>
                     ))
                   ) : (
                     <span className="font-mono text-[9px] text-white/25 uppercase tracking-wider">
-                      No profiles
+                      No profiles linked
                     </span>
                   )}
                 </div>
-
-                {/* Profile link CTA */}
-                {profileHref ? (
-                  <Link
-                    href={profileHref}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 transition-all duration-200 hover:border-indigo-500/50 hover:bg-indigo-500/20 hover:text-indigo-200"
-                  >
-                    View Profile
-                    <ArrowUpRight className="size-3" />
-                  </Link>
-                ) : (
-                  <span className="font-mono text-[9px] text-white/20 uppercase tracking-wider">
-                    Profile unavailable
-                  </span>
-                )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
     </section>
   );
 }
+
+
+

@@ -28,6 +28,8 @@ export interface PublicMember {
   linkedinUrl: string | null;
   phoneNumber: string | null;
   createdAt: string;
+  equippedBannerId?: string | null;
+  isPlatformCreator?: boolean;
 }
 
 /** The club posts that appear on the members page, in the order they appear. */
