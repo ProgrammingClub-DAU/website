@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -7,6 +8,7 @@ import { Navbar } from "@/components/site/navbar";
 import { FooterSlot } from "@/components/site/footer-slot";
 import { CommandPalette } from "@/components/site/command-palette";
 import { site } from "@/lib/site";
+
 import { siteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
@@ -81,6 +83,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
+
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -106,11 +109,25 @@ export default function RootLayout({
               vertical axis stays visible, so the glow still bleeds above and
               below the card, and main is viewport-width, so on wide screens the
               glow still reaches into the gutters. */}
+          {/* The opening identity: draws the logo, fills it, then docks it
+              beside the wordmark. No `once`: it plays on every full page
+              load, so a refresh replays it. Client-side navigation between
+              pages does not remount the root layout, so moving around the site
+              does not. `for` makes the main content inert while it plays and
+              restores whatever state it had. Escape dismisses it, and it is
+              skipped outright under prefers-reduced-motion. */}
+          <programming-club-intro overlay="" for="main" />
+
           <main id="main" className="flex-1 overflow-x-clip">
             {children}
           </main>
           <FooterSlot />
           <CommandPalette />
+
+          {/* beforeInteractive so the element is defined as early as possible:
+              it is the first thing on screen, and a late upgrade would show
+              the page before the intro that is meant to precede it. */}
+          <Script src="/club-intro.js" strategy="beforeInteractive" />
         </ThemeProvider>
       </body>
     </html>

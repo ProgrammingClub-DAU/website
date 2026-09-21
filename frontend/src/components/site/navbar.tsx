@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { GitHubMark } from "@/components/site/github-mark";
+import { ClubMarkReveal } from "@/components/site/club-mark-reveal";
 import { dashboardService } from "@/lib/services/dashboard";
 import { navItems, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -30,31 +31,81 @@ const NAV_STAR_INNER =
 const SHEET_STAR_INNER =
   "glass-control flex h-10 w-full items-center justify-center rounded-full text-sm font-medium";
 
-function Wordmark({ className }: { className?: string }) {
+const WORDMARK_SHELL =
+  "flex items-center gap-2.5 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap";
+const WORDMARK_FOCUS =
+  "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
+
+function MarkImage() {
   return (
-    <Link
-      href="/"
-      className={cn(
-        "flex items-center gap-2.5 rounded-control text-sm font-semibold tracking-tight whitespace-nowrap transition-opacity hover:opacity-90",
-        "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-        className
-      )}
-    >
-      <Image
-        src="/logo-mark.png"
-        alt=""
-        width={28}
-        height={28}
-        priority
-        className="size-7 shrink-0 rounded-full ring-1 ring-border/40"
-      />
-      <span className="flex items-baseline gap-1.5">
-        <span className="font-semibold text-foreground tracking-tight">{site.name}</span>
-        <span className="rounded-md border border-hairline bg-surface-2/80 px-1.5 py-0.5 font-mono text-label font-medium text-fg-muted">
-          {site.suffix}
-        </span>
+    <Image
+      src="/logo-mark.png"
+      alt=""
+      width={28}
+      height={28}
+      priority
+      className="size-7 shrink-0 rounded-full ring-1 ring-border/40"
+    />
+  );
+}
+
+function MarkLabel() {
+  return (
+    <span className="flex items-baseline gap-1.5">
+      <span className="font-semibold text-foreground tracking-tight">{site.name}</span>
+      <span className="rounded-md border border-hairline bg-surface-2/80 px-1.5 py-0.5 font-mono text-label font-medium text-fg-muted">
+        {site.suffix}
       </span>
-    </Link>
+    </span>
+  );
+}
+
+/**
+ * The club wordmark.
+ *
+ * Given `onMarkClick`, the logo stops being part of the home link and becomes a
+ * button that draws the mark as an Euler trail. Splitting the two is only safe
+ * because Home is already a nav item in its own right — the logo is not the
+ * sole route back, so it can afford to do something else. The text half still
+ * links home, so the habit is not entirely broken.
+ */
+function Wordmark({
+  className,
+  onMarkClick,
+}: {
+  className?: string;
+  onMarkClick?: () => void;
+}) {
+  if (!onMarkClick) {
+    return (
+      <Link
+        href="/"
+        className={cn(WORDMARK_SHELL, "transition-opacity hover:opacity-90", WORDMARK_FOCUS, className)}
+      >
+        <MarkImage />
+        <MarkLabel />
+      </Link>
+    );
+  }
+
+  return (
+    <div className={cn(WORDMARK_SHELL, className)}>
+      <button
+        type="button"
+        onClick={onMarkClick}
+        aria-label="Draw the club mark"
+        title="Draw the club mark"
+        className={cn(
+          "rounded-full transition-transform hover:scale-105 active:scale-95",
+          WORDMARK_FOCUS
+        )}
+      >
+        <MarkImage />
+      </button>
+      <Link href="/" className={cn("transition-opacity hover:opacity-90", WORDMARK_FOCUS)}>
+        <MarkLabel />
+      </Link>
+    </div>
   );
 }
 
@@ -65,6 +116,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [revealOpen, setRevealOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -120,6 +172,7 @@ export function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
+    <>
     <header
       className={cn(
         "sticky top-0 z-50 border-b backdrop-blur-md transition-colors duration-200",
@@ -130,7 +183,7 @@ export function Navbar() {
       style={{ backgroundColor: "var(--nav-bg)" }}
     >
       <nav className="container-page flex h-16 items-center justify-between gap-4">
-        <Wordmark />
+        <Wordmark onMarkClick={() => setRevealOpen(true)} />
 
         {/* Desktop navigation. Below lg the links move into the sheet. */}
         <div className="hidden items-center gap-1 lg:flex">
@@ -328,5 +381,9 @@ export function Navbar() {
         </div>
       </nav>
     </header>
+
+    {/* Mounted only while playing, so every click starts a clean run. */}
+    {revealOpen && <ClubMarkReveal onClose={() => setRevealOpen(false)} />}
+    </>
   );
 }
