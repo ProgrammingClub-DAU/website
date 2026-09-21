@@ -1029,7 +1029,7 @@ function EventsTab() {
       */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm sm:items-center">
-          <div className="my-auto w-full max-w-lg space-y-4 rounded-panel border border-border bg-surface p-5 shadow-2xl sm:p-6">
+          <div className="my-4 sm:my-auto w-full max-w-lg space-y-4 rounded-panel border border-border bg-surface p-5 shadow-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground">
                 {editingEvent ? "Edit Event" : "Create New Event"}
