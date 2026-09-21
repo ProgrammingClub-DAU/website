@@ -472,7 +472,57 @@ function MembersTab() {
         </div>
       </div>
 
-      <DataTable columns={columns} data={filteredMembers} isLoading={loading} emptyMessage="No members found." />
+      <div className="hidden sm:block">
+        <DataTable columns={columns} data={filteredMembers} isLoading={loading} emptyMessage="No members found." />
+      </div>
+
+      <div className="block sm:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-32 animate-pulse rounded-panel bg-surface-2" />
+          ))
+        ) : filteredMembers.length === 0 ? (
+          <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
+            No members found.
+          </div>
+        ) : (
+          filteredMembers.map((m) => (
+            <div key={m.id} className="rounded-panel border border-border bg-surface p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 shrink-0 rounded-full border border-border bg-surface-2 overflow-hidden flex items-center justify-center">
+                    {m.avatarUrl ? (
+                      <Image src={m.avatarUrl} alt={m.name} width={40} height={40} className="size-full object-cover" />
+                    ) : (
+                      <Users className="size-5 text-fg-muted" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground line-clamp-1">{m.name}</div>
+                    <div className="font-mono text-xs text-fg-muted">#{m.id} {m.academicYear ? `• ${ACADEMIC_YEAR_LABELS[m.academicYear]}` : ""}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDeleteUser(m.id, m.name)} disabled={actionLoadingId === m.id || currentUser?.id === m.id} title={currentUser?.id === m.id ? "You cannot delete your own account" : "Delete user"} className="p-1 text-fg-muted hover:text-red-400 transition-colors disabled:opacity-50">
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                  <div className="text-fg-subtle">Role</div>
+                  <div><ClubRoleBadge clubRole={m.clubRole} showIcon={false} /></div>
+                </div>
+                <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                  <div className="text-fg-subtle">Platform</div>
+                  <div className="font-semibold">{m.role.replace("ROLE_", "")}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -855,7 +905,71 @@ function EventsTab() {
         </button>
       </div>
 
-      <DataTable columns={columns} data={events} isLoading={loading} emptyMessage="No events created yet." />
+      <div className="hidden sm:block">
+        <DataTable columns={columns} data={events} isLoading={loading} emptyMessage="No events created yet." />
+      </div>
+
+      <div className="block sm:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-28 animate-pulse rounded-panel bg-surface-2" />
+          ))
+        ) : events.length === 0 ? (
+          <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
+            No events created yet.
+          </div>
+        ) : (
+          events.map((e) => {
+            const statusColors = {
+              UPCOMING: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+              COMPLETED: "border-blue-500/40 bg-blue-500/10 text-blue-400",
+              CANCELLED: "border-red-500/40 bg-red-500/10 text-red-400",
+            }[e.status] || "border-border bg-surface-2 text-fg-muted";
+            
+            return (
+              <div key={e.id} className="rounded-panel border border-border bg-surface p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 shrink-0 rounded-panel border border-border bg-surface-2 overflow-hidden flex items-center justify-center">
+                      {e.coverImageUrl ? (
+                        <Image src={e.coverImageUrl} alt={e.title} width={40} height={40} className="size-full object-cover" />
+                      ) : (
+                        <Calendar className="size-4 text-fg-muted" />
+                      )}
+                    </div>
+                    <div>
+                      <Link href={`/admin/events/${e.id}`} className="font-semibold text-foreground hover:underline line-clamp-1">{e.title}</Link>
+                      <div className="text-xs text-fg-muted">{e.location}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 flex-col items-end">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-nano font-bold uppercase tracking-wider ${statusColors}`}>
+                      {e.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
+                  <div>
+                    <div className="text-fg-subtle">Date</div>
+                    <div>
+                      {new Date(e.eventDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    </div>
+                  </div>
+                  <div className="flex justify-end items-center gap-2">
+                    <button onClick={() => openEdit(e)} className="p-2 rounded-control border border-border bg-surface-2 text-fg-muted hover:text-primary transition-colors">
+                      <Edit2 className="size-3.5" />
+                    </button>
+                    <button onClick={() => openDelete(e)} className="p-2 rounded-control border border-border bg-surface-2 text-fg-muted hover:text-red-400 transition-colors">
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
       <ConfirmDialog
         open={deleting !== null}
@@ -912,7 +1026,7 @@ function EventsTab() {
       */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm sm:items-center">
-          <div className="my-auto w-full max-w-lg space-y-4 rounded-panel border border-border bg-surface p-5 shadow-2xl sm:p-6">
+          <div className="my-4 sm:my-auto w-full max-w-lg space-y-4 rounded-panel border border-border bg-surface p-5 shadow-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground">
                 {editingEvent ? "Edit Event" : "Create New Event"}
