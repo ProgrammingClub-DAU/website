@@ -708,6 +708,13 @@ programming-club-intro {
   --intro-lock: min(760px, calc(100vw - 64px));
   --intro-mark: min(250px, 30vw);
   --intro-height: 480px;
+
+  /* The @ DAU pill, to match the navbar's treatment of the suffix: mono, in a
+     hairline box, beside the name rather than drawn into the wordmark. The
+     border is a fixed dark value rather than --border, because the intro is
+     always dark and --border follows the theme. */
+  --intro-suffix-font: var(--font-mono, ui-monospace, monospace);
+  --intro-suffix-border: rgb(255 255 255 / 0.17);
 }
 
 /* The on-demand play, from the navbar logo.
