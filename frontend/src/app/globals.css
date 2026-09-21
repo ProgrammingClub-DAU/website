@@ -673,3 +673,60 @@
     color: transparent;
   }
 }
+
+/* The opening identity is a custom element defined by /club-intro.js. An
+   unupgraded custom element is still a box, so hide it until it defines
+   itself -- otherwise an empty one flashes before the script lands. */
+programming-club-intro:not(:defined) {
+  display: none;
+}
+
+/* The intro ships navy (#080f1c). This site is neutral near-black, so the
+   overlay is repainted in the dark theme's own --background and the centre
+   glow in --primary at low alpha -- the same indigo the accent uses. The
+   hand-off at the end is then a fade rather than a colour change.
+
+   Custom properties are the one thing that crosses a shadow boundary, so this
+   retunes the component without forking it: club-intro.js keeps its own values
+   as the fallbacks.
+
+   Always the dark value, in both themes. The wordmark is light-on-dark vector
+   artwork, so a light background would leave it invisible -- and the intro
+   plays before the page is read, which makes it its own surface rather than
+   part of the page it covers. */
+programming-club-intro {
+  --intro-bg: #08090a;
+  --intro-glow: rgb(94 106 210 / 0.10);
+
+  /* Larger than the component ships. Its own --intro-x, the offset that keeps
+     the mark centred until it docks, is derived from these two, so they retune
+     together instead of drifting apart. Below its 560px container query the
+     component sets its own stacked sizes, which these do not disturb. */
+  /* Capped rather than fixed. The component's own stacked layout only starts
+     below 560px, so a fixed 760px lock overflowed the viewport between there
+     and about 768px -- the logo was clipped off the left edge. */
+  --intro-lock: min(760px, calc(100vw - 64px));
+  --intro-mark: min(250px, 30vw);
+  --intro-height: 480px;
+}
+
+/* The on-demand play, from the navbar logo.
+   
+   The opening identity is the first thing on screen and owns the window, so it
+   is opaque. This one interrupts a page someone is already reading, so it sits
+   over it rather than replacing it: a translucent surface with the page blurred
+   behind, which also makes it obvious the site is still there.
+
+   Only the standard `backdrop-filter` is written. Lightning CSS collapses a
+   hand-written standard/-webkit- pair down to the prefixed one alone, and
+   Chromium does not match that -- which is what made every backdrop-filter on
+   this site silently dead once before.
+
+   The mark is larger again here: with the wordmark hidden there is nothing
+   beside it competing for the frame. */
+programming-club-intro[mark-only] {
+  --intro-bg: rgb(8 9 10 / 0.82);
+  --intro-glow: rgb(94 106 210 / 0.07);
+  --intro-mark: min(300px, 38vw);
+  backdrop-filter: blur(7px) saturate(1.1);
+}
