@@ -4,12 +4,7 @@ import com.cpclub.backend.user.entity.User;
 
 /**
  * Immutable DTO record representing a single ranked entry on the leaderboard.
- * Displays calculated Codeforces performance tiers.
- *
- * <p>The member's id is {@code userId}, not {@code id}. The frontend type once
- * called it {@code id} and cast the response straight to that type, so every
- * leaderboard row linked to {@code /profile/undefined}. The frontend now maps
- * this field explicitly; renaming it here would break that mapping silently.</p>
+ * Displays calculated Codeforces performance tiers and dynamic banner status.
  */
 public record LeaderboardResponseDto(
         int rank,
@@ -19,9 +14,57 @@ public record LeaderboardResponseDto(
         Integer rating,
         String tier,
         String clubRole,
-        /** The member's photo, which the leaderboard rows were already built to show. */
-        String avatarUrl
+        String avatarUrl,
+        String equippedBannerId,
+        String rankBannerId,
+        String activeBannerId,
+        Integer maxRating,
+        @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
+        boolean isPlatformCreator
 ) {
+    /** Backwards-compatible constructor for existing callers and tests. */
+    public LeaderboardResponseDto(
+            int rank,
+            Long userId,
+            String name,
+            String codeforcesHandle,
+            Integer rating,
+            String tier,
+            String clubRole,
+            String avatarUrl
+    ) {
+        this(
+                rank,
+                userId,
+                name,
+                codeforcesHandle,
+                rating,
+                tier,
+                clubRole,
+                avatarUrl,
+                "rookie",
+                calculateRankBanner(rank),
+                calculateActiveBanner(rank, "rookie"),
+                rating,
+                false
+        );
+    }
+
+    public static String calculateRankBanner(int rank) {
+        return switch (rank) {
+            case 1 -> "rank-gold";
+            case 2 -> "rank-silver";
+            case 3 -> "rank-bronze";
+            default -> null;
+        };
+    }
+
+    public static String calculateActiveBanner(int rank, String equippedBannerId) {
+        String rankBanner = calculateRankBanner(rank);
+        if (rankBanner != null) return rankBanner;
+        return (equippedBannerId != null && !equippedBannerId.isBlank()) ? equippedBannerId : "rookie";
+    }
+
     /**
      * Resolves the official Codeforces rating tier based on rating thresholds.
      *
@@ -50,6 +93,9 @@ public record LeaderboardResponseDto(
      * @return public ranking entry with a calculated Codeforces tier
      */
     public static LeaderboardResponseDto fromEntity(User user, int rank) {
+        String rankBanner = calculateRankBanner(rank);
+        String equipped = user.getEquippedBannerId() != null ? user.getEquippedBannerId() : "rookie";
+        Integer maxR = user.getMaxRating() != null ? user.getMaxRating() : user.getRating();
         return new LeaderboardResponseDto(
                 rank,
                 user.getId(),
@@ -58,29 +104,40 @@ public record LeaderboardResponseDto(
                 user.getRating(),
                 calculateTier(user.getRating()),
                 user.getClubRole() != null ? user.getClubRole().name() : null,
-                user.getAvatarUrl()
+                user.getAvatarUrl(),
+                equipped,
+                rankBanner,
+                rankBanner != null ? rankBanner : equipped,
+                maxR,
+                user.isPlatformCreator()
         );
     }
 
     /**
      * Maps a database-ranked row into an immutable leaderboard entry.
      *
-     * <p>Unlike {@link #fromEntity}, the rank here is read from the query rather
-     * than counted in Java, so no caller has to know how ranking works.</p>
-     *
      * @param row projection carrying the member and its computed placement
      * @return public ranking entry with a calculated Codeforces tier
      */
     public static LeaderboardResponseDto fromProjection(LeaderboardEntryProjection row) {
+        int rank = row.getPlacement().intValue();
+        String rankBanner = calculateRankBanner(rank);
+        String equipped = row.getEquippedbannerid() != null ? row.getEquippedbannerid() : "rookie";
+        Integer maxR = row.getMaxrating() != null ? row.getMaxrating() : row.getRating();
         return new LeaderboardResponseDto(
-                row.getPlacement().intValue(),
+                rank,
                 row.getId(),
                 row.getName(),
                 row.getHandle(),
                 row.getRating(),
                 calculateTier(row.getRating()),
                 row.getClubrole(),
-                row.getAvatarurl()
+                row.getAvatarurl(),
+                equipped,
+                rankBanner,
+                rankBanner != null ? rankBanner : equipped,
+                maxR,
+                row.getIsplatformcreator() != null ? row.getIsplatformcreator() : false
         );
     }
 }

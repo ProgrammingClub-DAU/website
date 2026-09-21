@@ -46,7 +46,7 @@ import java.util.List;
  * annotation sits next to the code it protects where a reviewer will see it.</p>
  *
  * <p>Public: the event listings, one event's detail, and its photos. Everything
- * else is admin-only, including every attendee endpoint — the attendance list
+ * else is admin-only, including every attendee endpoint â€” the attendance list
  * carries members' phone numbers and email addresses.</p>
  */
 @RestController
@@ -58,7 +58,7 @@ public class EventController {
     private final EventService eventService;
     private final EventExportService eventExportService;
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Creates an event.
@@ -259,7 +259,7 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Event cancelled"));
     }
 
-    // ── Attendance ────────────────────────────────────────────────────────────
+    // â”€â”€ Attendance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Records that a member attended.
@@ -371,7 +371,7 @@ public class EventController {
                 .body(workbook);
     }
 
-    // ── Photos ────────────────────────────────────────────────────────────────
+    // â”€â”€ Photos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Attaches a photo to an event.
@@ -397,7 +397,7 @@ public class EventController {
      * Deletes one photo.
      *
      * <p>Addressed by photo id alone, without the event, because a photo id is
-     * already unique — requiring the event too would only invite a mismatched pair
+     * already unique â€” requiring the event too would only invite a mismatched pair
      * that has to be validated for no gain.</p>
      *
      * @param photoId photo identifier

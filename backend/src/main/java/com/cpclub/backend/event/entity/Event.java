@@ -134,6 +134,16 @@ public class Event {
     @Builder.Default
     private List<EventWinner> winners = new ArrayList<>();
 
+    @Column(name = "hide_podium", nullable = false)
+    @Builder.Default
+    private boolean hidePodium = false;
+
+    // â”€â”€ Phase 3: RSVPs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    /** Optional cap on event RSVPs. Null = unlimited capacity. */
+    @Column
+    private Integer capacity;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;

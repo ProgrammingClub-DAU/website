@@ -1,30 +1,28 @@
+"use client";
+
 /**
  * The people who run the club.
  *
- * Two groups, because that is how the club is organised: the core team, and the
- * batch representatives. Convenor and Deputy Convenor sit inside the core team
- * rather than in a section of their own -- they are the top of it, not a
- * separate body.
+ * Displays the committee grouped into two clean sections:
+ * 1. Core Team (Convenor, Deputy Convenor, Core, Associate Core)
+ * 2. Batch Representatives (All batch reps)
  *
- * Each card says who someone is and where to find them: photo, name, post, and
- * a way through to Codeforces and LinkedIn. No rating, no rank title, no year of
- * study. This page answers "who is on the committee"; a Specialist badge beside
- * a Convenor answers a different question badly, and standing belongs on the
- * leaderboard.
+ * Each member is presented in a square-ish dark glass card with a 128px avatar,
+ * name, role badge, and 4 platform links.
  */
 
 import Link from "next/link";
 import Image from "next/image";
-import { ExternalLink } from "lucide-react";
+import { Users, Shield, GraduationCap } from "lucide-react";
 
-import { PlatformGlyph, PROFILE_ACCENT } from "@/components/site/platform-glyph";
-import { CLUB_ROLE_LABELS } from "@/lib/club-roles";
+import { PlatformGlyph } from "@/components/site/platform-glyph";
+import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { profileUrl } from "@/lib/platform-profiles";
-import type { ClubRole, PublicMember } from "@/types/api";
+import type { PublicMember } from "@/types/api";
 
 function initialsOf(name: string): string {
   return name
-    .split(" ")
+    .split(/\s+/)
     .filter(Boolean)
     .map((part) => part[0])
     .join("")
@@ -32,45 +30,36 @@ function initialsOf(name: string): string {
     .toUpperCase();
 }
 
-/**
- * The page's two sections, top to bottom.
- *
- * The server returns the committee in hierarchy order, so within the core team
- * the Convenor comes first and the Associate Core last without this file
- * restating the ranking. All it decides is which posts share a heading.
- */
-const SECTIONS: { title: string; posts: ClubRole[] }[] = [
-  {
-    title: "Core team",
-    posts: ["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE"],
-  },
-  {
-    title: "Batch representatives",
-    posts: ["BATCH_REPRESENTATIVE"],
-  },
+/** Pre-computed unique vibrant gradient combinations for avatar placeholders */
+const AVATAR_GRADIENTS = [
+  "from-indigo-600 via-purple-600 to-pink-500",
+  "from-cyan-500 via-blue-600 to-indigo-700",
+  "from-emerald-500 via-teal-600 to-cyan-700",
+  "from-amber-500 via-orange-600 to-rose-600",
+  "from-fuchsia-600 via-purple-600 to-blue-600",
+  "from-blue-600 via-indigo-600 to-violet-700",
 ];
 
-/** The two senior posts, given a quiet accent so they read as the head of the team. */
-const SENIOR: ClubRole[] = ["CONVENOR", "DEPUTY_CONVENOR"];
+const CORE_ROLE_ORDER: Record<string, number> = {
+  CONVENOR: 1,
+  DEPUTY_CONVENOR: 2,
+  CORE: 3,
+  ASSOCIATE_CORE: 4,
+};
 
 export function MembersDirectory({
   team,
   unreachable = false,
 }: {
   team: PublicMember[];
-  /** True when the server could not be reached, as opposed to having nobody to show. */
   unreachable?: boolean;
 }) {
-  if (unreachable) {
-    /*
-      An empty committee and an unreachable server are different facts, and
-      saying the first when the second is true is a claim about the club.
-    */
+  if (unreachable && team.length === 0) {
     return (
-      <div className="rounded-panel border border-dashed border-destructive/40 bg-destructive/5 py-12 text-center">
-        <p className="text-sm text-destructive">Could not load the committee.</p>
-        <p className="mt-1 text-xs text-fg-muted">
-          The server may be waking up. Reload in a few seconds.
+      <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-12 text-center backdrop-blur-sm">
+        <p className="text-base font-semibold text-destructive">Could not load the committee.</p>
+        <p className="mt-2 text-sm text-fg-muted">
+          The server may be waking up or synchronizing. Please refresh in a few seconds.
         </p>
       </div>
     );
@@ -78,119 +67,246 @@ export function MembersDirectory({
 
   if (team.length === 0) {
     return (
-      <div className="rounded-panel border border-dashed border-border py-12 text-center">
-        <p className="text-sm text-fg-muted">No committee members listed yet.</p>
-        <p className="mt-1 text-xs text-fg-subtle">
-          People appear here once they are given a post in the admin panel.
+      <div className="rounded-2xl border border-dashed border-border p-12 text-center backdrop-blur-sm">
+        <Users className="mx-auto size-10 text-fg-subtle opacity-60" />
+        <p className="mt-3 text-base font-semibold text-fg-muted">No committee members listed yet.</p>
+        <p className="mt-1 text-sm text-fg-subtle">
+          Members will appear here once appointed in the administration panel.
         </p>
       </div>
     );
   }
 
+  // 1. Core Members: Convenor, Deputy Convenor, Core, Associate Core
+  const coreMembers = team
+    .filter((m) => m.clubRole && ["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE"].includes(m.clubRole))
+    .sort((a, b) => {
+      const orderA = CORE_ROLE_ORDER[a.clubRole || ""] || 99;
+      const orderB = CORE_ROLE_ORDER[b.clubRole || ""] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.id - b.id;
+    });
+
+  // 2. Batch Representatives
+  const batchReps = team
+    .filter((m) => m.clubRole === "BATCH_REPRESENTATIVE")
+    .sort((a, b) => a.id - b.id);
+
+  // 3. Fallback for any other committee members (if added in the future)
+  const otherMembers = team.filter(
+    (m) =>
+      !m.clubRole ||
+      (!["CONVENOR", "DEPUTY_CONVENOR", "CORE", "ASSOCIATE_CORE", "BATCH_REPRESENTATIVE"].includes(m.clubRole))
+  );
+
   return (
-    <div className="space-y-14">
-      {SECTIONS.map((section) => {
-        const people = team.filter((m) => m.clubRole && section.posts.includes(m.clubRole));
-        if (people.length === 0) return null;
-
-        return (
-          <section key={section.title}>
-            <div className="mb-6 flex items-baseline gap-3 border-b border-hairline pb-3">
-              <h2 className="font-heading text-lg font-medium tracking-tight text-foreground">
-                {section.title}
-              </h2>
-              <span className="font-mono text-micro text-fg-subtle">{people.length}</span>
+    <div className="space-y-16">
+      {/* ── Section 1: Core Team ── */}
+      {coreMembers.length > 0 && (
+        <section>
+          <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+                <Shield className="size-4" />
+              </div>
+              <div>
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Core Team
+                </h2>
+                {/* <p className="text-xs text-white/50">
+                  Convenor, Deputy Convenor, Core &amp; Associate Core Members
+                </p> */}
+              </div>
             </div>
+            <div className="hidden sm:block h-px flex-1 ml-6 bg-gradient-to-r from-white/15 to-transparent" />
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {people.map((member) => (
-                <MemberCard key={member.id} member={member} />
-              ))}
+          <div className="flex flex-wrap justify-center gap-6">
+            {coreMembers.map((member, index) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                avatarGradient={AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Section 2: Batch Representatives ── */}
+      {batchReps.length > 0 && (
+        <section>
+          <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+                <GraduationCap className="size-4" />
+              </div>
+              <div>
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Batch Representatives
+                </h2>
+                {/* <p className="text-xs text-white/50">
+                  Student Year Liaisons &amp; Batch Ambassadors
+                </p> */}
+              </div>
             </div>
-          </section>
-        );
-      })}
+            <div className="hidden sm:block h-px flex-1 ml-6 bg-gradient-to-r from-white/15 to-transparent" />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6">
+            {batchReps.map((member, index) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                avatarGradient={AVATAR_GRADIENTS[(index + 3) % AVATAR_GRADIENTS.length]}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Fallback: Other Committee Members ── */}
+      {otherMembers.length > 0 && (
+        <section>
+          <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+                <Users className="size-4" />
+              </div>
+              <div>
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Committee Members
+                </h2>
+                <p className="text-xs text-white/50">
+                  Student Leadership &amp; Operations
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:block h-px flex-1 ml-6 bg-gradient-to-r from-white/15 to-transparent" />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6">
+            {otherMembers.map((member, index) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                avatarGradient={AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
 /**
- * One member.
- *
- * The card links to their profile through a stretched anchor on the name rather
- * than a wrapper, because the platform capsules are links too and an anchor
- * inside an anchor is invalid and behaves differently in every browser. The
- * capsules sit above it on the z axis so they stay clickable.
+ * Uniform dark-glass member card — no neon, no role-based colors.
+ * Compact design with 104px avatar, name, role badge, and platform links at bottom.
  */
-function MemberCard({ member }: { member: PublicMember }) {
-  const senior = member.clubRole !== null && SENIOR.includes(member.clubRole);
+function MemberCard({
+  member,
+  avatarGradient,
+}: {
+  member: PublicMember;
+  avatarGradient: string;
+}) {
+  const PLATFORMS = [
+    { platform: "codeforces" as const, value: member.codeforcesHandle, label: "Codeforces" },
+    { platform: "linkedin" as const, value: member.linkedinUrl, label: "LinkedIn" },
+    { platform: "github" as const, value: member.githubUrl, label: "GitHub" },
+    { platform: "leetcode" as const, value: member.leetcodeHandle, label: "LeetCode" },
+  ] as const;
 
-  const links = (
-    [
-      { platform: "codeforces" as const, value: member.codeforcesHandle, label: "Codeforces" },
-      { platform: "linkedin" as const, value: member.linkedinUrl, label: "LinkedIn" },
-    ] as const
-  )
-    .map((link) => ({ ...link, href: profileUrl(link.platform, link.value) }))
-    .filter((link) => link.href !== null);
+  const links = PLATFORMS
+    .map((l) => ({ ...l, href: profileUrl(l.platform, l.value) }))
+    .filter((l) => l.href !== null);
 
   return (
     <article
-      className={`group relative flex flex-col rounded-panel border bg-surface-2 p-5 transition-all hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-panel ${
-        senior ? "border-primary/35" : "border-border"
-      }`}
+      className={`
+        group relative flex flex-col items-center
+        rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl
+        p-4 sm:p-5 pb-5 min-h-[270px]
+        w-full sm:w-[calc(50%-14px)] lg:w-[calc(25%-18px)]
+        transition-all duration-300 cursor-pointer
+        hover:-translate-y-1.5 hover:border-white/[0.18] hover:bg-white/[0.07]
+        hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.7)]
+      `}
     >
-      <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-3">
-        {member.avatarUrl ? (
-          <Image
-            src={member.avatarUrl}
-            alt=""
-            width={64}
-            height={64}
-            className="size-full object-cover"
-          />
-        ) : (
-          <span className="font-mono text-lg text-fg-muted">{initialsOf(member.name)}</span>
-        )}
+      {/* Subtle top edge highlight on hover */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      />
+
+      {/* ─── Centered Avatar (104px) ─── */}
+      <div className="mt-1 flex flex-col items-center gap-3 flex-1 w-full">
+        <div
+          className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/25 shadow-md"
+          style={{ width: "104px", height: "104px" }}
+        >
+          <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+            {member.avatarUrl ? (
+              <Image
+                src={member.avatarUrl}
+                alt={member.name}
+                width={104}
+                height={104}
+                className="size-full object-cover"
+              />
+            ) : (
+              <div
+                className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
+              >
+                {initialsOf(member.name)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Name */}
+        <div className="text-center px-1">
+          <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/90 transition-colors group-hover:text-white leading-tight line-clamp-2">
+            <Link href={`/profile/${member.id}`} className="after:absolute after:inset-0">
+              {member.name}
+            </Link>
+          </h3>
+
+          {/* Role badge */}
+          <div className="mt-2 flex items-center justify-center">
+            <ClubRoleBadge clubRole={member.clubRole} />
+          </div>
+        </div>
       </div>
 
-      <h3 className="mt-4 text-base font-semibold tracking-tight text-foreground">
-        <Link href={`/profile/${member.id}`} className="after:absolute after:inset-0">
-          {member.name}
-        </Link>
-      </h3>
-
-      {member.clubRole && (
-        <p
-          className={`mt-0.5 font-mono text-micro tracking-caps uppercase ${
-            senior ? "text-primary" : "text-fg-muted"
-          }`}
-        >
-          {CLUB_ROLE_LABELS[member.clubRole]}
-        </p>
-      )}
-
-      {links.length > 0 && (
-        <div className="relative z-10 mt-4 flex flex-wrap gap-2">
-          {links.map((link) => (
-            <a
-              key={link.platform}
-              href={link.href!}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${member.name} on ${link.label}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/40 px-2.5 py-1 font-mono text-micro text-fg-muted transition-colors hover:border-hairline-strong hover:text-foreground"
-            >
-              {/* The platform's own colour, so the two read apart at a glance. */}
-              <span style={{ color: PROFILE_ACCENT[link.platform] }} className="flex">
+      {/* ─── Bottom: Platform Links ─── */}
+      <div className="relative z-10 mt-auto pt-3 w-full border-t border-white/[0.08]">
+        <div className="flex items-center justify-center gap-2">
+          {links.length > 0 ? (
+            links.slice(0, 4).map((link) => (
+              <a
+                key={link.platform}
+                href={link.href!}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on ${link.label}`}
+                title={link.label}
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5
+                  text-white/50 transition-all duration-200 hover:scale-110 hover:border-white/25 hover:text-white hover:bg-white/10"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <PlatformGlyph platform={link.platform} className="size-3.5" />
-              </span>
-              {link.label}
-              <ExternalLink className="size-2.5 opacity-50" />
-            </a>
-          ))}
+              </a>
+            ))
+          ) : (
+            <span className="font-mono text-[9px] text-white/25 uppercase tracking-wider">
+              No profiles linked
+            </span>
+          )}
         </div>
-      )}
+      </div>
     </article>
   );
 }
+

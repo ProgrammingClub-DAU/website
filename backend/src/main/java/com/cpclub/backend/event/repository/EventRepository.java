@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * JPA repository for {@link Event}.
  *
- * <p>The ordering differs by status on purpose. Upcoming events read forwards —
- * the next one first — while completed events read backwards, most recent first.
+ * <p>The ordering differs by status on purpose. Upcoming events read forwards â€”
+ * the next one first â€” while completed events read backwards, most recent first.
  * A single ordering would put either the furthest-off event or the oldest one at
  * the top of its list.</p>
  */
@@ -41,4 +41,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
      * @return matching events, latest date first
      */
     List<Event> findByStatusInOrderByEventDateDesc(List<EventStatus> statuses);
+
+    /**
+     * Events in a date range and specific statuses.
+     */
+    List<Event> findByEventDateBetweenAndStatusIn(java.time.LocalDateTime from, java.time.LocalDateTime to, List<EventStatus> statuses);
 }

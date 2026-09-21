@@ -1,0 +1,1 @@
+UPDATE users SET is_platform_creator = TRUE WHERE trim(lower(name)) IN ('madhav thesiya', 'tanishq shah', 'raj patel', 'shane christian', 'gaurav rathod', 'mahek kanani') OR trim(lower(codeforces_handle)) IN ('madhav_t', 'king-t', 'raj_patel', 'raze07', 'gaurav_r', 'mahek_k');

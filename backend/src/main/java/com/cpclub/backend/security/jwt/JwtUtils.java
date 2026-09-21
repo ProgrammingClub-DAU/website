@@ -76,7 +76,7 @@ public class JwtUtils {
      * <p>Note that {@link Keys#hmacShaKeyFor} picks the key's algorithm from its
      * length: 64 bytes or more yields HmacSHA512, 48 yields HmacSHA384, and 32
      * yields HmacSHA256. The signing algorithm is therefore stated explicitly at
-     * each call site rather than inferred from this key — a bare
+     * each call site rather than inferred from this key â€” a bare
      * {@code signWith(key())} would silently change the token's {@code alg}
      * header whenever the deployed secret's length crossed one of those
      * boundaries. The secret suggested in {@code .env.example}

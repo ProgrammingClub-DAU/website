@@ -18,6 +18,10 @@ import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
+import com.cpclub.backend.codeforces.repository.CfSolveRepository;
+import com.cpclub.backend.stats.repository.ContestParticipationRepository;
+import com.cpclub.backend.common.model.Platform;
+import com.cpclub.backend.leaderboard.dto.BannerConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +45,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final CodeforcesSyncService codeforcesSyncService;
     private final LeetCodeSyncService leetCodeSyncService;
+    private final CfSolveRepository cfSolveRepository;
+    private final ContestParticipationRepository contestParticipationRepository;
 
     /**
      * Resolves a user profile by database primary key.
@@ -111,7 +117,7 @@ public class UserService {
      */
     /**
      * Searches and paginates members directory sorted alphabetically by name.
-     * Returns full DTO including email — for admin/authenticated use only.
+     * Returns full DTO including email â€” for admin/authenticated use only.
      *
      * @param query search filter matching name or Codeforces handle
      * @param page zero-indexed page number
@@ -168,7 +174,7 @@ public class UserService {
     }
 
     /**
-     * Public-safe profile lookup by ID — omits email, role, and updatedAt.
+     * Public-safe profile lookup by ID â€” omits email, role, and updatedAt.
      * Use this for the public-facing {@code GET /api/users/{id}} endpoint.
      *
      * @param id user ID
@@ -213,6 +219,14 @@ public class UserService {
                 .toList();
     }
 
+    /** Public, email-safe profiles for the website credits section. */
+    @Transactional(readOnly = true)
+    public List<PublicUserResponseDto> getPlatformCreators(boolean viewerIsAdmin) {
+        return userRepository.findByIsPlatformCreatorTrueOrderByNameAsc().stream()
+                .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
+                .toList();
+    }
+
     /**
      * Updates the Codeforces handle of a user.
      * Ensures handle is not registered to another user to maintain unique mapping.
@@ -233,7 +247,13 @@ public class UserService {
             throw new BadRequestException("Codeforces handle '" + handle + "' is already in use by another user!");
         }
 
+        boolean handleChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
         user.setCodeforcesHandle(handle);
+        if (handleChanged) {
+            user.setCfLastSubmissionId(null);
+            cfSolveRepository.deleteByUser(user);
+            contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+        }
         User savedUser = userRepository.save(user);
         codeforcesSyncService.syncSingleUser(savedUser);
         log.info("Updated Codeforces handle for user id {} to '{}'", userId, handle);
@@ -249,8 +269,8 @@ public class UserService {
      * unchanged profile is not rejected as a duplicate of itself.</p>
      *
      * <p>An external sync runs only when the handle it belongs to actually
-     * changed. Syncing unconditionally meant every profile save — a name edit, a
-     * new LinkedIn URL — spent a permit on the shared rate limiter that the
+     * changed. Syncing unconditionally meant every profile save â€” a name edit, a
+     * new LinkedIn URL â€” spent a permit on the shared rate limiter that the
      * scheduled jobs also queue behind.</p>
      *
      * <p>The link-only fields are stored as given. CodeChef and AtCoder publish no
@@ -285,6 +305,11 @@ public class UserService {
             }
             codeforcesChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
             user.setCodeforcesHandle(handle);
+            if (codeforcesChanged) {
+                user.setCfLastSubmissionId(null);
+                cfSolveRepository.deleteByUser(user);
+                contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+            }
         }
 
         boolean leetcodeChanged = false;
@@ -453,5 +478,50 @@ public class UserService {
             throw new BadRequestException(
                     "At least one administrator must remain. Promote another member first.");
         }
+    }
+
+    private boolean isWebsiteCreator(User user) {
+        return user.isPlatformCreator();
+    }
+
+    /**
+     * Equips a rating or exclusive banner for a user.
+     *
+     * @param userId user requesting the banner
+     * @param bannerId candidate banner ID
+     * @return equipped banner ID
+     */
+    @Transactional
+    public String equipBanner(Long userId, String bannerId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (!BannerConfig.isValidRatingBanner(bannerId)) {
+            throw new BadRequestException("Invalid banner ID: " + bannerId);
+        }
+
+        BannerConfig banner = BannerConfig.getBanner(bannerId);
+
+        if ("creator-vip".equalsIgnoreCase(bannerId)) {
+            if (!isWebsiteCreator(user)) {
+                throw new BadRequestException("The Red VIP banner is exclusively reserved for the 6 platform creators.");
+            }
+        } else {
+            int effectiveMaxRating = Math.max(
+                    user.getMaxRating() != null ? user.getMaxRating() : 0,
+                    user.getRating() != null ? user.getRating() : 0
+            );
+
+            if (effectiveMaxRating < banner.minRating()) {
+                throw new BadRequestException(String.format(
+                        "Cannot equip %s banner: required rating is %d, but your maximum rating is %d",
+                        banner.name(), banner.minRating(), effectiveMaxRating
+                ));
+            }
+        }
+
+        user.setEquippedBannerId(banner.id());
+        userRepository.save(user);
+        return banner.id();
     }
 }

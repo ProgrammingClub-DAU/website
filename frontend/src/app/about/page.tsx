@@ -194,12 +194,12 @@ export default function AboutPage() {
           {faq.map((item) => (
             <div
               key={item.q}
-              className="grid gap-2 border-b border-hairline py-6 md:grid-cols-2 md:gap-8"
+              className="grid gap-2 border-b border-hairline py-7 md:grid-cols-2 md:gap-8"
             >
               <dt className="text-base font-semibold tracking-tight text-pretty">
                 {item.q}
               </dt>
-              <dd className="text-body leading-[1.5] text-fg-muted text-pretty">
+              <dd className="text-body leading-[1.6] text-fg-muted text-pretty">
                 {item.a}
               </dd>
             </div>

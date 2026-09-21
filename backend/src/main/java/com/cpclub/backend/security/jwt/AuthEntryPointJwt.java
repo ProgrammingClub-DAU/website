@@ -27,7 +27,7 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
      *
      * <p>This previously built its own {@code com.fasterxml.jackson} (Jackson 2)
      * mapper. Spring Boot 4 serializes with Jackson 3, and Jackson 2 is only on the
-     * classpath transitively — so that mapper had no JSR-310 module and threw on
+     * classpath transitively â€” so that mapper had no JSR-310 module and threw on
      * this class's own {@link java.time.LocalDateTime} timestamp. Every 401 failed
      * while writing its body, and the caller got a serialization error instead of
      * the "unauthorized" signal the frontend uses to redirect to login.</p>

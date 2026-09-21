@@ -34,13 +34,17 @@ class UserServiceTest {
     private UserService userService;
     private CodeforcesSyncService codeforcesSyncService;
     private LeetCodeSyncService leetCodeSyncService;
+    private com.cpclub.backend.codeforces.repository.CfSolveRepository cfSolveRepository;
+    private com.cpclub.backend.stats.repository.ContestParticipationRepository contestParticipationRepository;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         codeforcesSyncService = mock(CodeforcesSyncService.class);
         leetCodeSyncService = mock(LeetCodeSyncService.class);
-        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService);
+        cfSolveRepository = mock(com.cpclub.backend.codeforces.repository.CfSolveRepository.class);
+        contestParticipationRepository = mock(com.cpclub.backend.stats.repository.ContestParticipationRepository.class);
+        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService, cfSolveRepository, contestParticipationRepository);
     }
 
     @Test
@@ -313,5 +317,29 @@ class UserServiceTest {
         user.setId(id);
         user.setClubRole(post);
         return user;
+    }
+
+    @Test
+    @DisplayName("A website creator can equip the creator-vip banner")
+    void creatorCanEquipCreatorVipBanner() {
+        User creator = teamMember(1L, "Tanishq Shah", ClubRole.CORE);
+        creator.setPlatformCreator(true);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(creator));
+
+        String bannerId = userService.equipBanner(1L, "creator-vip");
+        assertEquals("creator-vip", bannerId);
+        assertEquals("creator-vip", creator.getEquippedBannerId());
+    }
+
+    @Test
+    @DisplayName("A non-creator is rejected when attempting to equip creator-vip banner")
+    void nonCreatorCannotEquipCreatorVipBanner() {
+        User student = teamMember(99L, "Random User", ClubRole.STUDENT);
+        when(userRepository.findById(99L)).thenReturn(java.util.Optional.of(student));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                BadRequestException.class,
+                () -> userService.equipBanner(99L, "creator-vip")
+        );
     }
 }

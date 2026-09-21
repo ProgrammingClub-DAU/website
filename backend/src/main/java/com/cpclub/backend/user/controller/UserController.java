@@ -22,10 +22,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.cpclub.backend.user.dto.EquipBannerRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for managing student profiles and retrieving member lists.
@@ -49,7 +51,7 @@ public class UserController {
      * @return paginated response containing user profiles
      */
     @GetMapping
-    @Operation(summary = "Get members directory — public, email-safe (paginated & searchable)")
+    @Operation(summary = "Get members directory â€” public, email-safe (paginated & searchable)")
     public ResponseEntity<ApiResponse<PagedResponse<PublicUserResponseDto>>> getMembersDirectory(
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -76,6 +78,14 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<PublicUserResponseDto>>> getTeam(Authentication authentication) {
         List<PublicUserResponseDto> team = userService.getTeam(isAdmin(authentication));
         return ResponseEntity.ok(ApiResponse.success(team, "Fetched club team successfully"));
+    }
+
+    /** Public profiles of the registered website builders, for the credits section. */
+    @GetMapping("/platform-creators")
+    @Operation(summary = "Get website creators - public")
+    public ResponseEntity<ApiResponse<List<PublicUserResponseDto>>> getPlatformCreators(Authentication authentication) {
+        List<PublicUserResponseDto> creators = userService.getPlatformCreators(isAdmin(authentication));
+        return ResponseEntity.ok(ApiResponse.success(creators, "Fetched website creators successfully"));
     }
 
     /**
@@ -124,7 +134,7 @@ public class UserController {
      * @return user profile details
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get public user profile by ID — email-safe")
+    @Operation(summary = "Get public user profile by ID â€” email-safe")
     public ResponseEntity<ApiResponse<PublicUserResponseDto>> getUserById(
             @PathVariable Long id, Authentication authentication) {
         PublicUserResponseDto user = userService.getPublicUserById(id, isAdmin(authentication));
@@ -213,6 +223,25 @@ public class UserController {
     }
 
     /**
+     * Equips a rating banner for the authenticated member after server-side validation.
+     *
+     * @param userDetails injected authentication details
+     * @param request candidate banner ID
+     * @return equipped banner payload
+     */
+    @PutMapping("/banner")
+    @Operation(summary = "Equip rating banner for current user (authenticated)")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, String>>> equipBanner(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody EquipBannerRequest request
+    ) {
+        UserResponseDto currentUser = userService.getUserByEmail(userDetails.getUsername());
+        String equippedBanner = userService.equipBanner(currentUser.id(), request.bannerId());
+        return ResponseEntity.ok(ApiResponse.success(Map.of("equippedBannerId", equippedBanner), "Banner equipped successfully"));
+    }
+
+    /**
      * Updates the Codeforces handle for a given user.
      * Enforces ownership: only the resource owner or an admin may update the handle.
      *
@@ -288,4 +317,3 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
     }
 }
-

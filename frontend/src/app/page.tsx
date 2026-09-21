@@ -62,7 +62,6 @@ const features: Feature[] = [
     icon: Swords,
     title: "1v1 battles",
     body: "Head-to-head timed problems against another member, with a shared verdict feed.",
-    badge: "In development",
   },
   {
     icon: Users,
@@ -90,7 +89,8 @@ function initials(name: string): string {
     .slice(0, 2)
     .toUpperCase();
 }
-
+
+
 
 // Regenerated in the background at most every five minutes, so a new Hall
 // of Fame entry appears without a redeploy and without every visit waiting
@@ -332,18 +332,49 @@ export default async function HomePage() {
       </Section>
 
       <Section className="pb-16">
-        <SectionHeader eyebrow="On the roadmap" title="What we are building next." />
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          <InDevelopment
-            headingLevel="h3"
-            title="Coder of the Week"
-            body="A weekly spotlight on one member, picked from what they solved and how they did in contests that week."
-          />
-          <InDevelopment
-            headingLevel="h3"
-            title="1v1 battles"
-            body="Head-to-head timed problems against another member, with a shared verdict feed."
-          />
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Coder of the week teaser */}
+          <div>
+            <SectionHeader eyebrow="On the roadmap" title="What we are building next." />
+            <div className="mt-10">
+              <InDevelopment
+                headingLevel="h3"
+                title="Coder of the Week"
+                body="A weekly spotlight on one member, picked from what they solved and how they did in contests that week."
+              />
+            </div>
+          </div>
+
+          {/* New Gamification / Compete CTA */}
+          <div className="flex h-full flex-col">
+            <SectionHeader eyebrow="New Feature" title="Ready to battle?" />
+            <div className="mt-10 relative overflow-hidden rounded-control border border-primary/20 bg-primary/5 p-8 sm:p-10 transition-colors hover:border-primary/40 h-full flex flex-col justify-between group">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-full -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-primary/[0.08] to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+              />
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]">
+                    <Swords className="size-5" />
+                  </span>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] tracking-caps-wide text-primary uppercase">
+                    Gamification Live
+                  </span>
+                </div>
+                <h3 className="mt-6 text-2xl font-bold tracking-tight text-white group-hover:text-primary transition-colors">1v1 Battles & CP Bingo</h3>
+                <p className="mt-3 max-w-[40ch] text-base leading-relaxed text-fg-muted">
+                  Challenge your friends to a head-to-head Bingo duel. Solve Codeforces problems faster than your opponent to claim the grid and win the match!
+                </p>
+              </div>
+              
+              <div className="mt-8 pt-4 border-t border-primary/10">
+                <Button asChild className="w-full sm:w-auto font-bold tracking-wide rounded-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.6)] transition-all">
+                  <Link href="/compete">Enter the Arena</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </Section>
 
@@ -386,3 +417,4 @@ function cnFeature(span?: boolean) {
     span && "sm:col-span-2"
   );
 }
+

@@ -8,7 +8,7 @@ package com.cpclub.backend.leaderboard.dto;
  * of results costs exactly one query no matter how many members it contains.</p>
  *
  * <p>Every accessor maps to a single lowercase column alias in
- * {@code UserRepository.findLeaderboardPage} — no underscores and no camel case.
+ * {@code UserRepository.findLeaderboardPage} â€” no underscores and no camel case.
  * PostgreSQL and H2 both fold unquoted aliases to lowercase, so single-word
  * aliases are the one form that resolves identically on both.</p>
  */
@@ -48,4 +48,14 @@ public interface LeaderboardEntryProjection {
 
     /** Lower-case to match the native query's alias, as getClubrole does. */
     String getAvatarurl();
+
+    /** Member's currently equipped rating banner. */
+    String getEquippedbannerid();
+
+    /** Highest rating attained. */
+    Integer getMaxrating();
+
+    /** Is the member a platform creator? */
+    Boolean getIsplatformcreator();
 }
+

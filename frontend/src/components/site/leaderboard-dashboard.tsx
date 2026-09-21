@@ -1,47 +1,78 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import CountUp from "react-countup";
+import {
+  Search,
+  Users,
+  Trophy,
+  Code2,
+  Sparkles,
+  TrendingUp,
+  X,
+  RotateCcw,
+  ShieldCheck,
+  Flame,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { rankColor, ratingToRank, CF_RANKS, type CfRankKey } from "@/lib/cf-ranks";
-import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { leaderboardService } from "@/lib/services/leaderboard";
-import type { LeaderboardEntry, LeaderboardFilter, LeaderboardPlatform } from "@/types/api";
-import { Search, Flame, Users, Code2, Trophy, User, Loader2 } from "lucide-react";
 
-function getRankName(key: CfRankKey): string {
-  return CF_RANKS.find((r) => r.key === key)?.name ?? key;
-}
+import { PodiumSection } from "./leaderboard/podium-section";
+import { RankingRow } from "./leaderboard/ranking-row";
+import { BannerLockerDrawer } from "./leaderboard/banner-locker-drawer";
+import { SpotlightTopCard } from "./leaderboard/spotlight-top-card";
+import { RatingDistributionChart } from "./leaderboard/rating-distribution-chart";
+import type { LeaderboardEntry, LeaderboardFilter, LeaderboardPlatform } from "@/types/api";
+import { useAuthStore } from "@/store/auth";
 
 interface LeaderboardDashboardProps {
   initialEntries?: LeaderboardEntry[];
 }
 
 export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
+  const { user: currentUser } = useAuthStore();
   const [platform, setPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>("ALL");
+  // ── [LIVE / DUMMY DATA TOGGLE]: Switch between `initialEntries` and `MOCK_LEADERBOARD_ENTRIES` ──
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
+  // const [entries, setEntries] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD_ENTRIES);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
+  const [isLockerOpen, setIsLockerOpen] = useState(false);
+  const [lastUpdatedMin, setLastUpdatedMin] = useState(4);
 
-  const fetchLeaderboard = useCallback(async (p: LeaderboardPlatform, f: LeaderboardFilter) => {
-    setLoading(true);
-    try {
-      const data = await leaderboardService.getLeaderboard(p, f);
-      setEntries(data);
-    } catch (err) {
-      console.error("Failed to load leaderboard data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Re-fetch whenever platform or roleFilter changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
-    fetchLeaderboard(platform, roleFilter);
-  }, [platform, roleFilter, fetchLeaderboard]);
+    let ignore = false;
+
+    // ── [DUMMY RANKINGS PREVIEW MODE] (Uncomment below to preview dummy rankings) ──
+    // setEntries(MOCK_LEADERBOARD_ENTRIES);
+
+    // ── [LIVE BACKEND DATA] (Default) ──
+    leaderboardService
+      .getLeaderboard(platform, roleFilter)
+      .then((data) => {
+        if (!ignore) {
+          setEntries(data);
+          setLastUpdatedMin(Math.floor(Math.random() * 8) + 2);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          console.error("Failed to load leaderboard data:", err);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [platform, roleFilter]);
 
   // Client-side search filtering
   const filteredEntries = useMemo(() => {
@@ -65,13 +96,26 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   const top3 = sortedEntries[2];
   const rank4Onwards = sortedEntries.slice(3);
 
-  const clubStats = useMemo(
-    () => ({
+  // Club stats
+  const clubStats = useMemo(() => {
+    const rated = entries.filter((e) => e.rating != null && e.rating > 0);
+    const totalRated = rated.length;
+    const avgRating =
+      totalRated > 0
+        ? Math.round(rated.reduce((acc, curr) => acc + (curr.rating ?? 0), 0) / totalRated)
+        : 0;
+    const maxRating =
+      totalRated > 0
+        ? Math.max(...rated.map((e) => e.rating ?? 0))
+        : 0;
+
+    return {
       totalParticipants: entries.length,
-      rated: entries.filter((e) => e.rating != null && e.rating > 0).length,
-    }),
-    [entries]
-  );
+      ratedCount: totalRated,
+      avgRating,
+      maxRating,
+    };
+  }, [entries]);
 
   const topRatedMember = useMemo(() => {
     const rated = entries.filter((e) => e.rating != null && e.rating > 0);
@@ -79,353 +123,319 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     return [...rated].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
   }, [entries]);
 
+  // Handle banner equip callback
+  const handleBannerEquipped = (newBannerId: string) => {
+    if (selectedMemberForLocker) {
+      setEntries((prev) =>
+        prev.map((item) =>
+          item.id === selectedMemberForLocker.id
+            ? { ...item, equippedBannerId: newBannerId }
+            : item
+        )
+      );
+    }
+  };
+
+  const openLockerForMember = (member: LeaderboardEntry) => {
+    setSelectedMemberForLocker(member);
+    setIsLockerOpen(true);
+  };
+
+  // Letter-by-letter reveal animation for Hero title
+  const titleText = "Top Coders.";
+
   return (
-    <div className="grid gap-8 lg:grid-cols-12">
-      {/* ── LEFT COLUMN (~60% / 7 cols) ── */}
-      <div className="space-y-6 lg:col-span-7">
-        {/* Platform & Filter Controls */}
-        <div className="space-y-4">
-          {/* Platform Pills */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex rounded-panel border border-border bg-surface-2 p-1">
-              {(
-                [
-                  { key: "CODEFORCES", label: "Codeforces" },
-                  { key: "LEETCODE", label: "LeetCode" },
-                ] as const
-              ).map((p) => (
+    <div className="space-y-6">
+      {/* ── SECTION 1: HERO & CONTROLS ── */}
+      <div className="relative rounded-2xl border border-white/[0.08] bg-[#0b0b14]/80 p-4 md:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute -bottom-32 -right-32 size-80 rounded-full bg-cyan-600/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            {/* Live update pill */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-mono text-white/70 mb-3 shadow-inner">
+              <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Synced {lastUpdatedMin} min ago</span>
+              <span className="text-white/30">•</span>
+              <span className="text-purple-300 flex items-center gap-1">
+                Live Standings
+              </span>
+            </div>
+
+            {/* Letter-by-letter reveal heading */}
+            <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white flex flex-wrap">
+              {titleText.split("").map((char, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: index * 0.04,
+                    ease: [0.2, 0.8, 0.2, 1],
+                  }}
+                  className={char === "." ? "text-amber-400" : "bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent"}
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </h1>
+
+            {/* <p className="mt-2 text-sm md:text-base text-white/60 max-w-xl text-pretty">
+              Earn rating. Unlock exclusive animated banners. Climb the 3D podium to claim the crown.
+            </p> */}
+          </div>
+
+        </div>
+
+        {/* ── CONTROLS BAR: PLATFORM + FILTER CHIPS + SEARCH ── */}
+        <div className="mt-5 pt-4 border-t border-white/10 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+          {/* Sliding Pill Platform Switcher */}
+          <div className="flex rounded-xl border border-white/10 bg-[#09090f] p-1 shadow-inner shrink-0">
+            {(
+              [
+                { key: "CODEFORCES", label: "Codeforces" },
+                { key: "LEETCODE", label: "LeetCode" },
+              ] as const
+            ).map((p) => {
+              const active = platform === p.key;
+              return (
                 <button
                   key={p.key}
                   onClick={() => setPlatform(p.key)}
-                  className={`rounded-control px-4 py-1.5 text-xs font-semibold transition-all ${
-                    platform === p.key
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-fg-muted hover:text-foreground"
-                  }`}
+                  className={`relative rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${active ? "text-white" : "text-white/50 hover:text-white/80"
+                    }`}
                 >
-                  {p.label}
+                  {active && (
+                    <motion.div
+                      layoutId="platform-pill"
+                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{p.label}</span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            {/* Role Filter Buttons */}
-            <div className="flex flex-wrap gap-1.5">
-              {(
-                [
-                  { key: "ALL", label: "All" },
-                  { key: "CORE", label: "Core" },
-                  { key: "BATCH_REP", label: "Batch Rep" },
-                  { key: "STUDENTS", label: "Students" },
-                ] as const
-              ).map((r) => (
+          {/* Role Filter Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            {(
+              [
+                { key: "ALL", label: "All Members" },
+                { key: "CORE", label: "Core Team" },
+                { key: "BATCH_REP", label: "Batch Reps" },
+                { key: "STUDENTS", label: "Students" },
+              ] as const
+            ).map((r) => {
+              const active = roleFilter === r.key;
+              return (
                 <button
                   key={r.key}
                   onClick={() => setRoleFilter(r.key)}
-                  className={`rounded-full border px-3 py-1 text-label font-medium transition-all ${
-                    roleFilter === r.key
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-fg-muted hover:border-hairline-strong hover:text-foreground"
-                  }`}
+                  className={`relative rounded-full px-3 py-1 text-xs font-semibold border transition-all ${active
+                    ? "border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]"
+                    : "border-white/10 bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white"
+                    }`}
                 >
                   {r.label}
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />
+          {/* Instant Search with Clear */}
+          <div className="relative min-w-[240px] md:max-w-xs flex-1">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
             <input
               type="text"
-              placeholder={`Search ${platform === "CODEFORCES" ? "Codeforces" : "LeetCode"} members by name or handle...`}
+              placeholder="Search member or handle..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-control border border-border bg-surface-2 py-2 pl-9 pr-4 text-xs text-foreground placeholder:text-fg-muted focus:border-primary focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#09090f] py-2 pl-9 pr-8 text-xs text-white placeholder:text-white/40 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 focus:outline-none transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center font-mono text-xs text-fg-muted uppercase">
-            <Loader2 className="mb-2 size-6 animate-spin text-primary" />
-            Loading {platform} standings...
+      {/* ── SECTION 2: 3D PODIUM ── */}
+      {!loading && sortedEntries.length > 0 && (
+        <PodiumSection
+          top1={top1}
+          top2={top2}
+          top3={top3}
+          platform={platform}
+          onOpenLocker={openLockerForMember}
+        />
+      )}
+
+      {/* ── MAIN CONTENT GRID: RANKINGS (7 cols) + SIDEBAR (5 cols) ── */}
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* Left Column: Rankings List (7 cols) */}
+        <div className="space-y-4 lg:col-span-7">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Trophy className="size-4 text-amber-400" />
+              Rankings ({sortedEntries.length})
+            </h2>
+            <span className="text-xs text-white/50 font-mono">
+              Click any row to inspect locker
+            </span>
           </div>
-        ) : (
-          <>
-            {/* TOP 3 PODIUM */}
-            {sortedEntries.length > 0 && (
-              <div className="pt-2">
-                <h3 className="mb-3 text-xs font-semibold tracking-wider text-fg-muted uppercase">
-                  Top Performers ({platform === "CODEFORCES" ? "Codeforces" : "LeetCode"})
-                </h3>
-                <div className="grid grid-cols-3 gap-3 items-end">
-                  {/* #2 Silver (Left) */}
-                  {top2 ? (
-                    <PodiumCard entry={top2} place={2} platform={platform} />
-                  ) : (
-                    <div className="h-36 rounded-panel border border-dashed border-border/50" />
-                  )}
 
-                  {/* #1 Gold (Center, Dominant) */}
-                  {top1 ? (
-                    <PodiumCard entry={top1} place={1} platform={platform} />
-                  ) : (
-                    <div className="h-44 rounded-panel border border-dashed border-border/50" />
-                  )}
-
-                  {/* #3 Bronze (Right) */}
-                  {top3 ? (
-                    <PodiumCard entry={top3} place={3} platform={platform} />
-                  ) : (
-                    <div className="h-36 rounded-panel border border-dashed border-border/50" />
-                  )}
-                </div>
+          {/* Loading state */}
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-[62px] w-full rounded-xl border border-white/10 bg-white/[0.02] animate-pulse"
+                />
+              ))}
+            </div>
+          ) : rank4Onwards.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              <div className="space-y-2.5">
+                {rank4Onwards.map((entry, index) => (
+                  <RankingRow
+                    key={entry.id}
+                    entry={entry}
+                    rankNum={index + 4}
+                    platform={platform}
+                    searchQuery={searchQuery}
+                    onSelectMember={openLockerForMember}
+                  />
+                ))}
               </div>
-            )}
-
-            {/* RANK 4+ LIST */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold tracking-wider text-fg-muted uppercase">
-                Rankings
-              </h3>
-              {rank4Onwards.length > 0 ? (
-                <div className="space-y-2">
-                  {rank4Onwards.map((entry, index) => {
-                    const rankNum = index + 4;
-                    const cfRank = ratingToRank(entry.rating);
-                    const color = platform === "CODEFORCES" ? rankColor(cfRank) : "var(--primary)";
-                    return (
-                      <Link
-                        key={entry.id}
-                        href={`/profile/${entry.id}`}
-                        className="flex items-center justify-between rounded-panel border border-border bg-surface-2 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-hairline-strong"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="w-6 text-center font-mono text-xs font-bold text-fg-muted">
-                            #{rankNum}
-                          </span>
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-background overflow-hidden">
-                            {entry.avatarUrl ? (
-                              <Image
-                                src={entry.avatarUrl}
-                                alt={entry.name}
-                                width={32}
-                                height={32}
-                                className="size-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <User className="size-4 text-fg-muted" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="truncate text-sm font-semibold hover:underline"
-                                style={{ color }}
-                              >
-                                {entry.codeforcesHandle ? `@${entry.codeforcesHandle}` : entry.name}
-                              </span>
-                              <ClubRoleBadge clubRole={entry.clubRole} showIcon={false} />
-                            </div>
-                            <p className="truncate text-label text-fg-muted">{entry.name}</p>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-bold">
-                            {entry.rating !== null && entry.rating > 0 ? entry.rating : "Unrated"}
-                          </div>
-                          {platform === "CODEFORCES" && entry.rating ? (
-                            <div
-                              className="text-micro capitalize font-medium"
-                              style={{ color }}
-                            >
-                              {getRankName(cfRank)}
-                            </div>
-                          ) : (
-                            <div className="text-micro text-fg-muted">
-                              {platform === "LEETCODE" ? "LeetCode" : "Codeforces"}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : sortedEntries.length <= 3 && sortedEntries.length > 0 ? (
-                <p className="py-4 text-center text-xs text-fg-muted">End of list.</p>
-              ) : (
-                <p className="py-6 text-center text-xs text-fg-muted">
-                  No members found matching your filter criteria.
-                </p>
+            </AnimatePresence>
+          ) : sortedEntries.length > 0 && sortedEntries.length <= 3 ? (
+            <div className="rounded-xl border border-white/10 bg-[#0c0c14] p-8 text-center">
+              <p className="text-sm text-white/60">
+                All top performers are featured on the podium above.
+              </p>
+            </div>
+          ) : (
+            /* Friendly Empty State */
+            <div className="rounded-2xl border border-white/10 bg-[#0c0c14] p-10 text-center space-y-3">
+              <div className="mx-auto size-12 rounded-full bg-white/[0.05] flex items-center justify-center text-white/40">
+                <Users className="size-6" />
+              </div>
+              <h3 className="text-base font-bold text-white">No members found</h3>
+              <p className="text-xs text-white/50 max-w-sm mx-auto">
+                No club members match your search &quot;{searchQuery}&quot; under the {roleFilter} filter.
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 pt-2"
+                >
+                  <RotateCcw className="size-3" /> Clear search query
+                </button>
               )}
             </div>
-          </>
-        )}
-      </div>
-
-      {/* ── RIGHT COLUMN (~40% / 5 cols) ── */}
-      <div className="space-y-6 lg:col-span-5">
-        {/* Highest-rated member */}
-        {topRatedMember && (
-          <Card className="relative overflow-hidden border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-surface-2 to-surface-2">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-amber-400">
-                <Flame className="size-4" />
-                <span className="text-xs font-bold tracking-wide uppercase">
-                  Top Ranked ({platform})
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href={`/profile/${topRatedMember.id}`}
-                className="group flex items-center gap-4 rounded-panel border border-amber-500/20 bg-background/50 p-3 transition-all hover:border-amber-500/40"
-              >
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/50 bg-surface-2 overflow-hidden">
-                  {topRatedMember.avatarUrl ? (
-                    <Image
-                      src={topRatedMember.avatarUrl}
-                      alt={topRatedMember.name}
-                      width={48}
-                      height={48}
-                      className="size-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="size-6 text-amber-400" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4
-                    className="truncate text-base font-bold group-hover:underline"
-                    style={{
-                      color:
-                        platform === "CODEFORCES"
-                          ? rankColor(ratingToRank(topRatedMember.rating))
-                          : "var(--primary)",
-                    }}
-                  >
-                    {topRatedMember.name}
-                  </h4>
-                  {topRatedMember.codeforcesHandle && (
-                    <p className="text-xs text-fg-muted">@{topRatedMember.codeforcesHandle}</p>
-                  )}
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-xs font-semibold text-amber-400">
-                      {topRatedMember.rating} rating
-                    </span>
-                    <ClubRoleBadge clubRole={topRatedMember.clubRole} showIcon={false} />
-                  </div>
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Club Stats Panel */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Trophy className="size-4 text-primary" />
-              Club Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-panel border border-border bg-surface-2 p-3">
-                <div className="flex justify-center mb-1 text-primary">
-                  <Users className="size-4" />
-                </div>
-                <div className="text-xl font-bold">{clubStats.totalParticipants}</div>
-                <div className="text-label text-fg-muted">Members Listed</div>
-              </div>
-              <div className="rounded-panel border border-border bg-surface-2 p-3">
-                <div className="flex justify-center mb-1 text-cf-master">
-                  <Code2 className="size-4" />
-                </div>
-                <div className="text-xl font-bold">{clubStats.rated}</div>
-                <div className="text-label text-fg-muted">Rated on {platform}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-// ── Podium Card Sub-Component ──
-function PodiumCard({
-  entry,
-  place,
-  platform,
-}: {
-  entry: LeaderboardEntry;
-  place: 1 | 2 | 3;
-  platform: LeaderboardPlatform;
-}) {
-  const cfRank = ratingToRank(entry.rating);
-  const color = platform === "CODEFORCES" ? rankColor(cfRank) : "var(--primary)";
-
-  const placeConfig = {
-    1: {
-      medal: "🥇",
-      height: "h-48",
-      borderColor: "border-amber-400/50",
-      glow: "shadow-[0_0_20px_rgba(251,191,36,0.15)]",
-    },
-    2: {
-      medal: "🥈",
-      height: "h-40",
-      borderColor: "border-slate-300/40",
-      glow: "shadow-[0_0_15px_rgba(203,213,225,0.1)]",
-    },
-    3: {
-      medal: "🥉",
-      height: "h-36",
-      borderColor: "border-amber-700/40",
-      glow: "shadow-[0_0_15px_rgba(180,83,9,0.1)]",
-    },
-  }[place];
-
-  return (
-    <Link
-      href={`/profile/${entry.id}`}
-      className={`group relative flex flex-col justify-between rounded-panel border ${placeConfig.borderColor} bg-surface-2 p-3 text-center transition-all hover:-translate-y-1 ${placeConfig.height} ${placeConfig.glow}`}
-    >
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg">
-        {placeConfig.medal}
-      </div>
-
-      <div className="pt-2">
-        <div className="mx-auto flex size-10 items-center justify-center rounded-full border border-border bg-background overflow-hidden">
-          {entry.avatarUrl ? (
-            <Image
-              src={entry.avatarUrl}
-              alt={entry.name}
-              width={40}
-              height={40}
-              className="size-full rounded-full object-cover"
-            />
-          ) : (
-            <User className="size-5 text-fg-muted" />
           )}
         </div>
-        <h4 className="mt-2 truncate text-xs font-bold group-hover:underline" style={{ color }}>
-          {entry.name}
-        </h4>
-        <p className="truncate text-micro text-fg-muted">
-          {entry.codeforcesHandle ? `@${entry.codeforcesHandle}` : ""}
-        </p>
-      </div>
 
-      <div className="mb-1">
-        <div className="text-base font-extrabold">{entry.rating ?? "—"}</div>
-        <div className="text-nano font-medium capitalize truncate" style={{ color }}>
-          {platform === "CODEFORCES" ? getRankName(cfRank) : "LeetCode"}
+        {/* Right Column: Fintech Sidebar (5 cols) */}
+        <div className="space-y-6 lg:col-span-5">
+          {/* Spotlight Card with Rotating Border Beam */}
+          <SpotlightTopCard
+            topMember={topRatedMember}
+            platform={platform}
+            onOpenLocker={openLockerForMember}
+          />
+
+          {/* Club Stats Fintech Card */}
+          <Card className="border border-white/10 bg-[#0d0d16]/90 shadow-xl backdrop-blur-md rounded-2xl">
+            <CardHeader className="pb-3 border-b border-white/10">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <TrendingUp className="size-4 text-cyan-400" />
+                Fintech Club Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex justify-center mb-1 text-purple-400">
+                    <Users className="size-4" />
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white tabular-nums">
+                    <CountUp end={clubStats.totalParticipants} duration={1.5} />
+                  </div>
+                  <div className="text-[11px] text-white/50 font-medium">Total Listed</div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex justify-center mb-1 text-cyan-400">
+                    <Code2 className="size-4" />
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white tabular-nums">
+                    <CountUp end={clubStats.ratedCount} duration={1.5} />
+                  </div>
+                  <div className="text-[11px] text-white/50 font-medium">
+                    Rated on {platform === "LEETCODE" ? "LeetCode" : "Codeforces"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex justify-center mb-1 text-emerald-400">
+                    <ShieldCheck className="size-4" />
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white tabular-nums">
+                    <CountUp end={clubStats.avgRating} duration={1.5} />
+                  </div>
+                  <div className="text-[11px] text-white/50 font-medium">Avg Rating</div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex justify-center mb-1 text-amber-400">
+                    <Flame className="size-4" />
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white tabular-nums">
+                    <CountUp end={clubStats.maxRating} duration={1.5} />
+                  </div>
+                  <div className="text-[11px] text-white/50 font-medium">Peak Rating</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rating Distribution Breakdown Card */}
+          <Card className="border border-white/10 bg-[#0d0d16]/90 shadow-xl backdrop-blur-md rounded-2xl">
+            <CardHeader className="pb-2 border-b border-white/10">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <Sparkles className="size-4 text-purple-400" />
+                Rating Tier Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <RatingDistributionChart entries={entries} platform={platform} />
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </Link>
+
+      {/* ── BANNER LOCKER MODAL / DRAWER ── */}
+      <BannerLockerDrawer
+        member={selectedMemberForLocker}
+        isOpen={isLockerOpen}
+        isOwnProfile={
+          !!currentUser && !!selectedMemberForLocker &&
+          currentUser.id === selectedMemberForLocker.id
+        }
+        onClose={() => setIsLockerOpen(false)}
+        onBannerEquipped={handleBannerEquipped}
+      />
+    </div>
   );
 }

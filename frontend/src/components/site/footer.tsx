@@ -91,8 +91,11 @@ export function Footer() {
       </div>
 
       <div className="container-page pb-10">
-        <div className="border-t border-hairline pt-6 font-mono text-label tracking-caps text-fg-subtle uppercase">
-          © {new Date().getFullYear()} {site.fullName}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-6 font-mono text-label tracking-caps text-fg-subtle uppercase">
+          <span>© {new Date().getFullYear()} {site.fullName}</span>
+          <Link href="/privacy" className={linkClass}>
+            Privacy
+          </Link>
         </div>
       </div>
     </footer>

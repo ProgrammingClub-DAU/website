@@ -80,6 +80,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     List<User> findByCodeforcesHandleIsNotNull();
 
+    /** Returns the registered builders of this website for the public credits section. */
+    List<User> findByIsPlatformCreatorTrueOrderByNameAsc();
+
     /**
      * Returns members eligible for LeetCode synchronization.
      *
@@ -107,7 +110,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * <p>Backs the leaderboard's role filter. {@code STUDENTS} cannot use this
      * method, because its definition includes members with no role at all and
-     * {@code IN} never matches NULL — see {@code LeaderboardService}.</p>
+     * {@code IN} never matches NULL â€” see {@code LeaderboardService}.</p>
      *
      * @param roles positions to match
      * @return members holding one of them
@@ -141,7 +144,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * <p>{@code STUDENTS} cannot be expressed as an {@code IN} list. Its definition
      * includes members with no position recorded, and {@code IN} never matches
-     * NULL — every pre-Phase-2 account would vanish from the board.</p>
+     * NULL â€” every pre-Phase-2 account would vanish from the board.</p>
      *
      * <p>Column aliases are deliberately single lowercase words; see
      * {@link com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection}.</p>
@@ -160,6 +163,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
                         THEN u.leetcode_rating ELSE u.rating END AS rating,
                    u.club_role AS clubrole,
                    u.avatar_url AS avatarurl,
+                   COALESCE(u.equipped_banner_id, 'rookie') AS equippedbannerid,
+                   COALESCE(u.max_rating, CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE' THEN u.leetcode_rating ELSE u.rating END) AS maxrating,
+                   u.is_platform_creator AS isplatformcreator,
                    RANK() OVER (
                        ORDER BY CASE WHEN CAST(:platform AS VARCHAR) = 'LEETCODE'
                                      THEN u.leetcode_rating ELSE u.rating END DESC NULLS LAST

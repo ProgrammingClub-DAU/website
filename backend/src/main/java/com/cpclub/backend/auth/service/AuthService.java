@@ -6,6 +6,7 @@ import com.cpclub.backend.security.jwt.JwtUtils;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import com.cpclub.backend.user.service.PlatformCreatorAccounts;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -152,6 +153,7 @@ public class AuthService {
                 .email(email)
                 .avatarUrl(token.getClaimAsString("picture"))
                 .role(Role.ROLE_USER)
+                .isPlatformCreator(PlatformCreatorAccounts.contains(email))
                 .build();
 
         User saved = userRepository.save(user);

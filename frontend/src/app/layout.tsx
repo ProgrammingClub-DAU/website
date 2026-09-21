@@ -6,6 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
 import { FooterSlot } from "@/components/site/footer-slot";
+import { CommandPalette } from "@/components/site/command-palette";
 import { site } from "@/lib/site";
 
 import { siteUrl } from "@/lib/site-url";
@@ -48,8 +49,8 @@ export const metadata: Metadata = {
   // Share cards need absolute URLs. See lib/site-url.ts for where this comes from.
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${site.fullName} — Competitive programming at DAU`,
-    template: `%s — ${site.fullName}`,
+    default: `${site.fullName} | Competitive Programming at DAU`,
+    template: `%s | ${site.fullName}`,
   },
   description,
   applicationName: site.fullName,
@@ -61,6 +62,13 @@ export const metadata: Metadata = {
     locale: "en_IN",
   },
   twitter: { card: "summary_large_image", title: site.fullName, description },
+  // Google Search Console ownership check. Google's OAuth branding review
+  // requires the home page to be verified to the account that owns the Cloud
+  // project. The token is public by design (it is printed in the page), so it
+  // is read from the environment only to avoid a code change per account.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({
@@ -114,6 +122,7 @@ export default function RootLayout({
             {children}
           </main>
           <FooterSlot />
+          <CommandPalette />
 
           {/* beforeInteractive so the element is defined as early as possible:
               it is the first thing on screen, and a late upgrade would show

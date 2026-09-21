@@ -10,7 +10,7 @@ import com.cpclub.backend.user.entity.User;
  * <p>Wider than {@link UserResponseDto} and much wider than
  * {@link PublicUserResponseDto}: it carries the phone number, which is contact
  * information rather than profile decoration. Every endpoint returning this must
- * be admin-gated — an unauthenticated route handing this back would publish the
+ * be admin-gated â€” an unauthenticated route handing this back would publish the
  * membership's phone numbers.</p>
  *
  * <p>It deliberately omits {@code role}. An admin picking someone to add to an
