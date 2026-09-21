@@ -811,12 +811,102 @@ export default function EventAttendeesPage() {
             </div>
           </div>
 
-          <DataTable
-            columns={attendeeColumns}
-            data={filteredAttendees}
-            isLoading={loadingAttendees}
-            emptyMessage="No attendees registered for this event yet."
-          />
+          <div className="hidden sm:block">
+            <DataTable
+              columns={attendeeColumns}
+              data={filteredAttendees}
+              isLoading={loadingAttendees}
+              emptyMessage="No attendees registered for this event yet."
+            />
+          </div>
+
+          <div className="block sm:hidden space-y-3">
+            {loadingAttendees ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-24 animate-pulse rounded-panel bg-surface-2" />
+              ))
+            ) : filteredAttendees.length === 0 ? (
+              <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
+                No attendees registered for this event yet.
+              </div>
+            ) : (
+              filteredAttendees.map((a) => (
+                <div key={a.userId} className="rounded-panel border border-border bg-surface p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 shrink-0 rounded-full border border-border bg-surface-2 overflow-hidden flex items-center justify-center">
+                        {a.avatarUrl ? (
+                          <Image src={a.avatarUrl} alt={a.name} width={40} height={40} className="size-full object-cover" />
+                        ) : (
+                          <Users className="size-5 text-fg-muted" />
+                        )}
+                      </div>
+                      <div>
+                        <Link href={`/profile/${a.userId}`} className="font-semibold text-foreground hover:underline line-clamp-1">
+                          {a.name}
+                        </Link>
+                        <div className="font-mono text-xs text-fg-muted">#{a.userId}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAttendee(a.userId, a.name)}
+                      title="Remove from event"
+                      className="shrink-0 rounded-control p-2 border border-border bg-surface-2 text-fg-muted hover:text-red-400 hover:border-red-500/30 transition-colors"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                      <div className="text-fg-subtle">Role</div>
+                      <div><ClubRoleBadge clubRole={a.clubRole} showIcon={false} /></div>
+                    </div>
+                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                      <div className="text-fg-subtle">Phone</div>
+                      <div>
+                        {(!a.phoneNumber && !a.hasPhone) ? (
+                          <span className="inline-flex items-center gap-1 text-amber-400 font-mono text-micro" title="Phone missing">
+                            <AlertTriangle className="size-3" /> No Phone
+                          </span>
+                        ) : (
+                          <span className="font-mono">{a.phoneNumber}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                      <div className="text-fg-subtle">Codeforces</div>
+                      <div className="truncate">
+                        {a.codeforcesHandle ? (
+                          <span>
+                            @{a.codeforcesHandle} <span className="text-fg-muted text-micro">({a.cfRating ?? "—"})</span>
+                          </span>
+                        ) : (
+                          <span className="text-fg-subtle">--</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                      <div className="text-fg-subtle">LeetCode</div>
+                      <div className="truncate">
+                        {a.leetcodeHandle ? (
+                          <span>
+                            @{a.leetcodeHandle} <span className="text-fg-muted text-micro">({a.leetcodeRating ?? "—"})</span>
+                          </span>
+                        ) : (
+                          <span className="text-fg-subtle">--</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
