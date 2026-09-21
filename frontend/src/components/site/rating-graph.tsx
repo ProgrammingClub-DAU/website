@@ -16,6 +16,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CF_RANKS, ratingToRank } from "@/lib/cf-ranks";
+import { lcRankColor, ratingToLcRank, lcRankName } from "@/lib/lc-ranks";
+import type { LeaderboardPlatform } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 export type RatingPoint = {
@@ -30,8 +32,14 @@ const PADDING = { top: 18, right: 16, bottom: 26, left: 44 };
 const HEIGHT = 300;
 const GRID_LINES = 5;
 
-function rankName(rating: number): string {
+function rankName(rating: number, platform: LeaderboardPlatform = "CODEFORCES"): string {
+  if (platform === "LEETCODE") return lcRankName(rating);
   return CF_RANKS.find((r) => r.key === ratingToRank(rating))?.name ?? "Unrated";
+}
+
+function getPointColor(rating: number, platform: LeaderboardPlatform = "CODEFORCES"): string {
+  if (platform === "LEETCODE") return lcRankColor(ratingToLcRank(rating));
+  return `var(--cf-${ratingToRank(rating)})`;
 }
 
 /**
@@ -100,9 +108,11 @@ function monotonePath(pts: { x: number; y: number }[]): string {
 
 export function RatingGraph({
   data,
+  platform = "CODEFORCES",
   className,
 }: {
   data: RatingPoint[];
+  platform?: LeaderboardPlatform;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -246,7 +256,7 @@ export function RatingGraph({
           <path
             d={geometry.path}
             fill="none"
-            stroke="var(--cf-expert)"
+            stroke={platform === "LEETCODE" ? "var(--lc-knight, #7c9eff)" : "var(--cf-expert)"}
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -269,7 +279,7 @@ export function RatingGraph({
               cx={p.x}
               cy={p.y}
               r={active === i ? 6.5 : 4.5}
-              fill={`var(--cf-${ratingToRank(p.rating)})`}
+              fill={getPointColor(p.rating, platform)}
               stroke="var(--background)"
               strokeWidth={2}
             />
@@ -294,8 +304,8 @@ export function RatingGraph({
           </p>
           <p className="mt-0.5 text-sm font-semibold">
             {activePoint.rating}{" "}
-            <span style={{ color: `var(--cf-${ratingToRank(activePoint.rating)})` }}>
-              {rankName(activePoint.rating)}
+            <span style={{ color: getPointColor(activePoint.rating, platform) }}>
+              {rankName(activePoint.rating, platform)}
             </span>
           </p>
           {activePoint.contestName && (
@@ -325,7 +335,7 @@ export function RatingGraph({
               <td>{new Date(d.date).toLocaleDateString("en-US")}</td>
               <td>{d.contestName ?? "Contest"}</td>
               <td>{d.rating}</td>
-              <td>{rankName(d.rating)}</td>
+              <td>{rankName(d.rating, platform)}</td>
             </tr>
           ))}
         </tbody>
