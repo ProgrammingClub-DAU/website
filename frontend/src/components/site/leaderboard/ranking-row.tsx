@@ -8,6 +8,7 @@ import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { BannerGraphic } from "./banner-graphic";
 import { getActiveBannerForMember } from "@/lib/banner-config";
 import { rankColor, ratingToRank } from "@/lib/cf-ranks";
+import { lcRankColor, ratingToLcRank, lcRankName } from "@/lib/lc-ranks";
 import type { LeaderboardEntry, LeaderboardPlatform } from "@/types/api";
 
 interface RankingRowProps {
@@ -26,8 +27,10 @@ export const RankingRow: React.FC<RankingRowProps> = ({
   onSelectMember,
 }) => {
   const banner = getActiveBannerForMember(rankNum, entry.equippedBannerId, platform, entry.rating);
+  
   const cfRank = ratingToRank(entry.rating);
-  const color = platform === "CODEFORCES" ? rankColor(cfRank) : "var(--primary)";
+  const lcRank = ratingToLcRank(entry.rating);
+  const color = platform === "CODEFORCES" ? rankColor(cfRank) : lcRankColor(lcRank);
 
   // Search match highlight helper
   const highlightMatch = (text: string) => {
@@ -163,7 +166,7 @@ export const RankingRow: React.FC<RankingRowProps> = ({
             className="text-[10px] md:text-micro font-semibold capitalize tracking-wide"
             style={{ color: color }}
           >
-            {entry.tier || (platform === "LEETCODE" ? "LeetCode" : "Codeforces")}
+            {platform === "LEETCODE" ? lcRankName(entry.rating) : (entry.tier || "Codeforces")}
           </div>
         </div>
       </div>
