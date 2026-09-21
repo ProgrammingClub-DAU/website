@@ -650,18 +650,16 @@ export default function MatchPage() {
 
       <header className="w-full border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-4">
-          <Link href="/compete">
-            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text tracking-wide font-heading">
+          <Link href="/compete" className="flex items-center gap-2">
+            <span className="font-extrabold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-pink-500 font-heading">
               Bingo CP
-            </h1>
+            </span>
           </Link>
-          <nav className="flex items-center gap-3">
-            <Link
-              href="/compete/create"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Create Match
-            </Link>
+          <nav className="flex items-center gap-6 hidden sm:flex">
+            <Link href="/compete" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</Link>
+            <Link href="/compete/create" className="text-sm font-medium text-foreground">ICPC Mode</Link>
+            <Link href="/compete/ioi" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">IOI Mode</Link>
+            <Link href="/compete/help" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Help</Link>
           </nav>
         </div>
       </header>
