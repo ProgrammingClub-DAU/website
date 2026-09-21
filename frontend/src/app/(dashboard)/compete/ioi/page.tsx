@@ -37,7 +37,7 @@ export default function IOIModePage() {
         
         <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
           We are actively working on IOI Mode! This mode will introduce partial scoring based on subtasks. 
-          Instead of simply claiming a square with an "Accepted" verdict, teams will battle for the highest 
+          Instead of simply claiming a square with an &quot;Accepted&quot; verdict, teams will battle for the highest 
           score on each square up to 100 points. 
         </p>
         
