@@ -76,7 +76,7 @@ export default function HelpPage() {
               Squares can be stolen! If a team has already claimed a square, your team can steal it by solving the same problem, but you must accumulate more points (based on time or penalties, depending on the match settings) or simply be the most recent solver if points are not configured.
             </p>
             <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground">
-              <strong>Note:</strong> Currently, the replace mechanic requires the stealing team to have a higher solver rating or a faster solve time depending on the match "Replace Increment" settings configured during match creation.
+              <strong>Note:</strong> Currently, the replace mechanic requires the stealing team to have a higher solver rating or a faster solve time depending on the match &quot;Replace Increment&quot; settings configured during match creation.
             </div>
           </div>
         </section>
