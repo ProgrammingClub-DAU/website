@@ -797,7 +797,7 @@ function ProfileDashboardContent({
             </div>
           ) : lcPoints.length > 0 ? (
             // One contest is enough to draw, as it is for Codeforces.
-            <RatingGraph data={lcPoints} />
+            <RatingGraph data={lcPoints} platform="LEETCODE" />
           ) : (
             <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-sm text-fg-muted">
               <Code className="size-6 text-fg-subtle" />
