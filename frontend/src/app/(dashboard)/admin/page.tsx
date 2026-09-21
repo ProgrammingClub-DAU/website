@@ -499,14 +499,11 @@ function MembersTab() {
                   </div>
                   <div>
                     <div className="font-semibold text-foreground line-clamp-1">{m.name}</div>
-                    <div className="font-mono text-xs text-fg-muted">#{m.id} • {ACADEMIC_YEAR_LABELS[m.academicYear]}</div>
+                    <div className="font-mono text-xs text-fg-muted">#{m.id} {m.academicYear ? `• ${ACADEMIC_YEAR_LABELS[m.academicYear]}` : ""}</div>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => openEdit(m)} className="p-1 text-fg-muted hover:text-primary transition-colors">
-                    <Edit2 className="size-4" />
-                  </button>
-                  <button onClick={() => openDelete(m)} className="p-1 text-fg-muted hover:text-red-400 transition-colors">
+                  <button onClick={() => handleDeleteUser(m.id, m.name)} disabled={actionLoadingId === m.id || currentUser?.id === m.id} title={currentUser?.id === m.id ? "You cannot delete your own account" : "Delete user"} className="p-1 text-fg-muted hover:text-red-400 transition-colors disabled:opacity-50">
                     <Trash2 className="size-4" />
                   </button>
                 </div>
@@ -519,7 +516,7 @@ function MembersTab() {
                 </div>
                 <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
                   <div className="text-fg-subtle">Platform</div>
-                  <div className="font-semibold">{m.platformRole.replace("ROLE_", "")}</div>
+                  <div className="font-semibold">{m.role.replace("ROLE_", "")}</div>
                 </div>
               </div>
             </div>
