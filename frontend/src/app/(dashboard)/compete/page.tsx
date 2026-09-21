@@ -1,13 +1,49 @@
 "use client";
 
-import React, from "react";
+import React from "react";
 import Link from "next/link";
 import { ArrowRight, Trophy, Zap, Users } from "lucide-react";
 
 export default function CompeteLobbyPage() {
+  const [activeCell, setActiveCell] = React.useState(-1);
+  const [claimed, setClaimed] = React.useState<Record<number, string>>({});
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const nextCell = Math.floor(Math.random() * 25);
+      setActiveCell(nextCell);
+      
+      if (Math.random() > 0.6) {
+        setClaimed(prev => ({
+          ...prev,
+          [nextCell]: Math.random() > 0.5 ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-pink-500 text-white border-pink-600'
+        }));
+      }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <header className="max-w-7xl mx-auto px-6 pt-12 md:pt-20 lg:pt-24 pb-16">
+      
+      {/* Header Navigation */}
+      <header className="w-full border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+          <Link href="/compete" className="flex items-center gap-2">
+            <span className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-pink-500 font-heading">
+              Bingo CP
+            </span>
+          </Link>
+          <nav className="flex items-center gap-6">
+            <Link href="/compete" className="text-sm font-medium text-foreground">Home</Link>
+            <Link href="/compete/create" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">ICPC Mode</Link>
+            <Link href="/compete/ioi" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">IOI Mode</Link>
+            <Link href="/compete/help" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Help</Link>
+          </nav>
+        </div>
+      </header>
+
+      <section className="max-w-7xl mx-auto px-6 pt-12 md:pt-20 lg:pt-24 pb-16">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center lg:text-left">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
@@ -41,25 +77,45 @@ export default function CompeteLobbyPage() {
             </div>
           </div>
           
-          {/* Decorative 3x3 Grid */}
-          <div className="flex-1 w-full max-w-md">
-            <div className="aspect-square grid grid-cols-3 gap-3 p-4 rounded-3xl border border-border bg-card/50 backdrop-blur-sm shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-              {[...Array(9)].map((_, i) => (
+          {/* Animated 5x5 Grid */}
+          <div className="flex-1 w-full max-w-lg">
+            <div className="aspect-square grid grid-cols-5 gap-2 p-3 rounded-2xl border border-border bg-card shadow-2xl">
+              {[...Array(25)].map((_, i) => (
                 <div 
                   key={i} 
-                  className={`rounded-xl border flex items-center justify-center transition-colors
-                    ${i === 0 || i === 4 || i === 8 ? 'bg-indigo-500 border-indigo-600 text-white' : 
-                      i === 2 ? 'bg-pink-500 border-pink-600 text-white' : 
-                      'bg-card border-border'
-                    }`}
+                  className={`rounded-lg border flex flex-col items-center justify-center transition-all duration-500 text-center p-1
+                    ${claimed[i] ? claimed[i] : 'bg-background border-border text-foreground'}
+                    ${activeCell === i && !claimed[i] ? 'ring-2 ring-indigo-500 scale-105 shadow-lg' : ''}
+                  `}
                 >
-                  {(i === 0 || i === 4 || i === 8 || i === 2) && <Trophy className="w-8 h-8 opacity-50" />}
+                  <span className="text-[9px] opacity-70 mb-0.5">{800 + Math.floor(Math.random()*4)*100}</span>
+                  <span className="text-[10px] sm:text-xs font-semibold truncate w-full px-1">Problem {String.fromCharCode(65 + Math.floor(Math.random()*5))}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </header>
+      </section>
+
+      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-border bg-card/30">
+        <h2 className="text-3xl font-bold text-center mb-16 font-heading">How to Play</h2>
+        <div className="grid md:grid-cols-4 gap-8">
+          {[
+            { step: 1, title: "Create Match", desc: "Choose grid size (3x3 to 6x6), rating range, and game mode (Classic or Replace)." },
+            { step: 2, title: "Add Teams", desc: "Add up to 16 teams. Each team can have up to 16 Codeforces handles." },
+            { step: 3, title: "Start Solving", desc: "The grid is populated with random CF problems. Submit solutions on Codeforces." },
+            { step: 4, title: "Bingo!", desc: "The system syncs your accepted submissions. Claim a full row, column, or diagonal to win!" }
+          ].map(s => (
+            <div key={s.step} className="flex flex-col items-center text-center relative">
+              <div className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xl mb-4 z-10 ring-4 ring-background">
+                {s.step}
+              </div>
+              <h3 className="text-lg font-bold mb-2">{s.title}</h3>
+              <p className="text-sm text-muted-foreground">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="max-w-7xl mx-auto px-6 py-20 border-t border-border">
         <div className="grid md:grid-cols-3 gap-10">
@@ -93,7 +149,7 @@ export default function CompeteLobbyPage() {
         </div>
       </section>
 
-      <footer className="border-t border-border mt-10 py-8 text-center bg-card">
+      <footer className="border-t border-border py-8 text-center bg-card">
         <div className="text-sm text-muted-foreground font-medium">
           © {new Date().getFullYear()} Bingo CP — Ported for the club.
         </div>
