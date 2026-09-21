@@ -10,6 +10,7 @@ import { Crown, Medal, User, Sparkles, ExternalLink } from "lucide-react";
 
 import { BannerGraphic } from "./banner-graphic";
 import { getActiveBannerForMember } from "@/lib/banner-config";
+import { lcRankName } from "@/lib/lc-ranks";
 import type { LeaderboardEntry, LeaderboardPlatform } from "@/types/api";
 
 interface PodiumSectionProps {
@@ -210,7 +211,7 @@ export const PodiumSection: React.FC<PodiumSectionProps> = ({
                           style={{ color: banner.colors.accent }}
                         >
                           <Sparkles className="size-2.5" />
-                          {entry.tier || (platform === "LEETCODE" ? "LeetCode" : "Codeforces")}
+                          {platform === "LEETCODE" ? lcRankName(entry.rating) : (entry.tier || "Codeforces")}
                         </button>
                       </div>
 
