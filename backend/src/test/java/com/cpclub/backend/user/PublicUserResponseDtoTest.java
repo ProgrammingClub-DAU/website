@@ -88,6 +88,8 @@ class PublicUserResponseDtoTest {
         assertEquals(ClubRole.CORE, dto.clubRole());
         assertEquals("https://www.linkedin.com/in/ravi", dto.linkedinUrl());
         assertEquals("ravi_cf", dto.codeforcesHandle());
+        assertEquals("rookie", dto.equippedBannerId());
+        assertEquals(false, dto.isPlatformCreator());
     }
 
     private User member(ClubRole post) {

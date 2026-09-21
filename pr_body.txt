@@ -1,0 +1,4 @@
+## Description
+Redesigned the Banner Equip UX to be significantly more intuitive. 
+- Removed the clunky "Change Banner" button from the action row and the redundant dropdown from the edit form.
+- The hero banner header itself is now interactive! Owners can simply hover over the beautiful hero graphic to reveal an elegant "Click to Equip Banner" overlay, and click it to instantly open the Banner Locker drawer.

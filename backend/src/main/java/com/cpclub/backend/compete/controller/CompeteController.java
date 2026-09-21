@@ -36,14 +36,6 @@ public class CompeteController {
         return ResponseEntity.ok(competeMatchService.getMatch(matchId));
     }
 
-    // Bug #10 fix: propagate winner/match-end to all clients via next poll
-    @PatchMapping("/{matchId}/duration")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> setDuration(@PathVariable String matchId, @RequestBody Map<String, Integer> body) {
-        int duration = body.getOrDefault("durationMinutes", 1);
-        competeMatchService.setMatchDuration(matchId, duration);
-        return ResponseEntity.ok(Map.of("durationMinutes", duration));
-    }
 
     // Frontend-driven solve reporting: browser polls Codeforces directly and reports solves here
     @PostMapping("/{matchId}/report-solve")

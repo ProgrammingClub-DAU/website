@@ -60,5 +60,7 @@ public class MatchResponseDto {
     public static class ProblemRefDto {
         private Integer contestId;
         private String index;
+        private String name;
+        private Integer position;
     }
 }
