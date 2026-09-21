@@ -5,7 +5,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "compete_solve_logs")
+@Table(name = "compete_solve_logs",
+    uniqueConstraints = @UniqueConstraint(name = "uq_solve_log_match_problem",
+        columnNames = {"match_id", "contest_id", "index"}))
 @Getter
 @Setter
 @Builder

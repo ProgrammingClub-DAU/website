@@ -10,20 +10,21 @@ import apiClient from '@/lib/axios';
 import type { Match, ProblemCell, Team } from "@/components/compete/types";
 
 type SolveLog = {
+  handle?: string;
   team: string;
   problem: { contestId: number; index: string; name?: string; position?: number };
   timestamp?: string | number;
 };
 
 const teamColors: Record<string, string> = {
-  red: "bg-red-500/30 border-red-500/50 text-red-100",
-  blue: "bg-blue-500/30 border-blue-500/50 text-blue-100",
-  green: "bg-green-500/30 border-green-500/50 text-green-100",
-  purple: "bg-purple-500/30 border-purple-500/50 text-purple-100",
-  orange: "bg-orange-500/30 border-orange-500/50 text-orange-100",
-  pink: "bg-pink-500/30 border-pink-500/50 text-pink-100",
-  yellow: "bg-yellow-500/30 border-yellow-500/50 text-yellow-100",
-  teal: "bg-teal-500/30 border-teal-500/50 text-teal-100",
+  red: "bg-red-500 text-white border-red-600",
+  blue: "bg-blue-500 text-white border-blue-600",
+  green: "bg-green-500 text-white border-green-600",
+  purple: "bg-purple-500 text-white border-purple-600",
+  orange: "bg-orange-500 text-white border-orange-600",
+  pink: "bg-pink-500 text-white border-pink-600",
+  yellow: "bg-yellow-500 text-white border-yellow-600",
+  teal: "bg-teal-500 text-white border-teal-600",
 };
 
 type GridSize = 3 | 4 | 5 | 6;
@@ -35,14 +36,23 @@ const gridClasses = {
   6: "grid-cols-6",
 };
 
+const gridWidths = {
+  3: "max-w-2xl",
+  4: "max-w-4xl",
+  5: "max-w-5xl",
+  6: "max-w-6xl",
+};
+
 type LogEntry = {
   key: string;
   message: string;
   team: string;
+  timestamp: number;
 };
 
 type SolvedInfo = {
   team: string;
+  handle?: string;
 };
 
 type Winner = {
@@ -146,7 +156,7 @@ function CountdownToStart({ startTime }: { startTime: Date }) {
   }, [startTime]);
 
   if (timeLeft <= 0) {
-    return <p className="text-white/70">Match is starting now...</p>;
+    return <p className="text-muted-foreground">Match is starting now...</p>;
   }
 
   return (
@@ -160,7 +170,7 @@ export default function MatchPage() {
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
-  const [showLog] = useState(true);
+  const [showLog, setShowLog] = useState(true);
   const [problems, setProblems] = useState<ProblemCell[]>([]);
   const [loading, setLoading] = useState(true);
   const [gridSize, setGridSize] = useState<GridSize>(5);
@@ -179,6 +189,9 @@ export default function MatchPage() {
   const notifiedRef = useRef<Set<string>>(new Set());
   const problemsRef = useRef<ProblemCell[]>([]);
   const solvedRef = useRef<Record<string, SolvedInfo>>({});
+  const matchRef = useRef<Match | null>(null);
+
+  useEffect(() => { matchRef.current = match; }, [match]);
 
   function persistNotified(matchId: string) {
     const key = `notified_${matchId}`;
@@ -229,8 +242,7 @@ export default function MatchPage() {
             
             const key = `${contestId}-${index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            // Bug #7 fix: use same string key format as poll handler so cells color on initial load
-            solvedMap[key] = { team: teamKey };
+            solvedMap[key] = { team: teamKey, handle: entry.handle };
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
             }
@@ -238,10 +250,12 @@ export default function MatchPage() {
             const problemName = entry.problem?.name ?? `Problem ${index}`;
             const contestAndIndex = `${contestId}${index}`;
             const solveTime = entry.timestamp;
+            const solverName = entry.handle ? `${entry.handle} (${displayName})` : displayName;
             newLogEntries.push({
               key,
-              message: `${displayName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
+              message: `${solverName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
               team: teamKey,
+              timestamp: solveTime ? new Date(solveTime).getTime() : Date.now(),
             });
           });
           setPositionOwners(posOwners);
@@ -252,7 +266,7 @@ export default function MatchPage() {
             for (const e of combined) {
               if (!uniqueMap.has(e.key)) uniqueMap.set(e.key, e);
             }
-            return Array.from(uniqueMap.values());
+            return Array.from(uniqueMap.values()).sort((a, b) => b.timestamp - a.timestamp);
           });
           setSolved(solvedMap);
         } catch (e) {
@@ -312,6 +326,9 @@ export default function MatchPage() {
     let isPolling = false;
 
     const clientSidePoll = async () => {
+      const currentMatch = matchRef.current;
+      if (!currentMatch) return;
+
       const currentTime = new Date();
       if (currentTime < matchStart || currentTime > matchEnd) return;
       if (isPolling) return;
@@ -320,7 +337,7 @@ export default function MatchPage() {
       try {
 
       // Step 1: Poll Codeforces directly from the browser for each player
-      const allHandles = (match.teams ?? []).flatMap((t) => t.members ?? []);
+      const allHandles = (currentMatch.teams ?? []).flatMap((t) => t.members ?? []);
       const currentProblems = problemsRef.current;
       const currentSolved = solvedRef.current;
       const boardKeys = new Set(
@@ -397,7 +414,7 @@ export default function MatchPage() {
 
             const key = `${contestId}-${index}`;
             const { displayName, teamKey } = resolveTeamDisplayAndKey(entry.team, teamsFromServer);
-            solvedMap[key] = { team: teamKey };
+            solvedMap[key] = { team: teamKey, handle: entry.handle };
 
             if (entry.problem && typeof entry.problem.position === "number") {
               posOwners[entry.problem.position] = teamKey;
@@ -406,10 +423,12 @@ export default function MatchPage() {
             const problemName = entry.problem?.name ?? `Problem ${index}`;
             const contestAndIndex = `${contestId}${index}`;
             const solveTime = entry.timestamp;
+            const solverName = entry.handle ? `${entry.handle} (${displayName})` : displayName;
             newLogEntries.push({
               key,
-              message: `${displayName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
+              message: `${solverName} solved ${problemName} (${contestAndIndex}) at ${formatTime(solveTime)}`,
               team: teamKey,
+              timestamp: solveTime ? new Date(solveTime).getTime() : Date.now(),
             });
           });
 
@@ -429,7 +448,7 @@ export default function MatchPage() {
             for (const entry of combined) {
               if (!uniqueMap.has(entry.key)) uniqueMap.set(entry.key, entry);
             }
-            const deduped = Array.from(uniqueMap.values());
+            const deduped = Array.from(uniqueMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
             const prevMessages = new Set(prevLog.map((x) => x.message));
             newLogEntries.forEach((ne) => {
@@ -504,15 +523,11 @@ export default function MatchPage() {
           w.type === "row" ? "a row" : w.type === "col" ? "a column" : w.type === "diag" ? "the main diagonal" : "the anti-diagonal"
         } and won the match!`;
         notifyBrowser(`${displayName} won!`, finalMsg);
-        return [{ message: finalMsg, team: w.team.toLowerCase(), key: "winner-msg" }, ...prev];
+        return [{ message: finalMsg, team: w.team.toLowerCase(), key: "winner-msg", timestamp: Date.now() }, ...prev];
       });
       
       // Update duration locally
       setMatch((prev) => (prev ? { ...prev, durationMinutes: 1 } : prev));
-      // Bug #10 fix: propagate win to server so all other clients see match end on next poll
-      if (match?.id) {
-        apiClient.patch(`/api/compete/matches/${match.id}/duration`, { durationMinutes: 1 }).catch(() => {});
-      }
     }
   }, [solved, problems, winner, positionOwners, match, matchLocked, gridSize]);
 
@@ -566,7 +581,7 @@ export default function MatchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111318] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -577,10 +592,10 @@ export default function MatchPage() {
 
   if (!match) {
     return (
-      <main className="min-h-screen bg-[#111318] p-6 text-white flex items-center justify-center">
-        <div className="text-center rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl p-12">
+      <main className="min-h-screen bg-background p-6 text-foreground flex items-center justify-center">
+        <div className="text-center rounded-2xl border border-border bg-card p-12 shadow-sm">
           <h2 className="text-xl font-bold mb-2">Match Not Found</h2>
-          <p className="text-white/60 text-sm">The match you are looking for does not exist or could not be loaded.</p>
+          <p className="text-muted-foreground text-sm">The match you are looking for does not exist or could not be loaded.</p>
         </div>
       </main>
     );
@@ -594,77 +609,149 @@ export default function MatchPage() {
   const matchHasEnded = currentTime >= matchEnd;
   const matchOngoing = matchHasStarted && !matchHasEnded && !matchLocked;
 
-  return (
-    <main className="min-h-screen bg-[#111318] text-white overflow-hidden flex flex-col items-center">
-      {winner && confettiActive && <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />}
+  const scoreboard = (() => {
+    const scores: Record<string, { name: string; count: number }> = {};
+    (match.teams || []).forEach((t) => {
+      scores[t.color] = { name: t.name, count: 0 };
+    });
+    problems.forEach((problem, idx) => {
+      const key = `${problem.contestId}-${problem.index}`;
+      const ownerTeam = solved[key]?.team ?? positionOwners[problem.position ?? idx];
+      if (ownerTeam && scores[ownerTeam]) {
+        scores[ownerTeam].count++;
+      }
+    });
+    return Object.entries(scores).sort((a, b) => b[1].count - a[1].count);
+  })();
 
-      <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+  return (
+    <main className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col items-center">
+      {winner && confettiActive && (
+        <>
+          <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+            <div className={`p-8 rounded-2xl shadow-2xl border text-center animate-in zoom-in-95 duration-300 ${teamColors[winner.team] || "bg-card text-foreground"}`}>
+              <h2 className="text-4xl font-extrabold mb-4 drop-shadow-md">
+                🏆 Winner!
+              </h2>
+              <p className="text-xl font-semibold opacity-90">
+                Team {match?.teams?.find(t => t.color.toLowerCase() === winner.team.toLowerCase())?.name || winner.team} won the match!
+              </p>
+              <button
+                onClick={() => setConfettiActive(false)}
+                className="mt-6 px-6 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      <header className="w-full border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-4">
           <Link href="/compete">
             <h1 className="text-2xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text tracking-wide font-heading">
               Bingo CP
             </h1>
           </Link>
+          <nav className="flex items-center gap-3">
+            <Link
+              href="/compete/create"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Create Match
+            </Link>
+          </nav>
         </div>
       </header>
 
       <div className="text-center mt-8 mb-6">
         {!matchHasStarted && <CountdownToStart startTime={matchStart} />}
-        {matchHasEnded && <p className="text-red-400 font-medium">Match has ended.</p>}
+        {matchHasEnded && <p className="text-destructive font-medium">Match has ended.</p>}
         {matchOngoing && match && (
-          <p className="text-green-400 font-medium">
+          <p className="text-green-500 font-medium">
             Match ends in {formatDuration(matchEnd.getTime() - now.getTime())}
           </p>
         )}
       </div>
 
       {matchHasStarted && (
-        <div className="flex-1 w-full flex justify-center pb-24">
-          <div className={`grid ${gridClasses[gridSize]} gap-3 justify-items-center`}>
-            {problems.map((problem, idx) => {
-              const key = `${problem.contestId}-${problem.index}`;
-              const solvedInfo = solved[key] || solved[idx];
-              const ownerTeam = solvedInfo?.team ?? positionOwners[problem.position ?? idx];
-              const isWinningCell = winner?.keys?.includes(key);
+        <div className="flex flex-wrap justify-center gap-2 mb-6 px-4">
+          {scoreboard.map(([color, data]) => {
+            const teamStyle = teamColors[color] || "bg-secondary text-foreground border-border";
+            return (
+              <div key={color} className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border ${teamStyle}`}>
+                {data.name}: {data.count}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-              const cellStyle = ownerTeam
-                ? (teamColors[ownerTeam] || "bg-white/10 border-white/20 text-white")
-                : "bg-white/[0.04] border-white/[0.08] text-white/90 hover:bg-white/[0.08] hover:border-white/[0.15]";
 
-              return (
-                <div
-                  key={key}
-                  onClick={() => window.open(`https://codeforces.com/contest/${problem.contestId}/problem/${problem.index}`, "_blank")}
-                  className={`relative w-28 h-28 sm:w-36 sm:h-32 p-3 flex flex-col justify-center items-center text-center rounded-2xl border backdrop-blur-md shadow-sm cursor-pointer transition-all duration-300 ${cellStyle} ${isWinningCell ? "ring-4 ring-yellow-400 scale-105 z-10 shadow-[0_0_30px_rgba(250,204,21,0.4)]" : "hover:-translate-y-1 hover:shadow-lg"}`}
-                >
-                  {showRatings && (
-                    <div className="text-xs sm:text-sm font-semibold opacity-80 mb-1">
-                      {problem.rating} - {problem.index}
+      {matchHasStarted && (
+        <div className="flex-1 w-full flex justify-center pb-32 px-4">
+          <div className={`w-full ${gridWidths[gridSize as keyof typeof gridWidths] || 'max-w-5xl'} mx-auto`}>
+            <div className={`grid ${gridClasses[gridSize as keyof typeof gridClasses]} gap-2 sm:gap-3 justify-items-center`}>
+              {problems.map((problem, idx) => {
+                const key = `${problem.contestId}-${problem.index}`;
+                const solvedInfo = solved[key] || solved[idx];
+                const ownerTeam = solvedInfo?.team ?? positionOwners[problem.position ?? idx];
+                const isWinningCell = winner?.keys?.includes(key);
+
+                const cellStyle = ownerTeam
+                  ? (teamColors[ownerTeam] || "bg-secondary border-border text-foreground")
+                  : "bg-card border-border text-foreground hover:bg-accent hover:border-accent-foreground";
+
+                return (
+                  <div
+                    key={key}
+                    onClick={() => window.open(`https://codeforces.com/contest/${problem.contestId}/problem/${problem.index}`, "_blank")}
+                    className={`relative w-full aspect-square p-2 sm:p-3 flex flex-col justify-center items-center text-center rounded-xl border backdrop-blur-md shadow-sm cursor-pointer transition-all duration-300 ${cellStyle} ${isWinningCell ? "ring-4 ring-yellow-400 scale-105 z-10 shadow-[0_0_30px_rgba(250,204,21,0.4)]" : "hover:-translate-y-1 hover:shadow-lg"}`}
+                  >
+                    {showRatings && (
+                      <div className="text-[10px] sm:text-xs font-semibold opacity-80 mb-1">
+                        {problem.rating} - {problem.index}
+                      </div>
+                    )}
+                    <div className={`text-xs sm:text-sm font-medium line-clamp-3 leading-snug ${showRatings ? "opacity-90" : ""}`}>
+                      {problem.name}
                     </div>
-                  )}
-                  <div className={`text-xs sm:text-sm font-medium line-clamp-3 leading-snug ${showRatings ? "opacity-90" : ""}`}>
-                    {problem.name}
+                    {(solvedInfo?.handle || problem.claimedBy) && (
+                      <div className="absolute bottom-1 right-2 text-[9px] sm:text-[10px] opacity-75 font-semibold">
+                        ✓ {solvedInfo?.handle || problem.claimedBy}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
+      {/* Floating Log Toggle */}
+      <button
+        onClick={() => setShowLog(!showLog)}
+        className="fixed bottom-4 left-4 z-40 bg-card border border-border px-4 py-2 rounded-full shadow-md text-sm font-medium hover:bg-accent transition-colors"
+      >
+        {showLog ? "Hide Log" : "Show Log"}
+      </button>
+
+      {/* Solve Log Panel */}
       {showLog && (
-        <div className="fixed bottom-4 left-4 w-72 max-h-[40vh] sm:max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#1a1d24]/90 backdrop-blur-xl p-4 shadow-xl z-30">
-          <h2 className="text-base font-semibold mb-3 text-white">Solve Log</h2>
+        <div className="fixed bottom-16 left-4 w-72 max-h-[40vh] sm:max-h-[70vh] overflow-y-auto rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-4 shadow-xl z-30">
+          <h2 className="text-base font-semibold mb-3 text-foreground">Solve Log</h2>
           {log.length === 0 ? (
-            <p className="text-sm text-white/40">No solves yet</p>
+            <p className="text-sm text-muted-foreground">No solves yet</p>
           ) : (
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-2 text-sm">
               {log.map((entry, idx) => {
-                const badgeColor = teamColors[entry.team]?.split(" ")[0] || "bg-white/10";
+                const teamStyle = teamColors[entry.team] || "bg-secondary text-foreground border-border";
                 return (
-                  <li key={entry.key + idx} className="flex gap-2 items-start">
-                    <span className={`inline-block mt-0.5 w-2 h-2 rounded-full shrink-0 ${badgeColor.replace('/30', '')}`}></span>
-                    <span className="text-white/80 leading-tight">{entry.message}</span>
+                  <li key={entry.key + idx} className={`px-3 py-2 rounded-lg border shadow-sm ${teamStyle}`}>
+                    <span className="leading-tight break-words">{entry.message}</span>
                   </li>
                 );
               })}

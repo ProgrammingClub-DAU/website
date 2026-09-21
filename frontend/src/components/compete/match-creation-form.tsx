@@ -207,19 +207,19 @@ export function MatchCreationForm() {
     }
   };
 
-  const inputClass = "flex h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent";
-  const labelClass = "text-sm font-medium text-white/90 mb-1 block";
+  const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors";
+  const labelClass = "text-sm font-medium text-foreground mb-1 block";
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 w-full">
       <div className="flex-1 w-full">
-        <h3 className="text-xl font-bold text-white mb-4">Teams</h3>
+        <h3 className="text-xl font-bold text-foreground mb-4">Teams</h3>
         <TeamsForm onTeamsChange={setTeams} />
       </div>
 
       <div className="flex-1 w-full">
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl p-6 space-y-4">
-          <h3 className="text-xl font-bold text-white mb-4">Match Options</h3>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <h3 className="text-xl font-bold text-foreground mb-4">Match Options</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -344,23 +344,23 @@ export function MatchCreationForm() {
               <button
                 type="button"
                 onClick={() => setShowRatings(true)}
-                className={`px-4 py-2 text-sm font-medium rounded-l-md border border-white/10 ${showRatings ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-l-md border border-border ${showRatings ? 'bg-indigo-600 text-white' : 'bg-background text-muted-foreground hover:bg-accent'}`}
               >
                 Show
               </button>
               <button
                 type="button"
                 onClick={() => setShowRatings(false)}
-                className={`px-4 py-2 text-sm font-medium rounded-r-md border border-white/10 border-l-0 ${!showRatings ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-r-md border border-border border-l-0 ${!showRatings ? 'bg-indigo-600 text-white' : 'bg-background text-muted-foreground hover:bg-accent'}`}
               >
                 Hide
               </button>
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-white/10">
+          <div className="pt-4 mt-4 border-t border-border">
             {fetchProgress && (
-              <p className="text-sm text-indigo-400 mb-3 text-center animate-pulse">{fetchProgress}</p>
+              <p className="text-sm text-indigo-500 mb-3 text-center animate-pulse">{fetchProgress}</p>
             )}
             <button
               type="submit"
