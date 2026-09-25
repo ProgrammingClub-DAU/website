@@ -84,7 +84,7 @@ export const leaderboardService = {
   ): Promise<LeaderboardEntry[]> => {
     const response = await apiClient.get<ApiResponse<PagedLeaderboardResponse>>(
       "/api/leaderboard",
-      { params: { platform, filter } }
+      { params: { platform, filter, size: 2000 } }
     );
     const content = response.data.data?.content ?? [];
     return content.map(toEntry);

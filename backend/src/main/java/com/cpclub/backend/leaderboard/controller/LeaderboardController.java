@@ -40,7 +40,7 @@ public class LeaderboardController {
     @Operation(summary = "Get ranked member leaderboard (paginated, filterable by platform and club role)")
     public ResponseEntity<ApiResponse<PagedResponse<LeaderboardResponseDto>>> getLeaderboard(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(2000) int size,
             @RequestParam(defaultValue = "CODEFORCES") LeaderboardPlatform platform,
             @RequestParam(defaultValue = "ALL") LeaderboardFilter filter
     ) {
