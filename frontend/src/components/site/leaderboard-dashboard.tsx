@@ -42,6 +42,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
   const [lastUpdatedMin, setLastUpdatedMin] = useState(4);
+  const [displayLimit, setDisplayLimit] = useState(50);
 
   useEffect(() => {
     let ignore = false;
@@ -111,7 +112,8 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   const top1 = sortedEntries[0];
   const top2 = sortedEntries[1];
   const top3 = sortedEntries[2];
-  const rank4Onwards = sortedEntries.slice(3);
+  const rank4Onwards = sortedEntries.slice(3, displayLimit);
+  const hasMore = sortedEntries.length > displayLimit;
 
   // Club stats
   const clubStats = useMemo(() => {
@@ -321,20 +323,32 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
               ))}
             </div>
           ) : rank4Onwards.length > 0 ? (
-            <AnimatePresence mode="popLayout">
-              <div className="space-y-2.5">
-                {rank4Onwards.map((entry, index) => (
-                  <RankingRow
-                    key={entry.id}
-                    entry={entry}
-                    rankNum={index + 4}
-                    platform={platform}
-                    searchQuery={searchQuery}
-                    onSelectMember={openLockerForMember}
-                  />
-                ))}
-              </div>
-            </AnimatePresence>
+            <>
+              <AnimatePresence mode="popLayout">
+                <div className="space-y-2.5">
+                  {rank4Onwards.map((entry, index) => (
+                    <RankingRow
+                      key={entry.id}
+                      entry={entry}
+                      rankNum={index + 4}
+                      platform={platform}
+                      searchQuery={searchQuery}
+                      onSelectMember={openLockerForMember}
+                    />
+                  ))}
+                </div>
+              </AnimatePresence>
+              {hasMore && (
+                <div className="pt-6 pb-2 text-center">
+                  <button
+                    onClick={() => setDisplayLimit((prev) => prev + 50)}
+                    className="rounded-full border border-white/10 bg-white/5 px-6 py-2 text-xs font-semibold text-white/70 shadow transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                  >
+                    Load More Members
+                  </button>
+                </div>
+              )}
+            </>
           ) : sortedEntries.length > 0 && sortedEntries.length <= 3 ? (
             <div className="rounded-xl border border-white/10 bg-[#0c0c14] p-8 text-center">
               <p className="text-sm text-white/60">
