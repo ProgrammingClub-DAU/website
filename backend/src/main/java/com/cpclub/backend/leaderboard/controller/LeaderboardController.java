@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
+    private final com.cpclub.backend.stats.service.StatsService statsService;
 
     /**
      * Resolves paginated ranked listing of club members.
@@ -47,6 +48,24 @@ public class LeaderboardController {
         PagedResponse<LeaderboardResponseDto> response =
                 leaderboardService.getLeaderboard(page, size, platform, filter);
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched leaderboard successfully"));
+    }
+
+    /**
+     * Resolves dynamic stats-based leaderboard across metrics, platforms, periods, and club role filters.
+     */
+    @GetMapping("/stats")
+    @Operation(summary = "Get ranked leaderboard across metrics, platforms, periods, and filters")
+    public ResponseEntity<ApiResponse<com.cpclub.backend.stats.dto.StatsLeaderboardResponseDto>> getStatsLeaderboard(
+            @RequestParam(defaultValue = "SOLVED") com.cpclub.backend.stats.dto.StatsMetric metric,
+            @RequestParam(defaultValue = "CODEFORCES") com.cpclub.backend.stats.dto.StatsPlatform platform,
+            @RequestParam(defaultValue = "WEEK") com.cpclub.backend.stats.dto.StatsPeriod period,
+            @RequestParam(defaultValue = "ALL") com.cpclub.backend.leaderboard.dto.LeaderboardFilter filter,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(2000) int size
+    ) {
+        com.cpclub.backend.stats.dto.StatsLeaderboardResponseDto response =
+                statsService.getLeaderboard(metric, platform, period, filter, page, size);
+        return ResponseEntity.ok(ApiResponse.success(response, "Fetched stats leaderboard successfully"));
     }
 }
 
