@@ -111,6 +111,7 @@ public class SecurityConfig {
                         // with the numeric {id} pattern beside it.
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}").permitAll()

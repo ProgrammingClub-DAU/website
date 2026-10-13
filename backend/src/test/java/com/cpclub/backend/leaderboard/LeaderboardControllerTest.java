@@ -23,11 +23,13 @@ class LeaderboardControllerTest {
 
     private MockMvc mockMvc;
     private LeaderboardService leaderboardService;
+    private com.cpclub.backend.stats.service.StatsService statsService;
 
     @BeforeEach
     void setUp() {
         leaderboardService = mock(LeaderboardService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new LeaderboardController(leaderboardService)).build();
+        statsService = mock(com.cpclub.backend.stats.service.StatsService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new LeaderboardController(leaderboardService, statsService)).build();
     }
 
     @Test
