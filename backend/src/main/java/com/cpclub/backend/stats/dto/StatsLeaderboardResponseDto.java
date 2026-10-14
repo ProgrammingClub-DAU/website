@@ -27,5 +27,6 @@ public class StatsLeaderboardResponseDto {
     private long totalElements;
     private int totalPages;
     private LocalDate trackingSince;
+    private java.time.LocalDateTime computedAt;
     private List<StatsLeaderboardEntryDto> entries;
 }

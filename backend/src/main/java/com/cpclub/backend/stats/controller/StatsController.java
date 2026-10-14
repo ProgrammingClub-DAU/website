@@ -31,6 +31,7 @@ import java.util.List;
 public class StatsController {
 
     private final StatsService statsService;
+    private final com.cpclub.backend.practice.service.TopicStrengthService topicStrengthService;
 
     @GetMapping("/users/{id}")
     @Operation(summary = "Get aggregated statistics for a member over a given period")
@@ -50,6 +51,15 @@ public class StatsController {
     ) {
         List<RatingPointDto> history = statsService.getRatingHistory(id, platform);
         return ResponseEntity.ok(ApiResponse.success(history, "Fetched rating history successfully"));
+    }
+
+    @GetMapping("/users/{id}/topics")
+    @Operation(summary = "Get topic strength breakdown for a member across core tags")
+    public ResponseEntity<ApiResponse<com.cpclub.backend.practice.dto.TopicStrengthResponseDto>> getUserTopics(
+            @PathVariable Long id
+    ) {
+        com.cpclub.backend.practice.dto.TopicStrengthResponseDto topics = topicStrengthService.getUserTopicStrength(id);
+        return ResponseEntity.ok(ApiResponse.success(topics, "Fetched user topic strength successfully"));
     }
 
     @GetMapping("/compare")

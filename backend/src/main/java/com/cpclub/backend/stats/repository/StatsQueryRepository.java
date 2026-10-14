@@ -99,7 +99,7 @@ public class StatsQueryRepository {
             case CONTESTS -> buildContestsCte();
             case AVG_PROBLEM_RATING -> buildAvgProblemRatingCte();
             case ATTENDANCE -> buildAttendanceCte();
-            case OVERALL_SCORE -> throw new UnsupportedOperationException("OVERALL_SCORE is scheduled for Stage 3B");
+            case OVERALL_SCORE -> buildOverallScoreCte();
         };
     }
 
@@ -443,6 +443,38 @@ public class StatsQueryRepository {
             """;
     }
 
+    private String buildOverallScoreCte() {
+        return """
+            WITH filtered_users AS (
+                SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role
+                FROM users u
+                WHERE (:filter = 'ALL'
+                   OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
+                   OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
+                   OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
+                  AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+            ),
+            user_scores AS (
+                SELECT fu.id AS user_id,
+                       fu.name,
+                       fu.codeforces_handle,
+                       fu.leetcode_handle,
+                       fu.avatar_url,
+                       fu.club_role,
+                       ms.overall_score AS metric_value
+                FROM filtered_users fu
+                JOIN member_scores ms ON fu.id = ms.user_id
+            ),
+            ranked AS (
+                SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
+                       metric_value,
+                       CAST(NULL AS INTEGER) AS basis_val,
+                       RANK() OVER (ORDER BY metric_value DESC) AS placement
+                FROM user_scores
+            )
+            """;
+    }
+
     // ──────────────── Member Single Stats ────────────────
 
     public int countCodeforcesSolves(Long userId, Instant startUtc, Instant endUtc) {
@@ -605,6 +637,34 @@ public class StatsQueryRepository {
                     .rankA((Integer) rs.getObject("rank_a"))
                     .rankB((Integer) rs.getObject("rank_b"))
                     .build();
+        });
+    }
+
+    public LocalDateTime getMemberScoreComputedAt() {
+        String sql = "SELECT MAX(computed_at) FROM member_scores";
+        Timestamp ts = jdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Timestamp.class);
+        return ts != null ? ts.toLocalDateTime() : null;
+    }
+
+    public MemberScoreDto getMemberScore(Long userId) {
+        String sql = """
+            SELECT overall_score, rating_score, solved_score, contest_score, computed_at
+            FROM member_scores
+            WHERE user_id = :userId
+            """;
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        return jdbcTemplate.query(sql, params, rs -> {
+            if (rs.next()) {
+                Timestamp ts = rs.getTimestamp("computed_at");
+                return MemberScoreDto.builder()
+                        .overallScore(rs.getInt("overall_score"))
+                        .ratingScore(rs.getInt("rating_score"))
+                        .solvedScore(rs.getInt("solved_score"))
+                        .contestScore(rs.getInt("contest_score"))
+                        .computedAt(ts != null ? ts.toLocalDateTime() : null)
+                        .build();
+            }
+            return null;
         });
     }
 }

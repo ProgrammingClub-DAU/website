@@ -76,6 +76,11 @@ public class StatsService {
             trackingSince = statsQueryRepository.getLeetCodeOverallEarliestCapturedOn();
         }
 
+        java.time.LocalDateTime scoreComputedAt = null;
+        if (metric == StatsMetric.OVERALL_SCORE) {
+            scoreComputedAt = statsQueryRepository.getMemberScoreComputedAt();
+        }
+
         int totalPages = size > 0 ? (int) Math.ceil((double) result.totalElements() / size) : 0;
 
         return StatsLeaderboardResponseDto.builder()
@@ -88,17 +93,23 @@ public class StatsService {
                 .totalElements(result.totalElements())
                 .totalPages(totalPages)
                 .trackingSince(trackingSince)
+                .computedAt(scoreComputedAt)
                 .entries(result.entries())
                 .build();
     }
 
     private void validateLeaderboardParams(StatsMetric metric, StatsPlatform platform, StatsPeriod period) {
         if (metric == null) {
-            throw new BadRequestException("metric is required; allowed metrics: [SOLVED, CONTESTS, AVG_PROBLEM_RATING, ATTENDANCE]");
+            throw new BadRequestException("metric is required; allowed metrics: [SOLVED, CONTESTS, AVG_PROBLEM_RATING, ATTENDANCE, OVERALL_SCORE]");
         }
 
         if (metric == StatsMetric.OVERALL_SCORE) {
-            throw new BadRequestException("OVERALL_SCORE metric is not supported yet (scheduled for Stage 3B)");
+            if (platform != null && platform != StatsPlatform.OVERALL) {
+                throw new BadRequestException("OVERALL_SCORE is only supported for platform OVERALL; allowed platforms: [OVERALL]");
+            }
+            if (period != null && period != StatsPeriod.ALL_TIME) {
+                throw new BadRequestException("OVERALL_SCORE is only supported for period ALL_TIME; allowed periods: [ALL_TIME]");
+            }
         }
 
         if (metric == StatsMetric.AVG_PROBLEM_RATING) {
@@ -240,13 +251,15 @@ public class StatsService {
                 .contests(totalContests)
                 .build();
 
+        MemberScoreDto memberScore = statsQueryRepository.getMemberScore(user.getId());
+
         return MemberStatsDto.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .period(period)
                 .platforms(platformStats)
                 .overall(overall)
-                .overallScore(null)
+                .overallScore(memberScore)
                 .build();
     }
 
