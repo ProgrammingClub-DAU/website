@@ -111,9 +111,18 @@ public class SecurityConfig {
                         // with the numeric {id} pattern beside it.
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/awards/**").permitAll()
+
+                        // ---- BEFORE the existing GET "/api/blogs/**" permitAll ----
+                        // That permitAll would otherwise make these two readable by anyone.
+                        .requestMatchers(HttpMethod.GET, "/api/blogs/mine").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/blogs/review-queue").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
+
+                        // ---- BEFORE the existing "/api/events", "/api/events/**" ADMIN wildcard ----
+                        // Without these, the wildcard swallows member RSVPs and the public calendar file.
+                        .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}/ics").permitAll()
+                        .requestMatchers("/api/events/{id:[0-9]+}/registration").authenticated()
+
                         .requestMatchers(HttpMethod.GET, "/api/events/upcoming", "/api/events/completed").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/{id:[0-9]+}/photos").permitAll()
@@ -121,6 +130,25 @@ public class SecurityConfig {
                         // /api/gallery/** below, or the public gallery would demand a login.
                         .requestMatchers(HttpMethod.GET, "/api/gallery/members", "/api/gallery/members/batches", "/api/gallery/photos").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hall-of-fame", "/api/hall-of-fame/{id:[0-9]+}").permitAll()
+
+                        // ---- Phase 3 public reads (anywhere before anyRequest) ----
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/stats/**", "/api/awards/**",
+                                "/api/club-contests", "/api/club-contests/**",
+                                "/api/seasons", "/api/seasons/**",
+                                "/api/calendar", "/api/calendar/**",
+                                "/api/notifications/unsubscribe").permitAll()
+                        // One-click unsubscribe from mail clients arrives as a POST (RFC 8058).
+                        .requestMatchers(HttpMethod.POST, "/api/notifications/unsubscribe").permitAll()
+
+                        // ---- Phase 3 member routes ----
+                        .requestMatchers("/api/practice/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/blogs", "/api/blogs/{id:[0-9]+}/submit",
+                                "/api/blogs/{id:[0-9]+}/comments").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/blogs/{id:[0-9]+}").authenticated()
+                        .requestMatchers("/api/comments/**").authenticated()
+
+                        // ---- Existing admin & authenticated routes ----
                         .requestMatchers("/api/events", "/api/events/**").hasRole("ADMIN")
                         .requestMatchers("/api/gallery/**").hasRole("ADMIN")
                         // /** also matches the bare /api/hall-of-fame, so POST to the collection
@@ -128,6 +156,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/hall-of-fame", "/api/hall-of-fame/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/{id:[0-9]+}/lookup").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id:[0-9]+}/club-role").hasRole("ADMIN")
+
+                        // ---- Phase 3 admin writes ----
+                        .requestMatchers("/api/club-contests/**", "/api/seasons/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/blogs/{id:[0-9]+}/publish",
+                                "/api/blogs/{id:[0-9]+}/reject").hasRole("ADMIN")
+
                         .requestMatchers(HttpMethod.GET, "/api/snapshots/**").authenticated()
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -32,6 +32,18 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
 
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 app:
   jwt:
     # JWT_SECRET must be set as an environment variable in production.

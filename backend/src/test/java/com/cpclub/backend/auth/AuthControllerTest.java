@@ -46,6 +46,15 @@ class AuthControllerTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private com.cpclub.backend.auth.service.EmailVerificationService emailVerificationService;
+
+    @Mock
+    private com.cpclub.backend.auth.service.ResendRateLimiter resendRateLimiter;
+
+    @Mock
+    private com.cpclub.backend.user.repository.UserRepository userRepository;
+
     @InjectMocks
     private AuthController authController;
 
@@ -115,6 +124,35 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new GoogleSignInRequest(""))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-email - returns 200 on valid token")
+    void verifyEmail_success() throws Exception {
+        mockMvc.perform(post("/api/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"valid-token\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        org.mockito.Mockito.verify(emailVerificationService).verify("valid-token");
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-email - query param token fallback works")
+    void verifyEmail_queryParamSuccess() throws Exception {
+        mockMvc.perform(post("/api/auth/verify-email?token=query-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        org.mockito.Mockito.verify(emailVerificationService).verify("query-token");
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-email - missing token returns 400")
+    void verifyEmail_missingTokenReturns400() throws Exception {
+        mockMvc.perform(post("/api/auth/verify-email"))
                 .andExpect(status().isBadRequest());
     }
 }

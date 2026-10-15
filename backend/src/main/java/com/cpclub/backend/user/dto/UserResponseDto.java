@@ -74,8 +74,40 @@ public record UserResponseDto(
         Integer maxRating,
         String equippedBannerId,
         @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
-        boolean isPlatformCreator
+        boolean isPlatformCreator,
+        boolean emailVerified
 ) {
+    public UserResponseDto(
+            Long id,
+            String name,
+            String email,
+            String avatarUrl,
+            String phoneNumber,
+            String codeforcesHandle,
+            Integer rating,
+            String leetcodeHandle,
+            Integer leetcodeRating,
+            String codechefUrl,
+            String atcoderUrl,
+            String githubUrl,
+            String linkedinUrl,
+            ClubRole clubRole,
+            Integer batchYear,
+            AcademicYear academicYear,
+            boolean profileComplete,
+            Role role,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            Integer maxRating,
+            String equippedBannerId,
+            boolean isPlatformCreator
+    ) {
+        this(id, name, email, avatarUrl, phoneNumber, codeforcesHandle, rating,
+                leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl,
+                linkedinUrl, clubRole, batchYear, academicYear, profileComplete,
+                role, createdAt, updatedAt, maxRating, equippedBannerId, isPlatformCreator, true);
+    }
+
     /**
      * Maps the stable, public fields of a user entity into its API representation.
      *
@@ -106,7 +138,8 @@ public record UserResponseDto(
                 user.getUpdatedAt(),
                 user.getMaxRating(),
                 user.getEquippedBannerId(),
-                user.isPlatformCreator()
+                user.isPlatformCreator(),
+                user.isEmailVerified()
         );
     }
 

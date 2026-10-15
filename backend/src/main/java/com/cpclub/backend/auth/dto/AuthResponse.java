@@ -15,9 +15,8 @@ import com.cpclub.backend.user.entity.Role;
  * @param email normalized sign-in email
  * @param role authorization role embedded in the token
  * @param codeforcesHandle optional linked Codeforces handle
- * @param academicYear the member's year, or null if they have never been asked;
- *                     null is how the client knows to send a first-time member to
- *                     the welcome step instead of straight to the site
+ * @param academicYear the member's year, or null if they have never been asked
+ * @param emailVerified whether the member's email address has been verified
  */
 public record AuthResponse(
         String token,
@@ -26,6 +25,18 @@ public record AuthResponse(
         String email,
         Role role,
         String codeforcesHandle,
-        AcademicYear academicYear
+        AcademicYear academicYear,
+        boolean emailVerified
 ) {
+    public AuthResponse(
+            String token,
+            Long id,
+            String name,
+            String email,
+            Role role,
+            String codeforcesHandle,
+            AcademicYear academicYear
+    ) {
+        this(token, id, name, email, role, codeforcesHandle, academicYear, true);
+    }
 }
