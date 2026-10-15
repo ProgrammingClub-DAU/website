@@ -12,6 +12,12 @@ import com.cpclub.backend.event.dto.EventPhotoDto;
 import com.cpclub.backend.event.dto.EventResponseDto;
 import com.cpclub.backend.event.service.EventExportService;
 import com.cpclub.backend.event.service.EventService;
+import com.cpclub.backend.security.service.UserDetailsImpl;
+import com.cpclub.backend.event.service.EventRegistrationService;
+import com.cpclub.backend.event.dto.RegistrationStatusDto;
+import com.cpclub.backend.event.dto.MarkAttendedResultDto;
+import com.cpclub.backend.event.dto.MarkAttendedRequest;
+import com.cpclub.backend.event.dto.EventRegistrationDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -57,6 +63,7 @@ public class EventController {
 
     private final EventService eventService;
     private final EventExportService eventExportService;
+    private final EventRegistrationService eventRegistrationService;
 
     // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -422,5 +429,58 @@ public class EventController {
     public ResponseEntity<ApiResponse<List<EventPhotoDto>>> getEventPhotos(@PathVariable Long id) {
         List<EventPhotoDto> photos = eventService.getEventPhotos(id);
         return ResponseEntity.ok(ApiResponse.success(photos, "Fetched event photos successfully"));
+    }
+
+    // ── RSVPs (D13) ──────────────────────────────────────────────────────────
+    // SecurityConfig lets /api/events/{id}/registration through to any signed-in
+    // member, ahead of the ADMIN wildcard that covers the rest of /api/events/**.
+    // /registrations (plural) stays under that wildcard, and carries
+    // @PreAuthorize as well so it cannot be opened by a reordered URL rule.
+
+    @GetMapping("/{id:[0-9]+}/registration")
+    @Operation(summary = "The caller's RSVP status for an event")
+    public ResponseEntity<ApiResponse<RegistrationStatusDto>> getRegistration(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(
+                eventRegistrationService.getStatus(id, me.getId()), "Fetched RSVP status successfully"));
+    }
+
+    @PostMapping("/{id:[0-9]+}/registration")
+    @Operation(summary = "RSVP for an event")
+    public ResponseEntity<ApiResponse<RegistrationStatusDto>> register(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(
+                eventRegistrationService.register(id, me.getId()), "Registered"));
+    }
+
+    @DeleteMapping("/{id:[0-9]+}/registration")
+    @Operation(summary = "Cancel an RSVP")
+    public ResponseEntity<Void> unregister(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl me) {
+        eventRegistrationService.unregister(id, me.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id:[0-9]+}/registrations")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Everyone who RSVP'd (admin)")
+    public ResponseEntity<ApiResponse<List<EventRegistrationDto>>> getRegistrations(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                eventRegistrationService.getRegistrations(id), "Fetched RSVPs successfully"));
+    }
+
+    @PostMapping("/{id:[0-9]+}/registrations/mark-attended")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Turn RSVPs into attendance (admin)")
+    public ResponseEntity<ApiResponse<MarkAttendedResultDto>> markAttended(
+            @PathVariable Long id,
+            @Valid @RequestBody MarkAttendedRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(
+                eventRegistrationService.markAttended(id, request.userIds(), userDetails.getUsername()),
+                "Attendance updated"));
     }
 }

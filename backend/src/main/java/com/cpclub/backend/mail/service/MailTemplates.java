@@ -1,5 +1,9 @@
 package com.cpclub.backend.mail.service;
 
+import org.springframework.web.util.HtmlUtils;
+
+import java.util.List;
+
 /**
  * Text and HTML email templates used by the club site.
  * Implemented using plain Java text blocks without external template engine overhead.
@@ -46,59 +50,96 @@ public final class MailTemplates {
                 """.formatted(name, verificationUrl, verificationUrl, verificationUrl);
     }
 
-    public static String eventReminderText(String eventName, String eventTime, String eventUrl) {
+    /*
+     * The reminder and digest below were reshaped in Stage 5B, before anything sent
+     * them: they now carry the signed unsubscribe link every reminder must have (D29),
+     * and they escape everything that reaches HTML. An event title is admin input,
+     * and admin input in an HTML email is still input.
+     */
+
+    /** One line of the contest digest. */
+    public record DigestItem(String name, String platform, String when, String url) {
+    }
+
+    public static String eventReminderText(String eventName, String when, String location, String eventUrl,
+                                           boolean registered, String unsubscribeUrl) {
         return """
-                Upcoming Event Reminder: %s
+                Tomorrow: %s
 
                 When: %s
+                Where: %s
+                %s
                 Details: %s
 
-                We look forward to seeing you there!
-                CP Club Team
-                """.formatted(eventName, eventTime, eventUrl);
+                --
+                You asked for event reminders from the Programming Club.
+                Stop them: %s
+                """.formatted(eventName, when, location,
+                registered ? "You're registered." : "", eventUrl, unsubscribeUrl);
     }
 
-    public static String eventReminderHtml(String eventName, String eventTime, String eventUrl) {
+    public static String eventReminderHtml(String eventName, String when, String location, String eventUrl,
+                                           boolean registered, String unsubscribeUrl) {
         return """
                 <!DOCTYPE html>
                 <html>
                 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-                    <h2>Reminder: %s</h2>
-                    <p>This is a quick reminder for our upcoming event:</p>
-                    <p><strong>Time:</strong> %s</p>
-                    <p><a href="%s" style="display: inline-block; padding: 8px 16px; background-color: #2563eb; color: #fff; text-decoration: none; border-radius: 4px;">View Event Details</a></p>
+                    <h2>Tomorrow: %s</h2>
+                    <p><strong>When:</strong> %s<br/><strong>Where:</strong> %s</p>
+                    %s
+                    <p><a href="%s" style="display: inline-block; padding: 8px 16px; background-color: #5e6ad2; color: #fff; text-decoration: none; border-radius: 4px;">Event details</a></p>
                     <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;"/>
-                    <p style="font-size: 12px; color: #777;">CP Club Team</p>
+                    <p style="font-size: 12px; color: #777;">You asked for event reminders from the Programming Club. <a href="%s" style="color: #777;">Stop them</a>.</p>
                 </body>
                 </html>
-                """.formatted(eventName, eventTime, eventUrl);
+                """.formatted(esc(eventName), esc(when), esc(location),
+                registered ? "<p><strong>You're registered.</strong></p>" : "",
+                esc(eventUrl), esc(unsubscribeUrl));
     }
 
-    public static String contestDigestText(String weekLabel, String contestsSummary, String calendarUrl) {
+    public static String contestDigestText(String dayLabel, List<DigestItem> items, String calendarUrl,
+                                           String unsubscribeUrl) {
+        StringBuilder lines = new StringBuilder();
+        for (DigestItem item : items) {
+            lines.append("- ").append(item.name()).append(" (").append(item.platform()).append("), ")
+                    .append(item.when()).append("\n  ").append(item.url()).append('\n');
+        }
         return """
-                Contest Digest for %s
+                Contests in the next 24 hours -- %s
 
                 %s
+                Full calendar: %s
 
-                Check the full calendar at: %s
-
-                Good luck and high ratings!
-                CP Club Team
-                """.formatted(weekLabel, contestsSummary, calendarUrl);
+                --
+                You asked for the contest digest from the Programming Club.
+                Stop it: %s
+                """.formatted(dayLabel, lines, calendarUrl, unsubscribeUrl);
     }
 
-    public static String contestDigestHtml(String weekLabel, String contestsSummary, String calendarUrl) {
+    public static String contestDigestHtml(String dayLabel, List<DigestItem> items, String calendarUrl,
+                                           String unsubscribeUrl) {
+        StringBuilder rows = new StringBuilder();
+        for (DigestItem item : items) {
+            rows.append("<li><a href=\"").append(esc(item.url())).append("\">").append(esc(item.name()))
+                    .append("</a> <span style=\"color: #777;\">").append(esc(item.platform())).append(" &middot; ")
+                    .append(esc(item.when())).append("</span></li>");
+        }
         return """
                 <!DOCTYPE html>
                 <html>
                 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-                    <h2>Upcoming Contests: %s</h2>
-                    <pre style="font-family: sans-serif; white-space: pre-wrap;">%s</pre>
-                    <p><a href="%s">View Club Calendar</a></p>
+                    <h2>Contests in the next 24 hours</h2>
+                    <p style="color: #777;">%s</p>
+                    <ul>%s</ul>
+                    <p><a href="%s">Full calendar</a></p>
                     <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;"/>
-                    <p style="font-size: 12px; color: #777;">CP Club Team</p>
+                    <p style="font-size: 12px; color: #777;">You asked for the contest digest from the Programming Club. <a href="%s" style="color: #777;">Stop it</a>.</p>
                 </body>
                 </html>
-                """.formatted(weekLabel, contestsSummary, calendarUrl);
+                """.formatted(esc(dayLabel), rows, esc(calendarUrl), esc(unsubscribeUrl));
+    }
+
+    private static String esc(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
     }
 }

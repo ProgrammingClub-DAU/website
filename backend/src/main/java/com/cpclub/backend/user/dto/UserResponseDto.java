@@ -75,7 +75,14 @@ public record UserResponseDto(
         String equippedBannerId,
         @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
         boolean isPlatformCreator,
-        boolean emailVerified
+        boolean emailVerified,
+        /*
+         * Email preferences. This DTO is only ever returned to the member themselves
+         * or to an admin; PublicUserResponseDto, which anyone can read, never
+         * carries them.
+         */
+        boolean notifyEvents,
+        boolean notifyContests
 ) {
     public UserResponseDto(
             Long id,
@@ -105,7 +112,7 @@ public record UserResponseDto(
         this(id, name, email, avatarUrl, phoneNumber, codeforcesHandle, rating,
                 leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl,
                 linkedinUrl, clubRole, batchYear, academicYear, profileComplete,
-                role, createdAt, updatedAt, maxRating, equippedBannerId, isPlatformCreator, true);
+                role, createdAt, updatedAt, maxRating, equippedBannerId, isPlatformCreator, true, false, false);
     }
 
     /**
@@ -139,7 +146,9 @@ public record UserResponseDto(
                 user.getMaxRating(),
                 user.getEquippedBannerId(),
                 user.isPlatformCreator(),
-                user.isEmailVerified()
+                user.isEmailVerified(),
+                user.isNotifyEvents(),
+                user.isNotifyContests()
         );
     }
 

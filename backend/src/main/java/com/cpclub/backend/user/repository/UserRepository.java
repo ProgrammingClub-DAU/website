@@ -94,6 +94,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     List<User> findByLeetcodeHandleIsNotNull();
 
+    /** Members opted in to 24-hour event reminders (D29). */
+    List<User> findByNotifyEventsTrue();
+
+    /** Members opted in to the daily contest digest (D29). */
+    List<User> findByNotifyContestsTrue();
+
     /**
      * Checks whether a LeetCode handle is linked to any member.
      *

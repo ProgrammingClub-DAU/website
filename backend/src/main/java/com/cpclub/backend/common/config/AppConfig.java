@@ -58,6 +58,15 @@ public class AppConfig {
      *
      * @return application-wide LeetCode request gate
      */
+    /**
+     * Reminder emails go out at most two a second, to stay inside SMTP provider
+     * sending limits when a reminder fans out to the whole opted-in membership.
+     */
+    @Bean("mailRateLimiter")
+    public RateLimiter mailRateLimiter() {
+        return RateLimiter.create(2.0);
+    }
+
     @Bean("leetcodeRateLimiter")
     public RateLimiter leetcodeRateLimiter() {
         return RateLimiter.create(0.5); // polite rate for an unofficial endpoint

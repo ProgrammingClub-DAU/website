@@ -39,7 +39,11 @@ public record EventDetailDto(
         LocalDateTime createdAt,
         List<EventPhotoDto> photos,
         List<EventWinnerDto> winners,
-        Integer attendeeCount
+        Integer attendeeCount,
+        /** RSVP cap; null when unlimited. */
+        Integer capacity,
+        /** RSVPs so far. Public, like the cap, so the page can say "23 going". */
+        long registrationCount
 ) {
 
     /**
@@ -48,6 +52,7 @@ public record EventDetailDto(
      * @param event the event, with its winners loaded
      * @param photos the event's gallery
      * @param attendeeCount the real attendance figure
+     * @param registrationCount RSVPs so far
      * @param viewerIsAdmin whether the caller holds ROLE_ADMIN, who sees
      *                      everything regardless of the switches
      */
@@ -55,6 +60,7 @@ public record EventDetailDto(
             Event event,
             List<EventPhotoDto> photos,
             Integer attendeeCount,
+            long registrationCount,
             boolean viewerIsAdmin) {
 
         List<EventWinnerDto> podium = viewerIsAdmin || event.isShowWinners()
@@ -80,7 +86,9 @@ public record EventDetailDto(
                 event.getCreatedAt(),
                 photos,
                 podium,
-                visibleCount
+                visibleCount,
+                event.getCapacity(),
+                registrationCount
         );
     }
 }

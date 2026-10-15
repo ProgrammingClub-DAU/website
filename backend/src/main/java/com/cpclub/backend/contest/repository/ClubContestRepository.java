@@ -22,6 +22,9 @@ public interface ClubContestRepository extends JpaRepository<ClubContest, Long> 
 
     long countBySeasonId(Long seasonId);
 
+    /** Contests starting in [from, to), UTC (D31). Feeds the daily contest digest. */
+    List<ClubContest> findByStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(LocalDateTime from, LocalDateTime to);
+
     /**
      * Contests the 15-minute sync might need to touch: started, and not more than a
      * few days past their end. The exact rule lives in Java
