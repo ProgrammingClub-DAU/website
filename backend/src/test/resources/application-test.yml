@@ -34,3 +34,12 @@ app:
     # decoder is mocked, and this value exists so the context can start.
     client-id: test-only-client-id.apps.googleusercontent.com
     allowed-domain: dau.ac.in
+
+cpclub:
+  auth:
+    allowed-email-domains: dau.ac.in
+    require-email-verification: false
+  mail:
+    enabled: false
+    from: no-reply@localhost
+  public-site-url: http://localhost:3000

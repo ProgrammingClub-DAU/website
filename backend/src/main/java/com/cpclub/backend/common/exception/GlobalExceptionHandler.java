@@ -115,6 +115,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maps ResponseStatusException directly to its intended HTTP status and message.
+     *
+     * @param ex Spring Web ResponseStatusException
+     * @return standardized response with correct status code
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        return ResponseEntity
+                .status(ex.getStatusCode())
+                .body(ApiResponse.error(ex.getReason() != null ? ex.getReason() : ex.getMessage()));
+    }
+
+    /**
      * Provides a final consistent error response for unexpected failures.
      *
      * @param ex unhandled exception

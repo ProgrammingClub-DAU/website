@@ -41,16 +41,28 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final JwtDecoder googleIdTokenDecoder;
     private final String allowedDomain;
+    private final EmailDomainPolicy emailDomainPolicy;
 
     public AuthService(
             UserRepository userRepository,
             JwtUtils jwtUtils,
             @Qualifier("googleIdTokenDecoder") JwtDecoder googleIdTokenDecoder,
             @Value("${app.google.allowed-domain}") String allowedDomain) {
+        this(userRepository, jwtUtils, googleIdTokenDecoder, allowedDomain, new EmailDomainPolicy(allowedDomain));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthService(
+            UserRepository userRepository,
+            JwtUtils jwtUtils,
+            @Qualifier("googleIdTokenDecoder") JwtDecoder googleIdTokenDecoder,
+            @Value("${app.google.allowed-domain}") String allowedDomain,
+            EmailDomainPolicy emailDomainPolicy) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
         this.googleIdTokenDecoder = googleIdTokenDecoder;
         this.allowedDomain = allowedDomain.toLowerCase(Locale.ROOT).trim();
+        this.emailDomainPolicy = emailDomainPolicy != null ? emailDomainPolicy : new EmailDomainPolicy(allowedDomain);
     }
 
     /**
@@ -85,7 +97,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole(),
                 user.getCodeforcesHandle(),
-                user.getAcademicYear()
+                user.getAcademicYear(),
+                user.isEmailVerified()
         );
     }
 
@@ -132,7 +145,7 @@ public class AuthService {
         }
         email = email.toLowerCase(Locale.ROOT).trim();
 
-        if (!email.endsWith("@" + allowedDomain)) {
+        if (!emailDomainPolicy.isAllowed(email)) {
             throw new BadCredentialsException(
                     "Only @" + allowedDomain + " accounts can sign in. Please use your university Google account.");
         }
@@ -154,6 +167,7 @@ public class AuthService {
                 .avatarUrl(token.getClaimAsString("picture"))
                 .role(Role.ROLE_USER)
                 .isPlatformCreator(PlatformCreatorAccounts.contains(email))
+                .emailVerifiedAt(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC))
                 .build();
 
         User saved = userRepository.save(user);
