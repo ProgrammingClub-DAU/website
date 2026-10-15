@@ -20,5 +20,5 @@ public class MemberStatsDto {
     private StatsPeriod period;
     private List<PlatformStatsDto> platforms;
     private OverallStatsDto overall;
-    private Object overallScore; // Stage 3B
+    private MemberScoreDto overallScore;
 }
