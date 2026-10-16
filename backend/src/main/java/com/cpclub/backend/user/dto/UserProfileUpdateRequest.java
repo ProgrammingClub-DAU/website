@@ -55,6 +55,10 @@ public record UserProfileUpdateRequest(
         AcademicYear academicYear,
 
         @Size(max = 512, message = "Avatar URL must be at most 512 characters")
-        String avatarUrl
+        String avatarUrl,
+        /** Opt in to 24-hour event reminders (D29). Null leaves the setting as it is. */
+        Boolean notifyEvents,
+        /** Opt in to the daily contest digest (D29). Null leaves the setting as it is. */
+        Boolean notifyContests
 ) {
 }

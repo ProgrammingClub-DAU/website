@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * Outbound email service.
@@ -42,6 +43,15 @@ public class MailService {
 
     @Async
     public void send(String to, String subject, String text, String html) {
+        send(to, subject, text, html, Map.of());
+    }
+
+    /**
+     * Sends with extra headers. Reminders use this for {@code List-Unsubscribe} and
+     * {@code List-Unsubscribe-Post}, which mail clients turn into a one-click
+     * unsubscribe button (RFC 8058).
+     */
+    public void send(String to, String subject, String text, String html, Map<String, String> headers) {
         if (!enabled) {
             // Logs the subject only -- NEVER the body, which can hold a token (Table 4.11)
             log.info("Mail disabled; would have sent email to: {} with subject: '{}'", to, subject);
@@ -71,6 +81,9 @@ public class MailService {
                 helper.setText(text != null ? text : "", false);
             }
 
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                message.setHeader(header.getKey(), header.getValue());
+            }
             mailSender.send(message);
             log.info("Successfully sent email to {} with subject: '{}'", to, subject);
         } catch (Exception e) {

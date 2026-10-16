@@ -4,7 +4,10 @@ import com.cpclub.backend.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -90,9 +93,25 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        // A @PreAuthorize denial lands here before Spring Security's own exception
+        // filter sees it, so without this check an anonymous caller would get 403.
+        // That matters on endpoints the URL rules leave public but the method guards
+        // -- GET /api/club-contests/upsolve/me, GET /api/blogs/{id}/edit -- where the
+        // honest answer to someone not signed in is 401: sign in, then try again.
+        if (isAnonymous(SecurityContextHolder.getContext().getAuthentication())) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Unauthorized access: Full authentication is required to access this resource"));
+        }
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error("Access denied: You do not have permission to perform this action."));
+    }
+
+    private static boolean isAnonymous(Authentication authentication) {
+        return authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken;
     }
 
     /**
@@ -122,8 +141,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        // Forward the exception's own headers -- Retry-After on a 429, Allow on a 405 --
+        // which were dropped here before, leaving clients nothing to act on.
         return ResponseEntity
                 .status(ex.getStatusCode())
+                .headers(ex.getHeaders())
                 .body(ApiResponse.error(ex.getReason() != null ? ex.getReason() : ex.getMessage()));
     }
 

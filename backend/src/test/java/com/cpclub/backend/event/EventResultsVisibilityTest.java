@@ -163,7 +163,7 @@ class EventResultsVisibilityTest {
     // ------------------------------------------------------------------ helpers
 
     private EventDetailDto detail(Event event, boolean viewerIsAdmin) {
-        return EventDetailDto.of(event, List.of(), 42, viewerIsAdmin);
+        return EventDetailDto.of(event, List.of(), 42, 0, viewerIsAdmin);
     }
 
     private Event event() {

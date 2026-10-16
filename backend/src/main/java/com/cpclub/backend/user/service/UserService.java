@@ -297,6 +297,12 @@ public class UserService {
         user.setLinkedinUrl(trimToNull(request.linkedinUrl()));
         user.setAvatarUrl(trimToNull(request.avatarUrl()));
         user.setAcademicYear(request.academicYear());
+        if (request.notifyEvents() != null) {
+            user.setNotifyEvents(request.notifyEvents());
+        }
+        if (request.notifyContests() != null) {
+            user.setNotifyContests(request.notifyContests());
+        }
 
         boolean codeforcesChanged = false;
         if (request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank()) {

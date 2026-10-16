@@ -259,7 +259,8 @@ class UserServiceTest {
                 null, null,         // codechefUrl, atcoderUrl
                 null, null,         // githubUrl, linkedinUrl
                 null,               // academicYear
-                null                // avatarUrl
+                null,               // avatarUrl
+                null, null          // notifyEvents, notifyContests: leave as they are
         );
     }
     @Test

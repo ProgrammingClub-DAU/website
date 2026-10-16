@@ -1,53 +1,36 @@
 package com.cpclub.backend.blog.repository;
 
 import com.cpclub.backend.blog.entity.BlogPost;
+import com.cpclub.backend.blog.entity.BlogStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
- * JPA repository for {@link BlogPost} entities.
- * Provides slug-based lookups and filtered queries for published posts.
+ * Blog posts.
+ *
+ * <p>Every public lookup takes a status, and the public endpoints only ever pass
+ * PUBLISHED. There is deliberately no unfiltered find-by-slug here: an unfiltered
+ * lookup on a public route is how anyone walks ids or guesses slugs to read drafts.</p>
  */
 @Repository
 public interface BlogRepository extends JpaRepository<BlogPost, Long> {
 
-    /**
-     * Finds an article by its unique, frontend-facing slug.
-     *
-     * @param slug SEO-friendly article identifier
-     * @return matching post when one exists
-     */
-    Optional<BlogPost> findBySlug(String slug);
+    Optional<BlogPost> findByIdAndStatus(Long id, BlogStatus status);
 
-    /**
-     * Publication-aware lookups used by the public read endpoints.
-     *
-     * <p>The unfiltered {@code findById}/{@code findBySlug} above must not serve
-     * anonymous callers: they return unpublished drafts, so anyone could walk IDs
-     * and read embargoed content before the club intends to publish it. Admin
-     * paths keep using the unfiltered finders.
-     */
-    Optional<BlogPost> findByIdAndPublishedTrue(Long id);
+    Optional<BlogPost> findBySlugAndStatus(String slug, BlogStatus status);
 
-    Optional<BlogPost> findBySlugAndPublishedTrue(String slug);
+    Page<BlogPost> findByStatus(BlogStatus status, Pageable pageable);
 
-    /**
-     * Checks a generated slug before creating an article to avoid unique-constraint errors.
-     *
-     * @param slug candidate slug
-     * @return whether the slug is already assigned
-     */
-    Boolean existsBySlug(String slug);
+    boolean existsBySlug(String slug);
 
-    /**
-     * Retrieves only posts visible to public readers, preserving pagination metadata.
-     *
-     * @param pageable requested page and sort order
-     * @return page of published posts
-     */
-    Page<BlogPost> findByPublishedTrue(Pageable pageable);
+    /** The caller's own posts, every status: "my posts". */
+    List<BlogPost> findByAuthorIdOrderByUpdatedAtDesc(Long authorId);
+
+    /** The review queue: oldest submission first, so nothing waits behind newer posts. */
+    List<BlogPost> findByStatusOrderBySubmittedAtAsc(BlogStatus status);
 }

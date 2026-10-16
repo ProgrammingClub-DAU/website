@@ -109,3 +109,9 @@ cpclub:
     unsubscribe-secret: ${CPCLUB_UNSUBSCRIBE_SECRET:}
 
   public-site-url: ${CPCLUB_PUBLIC_SITE_URL:http://localhost:3000}
+
+  # The backend's own public address. Only the List-Unsubscribe header uses it:
+  # one-click unsubscribe (RFC 8058) is a POST from the mail provider straight to
+  # this URL, and the frontend does not proxy /api, so a link built from
+  # public-site-url would land on a page that cannot take the POST.
+  public-api-url: ${CPCLUB_PUBLIC_API_URL:http://localhost:8080}
