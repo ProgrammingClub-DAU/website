@@ -36,6 +36,7 @@ This document serves as the long-term master plan for the Competitive Programmin
 
 *   **Multi-Platform Synchronization:**
     *   Extend backend cron jobs to fetch data from **LeetCode**, **CodeChef**, and **AtCoder**. (This may require web-scraping if public APIs are unavailable).
+    *   > **Decided against for CodeChef and AtCoder (Phase 3, D9).** LeetCode is synced. CodeChef has no public API, so its stats would mean scraping profile pages that break on any markup change; both platforms stay **link only** on member profiles. Their public contest *schedules* still appear on the club calendar -- that is not member data.
 *   **Advanced Leaderboards:**
     *   Filter and sort leaderboards by specific platforms (e.g., "Top Leetcoders", "Top CodeChef").
     *   Create an "Overall Aggregated Score" combining metrics across all platforms.
@@ -59,6 +60,12 @@ This document serves as the long-term master plan for the Competitive Programmin
 *   **The Club Championship:**
     *   A specialized leaderboard that tracks overall standing across a "season" of multiple internal club contests.
 
+> **Status.** The Phase 3 backend is built: the sync pipeline, stats queries,
+> scores and weekly awards, and the calendar are merged; club contests and the
+> Championship, the blog workflow and comments, and RSVPs with reminder emails are
+> in review. The Phase 3 frontend pages and the production rollout have not
+> started. The plan is [phase_3_execution_playbook.md](phase_3_execution_playbook.md).
+
 ---
 
 ## 🔴 PHASE 4: Engagement, Gamification, & Community
@@ -81,3 +88,24 @@ This document serves as the long-term master plan for the Competitive Programmin
     *   **Channels:** Topic-specific real-time chat rooms built natively into the website (e.g., `#general`, `#web-dev`, `#codeforces-help`).
     *   **Threads:** Forum-style ability to create discussion threads for specific algorithms or tough problems.
     *   **Presence Indicators:** See who is currently Online, Offline, or "In a Contest".
+
+---
+
+## 🧹 Phase 4 cleanup, carried over from Phase 3
+
+Small debts Phase 3 knowingly left, and ones found while building it. None blocks
+Phase 3; each is cheaper to clear before Phase 4 builds on top of it.
+
+**Planned in the Phase 3 playbook (Section 10.5)**
+*   Drop `blog_posts.published`. V20 kept it so the previous backend release reads correct values during a rolling deploy; once nothing reads it, it can go.
+*   Delete the `frontend/src/app/next-api/cf/*` routes if nothing uses them once rating history comes from the API.
+*   Add ShedLock before ever running a second backend instance. `@Scheduled` has no distributed lock, and the comment and resend rate limits live in memory (D30).
+
+**Found while building Phase 3**
+*   Remove the stray files at the repository root -- `DbCheck.class`, `DbCheck.java`, `TestDto.java`, `TestLombok.java`, `pr_body.txt`, `pr_diff.patch`. A compiled class and a diff dump on the public default branch.
+*   Enable `@EnableAsync`, or drop `@Async` from `MailService.send`. Without it the annotation does nothing and every email is sent on the calling thread -- including the verification email, inside the request that triggered it.
+*   Decide what to do with email verification. Amendment A2 withdrew it, but Stage 1C built it anyway; it is switched off and harmless, and either the flag gets turned on deliberately or the code is removed.
+*   `SyncRunRecorder` stamps runs with `LocalDateTime.now()` -- the JVM's zone -- while `SyncHealthService` compares against UTC (D31). Identical on Render, five and a half hours apart on an IST laptop.
+*   `SyncJobDispatcher` writes a `sync_runs` row for every manual trigger that is never finished, beside the row the job itself records.
+*   `CodeforcesApiClient` builds its own `RestTemplate` with no timeouts. The configured bean has them; a hung Codeforces call would hold a sync thread indefinitely.
+*   Move `events.event_date` to UTC like every Phase 3 column. It stores the IST wall-clock time an admin typed, so every consumer has to know to convert it -- the calendar feed did not, and put club events five and a half hours late until Stage 7 fixed it.

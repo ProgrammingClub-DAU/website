@@ -201,6 +201,78 @@ Two consequences worth writing down:
 - The frontend stack line should read Google Identity Services rather than a
   password form.
 
+### A7 -- Found while building Stages 3C, 5A, 5B and 7
+
+Written after the backend stages were built. Frontend stages 2A to 6C should read
+this before wiring anything up: several answers differ from what the body of the
+plan implies.
+
+**Codeforces no longer filters official standings.** For an official round
+(contest id below 100000), `contest.standings` answers only an anonymous request
+with no parameters at all -- `handles`, `from`, `count` and `showUnofficial` are
+all refused, signed or not. The answer is the whole ranklist: 7 MB for a Div. 4,
+14 MB for a Div. 2. Stage 3C streams it and keeps only club members' rows, so heap
+use stays flat (A4). Two consequences:
+
+- A member who entered an official round **out of competition** -- a Div. 1
+  member in a Div. 2 round -- does not appear in that round's club ranklist.
+  Codeforces offers no way round this without contest-admin rights. Say so on the
+  contest page.
+- Gym, mashup and group contests (ids from 100000) refuse anonymous calls even when
+  public, so they need `CF_API_KEY` and `CF_API_SECRET`. D10 holds for those; an
+  official round can be added with no key at all.
+
+**`events.event_date` is IST wall-clock, not UTC.** It predates D31: the admin form
+sends the `datetime-local` value an admin typed, and that is what is stored. So:
+
+- Every time `/api/calendar` and `club.ics` return is now UTC, club events
+  included. Before Stage 7 club events went out unconverted, and `club.ics` put
+  every one five and a half hours late in subscribers' calendars. Frontend: treat
+  calendar times as UTC.
+- RSVP open and close, and the 24-hour event reminder, are judged on the IST clock.
+- Moving the column to UTC is on the Phase 4 cleanup list in the roadmap.
+
+**One more environment variable: `CPCLUB_PUBLIC_API_URL`.** RFC 8058 one-click
+unsubscribe is a POST from the mail provider straight to the `List-Unsubscribe`
+URL, and the frontend does not proxy `/api`. So that header points at the API; the
+link in the email body still goes to the site's `/unsubscribe` page, which Stage
+6A builds and which calls `GET /api/notifications/unsubscribe?token=`. See Section 12.
+
+**An anonymous caller refused by `@PreAuthorize` now gets 401, not 403.**
+`GlobalExceptionHandler` caught the denial before Spring Security could answer 401.
+It matters wherever a URL rule leaves a GET public and the method guards it:
+`/api/club-contests/upsolve/me` and `/api/blogs/{id}/edit`. Frontend: a 401 on those
+means "sign in", the same as everywhere else.
+
+**429s carry `Retry-After`.** The handler used to drop exception headers. A comment
+posted within 20 seconds of the last one answers 429 with the seconds remaining;
+Stage 6A's composer can show "try again in 14 seconds".
+
+**Blog API, for Stages 6A and 6B.**
+
+- `POST /api/blogs` takes `publishNow` (admin only). For members it is ignored, as
+  are `published` and `authorName`.
+- `PUT /api/blogs/{id}` never changes status; status changes only through
+  `/submit`, `/publish` and `/reject`.
+- `BlogResponseDto` adds `status`, `authorId`, `publishedAt`, `commentCount` and
+  `readMinutes`. `BlogEditDto` (from `/edit`, `/mine` and `/review-queue`) adds
+  `reviewNote` and `submittedAt`.
+- Comments arrive as a tree: top-level, oldest first, each with `replies`. A
+  deleted comment that has replies comes back with `body: null, deleted: true` --
+  render it as "[deleted]".
+
+**Email verification exists after all.** A2 withdrew D15, but Stage 1C built it,
+behind `CPCLUB_AUTH_REQUIRE_EMAIL_VERIFICATION`, which defaults to false. Stages 5A
+and 5B call `VerifiedMemberGuard`; with the flag off it lets every signed-in member
+through, which is exactly A2's "read it as `isAuthenticated()`". Whether to turn it
+on or remove it is on the Phase 4 cleanup list.
+
+**Testcontainers: one container for the whole run.** `PostgresIntegrationTest`
+used to start and stop its container per test class while Spring cached the
+application context across classes, so whichever class reused a cached context
+connected to a stopped database. It is now the singleton-container pattern. Extend
+it as before; nothing else changes.
+
 ---
 
 ## Prerequisites -- Phase 2 Must Be Finished First
@@ -2321,7 +2393,8 @@ unless marked **[MODIFY]** below.
 | `CPCLUB_EXTERNAL_CONTESTS_ENABLED` | 3A | `false` | Upcoming contests calendar sync |
 | `CLIST_API_KEY` | 3A | empty | Optional fallback source (D26) |
 | `CF_API_KEY`, `CF_API_SECRET` | 3C | empty | Authorized Codeforces API for club contests. **Secret.** |
-| `CPCLUB_UNSUBSCRIBE_SECRET` | 5B | -- | HMAC key for unsubscribe links. **Required when mail is enabled; the app refuses to start without it.** |
+| `CPCLUB_UNSUBSCRIBE_SECRET` | 5B | -- | HMAC key for unsubscribe links. **Required when mail is enabled, at least 32 characters; the app refuses to start without it.** Generate with `openssl rand -hex 32`. |
+| `CPCLUB_PUBLIC_API_URL` | 5B | `http://localhost:8080` | The backend's own public address, for the `List-Unsubscribe` header only. One-click unsubscribe POSTs straight here, and the frontend does not proxy `/api` (A7). |
 
 ### Frontend (Vercel)
 

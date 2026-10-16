@@ -45,6 +45,10 @@ cd frontend && npm run lint && npm run build
 cd backend  && ./mvnw clean compile test -B
 ```
 
+The backend suite includes Testcontainers tests against real PostgreSQL, so it
+needs a running Docker daemon. CI has one. Without Docker locally those classes
+fail to start rather than skip.
+
 Branch from `main` as `feature/<member>-<feature>`, open a PR, and let the Team
 Leader review — no self-merging, no force-pushing shared branches.
 
@@ -52,13 +56,21 @@ Leader review — no self-merging, no force-pushing shared branches.
 
 | Area | State |
 | --- | --- |
-| Frontend shell, design system, static pages | Built (Role 1) |
-| Home, About, Events, Hall of Fame, Blog, Members | Built, placeholder content |
-| Auth (Google sign-in, @dau.ac.in only) | Built (Role 2) |
-| Profiles, leaderboard UI | Not started (Role 3) |
-| Backend entities, APIs, security | Boilerplate only (Roles 4–5) |
-| Codeforces sync job, deployment | Not started (Role 6) |
+| Frontend shell, design system, every public page | Built |
+| Sign-in (Google, `@dau.ac.in` only) | Built |
+| Profiles, leaderboards (Codeforces + LeetCode, club-role filters) | Built (Phase 2) |
+| Events, attendance, Hall of Fame, gallery | Built (Phase 2) |
+| CP Bingo, 1v1 compete | Built |
+| Phase 3 backend: sync pipeline, stats, scores and awards, calendar | Merged |
+| Phase 3 backend: club contests, blog workflow and comments, RSVP and reminders | Built, in review |
+| Phase 3 frontend: stats pages, contests, calendar, practice, blog editor, RSVP | Not started |
+| Phase 3 rollout (flags, backfill, mail) | Not started -- see Section 10 of the Phase 3 playbook |
 
-Site content is placeholder pending confirmation from the club — see the
+The Phase 3 plan, and every decision behind it, is
+[documents/phase_3_execution_playbook.md](documents/phase_3_execution_playbook.md).
+Read its Amendments section first: it records what changed after the plan was
+written, including what the Codeforces API actually allows today.
+
+Site content is placeholder pending confirmation from the club -- see the
 placeholder section of [frontend/FRONTEND.md](frontend/FRONTEND.md) before
 publishing anything publicly.
