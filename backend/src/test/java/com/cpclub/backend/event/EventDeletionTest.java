@@ -7,6 +7,7 @@ import com.cpclub.backend.event.entity.EventStatus;
 import com.cpclub.backend.event.entity.EventWinner;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
+import com.cpclub.backend.event.repository.EventRegistrationRepository;
 import com.cpclub.backend.event.repository.EventRepository;
 import com.cpclub.backend.event.service.EventService;
 import com.cpclub.backend.user.entity.Role;
@@ -47,6 +48,9 @@ class EventDeletionTest {
 
     @Mock
     private EventPhotoRepository eventPhotoRepository;
+
+    @Mock
+    private EventRegistrationRepository eventRegistrationRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -140,5 +144,33 @@ class EventDeletionTest {
         User user = new User("Ravi", "ravi@dau.ac.in", null, Role.ROLE_USER);
         user.setId(5L);
         return user;
+    }
+
+    @Test
+    @DisplayName("An RSVP alone is enough to refuse an unconfirmed delete (D14, extended by 5B)")
+    void oneRsvp_refusesTheDelete() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(eventRegistrationRepository.countByEventId(10L)).thenReturn(1L);
+
+        ConflictException thrown = assertThrows(ConflictException.class,
+                () -> eventService.deleteEvent(10L, false));
+
+        assertEquals(true, thrown.getMessage().startsWith("This event has 1 RSVP."), thrown.getMessage());
+        assertEquals(true, thrown.getMessage().contains("Cancel it instead"));
+        verify(eventRepository, never()).delete(any());
+        verify(eventRegistrationRepository, never()).deleteAllByEventId(anyLong());
+    }
+
+    @Test
+    @DisplayName("Confirmed, the RSVPs go too, before the event itself")
+    void forceDeletesRsvps() {
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(eventRegistrationRepository.countByEventId(10L)).thenReturn(3L);
+
+        eventService.deleteEvent(10L, true);
+
+        InOrder order = inOrder(eventRegistrationRepository, eventRepository);
+        order.verify(eventRegistrationRepository).deleteAllByEventId(10L);
+        order.verify(eventRepository).delete(event);
     }
 }

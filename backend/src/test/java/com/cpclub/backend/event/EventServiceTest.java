@@ -14,6 +14,7 @@ import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
+import com.cpclub.backend.event.repository.EventRegistrationRepository;
 import com.cpclub.backend.event.repository.EventRepository;
 import com.cpclub.backend.event.service.EventService;
 import com.cpclub.backend.user.entity.User;
@@ -58,6 +59,9 @@ class EventServiceTest {
 
     @Mock
     private EventPhotoRepository eventPhotoRepository;
+
+    @Mock
+    private EventRegistrationRepository eventRegistrationRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -228,7 +232,7 @@ class EventServiceTest {
         var result = eventService.updateEvent(10L, new com.cpclub.backend.event.dto.EventCreateRequest(
                 "Renamed", "New description",
                 LocalDateTime.of(2026, 5, 1, 18, 0), "Lab 2", null,
-                null, null, false, false, false));
+                null, null, false, false, false, null));
 
         assertEquals("Renamed", result.title());
         assertEquals(EventStatus.COMPLETED, result.status(),
@@ -246,7 +250,7 @@ class EventServiceTest {
         EventResponseDto result = eventService.createEvent(new EventCreateRequest(
                 "Spring Code Sprint", "Five problems, two hours",
                 LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
-                null, null, false, false, false), "admin@dau.ac.in");
+                null, null, false, false, false, null), "admin@dau.ac.in");
 
         ArgumentCaptor<Event> saved = ArgumentCaptor.forClass(Event.class);
         verify(eventRepository).save(saved.capture());
@@ -264,7 +268,7 @@ class EventServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.createEvent(new EventCreateRequest(
                 "Title", null, LocalDateTime.of(2026, 10, 3, 15, 0), "Lab 101", null,
-                null, null, false, false, false), "gone@dau.ac.in"));
+                null, null, false, false, false, null), "gone@dau.ac.in"));
         verify(eventRepository, never()).save(any());
     }
 

@@ -3,6 +3,7 @@ package com.cpclub.backend.event.dto;
 import com.cpclub.backend.event.entity.EventType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
@@ -66,6 +67,9 @@ public record EventCreateRequest(
          */
         boolean showContestLink,
         boolean showWinners,
-        boolean showAttendeeCount
+        boolean showAttendeeCount,
+        /** RSVP cap; null leaves it unlimited. */
+        @Positive(message = "Capacity must be positive")
+        Integer capacity
 ) {
 }

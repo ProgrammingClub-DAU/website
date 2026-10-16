@@ -2,10 +2,15 @@ package com.cpclub.backend.event.repository;
 
 import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * JPA repository for {@link Event}.
@@ -46,4 +51,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
      * Events in a date range and specific statuses.
      */
     List<Event> findByEventDateBetweenAndStatusIn(java.time.LocalDateTime from, java.time.LocalDateTime to, List<EventStatus> statuses);
+
+    /**
+     * Reads the event with a row lock ({@code SELECT ... FOR UPDATE}), held until the
+     * surrounding transaction ends. An RSVP takes it before counting registrations,
+     * so two requests for the last seat are serialised and cannot both see a free one.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Event e WHERE e.id = :id")
+    Optional<Event> findByIdForUpdate(@Param("id") Long id);
 }

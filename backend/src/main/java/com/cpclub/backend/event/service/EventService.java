@@ -17,6 +17,7 @@ import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
+import com.cpclub.backend.event.repository.EventRegistrationRepository;
 import com.cpclub.backend.event.repository.EventRepository;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
@@ -42,6 +43,7 @@ public class EventService {
     private final EventRepository eventRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
     private final EventPhotoRepository eventPhotoRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
     private final UserRepository userRepository;
 
     // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -69,6 +71,7 @@ public class EventService {
                 .showContestLink(request.showContestLink())
                 .showWinners(request.showWinners())
                 .showAttendeeCount(request.showAttendeeCount())
+                .capacity(request.capacity())
                 .status(EventStatus.UPCOMING)
                 .createdBy(admin)
                 .build();
@@ -140,7 +143,8 @@ public class EventService {
                 .toList();
 
         long attendeeCount = eventAttendeeRepository.countByEventId(id);
-        return EventDetailDto.of(event, photos, (int) attendeeCount, viewerIsAdmin);
+        long registrationCount = eventRegistrationRepository.countByEventId(id);
+        return EventDetailDto.of(event, photos, (int) attendeeCount, registrationCount, viewerIsAdmin);
     }
 
     /**
@@ -170,6 +174,9 @@ public class EventService {
         event.setShowContestLink(request.showContestLink());
         event.setShowWinners(request.showWinners());
         event.setShowAttendeeCount(request.showAttendeeCount());
+        // Lowering the cap below the RSVPs already taken is allowed: nobody is
+        // removed, and new RSVPs stop until enough members cancel.
+        event.setCapacity(request.capacity());
 
         Event saved = eventRepository.save(event);
         log.info("Updated event id {}", id);
@@ -256,28 +263,33 @@ public class EventService {
         Event event = requireEvent(id);
 
         long attendees = eventAttendeeRepository.countByEventId(id);
+        long rsvps = eventRegistrationRepository.countByEventId(id);
         long photos = eventPhotoRepository.countByEventId(id);
         int winners = event.getWinners().size();
 
-        if (!force && (attendees > 0 || photos > 0 || winners > 0)) {
-            throw new ConflictException(describeLoss(attendees, photos, winners)
+        if (!force && (attendees > 0 || rsvps > 0 || photos > 0 || winners > 0)) {
+            throw new ConflictException(describeLoss(attendees, rsvps, photos, winners)
                     + " Deleting the event removes them permanently. Cancel it instead to keep the record,"
                     + " or confirm the deletion.");
         }
 
         int removedAttendees = eventAttendeeRepository.deleteAllByEventId(id);
+        int removedRsvps = eventRegistrationRepository.deleteAllByEventId(id);
         int removedPhotos = eventPhotoRepository.deleteAllByEventId(id);
         eventRepository.delete(event);
 
-        log.warn("Deleted event id {} ('{}') with {} attendee(s), {} photo(s) and {} winner(s)",
-                id, event.getTitle(), removedAttendees, removedPhotos, winners);
+        log.warn("Deleted event id {} ('{}') with {} attendee(s), {} RSVP(s), {} photo(s) and {} winner(s)",
+                id, event.getTitle(), removedAttendees, removedRsvps, removedPhotos, winners);
     }
 
     /** "This event has 12 attendees, 4 photos and 3 winners." */
-    private static String describeLoss(long attendees, long photos, int winners) {
+    private static String describeLoss(long attendees, long rsvps, long photos, int winners) {
         java.util.List<String> parts = new java.util.ArrayList<>();
         if (attendees > 0) {
             parts.add(attendees + (attendees == 1 ? " attendee" : " attendees"));
+        }
+        if (rsvps > 0) {
+            parts.add(rsvps + (rsvps == 1 ? " RSVP" : " RSVPs"));
         }
         if (photos > 0) {
             parts.add(photos + (photos == 1 ? " photo" : " photos"));
