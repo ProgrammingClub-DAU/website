@@ -1,12 +1,16 @@
 package com.cpclub.backend.blog.dto;
 
 import com.cpclub.backend.blog.entity.BlogPost;
+import com.cpclub.backend.blog.entity.BlogStatus;
 
 import java.time.LocalDateTime;
 
 /**
- * Immutable response DTO representing a blog post returned to API consumers.
- * Maps all public-facing fields from the {@link BlogPost} entity.
+ * A post as anyone may read it.
+ *
+ * @param commentCount visible comments: deleted ones are not counted
+ * @param readMinutes  {@code max(1, round(words / 200))}, computed here so every
+ *                     client shows the same figure
  */
 public record BlogResponseDto(
         Long id,
@@ -17,15 +21,14 @@ public record BlogResponseDto(
         String tags,
         Boolean published,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        BlogStatus status,
+        Long authorId,
+        LocalDateTime publishedAt,
+        long commentCount,
+        int readMinutes
 ) {
-    /**
-     * Factory method mapping a JPA entity to an immutable response record.
-     *
-     * @param post persisted blog post entity
-     * @return mapped DTO
-     */
-    public static BlogResponseDto fromEntity(BlogPost post) {
+    public static BlogResponseDto fromEntity(BlogPost post, long commentCount) {
         return new BlogResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -33,9 +36,22 @@ public record BlogResponseDto(
                 post.getContent(),
                 post.getAuthorName(),
                 post.getTags(),
-                post.getPublished(),
+                post.getStatus() == BlogStatus.PUBLISHED,
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                post.getStatus(),
+                post.getAuthor() != null ? post.getAuthor().getId() : null,
+                post.getPublishedAt(),
+                commentCount,
+                readMinutes(post.getContent())
         );
+    }
+
+    static int readMinutes(String content) {
+        if (content == null || content.isBlank()) {
+            return 1;
+        }
+        int words = content.trim().split("\\s+").length;
+        return Math.max(1, (int) Math.round(words / 200.0));
     }
 }
