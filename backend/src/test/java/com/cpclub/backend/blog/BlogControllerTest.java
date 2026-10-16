@@ -3,35 +3,35 @@ package com.cpclub.backend.blog;
 import com.cpclub.backend.blog.controller.BlogController;
 import com.cpclub.backend.blog.dto.BlogCreateRequest;
 import com.cpclub.backend.blog.dto.BlogResponseDto;
-import com.cpclub.backend.blog.dto.BlogUpdateRequest;
+import com.cpclub.backend.blog.entity.BlogStatus;
 import com.cpclub.backend.blog.service.BlogService;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.common.exception.GlobalExceptionHandler;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/** Routing and request handling. Security is covered by BlogAuthorizationTest. */
 class BlogControllerTest {
 
     private MockMvc mockMvc;
@@ -48,49 +48,53 @@ class BlogControllerTest {
     }
 
     @Test
+    @DisplayName("The list passes the requested page through")
     void getPublishedBlogs_returnsRequestedPage() throws Exception {
-        BlogResponseDto post = response(1L, "Dynamic Programming", "dynamic-programming");
         when(blogService.getPublishedBlogs(1, 5))
-                .thenReturn(new PagedResponse<>(List.of(post), 1, 5, 6, 2, true));
+                .thenReturn(new PagedResponse<>(List.of(response(4L, "Graphs", "graphs")), 1, 5, 6, 2, true));
 
         mockMvc.perform(get("/api/blogs").param("page", "1").param("size", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.page").value(1))
-                .andExpect(jsonPath("$.data.content[0].slug").value("dynamic-programming"));
+                .andExpect(jsonPath("$.data.content[0].slug").value("graphs"))
+                .andExpect(jsonPath("$.data.content[0].readMinutes").value(1));
     }
 
     @Test
-    void getBlogById_andSlug_returnPost_orNotFound() throws Exception {
-        BlogResponseDto post = response(4L, "Graphs", "graphs");
-        when(blogService.getBlogById(4L)).thenReturn(post);
-        when(blogService.getBlogBySlug("graphs")).thenReturn(post);
+    @DisplayName("By id and by slug, a missing post is a 404")
+    void getById_andSlug() throws Exception {
+        when(blogService.getBlogById(4L)).thenReturn(response(4L, "Graphs", "graphs"));
+        when(blogService.getBlogBySlug("graphs")).thenReturn(response(4L, "Graphs", "graphs"));
         when(blogService.getBlogById(99L)).thenThrow(new ResourceNotFoundException("Blog post not found with id: 99"));
 
-        mockMvc.perform(get("/api/blogs/4"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(4));
-        mockMvc.perform(get("/api/blogs/slug/graphs"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("Graphs"));
-        mockMvc.perform(get("/api/blogs/99"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.success").value(false));
+        mockMvc.perform(get("/api/blogs/4")).andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(4));
+        mockMvc.perform(get("/api/blogs/slug/graphs")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/blogs/99")).andExpect(status().isNotFound());
     }
 
     @Test
-    void createBlog_returnsCreated_andRejectsMissingRequiredFields() throws Exception {
-        BlogCreateRequest request = new BlogCreateRequest("Graphs", "Content", "Admin", null, true);
-        when(blogService.createBlog(any(BlogCreateRequest.class), any())).thenReturn(response(7L, "Graphs", "graphs"));
+    @DisplayName("/mine and /review-queue are never read as a post id")
+    void namedRoutesAreNotIds() throws Exception {
+        when(blogService.mine(any())).thenReturn(List.of());
+        when(blogService.reviewQueue(any())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/blogs/mine")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/blogs/review-queue")).andExpect(status().isOk());
+        verify(blogService, never()).getBlogById(any());
+    }
+
+    @Test
+    @DisplayName("Creating returns 201; missing fields are a 400 before the service is called")
+    void create() throws Exception {
+        when(blogService.create(any(BlogCreateRequest.class), any())).thenReturn(response(7L, "Graphs", "graphs"));
 
         mockMvc.perform(post("/api/blogs")
-                        .with(user("admin@example.com").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(
+                                new BlogCreateRequest("Graphs", "Content", null, null, null, null))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.id").value(7));
+
         mockMvc.perform(post("/api/blogs")
-                        .with(user("admin@example.com").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"\",\"content\":\"\"}"))
                 .andExpect(status().isBadRequest())
@@ -98,25 +102,18 @@ class BlogControllerTest {
     }
 
     @Test
-    void updateAndDeleteBlog_delegateToService() throws Exception {
-        BlogUpdateRequest request = new BlogUpdateRequest("Updated", "Updated content", "graphs", false);
-        when(blogService.updateBlog(eq(3L), any(BlogUpdateRequest.class))).thenReturn(response(3L, "Updated", "updated"));
-        doNothing().when(blogService).deleteBlog(3L);
-        doThrow(new ResourceNotFoundException("Blog post not found with id: 99")).when(blogService).deleteBlog(99L);
-
-        mockMvc.perform(put("/api/blogs/3")
+    @DisplayName("Rejecting without a note fails validation")
+    void rejectNeedsANote() throws Exception {
+        mockMvc.perform(post("/api/blogs/3/reject")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("Updated"));
-        mockMvc.perform(delete("/api/blogs/3"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        mockMvc.perform(delete("/api/blogs/99"))
-                .andExpect(status().isNotFound());
+                        .content("{\"note\":\"\"}"))
+                .andExpect(status().isBadRequest());
+        verify(blogService, never()).reject(eq(3L), any(), any());
     }
 
-    private BlogResponseDto response(Long id, String title, String slug) {
-        return new BlogResponseDto(id, title, slug, "Article content", "Admin", "algorithms", true, null, null);
+    private static BlogResponseDto response(Long id, String title, String slug) {
+        LocalDateTime t = LocalDateTime.of(2026, 10, 1, 10, 0);
+        return new BlogResponseDto(id, title, slug, "content", "Alice", null, true, t, t,
+                BlogStatus.PUBLISHED, 1L, t, 0, 1);
     }
 }

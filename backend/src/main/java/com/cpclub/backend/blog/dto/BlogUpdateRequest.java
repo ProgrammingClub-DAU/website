@@ -4,17 +4,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Immutable request DTO for updating an existing blog post.
- * Tags and published status are optional â€” only non-null values are applied.
+ * New content for a post. Never changes its status: that goes through submit,
+ * publish and reject, so there is exactly one way into each state.
+ *
+ * @param published accepted for compatibility with the old CMS and ignored
  */
 public record BlogUpdateRequest(
         @NotBlank(message = "Title is required")
         @Size(min = 3, max = 255, message = "Title must be between 3 and 255 characters")
         String title,
-
         @NotBlank(message = "Content is required")
         String content,
-
         String tags,
         Boolean published
 ) {

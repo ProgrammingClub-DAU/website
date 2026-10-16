@@ -141,8 +141,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        // Forward the exception's own headers -- Retry-After on a 429, Allow on a 405 --
+        // which were dropped here before, leaving clients nothing to act on.
         return ResponseEntity
                 .status(ex.getStatusCode())
+                .headers(ex.getHeaders())
                 .body(ApiResponse.error(ex.getReason() != null ? ex.getReason() : ex.getMessage()));
     }
 

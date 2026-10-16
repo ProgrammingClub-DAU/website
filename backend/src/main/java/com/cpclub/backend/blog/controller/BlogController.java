@@ -1,11 +1,15 @@
 package com.cpclub.backend.blog.controller;
 
 import com.cpclub.backend.blog.dto.BlogCreateRequest;
+import com.cpclub.backend.blog.dto.BlogEditDto;
+import com.cpclub.backend.blog.dto.BlogRejectRequest;
 import com.cpclub.backend.blog.dto.BlogResponseDto;
 import com.cpclub.backend.blog.dto.BlogUpdateRequest;
 import com.cpclub.backend.blog.service.BlogService;
+import com.cpclub.backend.blog.service.BlogService.Caller;
 import com.cpclub.backend.common.dto.ApiResponse;
 import com.cpclub.backend.common.dto.PagedResponse;
+import com.cpclub.backend.security.service.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,117 +18,139 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
- * REST controller for the club's content management system.
- * Provides public read access to published articles and admin-only write operations.
- * Slugs are auto-generated from titles to support SEO-friendly URLs.
+ * Blog posts and their review workflow (D18).
+ *
+ * <p>SecurityConfig makes every GET under {@code /api/blogs/**} public, and matches
+ * {@code /mine} and {@code /review-queue} ahead of that. {@code /{id}/edit} is not
+ * matched ahead of it, so its {@code @PreAuthorize} is the only thing requiring a
+ * login there. Numeric routes are {@code /{id:[0-9]+}} so that {@code /mine} and
+ * {@code /review-queue} can never be read as an id.</p>
+ *
+ * <p>Who may edit or delete a post depends on who wrote it, which the URL layer cannot
+ * know; those checks live in BlogService, not here.</p>
  */
 @RestController
 @RequestMapping("/api/blogs")
 @RequiredArgsConstructor
-@Tag(name = "Blogs & Editorial CMS", description = "Endpoints for reading and publishing club articles, tutorials, and editorials")
+@Tag(name = "Blogs & Editorial CMS", description = "Member-written posts with core-team review")
 public class BlogController {
 
     private final BlogService blogService;
 
-    /**
-     * Retrieves paginated list of published blog posts, ordered by recency.
-     *
-     * @param page zero-indexed page number
-     * @param size number of items per page
-     * @return paginated blog post summaries
-     */
+    // ------------------------------------------------------------------ public
+
     @GetMapping
-    @Operation(summary = "Get published blog posts (paginated)")
+    @Operation(summary = "Published posts, newest first (paginated)")
     public ResponseEntity<ApiResponse<PagedResponse<BlogResponseDto>>> getPublishedBlogs(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        PagedResponse<BlogResponseDto> response = blogService.getPublishedBlogs(page, size);
-        return ResponseEntity.ok(ApiResponse.success(response, "Fetched blog posts successfully"));
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.getPublishedBlogs(page, size),
+                "Fetched blog posts successfully"));
     }
 
-    /**
-     * Fetches a single blog post by its database ID.
-     *
-     * @param id blog post primary key
-     * @return full blog post details
-     */
-    @GetMapping("/{id}")
-    @Operation(summary = "Get blog post by ID")
+    @GetMapping("/{id:[0-9]+}")
+    @Operation(summary = "A published post by id")
     public ResponseEntity<ApiResponse<BlogResponseDto>> getBlogById(@PathVariable Long id) {
-        BlogResponseDto blog = blogService.getBlogById(id);
-        return ResponseEntity.ok(ApiResponse.success(blog, "Fetched blog post successfully"));
+        return ResponseEntity.ok(ApiResponse.success(blogService.getBlogById(id), "Fetched blog post successfully"));
     }
 
-    /**
-     * Fetches a single blog post by its URL-friendly slug.
-     * Used by the frontend for SEO-friendly routing.
-     *
-     * @param slug URL-friendly identifier derived from the post title
-     * @return full blog post details
-     */
     @GetMapping("/slug/{slug}")
-    @Operation(summary = "Get blog post by slug")
+    @Operation(summary = "A published post by slug")
     public ResponseEntity<ApiResponse<BlogResponseDto>> getBlogBySlug(@PathVariable String slug) {
-        BlogResponseDto blog = blogService.getBlogBySlug(slug);
-        return ResponseEntity.ok(ApiResponse.success(blog, "Fetched blog post successfully"));
+        return ResponseEntity.ok(ApiResponse.success(blogService.getBlogBySlug(slug), "Fetched blog post successfully"));
     }
 
-    /**
-     * Creates a new blog post. Restricted to administrators.
-     * Author defaults to the authenticated user's email if not explicitly provided.
-     *
-     * @param request validated blog creation payload
-     * @param userDetails injected authentication principal
-     * @return the newly created blog post with HTTP 201 status
-     */
+    // ------------------------------------------------------------------ authoring
+
+    @GetMapping("/{id:[0-9]+}/edit")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "A post with its review note, for its author or an admin")
+    public ResponseEntity<ApiResponse<BlogEditDto>> getForEditing(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.getForEditing(id, caller(me)), "Fetched blog post successfully"));
+    }
+
+    @GetMapping("/mine")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "The caller's posts, every status")
+    public ResponseEntity<ApiResponse<List<BlogEditDto>>> mine(@AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.mine(caller(me)), "Fetched your posts successfully"));
+    }
+
+    @GetMapping("/review-queue")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Posts waiting for review, oldest first (admin)")
+    public ResponseEntity<ApiResponse<List<BlogEditDto>>> reviewQueue(@AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.reviewQueue(caller(me)), "Fetched review queue successfully"));
+    }
+
     @PostMapping
-    @Operation(summary = "Create a new blog post (Admin only)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Write a post; it starts as a draft")
     public ResponseEntity<ApiResponse<BlogResponseDto>> createBlog(
-            @Valid @RequestBody BlogCreateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        String defaultAuthor = userDetails != null ? userDetails.getUsername() : "Admin";
-        BlogResponseDto created = blogService.createBlog(request, defaultAuthor);
+            @Valid @RequestBody BlogCreateRequest request, @AuthenticationPrincipal UserDetailsImpl me) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(created, "Blog post created successfully"));
+                .body(ApiResponse.success(blogService.create(request, caller(me)), "Blog post created successfully"));
     }
 
-    /**
-     * Updates an existing blog post by ID. Restricted to administrators.
-     *
-     * @param id blog post primary key
-     * @param request validated update payload
-     * @return the updated blog post details
-     */
-    @PutMapping("/{id}")
-    @Operation(summary = "Update an existing blog post (Admin only)")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<BlogResponseDto>> updateBlog(
-            @PathVariable Long id,
-            @Valid @RequestBody BlogUpdateRequest request
-    ) {
-        BlogResponseDto updated = blogService.updateBlog(id, request);
-        return ResponseEntity.ok(ApiResponse.success(updated, "Blog post updated successfully"));
+    @PutMapping("/{id:[0-9]+}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Edit a post: its author while DRAFT or REJECTED, or an admin")
+    public ResponseEntity<ApiResponse<BlogEditDto>> updateBlog(
+            @PathVariable Long id, @Valid @RequestBody BlogUpdateRequest request,
+            @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.update(id, request, caller(me)), "Blog post updated successfully"));
     }
 
-    /**
-     * Permanently deletes a blog post by ID. Restricted to administrators.
-     *
-     * @param id blog post primary key
-     * @return empty response body on success
-     */
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a blog post (Admin only)")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteBlog(@PathVariable Long id) {
-        blogService.deleteBlog(id);
+    @DeleteMapping("/{id:[0-9]+}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Delete a post: its author while DRAFT or REJECTED, or an admin")
+    public ResponseEntity<ApiResponse<Void>> deleteBlog(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl me) {
+        blogService.delete(id, caller(me));
         return ResponseEntity.ok(ApiResponse.success(null, "Blog post deleted successfully"));
     }
-}
 
+    @PostMapping("/{id:[0-9]+}/submit")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Submit a draft for review")
+    public ResponseEntity<ApiResponse<BlogEditDto>> submit(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.submit(id, caller(me)), "Submitted for review"));
+    }
+
+    @PostMapping("/{id:[0-9]+}/publish")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Publish a post (admin)")
+    public ResponseEntity<ApiResponse<BlogEditDto>> publish(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.publish(id, caller(me)), "Published"));
+    }
+
+    @PostMapping("/{id:[0-9]+}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Send a post back to its author with a note (admin)")
+    public ResponseEntity<ApiResponse<BlogEditDto>> reject(
+            @PathVariable Long id, @Valid @RequestBody BlogRejectRequest request,
+            @AuthenticationPrincipal UserDetailsImpl me) {
+        return ResponseEntity.ok(ApiResponse.success(blogService.reject(id, request.note(), caller(me)), "Rejected"));
+    }
+
+    static Caller caller(UserDetailsImpl me) {
+        if (me == null) {
+            return null;
+        }
+        boolean admin = me.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        return new Caller(me.getId(), admin);
+    }
+}
