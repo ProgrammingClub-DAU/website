@@ -25,6 +25,7 @@ export interface User {
   leetcodeHandle: string | null;
   phoneNumber: string | null;
   avatarUrl: string | null;
+  emailVerified?: boolean;
 }
 
 // Standard API response envelope matching com.cpclub.backend.common.dto.ApiResponse
@@ -43,6 +44,7 @@ export interface AuthResponse {
   email: string;
   role: string;
   codeforcesHandle: string | null;
+  emailVerified?: boolean;
   /**
    * Null when the member has never been asked their year, which is how the
    * sign-in page knows to send them to /welcome instead of the site.
@@ -66,6 +68,7 @@ export function mapAuthResponseToUser(authData: AuthResponse): User {
     leetcodeHandle: null,
     phoneNumber: null,
     avatarUrl: null,
+    emailVerified: authData.emailVerified ?? true,
   };
 }
 

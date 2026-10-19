@@ -16,14 +16,17 @@ export const site = {
 
 export const navItems = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
+  { href: "/contests", label: "Contests" },
+  { href: "/practice", label: "Practice" },
+  { href: "/calendar", label: "Calendar" },
   { href: "/events", label: "Events" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/hall-of-fame", label: "Hall of Fame" },
-  { href: "/gallery", label: "Gallery" },
   { href: "/blog", label: "Blog" },
   { href: "/compete", label: "Compete" },
   { href: "/members", label: "Members" },
-  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/about", label: "About" },
+  { href: "/gallery", label: "Gallery" },
 ] as const;
 
 /**

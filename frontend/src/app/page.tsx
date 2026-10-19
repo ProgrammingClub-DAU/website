@@ -26,6 +26,7 @@ import { howItWorks } from "@/lib/content/home";
 import { dashboardService } from "@/lib/services/dashboard";
 import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
+import { WeeklyHighlights } from "@/components/site/weekly-highlights";
 import { InDevelopment } from "@/components/site/in-development";
 import { cn } from "@/lib/utils";
 import type { PublicMember } from "@/types/api";
@@ -51,7 +52,6 @@ const features: Feature[] = [
     icon: FileText,
     title: "Editorials & blog",
     body: "Write-ups from club contests and problem breakdowns, written by members.",
-    badge: "In development",
   },
   {
     icon: CalendarDays,
@@ -376,6 +376,10 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+      </Section>
+
+      <Section className="py-8">
+        <WeeklyHighlights />
       </Section>
 
       <HallOfFameTeaser title="The people who set the bar." />

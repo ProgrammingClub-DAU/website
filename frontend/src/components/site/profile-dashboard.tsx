@@ -10,13 +10,17 @@
  * - Account details with masked phone for visitors
  */
 
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import Script from "next/script";
 import Image from "next/image";
 import { RatingGraph, type RatingPoint } from "@/components/site/rating-graph";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
 import { ProfileLinksCard } from "@/components/site/profile-links-card";
-import { InDevelopment } from "@/components/site/in-development";
+import { StatTile } from "@/components/site/stat-tile";
+import { PeriodToggle } from "@/components/site/period-toggle";
+import { PlatformMark } from "@/components/site/platform-mark";
+import { statsService } from "@/lib/services/stats";
 import { dashboardService, type ProfileUpdateRequest } from "@/lib/services/dashboard";
 import { PROFILE_PLATFORMS, profileUrl, usernameFrom } from "@/lib/platform-profiles";
 import { leetcodeService } from "@/lib/services/leetcode";
@@ -34,7 +38,13 @@ import { openUploadWidget } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { rankColor, CF_RANKS } from "@/lib/cf-ranks";
-import { ACADEMIC_YEAR_LABELS, type Profile, type AcademicYear } from "@/types/api";
+import {
+  ACADEMIC_YEAR_LABELS,
+  type Profile,
+  type AcademicYear,
+  type MemberStats,
+  type StatsPeriod,
+} from "@/types/api";
 import {
   User,
   Trophy,
@@ -47,10 +57,11 @@ import {
   CheckCircle2,
   Loader2,
   Sparkles,
+  ArrowRightLeft,
+  Code2,
 } from "lucide-react";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
-
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
@@ -74,6 +85,8 @@ function profilePayload(profile: Profile, overrides: Partial<ProfileUpdateReques
     linkedinUrl: profile.linkedinUrl,
     avatarUrl: profile.avatarUrl,
     academicYear: profile.academicYear,
+    notifyEvents: profile.notifyEvents,
+    notifyContests: profile.notifyContests,
     ...overrides,
   };
 }
@@ -91,6 +104,8 @@ function formFromProfile(profile: Profile) {
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
     academicYear: (profile.academicYear ?? "") as AcademicYear | "",
     bannerId: profile.equippedBannerId || "rookie",
+    notifyEvents: profile.notifyEvents ?? false,
+    notifyContests: profile.notifyContests ?? false,
   };
 }
 
@@ -101,6 +116,9 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   const [lcHistory, setLcHistory] = useState<CfRatingHistoryEntry[]>([]);
   const [lcLoading, setLcLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>("ALL_TIME");
+  const [memberStats, setMemberStats] = useState<MemberStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
   const isOwner = isAuthenticated && String(user?.id) === userId;
@@ -148,6 +166,27 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
     loadProfile();
   }, [loadProfile]);
 
+  // Fetch verified member stats for the selected period
+  useEffect(() => {
+    let ignore = false;
+    setStatsLoading(true);
+    statsService
+      .getMemberStats(Number(userId), statsPeriod)
+      .then((data) => {
+        if (!ignore) setMemberStats(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load member stats:", err);
+      })
+      .finally(() => {
+        if (!ignore) setStatsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [userId, statsPeriod]);
+
   useEffect(() => {
     const handleBannerChanged = (e: Event) => {
       const customEvt = e as CustomEvent<{ bannerId: string }>;
@@ -180,6 +219,7 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
     <>
       <Script src="https://upload-widget.cloudinary.com/global/all.js" strategy="lazyOnload" />
       <ProfileDashboardContent
+        userId={userId}
         profile={profile}
         cfInfo={cfInfo}
         cfHistory={cfHistory}
@@ -187,12 +227,17 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
         lcLoading={lcLoading}
         onUpdate={loadProfile}
         isOwner={isOwner}
+        statsPeriod={statsPeriod}
+        setStatsPeriod={setStatsPeriod}
+        memberStats={memberStats}
+        statsLoading={statsLoading}
       />
     </>
   );
 }
 
 function ProfileDashboardContent({
+  userId,
   profile,
   cfInfo,
   cfHistory,
@@ -200,7 +245,12 @@ function ProfileDashboardContent({
   lcLoading,
   onUpdate,
   isOwner,
+  statsPeriod,
+  setStatsPeriod,
+  memberStats,
+  statsLoading,
 }: {
+  userId: string;
   profile: Profile;
   cfInfo: CfUserInfo | null;
   cfHistory: CfRatingHistoryEntry[];
@@ -208,7 +258,12 @@ function ProfileDashboardContent({
   lcLoading: boolean;
   onUpdate: () => void;
   isOwner: boolean;
+  statsPeriod: StatsPeriod;
+  setStatsPeriod: React.Dispatch<React.SetStateAction<StatsPeriod>>;
+  memberStats: MemberStats | null;
+  statsLoading: boolean;
 }) {
+  const { user, isAuthenticated } = useAuthStore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -227,6 +282,8 @@ function ProfileDashboardContent({
     linkedin: usernameFrom("linkedin", profile.linkedinUrl),
     academicYear: (profile.academicYear ?? "") as AcademicYear | "",
     bannerId: profile.equippedBannerId || "rookie",
+    notifyEvents: profile.notifyEvents ?? false,
+    notifyContests: profile.notifyContests ?? false,
   });
 
   const openEditor = () => {
@@ -288,6 +345,8 @@ function ProfileDashboardContent({
         academicYear: formData.academicYear || null,
         // Carried through so that saving the form does not clear the avatar.
         avatarUrl: profile.avatarUrl,
+        notifyEvents: formData.notifyEvents,
+        notifyContests: formData.notifyContests,
       };
       await dashboardService.updateProfile(payload);
       if (formData.bannerId !== profile.equippedBannerId) {
@@ -421,8 +480,8 @@ function ProfileDashboardContent({
               )}
             </div>
 
-            {/* Action Buttons (Owner Only) */}
-            {isOwner && (
+            {/* Action Buttons */}
+            {isOwner ? (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -442,7 +501,17 @@ function ProfileDashboardContent({
                   {isEditingProfile ? "Cancel Editing" : "Edit Profile"}
                 </button>
               </div>
-            )}
+            ) : isAuthenticated && user ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/compare?a=${user.id}&b=${userId}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-foreground transition-all hover:border-hairline-strong hover:bg-surface-3 shadow-xs"
+                >
+                  <ArrowRightLeft className="size-3.5 text-primary" />
+                  Compare with me
+                </Link>
+              </div>
+            ) : null}
           </div>
 
           {/* Name + handle + rank + club role */}
@@ -709,6 +778,39 @@ function ProfileDashboardContent({
                   </p>
                 </div>
 
+                {/* ── Notification Preferences (Stage 5B/6B) ── */}
+                <div className="rounded-panel border border-border bg-surface-2/50 p-4 space-y-3">
+                  <div>
+                    <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Mail className="size-3.5 text-primary" />
+                      Email Notification Preferences
+                    </h4>
+                    <p className="mt-0.5 text-[11px] text-fg-muted">
+                      Receive updates to your verified university email. You can unsubscribe at any time.
+                    </p>
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.notifyEvents}
+                        onChange={(e) => setFormData({ ...formData, notifyEvents: e.target.checked })}
+                        className="mt-0.5 size-4 rounded border-border bg-surface-2 text-primary focus:ring-primary"
+                      />
+                      <span>Email me 24 hours before club events I can attend</span>
+                    </label>
+                    <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.notifyContests}
+                        onChange={(e) => setFormData({ ...formData, notifyContests: e.target.checked })}
+                        className="mt-0.5 size-4 rounded border-border bg-surface-2 text-primary focus:ring-primary"
+                      />
+                      <span>Send me daily contest digests when external or club contests are scheduled</span>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
@@ -811,17 +913,123 @@ function ProfileDashboardContent({
         </CardContent>
       </Card>
 
-      <InDevelopment
-        headingLevel="h3"
-        title="Practice stats"
-        body="A breakdown of what this member practises, built from their Codeforces submissions."
-        items={[
-          "Problems solved",
-          "Average problem rating",
-          "Topic strength",
-          "Practice suggestions",
-        ]}
-      />
+      {/* ── Live Performance & Practice Stats (Phase 3) ── */}
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Code2 className="size-4 text-primary" />
+              Platform Performance & Solves
+            </CardTitle>
+            <p className="mt-1 text-label text-fg-muted font-mono">
+              Aggregated problems solved, contests entered, and difficulty metrics.
+            </p>
+          </div>
+          <PeriodToggle
+            value={statsPeriod}
+            onChange={setStatsPeriod}
+            size="sm"
+          />
+        </CardHeader>
+        <CardContent className="pt-3 space-y-4">
+          {/* Primary 3 Tiles Grid: Overall Solved, Contests, CF Avg Rating */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <StatTile
+              label="Total Problems Solved"
+              value={memberStats?.overall.solved}
+              partial={memberStats?.overall.solvedPartial}
+              emptyHint={statsPeriod === "ALL_TIME" ? "No solves synced" : "No solves in this period"}
+              loading={statsLoading}
+            />
+            <StatTile
+              label="Contests Given"
+              value={memberStats?.overall.contests}
+              emptyHint="No contests attended"
+              loading={statsLoading}
+            />
+            <StatTile
+              label="CF Avg Problem Rating"
+              value={memberStats?.codeforces?.avgProblemRating}
+              basis={
+                memberStats?.codeforces?.avgProblemRating
+                  ? `over ${memberStats.codeforces.ratedSolvesCount ?? 0} rated solves`
+                  : null
+              }
+              emptyHint={
+                !profile.codeforcesHandle
+                  ? "Handle not linked"
+                  : "Needs at least 10 rated solves"
+              }
+              loading={statsLoading}
+            />
+          </div>
+
+          {/* Platform Breakdown Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {/* Codeforces Breakdown */}
+            <div className="rounded-card border border-hairline bg-surface/40 p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-label font-mono">
+                <span className="flex items-center gap-1.5 text-fg-muted uppercase tracking-caps">
+                  <PlatformMark platform="codeforces" className="size-3.5" /> Codeforces
+                </span>
+                <span className="text-fg-subtle">
+                  {profile.codeforcesHandle ? `@${profile.codeforcesHandle}` : "Unlinked"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="rounded bg-surface-elevated/40 p-2 text-center">
+                  <div className="text-xl font-heading font-semibold text-foreground">
+                    {memberStats?.codeforces?.solved ?? 0}
+                  </div>
+                  <div className="text-nano font-mono text-fg-muted uppercase">Solved</div>
+                </div>
+                <div className="rounded bg-surface-elevated/40 p-2 text-center">
+                  <div className="text-xl font-heading font-semibold text-foreground">
+                    {memberStats?.codeforces?.contests ?? 0}
+                  </div>
+                  <div className="text-nano font-mono text-fg-muted uppercase">Contests</div>
+                </div>
+              </div>
+            </div>
+
+            {/* LeetCode Breakdown */}
+            <div className="rounded-card border border-hairline bg-surface/40 p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-label font-mono">
+                <span className="flex items-center gap-1.5 text-fg-muted uppercase tracking-caps">
+                  <PlatformMark platform="leetcode" className="size-3.5" /> LeetCode
+                </span>
+                <span className="text-fg-subtle">
+                  {profile.leetcodeHandle ? profile.leetcodeHandle : "Unlinked"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="rounded bg-surface-elevated/40 p-2 text-center">
+                  <div className="text-xl font-heading font-semibold text-foreground">
+                    {memberStats?.leetcode?.solved !== null && memberStats?.leetcode?.solved !== undefined
+                      ? memberStats.leetcode.solved
+                      : "–"}
+                  </div>
+                  <div className="text-nano font-mono text-fg-muted uppercase">Solved</div>
+                </div>
+                <div className="rounded bg-surface-elevated/40 p-2 text-center">
+                  <div className="text-xl font-heading font-semibold text-foreground">
+                    {memberStats?.leetcode?.contests ?? 0}
+                  </div>
+                  <div className="text-nano font-mono text-fg-muted uppercase">Contests</div>
+                </div>
+              </div>
+              {/* Difficulty breakdown chips */}
+              {memberStats?.leetcode?.lcDifficulty && (
+                <div className="flex items-center justify-between text-nano font-mono pt-1 text-fg-muted border-t border-hairline/60">
+                  <span className="text-emerald-400">Easy: {memberStats.leetcode.lcDifficulty.easy ?? 0}</span>
+                  <span className="text-amber-400">Med: {memberStats.leetcode.lcDifficulty.medium ?? 0}</span>
+                  <span className="text-rose-400">Hard: {memberStats.leetcode.lcDifficulty.hard ?? 0}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── Account Details ── */}
       <Card>
