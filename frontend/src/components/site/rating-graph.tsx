@@ -1,35 +1,39 @@
 "use client";
 
 /**
- * Contest rating history as a line graph.
+ * Contest rating history as a multi-platform line graph.
  *
- * Written rather than pulled from a library. It replaces a recharts line chart
- * that cost about 104 kB gzipped on this route — an open finding in the frontend
- * audit — to draw roughly two hundred lines of SVG. Nothing else on the site uses
- * recharts, so this removes the dependency outright.
+ * Implemented with pure SVG and Fritsch-Carlson monotone cubic spline interpolation
+ * to guarantee no overshoot (eliminating the recharts bundle overhead).
  *
- * Dots are coloured by the Codeforces rank the rating sat in at that moment, so
- * the graph shows progression through the ladder rather than a single accent
- * line. That is the same rank palette the club gradient is built from.
+ * Supports single series (legacy `data` prop) and multi-platform comparison (`series` prop).
+ * Codeforces points are coloured by the rank ladder tier; LeetCode points are styled
+ * in signature platform blue/orange.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import { CF_RANKS, ratingToRank } from "@/lib/cf-ranks";
 import { lcRankColor, ratingToLcRank, lcRankName } from "@/lib/lc-ranks";
-import type { LeaderboardPlatform } from "@/types/api";
 import { cn } from "@/lib/utils";
+import type { LeaderboardPlatform } from "@/types/api";
 
 export type RatingPoint = {
   /** ISO date string, or anything `new Date()` accepts. */
   date: string;
   rating: number;
   contestName?: string;
+  rank?: number | null;
 };
 
-/** Vertical room for the value axis; horizontal room so end dots are not clipped. */
-const PADDING = { top: 18, right: 16, bottom: 26, left: 44 };
-const HEIGHT = 300;
+export interface RatingSeries {
+  platform: LeaderboardPlatform;
+  points: RatingPoint[];
+  label?: string;
+  color?: string;
+}
+
+const PADDING = { top: 22, right: 20, bottom: 32, left: 48 };
+const HEIGHT = 320;
 const GRID_LINES = 5;
 
 function rankName(rating: number, platform: LeaderboardPlatform = "CODEFORCES"): string {
@@ -43,12 +47,7 @@ function getPointColor(rating: number, platform: LeaderboardPlatform = "CODEFORC
 }
 
 /**
- * Builds a smooth path using monotone cubic interpolation.
- *
- * A plain Catmull-Rom spline overshoots between points, which on a rating graph
- * would draw dips and spikes that never happened — the curve would claim the
- * member dropped below a rating they never held. Monotone interpolation clamps
- * the tangents so the line only moves in the direction the data does.
+ * Builds a smooth path using monotone cubic interpolation (Fritsch-Carlson).
  */
 function monotonePath(pts: { x: number; y: number }[]): string {
   const n = pts.length;
@@ -56,7 +55,6 @@ function monotonePath(pts: { x: number; y: number }[]): string {
   if (n === 1) return `M ${pts[0].x} ${pts[0].y}`;
   if (n === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
 
-  // Secant slopes between consecutive points.
   const dx: number[] = [];
   const dy: number[] = [];
   const slope: number[] = [];
@@ -66,20 +64,17 @@ function monotonePath(pts: { x: number; y: number }[]): string {
     slope[i] = dx[i] === 0 ? 0 : dy[i] / dx[i];
   }
 
-  // Tangents, averaged then clamped where the direction changes.
   const tangent: number[] = new Array(n);
   tangent[0] = slope[0];
   tangent[n - 1] = slope[n - 2];
   for (let i = 1; i < n - 1; i++) {
     if (slope[i - 1] * slope[i] <= 0) {
-      // A local extremum: flatten, or the curve overshoots past it.
       tangent[i] = 0;
     } else {
       tangent[i] = (slope[i - 1] + slope[i]) / 2;
     }
   }
 
-  // Fritsch-Carlson limiter keeps each segment monotone.
   for (let i = 0; i < n - 1; i++) {
     if (slope[i] === 0) {
       tangent[i] = 0;
@@ -106,21 +101,28 @@ function monotonePath(pts: { x: number; y: number }[]): string {
   return d;
 }
 
+interface RatingGraphProps {
+  data?: RatingPoint[];
+  platform?: LeaderboardPlatform;
+  series?: RatingSeries[];
+  className?: string;
+  showLegend?: boolean;
+}
+
 export function RatingGraph({
   data,
   platform = "CODEFORCES",
+  series,
   className,
-}: {
-  data: RatingPoint[];
-  platform?: LeaderboardPlatform;
-  className?: string;
-}) {
+  showLegend = true,
+}: RatingGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
-  const [active, setActive] = useState<number | null>(null);
+  const [activeItem, setActiveItem] = useState<{
+    seriesIdx: number;
+    pointIdx: number;
+  } | null>(null);
 
-  // The SVG is drawn in pixels rather than scaled with a viewBox, so labels stay
-  // at a readable size instead of stretching with the container.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -129,29 +131,48 @@ export function RatingGraph({
     return () => ro.disconnect();
   }, []);
 
-  const sorted = useMemo(
-    () => [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [data]
-  );
+  // Normalize inputs to standard series list
+  const activeSeries: RatingSeries[] = useMemo(() => {
+    if (series && series.length > 0) {
+      return series.filter((s) => s.points && s.points.length > 0);
+    }
+    if (data && data.length > 0) {
+      return [
+        {
+          platform,
+          points: data,
+          label: platform === "CODEFORCES" ? "Codeforces" : "LeetCode",
+          color: platform === "CODEFORCES" ? "var(--cf-expert)" : "#FFA116",
+        },
+      ];
+    }
+    return [];
+  }, [series, data, platform]);
 
   const geometry = useMemo(() => {
-    if (width === 0 || sorted.length === 0) return null;
+    if (width === 0 || activeSeries.length === 0) return null;
 
     const innerW = Math.max(1, width - PADDING.left - PADDING.right);
     const innerH = HEIGHT - PADDING.top - PADDING.bottom;
 
-    const times = sorted.map((d) => new Date(d.date).getTime());
-    const ratings = sorted.map((d) => d.rating);
+    // Collect all points across series
+    const allTimes: number[] = [];
+    const allRatings: number[] = [];
 
-    const tMin = Math.min(...times);
-    const tMax = Math.max(...times);
-    // Pad the value axis so the highest and lowest dots are not flush with the edge.
-    const rMin = Math.min(...ratings) - 100;
-    const rMax = Math.max(...ratings) + 100;
+    activeSeries.forEach((s) => {
+      s.points.forEach((p) => {
+        allTimes.push(new Date(p.date).getTime());
+        allRatings.push(p.rating);
+      });
+    });
 
-    // A single contest, or several on one day, would make every timestamp equal
-    // and divide by zero — centre horizontally instead. The rating axis has no
-    // equivalent case: it is always padded by ±100 above, so spanR is never zero.
+    if (allTimes.length === 0) return null;
+
+    const tMin = Math.min(...allTimes);
+    const tMax = Math.max(...allTimes);
+    const rMin = Math.min(...allRatings) - 100;
+    const rMax = Math.max(...allRatings) + 100;
+
     const spanT = tMax - tMin;
     const spanR = rMax - rMin;
 
@@ -159,79 +180,103 @@ export function RatingGraph({
       PADDING.left + (spanT === 0 ? innerW / 2 : ((t - tMin) / spanT) * innerW);
     const y = (r: number) => PADDING.top + innerH - ((r - rMin) / spanR) * innerH;
 
-    const points = sorted.map((d, i) => ({
-      x: x(times[i]),
-      y: y(d.rating),
-      ...d,
-    }));
+    const plottedSeries = activeSeries.map((s, sIdx) => {
+      const sortedPoints = [...s.points].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      const points = sortedPoints.map((p) => ({
+        x: x(new Date(p.date).getTime()),
+        y: y(p.rating),
+        seriesIdx: sIdx,
+        ...p,
+      }));
+      return {
+        ...s,
+        points,
+        path: monotonePath(points),
+      };
+    });
 
     const ticks = Array.from({ length: GRID_LINES }, (_, i) => {
       const value = rMin + (spanR * i) / (GRID_LINES - 1);
       return { value: Math.round(value), y: y(value) };
     });
 
-    return { points, ticks, path: monotonePath(points) };
-  }, [sorted, width]);
+    return { plottedSeries, ticks, tMin, tMax };
+  }, [activeSeries, width]);
 
-  /** Nearest point to the pointer, so the whole plot is a hit area. */
   const handleMove = useCallback(
     (event: React.PointerEvent<SVGSVGElement>) => {
       if (!geometry) return;
       const rect = event.currentTarget.getBoundingClientRect();
       const px = event.clientX - rect.left;
-      let nearest = 0;
-      let best = Infinity;
-      geometry.points.forEach((p, i) => {
-        const dist = Math.abs(p.x - px);
-        if (dist < best) {
-          best = dist;
-          nearest = i;
-        }
-      });
-      setActive(nearest);
-    },
-    [geometry]
-  );
 
-  const handleKey = useCallback(
-    (event: React.KeyboardEvent<SVGSVGElement>) => {
-      if (!geometry) return;
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        event.preventDefault();
-        const step = event.key === "ArrowRight" ? 1 : -1;
-        setActive((current) => {
-          const next = (current ?? -1) + step;
-          return Math.max(0, Math.min(geometry.points.length - 1, next));
+      let bestDist = Infinity;
+      let closest: { seriesIdx: number; pointIdx: number } | null = null;
+
+      geometry.plottedSeries.forEach((s, sIdx) => {
+        s.points.forEach((p, pIdx) => {
+          const dist = Math.abs(p.x - px);
+          if (dist < bestDist) {
+            bestDist = dist;
+            closest = { seriesIdx: sIdx, pointIdx: pIdx };
+          }
         });
-      } else if (event.key === "Escape") {
-        setActive(null);
-      }
+      });
+
+      setActiveItem(closest);
     },
     [geometry]
   );
 
-  if (sorted.length === 0) return null;
+  if (activeSeries.length === 0) {
+    return (
+      <div className="flex h-48 w-full items-center justify-center rounded-panel border border-dashed border-hairline text-label text-fg-muted font-mono">
+        No contest rating history recorded
+      </div>
+    );
+  }
 
-  const activePoint = geometry && active !== null ? geometry.points[active] : null;
-  const latest = sorted[sorted.length - 1];
-  const first = sorted[0];
-  const delta = latest.rating - first.rating;
+  const activePoint =
+    geometry && activeItem !== null
+      ? geometry.plottedSeries[activeItem.seriesIdx]?.points[activeItem.pointIdx]
+      : null;
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
+      {/* ── Optional Multi-Series Legend ── */}
+      {showLegend && activeSeries.length > 1 && (
+        <div className="mb-3 flex flex-wrap items-center gap-4 text-label font-mono">
+          {activeSeries.map((s) => (
+            <div key={s.platform} className="flex items-center gap-2">
+              <span
+                className="size-2.5 rounded-full"
+                style={{
+                  backgroundColor:
+                    s.color || (s.platform === "LEETCODE" ? "#FFA116" : "var(--cf-expert)"),
+                }}
+              />
+              <span className="text-fg-muted uppercase tracking-caps">
+                {s.label || s.platform}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {geometry && (
         <svg
           width={width}
           height={HEIGHT}
-          role="group"
+          role="img"
+          aria-label="Contest rating history multi-platform progression chart"
           tabIndex={0}
-          aria-label={`Contest rating history: ${sorted.length} contests, from ${first.rating} to ${latest.rating}, ${delta >= 0 ? "up" : "down"} ${Math.abs(delta)} points. Use the arrow keys to read each contest.`}
           onPointerMove={handleMove}
-          onPointerLeave={() => setActive(null)}
-          onKeyDown={handleKey}
-          onBlur={() => setActive(null)}
+          onPointerLeave={() => setActiveItem(null)}
+          onBlur={() => setActiveItem(null)}
           className="touch-none rounded-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
+          {/* ── Background Grid & Value Labels ── */}
           {geometry.ticks.map((tick) => (
             <g key={tick.value}>
               <line
@@ -253,15 +298,25 @@ export function RatingGraph({
             </g>
           ))}
 
-          <path
-            d={geometry.path}
-            fill="none"
-            stroke={platform === "LEETCODE" ? "var(--lc-knight, #7c9eff)" : "var(--cf-expert)"}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* ── Series Curve Paths ── */}
+          {geometry.plottedSeries.map((s) => {
+            const strokeColor =
+              s.color || (s.platform === "LEETCODE" ? "#FFA116" : "var(--cf-expert)");
+            return (
+              <path
+                key={s.platform}
+                d={s.path}
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-all duration-150"
+              />
+            );
+          })}
 
+          {/* ── Active Hover Vertical Crosshair ── */}
           {activePoint && (
             <line
               x1={activePoint.x}
@@ -273,71 +328,103 @@ export function RatingGraph({
             />
           )}
 
-          {geometry.points.map((p, i) => (
-            <circle
-              key={`${p.date}-${i}`}
-              cx={p.x}
-              cy={p.y}
-              r={active === i ? 6.5 : 4.5}
-              fill={getPointColor(p.rating, platform)}
-              stroke="var(--background)"
-              strokeWidth={2}
-            />
-          ))}
+          {/* ── Data Points / Markers ── */}
+          {geometry.plottedSeries.map((s, sIdx) =>
+            s.points.map((p, pIdx) => {
+              const isSelected =
+                activeItem?.seriesIdx === sIdx && activeItem?.pointIdx === pIdx;
+              const ptColor =
+                s.platform === "CODEFORCES"
+                  ? getPointColor(p.rating, "CODEFORCES")
+                  : s.color || "#FFA116";
+
+              return (
+                <circle
+                  key={`${p.date}-${sIdx}-${pIdx}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r={isSelected ? 6.5 : 4}
+                  fill={ptColor}
+                  stroke="var(--background)"
+                  strokeWidth={2}
+                  className="transition-transform duration-100"
+                />
+              );
+            })
+          )}
         </svg>
       )}
 
+      {/* ── Floating Tooltip ── */}
       {activePoint && (
         <div
-          className="pointer-events-none absolute z-10 min-w-[150px] -translate-x-1/2 rounded-control border border-border bg-surface-2 px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute z-10 min-w-[160px] -translate-x-1/2 rounded-control border border-border bg-surface-elevated/95 p-2.5 shadow-xl backdrop-blur-md"
           style={{
-            left: Math.min(Math.max(activePoint.x, 80), Math.max(80, width - 80)),
-            top: Math.max(0, activePoint.y - 78),
+            left: Math.min(Math.max(activePoint.x, 90), Math.max(90, width - 90)),
+            top: Math.max(0, activePoint.y - 84),
           }}
         >
-          <p className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
-            {new Date(activePoint.date).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-          <p className="mt-0.5 text-sm font-semibold">
-            {activePoint.rating}{" "}
-            <span style={{ color: getPointColor(activePoint.rating, platform) }}>
-              {rankName(activePoint.rating, platform)}
+          <div className="flex items-center justify-between gap-2 border-b border-hairline pb-1">
+            <span className="font-mono text-nano text-fg-subtle uppercase tracking-caps">
+              {geometry?.plottedSeries[activeItem!.seriesIdx]?.platform}
             </span>
-          </p>
+            <span className="font-mono text-nano text-fg-muted">
+              {new Date(activePoint.date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="font-heading text-base font-semibold text-foreground">
+              {activePoint.rating}
+            </span>
+            <span
+              className="text-label font-mono font-medium"
+              style={{
+                color: getPointColor(
+                  activePoint.rating,
+                  geometry?.plottedSeries[activeItem!.seriesIdx]?.platform
+                ),
+              }}
+            >
+              {rankName(
+                activePoint.rating,
+                geometry?.plottedSeries[activeItem!.seriesIdx]?.platform
+              )}
+            </span>
+          </div>
           {activePoint.contestName && (
-            <p className="mt-0.5 line-clamp-2 text-label text-fg-muted">
+            <p className="mt-0.5 line-clamp-1 text-nano text-fg-muted">
               {activePoint.contestName}
             </p>
           )}
         </div>
       )}
 
-      {/* The SVG carries a summary, but the individual results are only in the
-          drawing. This table is the same data in a form a screen reader can walk
-          through, which recharts did not provide either. */}
+      {/* ── Hidden Accessibility Table for Screen Readers ── */}
       <table className="sr-only">
-        <caption>Contest rating history</caption>
+        <caption>Contest rating history table</caption>
         <thead>
           <tr>
+            <th scope="col">Platform</th>
             <th scope="col">Date</th>
             <th scope="col">Contest</th>
             <th scope="col">Rating</th>
-            <th scope="col">Rank</th>
           </tr>
         </thead>
         <tbody>
-          {sorted.map((d, i) => (
-            <tr key={`${d.date}-${i}`}>
-              <td>{new Date(d.date).toLocaleDateString("en-US")}</td>
-              <td>{d.contestName ?? "Contest"}</td>
-              <td>{d.rating}</td>
-              <td>{rankName(d.rating, platform)}</td>
-            </tr>
-          ))}
+          {activeSeries.map((s) =>
+            s.points.map((p, i) => (
+              <tr key={`${s.platform}-${p.date}-${i}`}>
+                <td>{s.platform}</td>
+                <td>{new Date(p.date).toLocaleDateString()}</td>
+                <td>{p.contestName ?? "Contest"}</td>
+                <td>{p.rating}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

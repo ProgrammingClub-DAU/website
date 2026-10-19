@@ -3,8 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Menu } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Menu,
+  ChevronDown,
+  Gamepad2,
+  Calendar,
+  Trophy,
+  Users,
+  Camera,
+  Info,
+  Shield,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import StarBorder from "@/components/site/star-border";
@@ -20,7 +30,7 @@ import { ThemeToggle } from "@/components/site/theme-toggle";
 import { GitHubMark } from "@/components/site/github-mark";
 import { ClubMarkReveal } from "@/components/site/club-mark-reveal";
 import { dashboardService } from "@/lib/services/dashboard";
-import { navItems, site, utilityLinks } from "@/lib/site";
+import { primaryNavItems, moreNavGroups, site, utilityLinks } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
@@ -109,6 +119,27 @@ function Wordmark({
   );
 }
 
+function NavIcon({ name, className }: { name: string; className?: string }) {
+  switch (name) {
+    case "Gamepad2":
+      return <Gamepad2 className={className} />;
+    case "Calendar":
+      return <Calendar className={className} />;
+    case "Trophy":
+      return <Trophy className={className} />;
+    case "Users":
+      return <Users className={className} />;
+    case "Camera":
+      return <Camera className={className} />;
+    case "Info":
+      return <Info className={className} />;
+    case "Shield":
+      return <Shield className={className} />;
+    default:
+      return null;
+  }
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -117,15 +148,44 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [revealOpen, setRevealOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close dropdown on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+      }
+    };
+
+    if (moreOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [moreOpen]);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   const userId = user?.id;
 
@@ -164,12 +224,13 @@ export function Navbar() {
   // when a persisted session has no id -- never /profile/undefined.
   const profileHref = user?.id ? `/profile/${user.id}` : "/profile";
   const isAdmin = isMounted && isAuthenticated && user?.role === "ROLE_ADMIN";
-  const links = isAdmin
-    ? [...navItems, { href: "/admin", label: "Admin" }]
-    : [...navItems];
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const isMoreActive = moreNavGroups.some((group) =>
+    group.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+  );
 
   return (
     <>
@@ -185,9 +246,9 @@ export function Navbar() {
       <nav className="container-page flex h-16 items-center justify-between gap-4">
         <Wordmark onMarkClick={() => setRevealOpen(true)} />
 
-        {/* Desktop navigation. Below lg the links move into the sheet. */}
+        {/* Desktop navigation: Primary daily destinations + More dropdown */}
         <div className="hidden items-center gap-1 lg:flex">
-          {links.map((item) => (
+          {primaryNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -203,6 +264,105 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
+
+          {/* More dropdown panel */}
+          <div ref={moreRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((prev) => !prev)}
+              aria-expanded={moreOpen}
+              aria-haspopup="true"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-meta font-medium transition-colors whitespace-nowrap",
+                "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                isMoreActive || moreOpen
+                  ? "bg-surface-2 text-foreground font-semibold shadow-xs"
+                  : "text-fg-muted hover:bg-surface-2/60 hover:text-foreground"
+              )}
+            >
+              <span>More</span>
+              <ChevronDown
+                className={cn(
+                  "size-3.5 transition-transform duration-200",
+                  moreOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {moreOpen && (
+              <div
+                role="menu"
+                className="absolute top-full left-1/2 mt-2 w-[490px] -translate-x-1/2 rounded-2xl border border-hairline bg-surface-1/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 z-50 ring-1 ring-border/20"
+                style={{ backgroundColor: "var(--popover-bg, rgba(17, 19, 24, 0.96))" }}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  {moreNavGroups.map((group) => (
+                    <div key={group.heading} className="flex flex-col gap-1">
+                      <span className="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted/80">
+                        {group.heading}
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        {group.items.map((item) => {
+                          const itemActive =
+                            pathname === item.href || pathname.startsWith(item.href + "/");
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setMoreOpen(false)}
+                              className={cn(
+                                "group flex items-start gap-2.5 rounded-xl p-2 transition-all",
+                                itemActive
+                                  ? "bg-surface-2 text-foreground shadow-xs"
+                                  : "text-fg-muted hover:bg-surface-2/70 hover:text-foreground"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg border transition-colors",
+                                  itemActive
+                                    ? "border-primary/40 bg-primary/10 text-primary"
+                                    : "border-hairline bg-surface-2/40 text-fg-muted group-hover:border-border/60 group-hover:bg-surface-2 group-hover:text-foreground"
+                                )}
+                              >
+                                <NavIcon name={item.icon} className="size-3.5" />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold leading-tight text-foreground">
+                                  {item.label}
+                                </span>
+                                <span className="truncate text-[11px] text-fg-muted/90 group-hover:text-fg-muted">
+                                  {item.description}
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Admin link if signed in as admin */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-meta font-medium transition-colors whitespace-nowrap",
+                "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                pathname.startsWith("/admin")
+                  ? "bg-primary/20 text-primary font-semibold ring-1 ring-primary/40"
+                  : "text-primary/90 hover:bg-primary/10 hover:text-primary"
+              )}
+            >
+              <Shield className="size-3.5" />
+              <span>Admin</span>
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -293,37 +453,108 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-                {links.map((item) => (
-                  <SheetClose asChild key={item.href}>
+              <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+                {/* Main / Primary links */}
+                <div className="flex flex-col gap-0.5">
+                  <SheetClose asChild>
                     <Link
-                      href={item.href}
-                      aria-current={isActive(item.href) ? "page" : undefined}
+                      href="/"
+                      aria-current={pathname === "/" ? "page" : undefined}
                       className={cn(
-                        "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                        "hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-                        isActive(item.href)
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        pathname === "/"
                           ? "bg-surface-2 text-foreground font-semibold"
-                          : "text-fg-muted"
+                          : "text-fg-muted hover:bg-surface-2 hover:text-foreground"
                       )}
                     >
-                      {item.label}
+                      Home
                     </Link>
                   </SheetClose>
+                  {primaryNavItems.map((item) => (
+                    <SheetClose asChild key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={isActive(item.href) ? "page" : undefined}
+                        className={cn(
+                          "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          isActive(item.href)
+                            ? "bg-surface-2 text-foreground font-semibold"
+                            : "text-fg-muted hover:bg-surface-2 hover:text-foreground"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </div>
+
+                {/* Categorized groups */}
+                {moreNavGroups.map((group) => (
+                  <div key={group.heading} className="flex flex-col gap-1 border-t border-hairline pt-3">
+                    <span className="px-3 text-[10px] font-semibold uppercase tracking-wider text-fg-muted/70">
+                      {group.heading}
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {group.items.map((item) => {
+                        const itemActive =
+                          pathname === item.href || pathname.startsWith(item.href + "/");
+                        return (
+                          <SheetClose asChild key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={cn(
+                                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                itemActive
+                                  ? "bg-surface-2 text-foreground font-semibold"
+                                  : "text-fg-muted hover:bg-surface-2 hover:text-foreground"
+                              )}
+                            >
+                              <NavIcon name={item.icon} className="size-4 shrink-0 text-fg-muted" />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SheetClose>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
-                {utilityLinks.map((item) => (
-                  <SheetClose asChild key={item.href}>
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
-                    >
-                      <GitHubMark className="size-4 shrink-0" />
-                      {item.label}
-                    </a>
-                  </SheetClose>
-                ))}
+
+                {/* Admin link if signed in as admin */}
+                {isAdmin && (
+                  <div className="flex flex-col gap-1 border-t border-hairline pt-3">
+                    <SheetClose asChild>
+                      <Link
+                        href="/admin"
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          pathname.startsWith("/admin")
+                            ? "bg-primary/20 text-primary font-semibold"
+                            : "text-primary/90 hover:bg-primary/10"
+                        )}
+                      >
+                        <Shield className="size-4 shrink-0 text-primary" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    </SheetClose>
+                  </div>
+                )}
+
+                {/* External utilities */}
+                <div className="flex flex-col gap-1 border-t border-hairline pt-3">
+                  {utilityLinks.map((item) => (
+                    <SheetClose asChild key={item.href}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                      >
+                        <GitHubMark className="size-4 shrink-0" />
+                        {item.label}
+                      </a>
+                    </SheetClose>
+                  ))}
+                </div>
               </div>
 
               {/* Mobile auth controls: swap Login/Join for user name + Logout */}

@@ -14,16 +14,67 @@ export const site = {
   codeforces: null,
 } as const;
 
+export const primaryNavItems = [
+  { href: "/contests", label: "Contests" },
+  { href: "/practice", label: "Practice" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/events", label: "Events" },
+  { href: "/blog", label: "Blog" },
+] as const;
+
+export const moreNavGroups = [
+  {
+    heading: "Activities & Games",
+    items: [
+      {
+        href: "/compete",
+        label: "CP Bingo",
+        description: "Multiplayer competitive problem grid",
+        icon: "Gamepad2",
+      },
+      {
+        href: "/calendar",
+        label: "Contest Calendar",
+        description: "Upcoming CF, LC & club schedules",
+        icon: "Calendar",
+      },
+      {
+        href: "/hall-of-fame",
+        label: "Hall of Fame",
+        description: "All-time club champions & honors",
+        icon: "Trophy",
+      },
+    ],
+  },
+  {
+    heading: "Club & Community",
+    items: [
+      {
+        href: "/members",
+        label: "Member Directory",
+        description: "Batch profiles & student cards",
+        icon: "Users",
+      },
+      {
+        href: "/gallery",
+        label: "Photo Gallery",
+        description: "Event photos & club memories",
+        icon: "Camera",
+      },
+      {
+        href: "/about",
+        label: "About Club",
+        description: "History, committee & constitution",
+        icon: "Info",
+      },
+    ],
+  },
+] as const;
+
 export const navItems = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/events", label: "Events" },
-  { href: "/hall-of-fame", label: "Hall of Fame" },
-  { href: "/gallery", label: "Gallery" },
-  { href: "/blog", label: "Blog" },
-  { href: "/compete", label: "Compete" },
-  { href: "/members", label: "Members" },
-  { href: "/leaderboard", label: "Leaderboard" },
+  ...primaryNavItems,
+  ...moreNavGroups.flatMap((g) => g.items.map((i) => ({ href: i.href, label: i.label }))),
 ] as const;
 
 /**

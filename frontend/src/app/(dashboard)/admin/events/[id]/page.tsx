@@ -14,7 +14,7 @@ import {
 } from "@/lib/google-sheets";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
-import type { EventDetail, EventAttendee, UserLookup } from "@/types/api";
+import type { EventDetail, EventAttendee, UserLookup, EventRegistrationRow } from "@/types/api";
 import {
   ArrowLeft,
   Search,
@@ -33,6 +33,9 @@ import {
   Loader2,
   ShieldAlert,
   Phone,
+  CheckSquare,
+  Square,
+  UserCheck,
 } from "lucide-react";
 
 export default function EventAttendeesPage() {
@@ -69,6 +72,14 @@ export default function EventAttendeesPage() {
 
   // Filter attendees state
   const [attendeeFilter, setAttendeeFilter] = useState("");
+
+  // RSVP management state
+  const [activeTab, setActiveTab] = useState<"attendees" | "rsvps">("attendees");
+  const [registrations, setRegistrations] = useState<EventRegistrationRow[]>([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(true);
+  const [selectedRsvpUserIds, setSelectedRsvpUserIds] = useState<number[]>([]);
+  const [isMarkingRsvp, setIsMarkingRsvp] = useState(false);
+  const [rsvpFilter, setRsvpFilter] = useState("");
 
   /**
    * The podium being edited, as "" or a member id per placing.
@@ -114,11 +125,71 @@ export default function EventAttendeesPage() {
     }
   }, [eventId]);
 
+  const loadRegistrations = useCallback(async () => {
+    if (!eventId || isNaN(eventId)) return;
+    setLoadingRegistrations(true);
+    try {
+      const data = await eventsService.getRegistrations(eventId);
+      setRegistrations(data);
+    } catch (err) {
+      console.error("Failed to load registrations:", err);
+    } finally {
+      setLoadingRegistrations(false);
+    }
+  }, [eventId]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadEventData();
     loadAttendees();
-  }, [loadEventData, loadAttendees]);
+    loadRegistrations();
+  }, [loadEventData, loadAttendees, loadRegistrations]);
+
+  const handleMarkSelectedAsAttended = async () => {
+    if (!eventId || selectedRsvpUserIds.length === 0) return;
+    setIsMarkingRsvp(true);
+    setStatusMessage(null);
+    try {
+      await eventsService.markAttendedFromRsvp(eventId, selectedRsvpUserIds);
+      setStatusMessage({
+        type: "success",
+        text: `Successfully marked ${selectedRsvpUserIds.length} member(s) as attended!`,
+      });
+      setSelectedRsvpUserIds([]);
+      await Promise.all([loadAttendees(), loadRegistrations()]);
+    } catch (err: unknown) {
+      console.error("Failed to mark attendance from RSVP:", err);
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to mark attendance for selected members.";
+      setStatusMessage({ type: "error", text: msg });
+    } finally {
+      setIsMarkingRsvp(false);
+    }
+  };
+
+  const handleMarkSingleAttended = async (userId: number, name: string) => {
+    if (!eventId) return;
+    setIsMarkingRsvp(true);
+    setStatusMessage(null);
+    try {
+      await eventsService.markAttendedFromRsvp(eventId, [userId]);
+      setStatusMessage({
+        type: "success",
+        text: `Marked ${name} as attended!`,
+      });
+      setSelectedRsvpUserIds((prev) => prev.filter((id) => id !== userId));
+      await Promise.all([loadAttendees(), loadRegistrations()]);
+    } catch (err: unknown) {
+      console.error("Failed to mark attendance:", err);
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        `Failed to mark attendance for ${name}.`;
+      setStatusMessage({ type: "error", text: msg });
+    } finally {
+      setIsMarkingRsvp(false);
+    }
+  };
 
 
   const handleSearchStudent = async (e: React.FormEvent) => {
@@ -337,6 +408,36 @@ export default function EventAttendeesPage() {
     );
   }, [attendees, attendeeFilter]);
 
+  const filteredRegistrations = useMemo(() => {
+    const q = rsvpFilter.toLowerCase().trim();
+    if (!q) return registrations;
+    return registrations.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        (r.phoneNumber ?? "").toLowerCase().includes(q) ||
+        String(r.userId).includes(q)
+    );
+  }, [registrations, rsvpFilter]);
+
+  const unmarkedRegistrations = useMemo(() => {
+    return filteredRegistrations.filter((r) => !r.alreadyAttending);
+  }, [filteredRegistrations]);
+
+  const toggleSelectAllUnmarked = () => {
+    if (selectedRsvpUserIds.length === unmarkedRegistrations.length && unmarkedRegistrations.length > 0) {
+      setSelectedRsvpUserIds([]);
+    } else {
+      setSelectedRsvpUserIds(unmarkedRegistrations.map((r) => r.userId));
+    }
+  };
+
+  const toggleSelectRsvpUser = (userId: number) => {
+    setSelectedRsvpUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
   // Placed after every hook: an early return above useMemo changes the number of
   // hooks React sees between renders, which is the rules-of-hooks error.
   // Auth guards
@@ -449,6 +550,123 @@ export default function EventAttendeesPage() {
           <Trash2 className="size-4" />
         </button>
       ),
+    },
+  ];
+
+  const registrationColumns: Column<EventRegistrationRow>[] = [
+    {
+      key: "select",
+      header: (
+        <button
+          type="button"
+          onClick={toggleSelectAllUnmarked}
+          disabled={unmarkedRegistrations.length === 0}
+          title="Select all pending"
+          className="text-fg-muted hover:text-foreground disabled:opacity-40"
+        >
+          {selectedRsvpUserIds.length > 0 && selectedRsvpUserIds.length === unmarkedRegistrations.length ? (
+            <CheckSquare className="size-4 text-primary" />
+          ) : (
+            <Square className="size-4" />
+          )}
+        </button>
+      ),
+      className: "w-8 text-center",
+      render: (r) =>
+        r.alreadyAttending ? (
+          <span title="Already marked attended" className="inline-flex items-center justify-center">
+            <CheckCircle2 className="size-4 text-emerald-400 mx-auto" />
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toggleSelectRsvpUser(r.userId)}
+            className="text-fg-muted hover:text-foreground mx-auto block"
+          >
+            {selectedRsvpUserIds.includes(r.userId) ? (
+              <CheckSquare className="size-4 text-primary" />
+            ) : (
+              <Square className="size-4" />
+            )}
+          </button>
+        ),
+    },
+    {
+      key: "name",
+      header: "Member",
+      render: (r) => (
+        <div>
+          <Link href={`/profile/${r.userId}`} className="font-semibold text-foreground hover:underline">
+            {r.name}
+          </Link>
+          <div className="font-mono text-micro text-fg-muted">{r.email}</div>
+        </div>
+      ),
+    },
+    {
+      key: "phoneNumber",
+      header: "Phone",
+      className: "text-xs font-mono",
+      render: (r) =>
+        r.phoneNumber ? (
+          <span>{r.phoneNumber}</span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-amber-400 font-mono text-micro">
+            <AlertTriangle className="size-3" /> No Phone
+          </span>
+        ),
+    },
+    {
+      key: "clubRole",
+      header: "Role",
+      render: (r) => <ClubRoleBadge clubRole={r.clubRole} showIcon={false} />,
+    },
+    {
+      key: "registeredAt",
+      header: "RSVP Date",
+      className: "text-xs text-fg-muted font-mono",
+      render: (r) =>
+        r.registeredAt
+          ? new Date(r.registeredAt).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) =>
+        r.alreadyAttending ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-nano font-medium text-emerald-400">
+            <CheckCircle2 className="size-3" /> Attended
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-nano font-medium text-amber-300">
+            Pending Check-in
+          </span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "Action",
+      className: "text-right",
+      render: (r) =>
+        r.alreadyAttending ? (
+          <span className="text-micro font-mono text-fg-subtle">Done</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleMarkSingleAttended(r.userId, r.name)}
+            disabled={isMarkingRsvp}
+            className="inline-flex items-center gap-1 rounded-control bg-primary/20 border border-primary/30 px-2.5 py-1 text-nano font-bold text-primary hover:bg-primary/30 transition-colors disabled:opacity-50"
+          >
+            <UserCheck className="size-3" />
+            Check In
+          </button>
+        ),
     },
   ];
 
@@ -795,118 +1013,257 @@ export default function EventAttendeesPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />
-              <input
-                type="text"
-                placeholder="Filter attendees by name, handle, or ID..."
-                value={attendeeFilter}
-                onChange={(e) => setAttendeeFilter(e.target.value)}
-                className="w-full rounded-control border border-border bg-surface-2 py-2 pl-9 pr-4 text-xs text-foreground placeholder:text-fg-muted focus:border-primary focus:outline-none"
-              />
-            </div>
-            <div className="text-xs text-fg-muted">
-              Showing {filteredAttendees.length} of {attendees.length} attendees
-            </div>
+          {/* Tabs for Attendees vs RSVPs */}
+          <div className="flex border-b border-border">
+            <button
+              type="button"
+              onClick={() => setActiveTab("attendees")}
+              className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${
+                activeTab === "attendees"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-fg-muted hover:text-foreground"
+              }`}
+            >
+              <Users className="size-4" />
+              Marked Attendees ({attendees.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("rsvps")}
+              className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${
+                activeTab === "rsvps"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-fg-muted hover:text-foreground"
+              }`}
+            >
+              <UserPlus className="size-4" />
+              RSVPs ({registrations.length})
+              {registrations.filter((r) => !r.alreadyAttending).length > 0 && (
+                <span className="rounded-full bg-primary/20 px-2 py-0.5 font-mono text-nano text-primary">
+                  {registrations.filter((r) => !r.alreadyAttending).length} pending
+                </span>
+              )}
+            </button>
           </div>
 
-          <div className="hidden sm:block">
-            <DataTable
-              columns={attendeeColumns}
-              data={filteredAttendees}
-              isLoading={loadingAttendees}
-              emptyMessage="No attendees registered for this event yet."
-            />
-          </div>
-
-          <div className="block sm:hidden space-y-3">
-            {loadingAttendees ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-24 animate-pulse rounded-panel bg-surface-2" />
-              ))
-            ) : filteredAttendees.length === 0 ? (
-              <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
-                No attendees registered for this event yet.
+          {activeTab === "attendees" ? (
+            <>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />
+                  <input
+                    type="text"
+                    placeholder="Filter attendees by name, handle, or ID..."
+                    value={attendeeFilter}
+                    onChange={(e) => setAttendeeFilter(e.target.value)}
+                    className="w-full rounded-control border border-border bg-surface-2 py-2 pl-9 pr-4 text-xs text-foreground placeholder:text-fg-muted focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div className="text-xs text-fg-muted">
+                  Showing {filteredAttendees.length} of {attendees.length} attendees
+                </div>
               </div>
-            ) : (
-              filteredAttendees.map((a) => (
-                <div key={a.userId} className="rounded-panel border border-border bg-surface p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 shrink-0 rounded-full border border-border bg-surface-2 overflow-hidden flex items-center justify-center">
-                        {a.avatarUrl ? (
-                          <Image src={a.avatarUrl} alt={a.name} width={40} height={40} className="size-full object-cover" />
-                        ) : (
-                          <Users className="size-5 text-fg-muted" />
-                        )}
+
+              <div className="hidden sm:block">
+                <DataTable
+                  columns={attendeeColumns}
+                  data={filteredAttendees}
+                  isLoading={loadingAttendees}
+                  emptyMessage="No attendees registered for this event yet."
+                />
+              </div>
+
+              <div className="block sm:hidden space-y-3">
+                {loadingAttendees ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-24 animate-pulse rounded-panel bg-surface-2" />
+                  ))
+                ) : filteredAttendees.length === 0 ? (
+                  <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
+                    No attendees registered for this event yet.
+                  </div>
+                ) : (
+                  filteredAttendees.map((a) => (
+                    <div key={a.userId} className="rounded-panel border border-border bg-surface p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 shrink-0 rounded-full border border-border bg-surface-2 overflow-hidden flex items-center justify-center">
+                            {a.avatarUrl ? (
+                              <Image src={a.avatarUrl} alt={a.name} width={40} height={40} className="size-full object-cover" />
+                            ) : (
+                              <Users className="size-5 text-fg-muted" />
+                            )}
+                          </div>
+                          <div>
+                            <Link href={`/profile/${a.userId}`} className="font-semibold text-foreground hover:underline line-clamp-1">
+                              {a.name}
+                            </Link>
+                            <div className="font-mono text-xs text-fg-muted">#{a.userId}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveAttendee(a.userId, a.name)}
+                          title="Remove from event"
+                          className="shrink-0 rounded-control p-2 border border-border bg-surface-2 text-fg-muted hover:text-red-400 hover:border-red-500/30 transition-colors"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
-                      <div>
-                        <Link href={`/profile/${a.userId}`} className="font-semibold text-foreground hover:underline line-clamp-1">
-                          {a.name}
-                        </Link>
-                        <div className="font-mono text-xs text-fg-muted">#{a.userId}</div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                          <div className="text-fg-subtle">Role</div>
+                          <div><ClubRoleBadge clubRole={a.clubRole} showIcon={false} /></div>
+                        </div>
+                        <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                          <div className="text-fg-subtle">Phone</div>
+                          <div>
+                            {(!a.phoneNumber && !a.hasPhone) ? (
+                              <span className="inline-flex items-center gap-1 text-amber-400 font-mono text-micro" title="Phone missing">
+                                <AlertTriangle className="size-3" /> No Phone
+                              </span>
+                            ) : (
+                              <span className="font-mono">{a.phoneNumber}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                          <div className="text-fg-subtle">Codeforces</div>
+                          <div className="truncate">
+                            {a.codeforcesHandle ? (
+                              <span>
+                                @{a.codeforcesHandle} <span className="text-fg-muted text-micro">({a.cfRating ?? "—"})</span>
+                              </span>
+                            ) : (
+                              <span className="text-fg-subtle">--</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
+                          <div className="text-fg-subtle">LeetCode</div>
+                          <div className="truncate">
+                            {a.leetcodeHandle ? (
+                              <span>
+                                @{a.leetcodeHandle} <span className="text-fg-muted text-micro">({a.leetcodeRating ?? "—"})</span>
+                              </span>
+                            ) : (
+                              <span className="text-fg-subtle">--</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* RSVP Tab Content */}
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />
+                    <input
+                      type="text"
+                      placeholder="Filter RSVPs by name, email, or ID..."
+                      value={rsvpFilter}
+                      onChange={(e) => setRsvpFilter(e.target.value)}
+                      className="w-full rounded-control border border-border bg-surface-2 py-2 pl-9 pr-4 text-xs text-foreground placeholder:text-fg-muted focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
-                      onClick={() => handleRemoveAttendee(a.userId, a.name)}
-                      title="Remove from event"
-                      className="shrink-0 rounded-control p-2 border border-border bg-surface-2 text-fg-muted hover:text-red-400 hover:border-red-500/30 transition-colors"
+                      type="button"
+                      onClick={handleMarkSelectedAsAttended}
+                      disabled={isMarkingRsvp || selectedRsvpUserIds.length === 0}
+                      className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover disabled:opacity-50 transition-colors"
                     >
-                      <Trash2 className="size-4" />
+                      {isMarkingRsvp ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <UserCheck className="size-3.5" />
+                      )}
+                      Mark Selected as Attended ({selectedRsvpUserIds.length})
                     </button>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
-                      <div className="text-fg-subtle">Role</div>
-                      <div><ClubRoleBadge clubRole={a.clubRole} showIcon={false} /></div>
-                    </div>
-                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
-                      <div className="text-fg-subtle">Phone</div>
-                      <div>
-                        {(!a.phoneNumber && !a.hasPhone) ? (
-                          <span className="inline-flex items-center gap-1 text-amber-400 font-mono text-micro" title="Phone missing">
-                            <AlertTriangle className="size-3" /> No Phone
-                          </span>
-                        ) : (
-                          <span className="font-mono">{a.phoneNumber}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
-                      <div className="text-fg-subtle">Codeforces</div>
-                      <div className="truncate">
-                        {a.codeforcesHandle ? (
-                          <span>
-                            @{a.codeforcesHandle} <span className="text-fg-muted text-micro">({a.cfRating ?? "—"})</span>
-                          </span>
-                        ) : (
-                          <span className="text-fg-subtle">--</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="rounded border border-border/50 bg-surface-2/50 p-2 space-y-1">
-                      <div className="text-fg-subtle">LeetCode</div>
-                      <div className="truncate">
-                        {a.leetcodeHandle ? (
-                          <span>
-                            @{a.leetcodeHandle} <span className="text-fg-muted text-micro">({a.leetcodeRating ?? "—"})</span>
-                          </span>
-                        ) : (
-                          <span className="text-fg-subtle">--</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
                 </div>
-              ))
-            )}
-          </div>
+
+                <div className="hidden sm:block">
+                  <DataTable
+                    columns={registrationColumns}
+                    data={filteredRegistrations}
+                    isLoading={loadingRegistrations}
+                    emptyMessage="No member RSVPs recorded for this event yet."
+                  />
+                </div>
+
+                <div className="block sm:hidden space-y-3">
+                  {loadingRegistrations ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-24 animate-pulse rounded-panel bg-surface-2" />
+                    ))
+                  ) : filteredRegistrations.length === 0 ? (
+                    <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-fg-muted">
+                      No member RSVPs recorded for this event yet.
+                    </div>
+                  ) : (
+                    filteredRegistrations.map((r) => (
+                      <div key={r.id} className="rounded-panel border border-border bg-surface p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            {!r.alreadyAttending ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleSelectRsvpUser(r.userId)}
+                                className="text-fg-muted hover:text-foreground"
+                              >
+                                {selectedRsvpUserIds.includes(r.userId) ? (
+                                  <CheckSquare className="size-5 text-primary" />
+                                ) : (
+                                  <Square className="size-5" />
+                                )}
+                              </button>
+                            ) : (
+                              <CheckCircle2 className="size-5 text-emerald-400" />
+                            )}
+                            <div>
+                              <Link href={`/profile/${r.userId}`} className="font-semibold text-foreground hover:underline line-clamp-1">
+                                {r.name}
+                              </Link>
+                              <div className="font-mono text-micro text-fg-muted">{r.email}</div>
+                            </div>
+                          </div>
+
+                          {!r.alreadyAttending && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkSingleAttended(r.userId, r.name)}
+                              disabled={isMarkingRsvp}
+                              className="rounded-control bg-primary/20 border border-primary/30 px-2 py-1 text-nano font-bold text-primary disabled:opacity-50"
+                            >
+                              Check In
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-micro text-fg-muted pt-2 border-t border-border">
+                          <span>{r.phoneNumber ?? "No Phone"}</span>
+                          <span>
+                            {r.registeredAt ? new Date(r.registeredAt).toLocaleDateString() : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

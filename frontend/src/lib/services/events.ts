@@ -1,7 +1,16 @@
 import apiClient from "@/lib/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "@/store/auth";
-import type { Event, EventAttendee, EventDetail, EventPhoto, EventType, UserLookup } from "@/types/api";
+import type {
+  Event,
+  EventAttendee,
+  EventDetail,
+  EventPhoto,
+  EventType,
+  UserLookup,
+  RegistrationStatus,
+  EventRegistrationRow,
+} from "@/types/api";
 
 export interface EventRequest {
   title: string;
@@ -195,5 +204,43 @@ export const eventsService = {
   lookupUser: async (userId: number): Promise<UserLookup> => {
     const response = await apiClient.get<ApiResponse<UserLookup>>(`/api/users/${userId}/lookup`);
     return response.data.data;
+  },
+
+  /**
+   * Fetches current member's RSVP status for an event.
+   */
+  getRegistrationStatus: async (eventId: number): Promise<RegistrationStatus> => {
+    const response = await apiClient.get<ApiResponse<RegistrationStatus>>(`/api/events/${eventId}/registration`);
+    return response.data.data;
+  },
+
+  /**
+   * Member RSVP for an upcoming event.
+   */
+  registerForEvent: async (eventId: number): Promise<RegistrationStatus> => {
+    const response = await apiClient.post<ApiResponse<RegistrationStatus>>(`/api/events/${eventId}/registration`);
+    return response.data.data;
+  },
+
+  /**
+   * Cancel an existing RSVP.
+   */
+  unregisterFromEvent: async (eventId: number): Promise<void> => {
+    await apiClient.delete(`/api/events/${eventId}/registration`);
+  },
+
+  /**
+   * Admin: List all member RSVPs for an event.
+   */
+  getRegistrations: async (eventId: number): Promise<EventRegistrationRow[]> => {
+    const response = await apiClient.get<ApiResponse<EventRegistrationRow[]>>(`/api/events/${eventId}/registrations`);
+    return response.data.data;
+  },
+
+  /**
+   * Admin: Convert checked RSVPs into marked attendance.
+   */
+  markAttendedFromRsvp: async (eventId: number, userIds: number[]): Promise<void> => {
+    await apiClient.post(`/api/events/${eventId}/registrations/mark-attended`, { userIds });
   },
 };

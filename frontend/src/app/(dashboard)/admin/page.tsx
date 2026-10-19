@@ -10,6 +10,10 @@ import { eventsService, type EventRequest } from "@/lib/services/events";
 import { galleryService, type MemberGalleryPhotoRequest } from "@/lib/services/gallery";
 import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
 import { HallOfFameManager } from "@/components/admin/hall-of-fame-manager";
+import { ContestsManager } from "@/components/admin/contests-manager";
+import { AwardsManager } from "@/components/admin/awards-manager";
+import { SyncManager } from "@/components/admin/sync-manager";
+import { BlogReviewManager } from "@/components/admin/blog-review-manager";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { openUploadWidget } from "@/lib/cloudinary";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -183,6 +187,10 @@ export default function AdminDashboardPage() {
         {activeTab === "events" && <EventsTab />}
         {activeTab === "hallOfFame" && <HallOfFameManager />}
         {activeTab === "galleries" && <GalleriesTab />}
+        {activeTab === "contests" && <ContestsManager />}
+        {activeTab === "awards" && <AwardsManager />}
+        {activeTab === "sync" && <SyncManager />}
+        {activeTab === "blogs" && <BlogReviewManager />}
       </div>
     </>
   );

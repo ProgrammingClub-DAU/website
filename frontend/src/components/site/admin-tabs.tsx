@@ -1,10 +1,18 @@
 "use client";
 
 import React from "react";
-import { Users, Calendar, Image as ImageIcon, Trophy } from "lucide-react";
+import { Users, Calendar, Image as ImageIcon, Trophy, Award, RefreshCw, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AdminTab = "members" | "events" | "hallOfFame" | "galleries";
+export type AdminTab =
+  | "members"
+  | "events"
+  | "hallOfFame"
+  | "galleries"
+  | "contests"
+  | "awards"
+  | "sync"
+  | "blogs";
 
 interface AdminTabsProps {
   activeTab: AdminTab;
@@ -18,6 +26,10 @@ export function AdminTabs({ activeTab, onChange, className }: AdminTabsProps) {
     { id: "events", label: "Events", icon: Calendar },
     { id: "hallOfFame", label: "Hall of Fame", icon: Trophy },
     { id: "galleries", label: "Galleries", icon: ImageIcon },
+    { id: "contests", label: "Contests & Seasons", icon: Trophy },
+    { id: "awards", label: "Awards", icon: Award },
+    { id: "sync", label: "Sync Health", icon: RefreshCw },
+    { id: "blogs", label: "Blog Reviews", icon: FileText },
   ];
 
   return (

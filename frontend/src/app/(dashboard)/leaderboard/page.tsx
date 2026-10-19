@@ -8,7 +8,6 @@ import type { Metadata } from "next";
 import { Section } from "@/components/site/primitives";
 import { leaderboardService } from "@/lib/services/leaderboard";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
-import { InDevelopment } from "@/components/site/in-development";
 import type { LeaderboardEntry } from "@/types/api";
 
 export const metadata: Metadata = {
@@ -43,22 +42,8 @@ export default async function LeaderboardPage() {
       {/* Atmospheric Aurora Glow Blobs */}
       <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-cyan-500/10 via-slate-500/5 to-transparent blur-[120px] rounded-full" />
 
-      <Section className="relative z-10 pt-10 md:pt-14 pb-8">
+      <Section className="relative z-10 pt-10 md:pt-14 pb-16">
         <LeaderboardDashboard initialEntries={leaderboard} />
-      </Section>
-
-      <Section className="relative z-10 pb-16">
-        <InDevelopment
-          title="More ways to rank"
-          body="Rankings built from what members solve and how they do in contests, not only from their current rating."
-          items={[
-            "Top solvers this week",
-            "Top solvers this month",
-            "Top solvers this year",
-            "Most contests",
-            "Overall score",
-          ]}
-        />
       </Section>
     </div>
   );

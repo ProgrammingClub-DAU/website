@@ -16,6 +16,8 @@ import { ArrowLeft, CalendarDays, MapPin, Trophy, Users, ExternalLink } from "lu
 
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { PhotoGrid } from "@/components/site/photo-grid";
+import { RegistrationButton } from "@/components/site/registration-button";
+import { AddToCalendar } from "@/components/site/add-to-calendar";
 import { eventsService } from "@/lib/services/events";
 import type { EventDetail, EventWinner } from "@/types/api";
 
@@ -92,6 +94,30 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <p className="mt-6 max-w-[62ch] text-base leading-6 text-fg-muted text-pretty whitespace-pre-line">
             {event.description}
           </p>
+        )}
+
+        {event.status !== "COMPLETED" && (
+          <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-2xl border border-white/10 bg-surface-2/60 p-5 backdrop-blur-md">
+            <div>
+              <div className="font-mono text-micro tracking-caps uppercase text-fg-subtle mb-2">
+                Event Attendance & RSVP
+              </div>
+              <RegistrationButton eventId={event.id} />
+            </div>
+
+            <div className="md:border-l md:border-white/10 md:pl-6">
+              <div className="font-mono text-micro tracking-caps uppercase text-fg-subtle mb-2">
+                Add to your Calendar
+              </div>
+              <AddToCalendar
+                eventId={event.id}
+                title={event.title}
+                description={event.description}
+                location={event.location}
+                startDateIso={event.eventDate}
+              />
+            </div>
+          </div>
         )}
       </Section>
 

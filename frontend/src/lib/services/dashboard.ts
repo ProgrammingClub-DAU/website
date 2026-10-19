@@ -41,6 +41,9 @@ interface UserProfileResponse {
   equippedBannerId?: string | null;
   isPlatformCreator?: boolean;
   platformCreator?: boolean;
+  emailVerified?: boolean;
+  notifyEvents?: boolean;
+  notifyContests?: boolean;
 }
 
 export interface ProfileUpdateRequest {
@@ -54,6 +57,8 @@ export interface ProfileUpdateRequest {
   linkedinUrl?: string | null;
   avatarUrl?: string | null;
   academicYear?: Profile["academicYear"];
+  notifyEvents?: boolean;
+  notifyContests?: boolean;
 }
 
 function mapUserToProfile(user: UserProfileResponse): Profile {
@@ -83,6 +88,9 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     platformStats: [], // Phase 2
     ratingHistory: [], // Live fetch
     activityData: [], // Phase 2
+    emailVerified: user.emailVerified ?? true,
+    notifyEvents: user.notifyEvents ?? false,
+    notifyContests: user.notifyContests ?? false,
   };
 }
 
