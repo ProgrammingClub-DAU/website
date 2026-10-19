@@ -59,6 +59,7 @@ import {
   Sparkles,
   ArrowRightLeft,
   Code2,
+  RefreshCw,
 } from "lucide-react";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
@@ -269,6 +270,27 @@ function ProfileDashboardContent({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isBannerLockerOpen, setIsBannerLockerOpen] = useState(false);
+  const [syncingStats, setSyncingStats] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const handleSyncStats = async () => {
+    setSyncingStats(true);
+    setSyncMessage(null);
+    try {
+      const msg = await dashboardService.syncStats();
+      setSyncMessage(msg || "Sync started in background. Your problems and contests are being updated.");
+      setTimeout(() => {
+        onUpdate();
+      }, 3000);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to trigger sync. Please try again later.";
+      setSyncMessage(msg);
+    } finally {
+      setSyncingStats(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -925,13 +947,42 @@ function ProfileDashboardContent({
               Aggregated problems solved, contests entered, and difficulty metrics.
             </p>
           </div>
-          <PeriodToggle
-            value={statsPeriod}
-            onChange={setStatsPeriod}
-            size="sm"
-          />
+          <div className="flex items-center gap-2">
+            {isOwner && (
+              <button
+                type="button"
+                onClick={handleSyncStats}
+                disabled={syncingStats}
+                className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 py-1 text-xs font-mono text-fg-muted hover:text-foreground hover:bg-surface-elevated transition-colors disabled:opacity-50"
+                title="Trigger a full background sync of your historical Codeforces submissions and LeetCode totals"
+              >
+                <RefreshCw className={`size-3 text-primary ${syncingStats ? "animate-spin" : ""}`} />
+                <span>{syncingStats ? "Syncing..." : "Sync Solves"}</span>
+              </button>
+            )}
+            <PeriodToggle
+              value={statsPeriod}
+              onChange={setStatsPeriod}
+              size="sm"
+            />
+          </div>
         </CardHeader>
         <CardContent className="pt-3 space-y-4">
+          {syncMessage && (
+            <div className="flex items-center justify-between rounded-panel border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>{syncMessage}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSyncMessage(null)}
+                className="text-primary hover:text-foreground font-mono text-[10px] ml-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           {/* Primary 3 Tiles Grid: Overall Solved, Contests, CF Avg Rating */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <StatTile

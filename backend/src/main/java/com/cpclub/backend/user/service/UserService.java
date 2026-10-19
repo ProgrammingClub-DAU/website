@@ -47,6 +47,41 @@ public class UserService {
     private final LeetCodeSyncService leetCodeSyncService;
     private final CfSolveRepository cfSolveRepository;
     private final ContestParticipationRepository contestParticipationRepository;
+    private final com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
+    private final com.cpclub.backend.stats.service.ContestHistorySyncService contestHistorySyncService;
+    private final com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService leetCodeTotalsSnapshotService;
+    private final com.cpclub.backend.score.service.MemberScoreService memberScoreService;
+
+    /**
+     * Triggers asynchronous background backfill and stat sync for a member.
+     * Backfills lifetime CF submissions (1200+ solves), CF/LC contest history,
+     * LeetCode live totals, and recomputes the Overall Score.
+     */
+    public void syncMemberExternalStatsAsync(Long userId) {
+        new Thread(() -> {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) return;
+                log.info("Starting background external stats backfill for user id {} ({})", userId, user.getName());
+
+                if (user.getCodeforcesHandle() != null && !user.getCodeforcesHandle().isBlank()) {
+                    codeforcesSyncService.syncSingleUser(user);
+                    codeforcesSubmissionSyncService.syncMember(user);
+                    contestHistorySyncService.syncUserContests(user);
+                }
+                if (user.getLeetcodeHandle() != null && !user.getLeetcodeHandle().isBlank()) {
+                    leetCodeSyncService.syncSingleUser(user);
+                    leetCodeTotalsSnapshotService.captureSingleUser(user);
+                    contestHistorySyncService.syncUserContests(user);
+                }
+
+                memberScoreService.computeScores();
+                log.info("Completed background external stats backfill for user id {}", userId);
+            } catch (Exception e) {
+                log.error("Background external stats backfill failed for user id {}", userId, e);
+            }
+        }).start();
+    }
 
     /**
      * Resolves a user profile by database primary key.
@@ -257,7 +292,7 @@ public class UserService {
             contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
         }
         User savedUser = userRepository.save(user);
-        codeforcesSyncService.syncSingleUser(savedUser);
+        syncMemberExternalStatsAsync(savedUser.getId());
         log.info("Updated Codeforces handle for user id {} to '{}'", userId, handle);
         return UserResponseDto.fromEntity(savedUser);
     }
@@ -333,11 +368,20 @@ public class UserService {
 
         User saved = userRepository.save(user);
 
-        if (codeforcesChanged) {
-            codeforcesSyncService.syncSingleUser(saved);
-        }
-        if (leetcodeChanged) {
-            leetCodeSyncService.syncSingleUser(saved);
+        boolean cfNeedsSync = (saved.getCodeforcesHandle() != null && !saved.getCodeforcesHandle().isBlank())
+                && (codeforcesChanged || saved.getCfLastSubmissionId() == null);
+        boolean lcNeedsSync = (saved.getLeetcodeHandle() != null && !saved.getLeetcodeHandle().isBlank())
+                && (leetcodeChanged || saved.getLeetcodeTotalSolved() == null);
+
+        if (cfNeedsSync || lcNeedsSync) {
+            syncMemberExternalStatsAsync(saved.getId());
+        } else {
+            if (codeforcesChanged) {
+                codeforcesSyncService.syncSingleUser(saved);
+            }
+            if (leetcodeChanged) {
+                leetCodeSyncService.syncSingleUser(saved);
+            }
         }
         return UserResponseDto.fromEntity(saved);
     }

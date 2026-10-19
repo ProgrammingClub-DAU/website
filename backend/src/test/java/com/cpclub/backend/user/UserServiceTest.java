@@ -36,6 +36,10 @@ class UserServiceTest {
     private LeetCodeSyncService leetCodeSyncService;
     private com.cpclub.backend.codeforces.repository.CfSolveRepository cfSolveRepository;
     private com.cpclub.backend.stats.repository.ContestParticipationRepository contestParticipationRepository;
+    private com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
+    private com.cpclub.backend.stats.service.ContestHistorySyncService contestHistorySyncService;
+    private com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService leetCodeTotalsSnapshotService;
+    private com.cpclub.backend.score.service.MemberScoreService memberScoreService;
 
     @BeforeEach
     void setUp() {
@@ -44,7 +48,21 @@ class UserServiceTest {
         leetCodeSyncService = mock(LeetCodeSyncService.class);
         cfSolveRepository = mock(com.cpclub.backend.codeforces.repository.CfSolveRepository.class);
         contestParticipationRepository = mock(com.cpclub.backend.stats.repository.ContestParticipationRepository.class);
-        userService = new UserService(userRepository, codeforcesSyncService, leetCodeSyncService, cfSolveRepository, contestParticipationRepository);
+        codeforcesSubmissionSyncService = mock(com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService.class);
+        contestHistorySyncService = mock(com.cpclub.backend.stats.service.ContestHistorySyncService.class);
+        leetCodeTotalsSnapshotService = mock(com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService.class);
+        memberScoreService = mock(com.cpclub.backend.score.service.MemberScoreService.class);
+        userService = new UserService(
+                userRepository,
+                codeforcesSyncService,
+                leetCodeSyncService,
+                cfSolveRepository,
+                contestParticipationRepository,
+                codeforcesSubmissionSyncService,
+                contestHistorySyncService,
+                leetCodeTotalsSnapshotService,
+                memberScoreService
+        );
     }
 
     @Test

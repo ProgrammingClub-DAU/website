@@ -52,6 +52,22 @@ public class SyncRunRecorder {
             }
         }
 
+        public void complete(int ok, int failed, String errorSample) {
+            if (run != null) {
+                try {
+                    run.setMembersOk(ok);
+                    run.setMembersFailed(failed);
+                    if (errorSample != null) {
+                        run.setErrorSample(errorSample.length() > 1000 ? errorSample.substring(0, 1000) : errorSample);
+                    }
+                    run.setFinishedAt(LocalDateTime.now());
+                    repository.save(run);
+                } catch (Exception e) {
+                    log.error("Failed to complete sync run recorder for job {}", run.getJob(), e);
+                }
+            }
+        }
+
         public void finish() {
             if (run != null) {
                 try {

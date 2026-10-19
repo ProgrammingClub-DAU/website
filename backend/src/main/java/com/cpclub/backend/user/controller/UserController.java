@@ -223,6 +223,23 @@ public class UserController {
     }
 
     /**
+     * Triggers an immediate asynchronous background sync of external stats (1200+ CF solves, 400+ LC totals, contests, and overall score).
+     */
+    @PostMapping("/profile/sync")
+    @Operation(summary = "Trigger immediate on-demand sync of external stats (CF solves, LC totals, contests, and overall score)")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> syncCurrentUserStats(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UserResponseDto currentUser = userService.getUserByEmail(userDetails.getUsername());
+        userService.syncMemberExternalStatsAsync(currentUser.id());
+        return ResponseEntity.ok(ApiResponse.success(
+                "Sync started in the background. Your submissions, contest history, and overall score will be updated shortly.",
+                "Sync started"
+        ));
+    }
+
+    /**
      * Equips a rating banner for the authenticated member after server-side validation.
      *
      * @param userDetails injected authentication details

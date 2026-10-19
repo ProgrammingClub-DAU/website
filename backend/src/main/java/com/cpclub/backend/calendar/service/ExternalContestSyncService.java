@@ -8,10 +8,12 @@ import com.cpclub.backend.calendar.service.sources.ClistContestSource;
 import com.cpclub.backend.calendar.service.sources.ExternalContestSource;
 import com.cpclub.backend.sync.entity.SyncJob;
 import com.cpclub.backend.sync.entity.SyncRun;
+import com.cpclub.backend.sync.event.SyncTriggerEvent;
 import com.cpclub.backend.sync.repository.SyncRunRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ExternalContestSyncService {
 
-    @Value("${cpclub.external-contests.enabled:false}")
+    @Value("${cpclub.external-contests.enabled:true}")
     private boolean enabled;
 
     private final List<ExternalContestSource> sources;
@@ -39,6 +41,15 @@ public class ExternalContestSyncService {
     @Scheduled(cron = "0 0 0/6 * * *", zone = "Asia/Kolkata")
     public void sync() {
         if (!enabled) return;
+        syncForce();
+    }
+
+    @EventListener(condition = "#event.job.name() == 'EXTERNAL_CONTESTS'")
+    public void handleManualTrigger(SyncTriggerEvent event) {
+        syncForce();
+    }
+
+    public void syncForce() {
         
         for (ContestPlatform platform : ContestPlatform.values()) {
             SyncRun run = SyncRun.builder()

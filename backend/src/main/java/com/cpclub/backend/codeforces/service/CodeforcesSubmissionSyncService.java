@@ -8,10 +8,16 @@ import com.cpclub.backend.codeforces.entity.CfSolve;
 import com.cpclub.backend.codeforces.repository.CfProblemRepository;
 import com.cpclub.backend.codeforces.repository.CfSolveRepository;
 import com.cpclub.backend.stats.service.ContestHistorySyncService;
+import com.cpclub.backend.sync.entity.SyncJob;
+import com.cpclub.backend.sync.event.SyncTriggerEvent;
+import com.cpclub.backend.sync.service.SyncRunRecorder;
 import com.cpclub.backend.user.entity.User;
+import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -29,6 +35,8 @@ public class CodeforcesSubmissionSyncService {
     private final CfProblemRepository cfProblemRepository;
     private final CfSolveRepository cfSolveRepository;
     private final ContestHistorySyncService contestHistorySyncService;
+    private final UserRepository userRepository;
+    private final SyncRunRecorder syncRunRecorder;
 
     public void syncMember(User user) {
         if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
@@ -86,6 +94,38 @@ public class CodeforcesSubmissionSyncService {
             user.setCfLastSubmissionId(Math.max(highestIdSeen, cursor));
         }
         user.setCfSyncedAt(LocalDateTime.now(ZoneOffset.UTC));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void syncAll() {
+        SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_SUBMISSIONS);
+        int ok = 0;
+        int failed = 0;
+        String errorSample = null;
+
+        List<User> users = userRepository.findByCodeforcesHandleIsNotNull();
+        for (User user : users) {
+            if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
+                continue;
+            }
+            try {
+                syncMember(user);
+                ok++;
+            } catch (Exception e) {
+                log.error("Failed to sync CF submissions for user {}: {}", user.getCodeforcesHandle(), e.getMessage());
+                failed++;
+                if (errorSample == null) {
+                    errorSample = user.getCodeforcesHandle() + ": " + e.getMessage();
+                }
+            }
+        }
+        run.complete(ok, failed, errorSample);
+    }
+
+    @EventListener(condition = "#event.job.name() == 'CF_SUBMISSIONS'")
+    public void handleManualTrigger(SyncTriggerEvent event) {
+        syncAll();
     }
     
     private void saveProblemAndSolve(User user, CfSubmission sub, String participantType) {
@@ -106,6 +146,12 @@ public class CodeforcesSubmissionSyncService {
             p.setSolvedCount(0); // Optional
             return cfProblemRepository.save(p);
         });
+
+        // Ensure problem rating is populated if it was previously null
+        if (prob.getRating() == null && sub.getProblem().getRating() != null) {
+            prob.setRating(sub.getProblem().getRating());
+            cfProblemRepository.save(prob);
+        }
         
         LocalDateTime time = LocalDateTime.ofInstant(Instant.ofEpochSecond(sub.getCreationTimeSeconds()), ZoneOffset.UTC);
         
