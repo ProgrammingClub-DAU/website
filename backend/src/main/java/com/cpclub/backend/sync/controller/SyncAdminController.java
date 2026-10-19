@@ -24,6 +24,14 @@ public class SyncAdminController {
     private final com.cpclub.backend.sync.service.SyncHealthService syncHealthService;
 
     private final com.cpclub.backend.sync.service.SyncJobDispatcher syncJobDispatcher;
+    private final com.cpclub.backend.score.service.MemberScoreService memberScoreService;
+
+    @PostMapping("/scores")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> recomputeScores() {
+        int updated = memberScoreService.computeScores();
+        return ResponseEntity.ok("Successfully computed overall scores for " + updated + " member(s)");
+    }
 
     @PostMapping("/{job}")
     @PreAuthorize("hasRole('ADMIN')")

@@ -143,5 +143,10 @@ export const dashboardService = {
       data
     );
     return mapUserToProfile(response.data.data);
+  },
+
+  syncStats: async (): Promise<string> => {
+    const response = await apiClient.post<ApiResponse<string>>("/api/users/profile/sync");
+    return response.data?.data || "Sync started";
   }
 };

@@ -7,6 +7,9 @@ import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import com.cpclub.backend.sync.entity.SyncJob;
+import com.cpclub.backend.sync.event.SyncTriggerEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -43,6 +46,16 @@ public class MemberScoreService {
     public void computeDailyScores() {
         log.info("Starting scheduled daily overall score computation at 01:00 IST");
         computeScores();
+    }
+
+    @EventListener
+    public void onSyncTrigger(SyncTriggerEvent event) {
+        if (event.getJob() == SyncJob.CF_SUBMISSIONS 
+                || event.getJob() == SyncJob.CF_CONTESTS 
+                || event.getJob() == SyncJob.LC_TOTALS) {
+            log.info("Recomputing member scores in response to sync job: {}", event.getJob());
+            computeScores();
+        }
     }
 
     @Transactional
