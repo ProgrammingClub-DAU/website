@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, Trophy, Zap, Users } from "lucide-react";
 
-const DUMMY_PROBLEMS = [
+const DEMO_TILES = [
   { rating: 800, index: "A" }, { rating: 900, index: "B" }, { rating: 800, index: "A" }, { rating: 1000, index: "C" }, { rating: 900, index: "B" },
   { rating: 1100, index: "D" }, { rating: 800, index: "A" }, { rating: 900, index: "B" }, { rating: 1000, index: "C" }, { rating: 800, index: "A" },
   { rating: 900, index: "B" }, { rating: 1100, index: "C" }, { rating: 800, index: "A" }, { rating: 1200, index: "D" }, { rating: 900, index: "B" },
@@ -96,8 +96,8 @@ export default function CompeteLobbyPage() {
                     ${activeCell === i && !claimed[i] ? 'ring-2 ring-indigo-500 scale-105 shadow-lg' : ''}
                   `}
                 >
-                  <span className="text-[9px] opacity-70 mb-0.5">{DUMMY_PROBLEMS[i].rating}</span>
-                  <span className="text-[10px] sm:text-xs font-semibold truncate w-full px-1">Problem {DUMMY_PROBLEMS[i].index}</span>
+                  <span className="text-[9px] opacity-70 mb-0.5">{DEMO_TILES[i].rating}</span>
+                  <span className="text-[10px] sm:text-xs font-semibold truncate w-full px-1">Problem {DEMO_TILES[i].index}</span>
                 </div>
               ))}
             </div>
