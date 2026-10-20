@@ -10,6 +10,7 @@ import com.cpclub.backend.sync.service.SyncRunRecorder;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -54,6 +55,7 @@ public class ContestHistorySyncService {
     private final SyncRunRecorder syncRunRecorder;
     private final RateLimiter leetcodeRateLimiter;
     private final RestTemplate restTemplate = new RestTemplate();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public ContestHistorySyncService(
             CodeforcesApiClient codeforcesApiClient,
@@ -175,18 +177,24 @@ public class ContestHistorySyncService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set(HttpHeaders.REFERER, "https://leetcode.com");
+            headers.set(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             Map<String, Object> body = Map.of(
                     "query", LC_CONTEST_HISTORY_QUERY,
                     "variables", Map.of("username", handle)
             );
 
-            JsonNode response = restTemplate.postForObject(
+            String jsonString = restTemplate.postForObject(
                     LEETCODE_GRAPHQL_URL,
                     new HttpEntity<>(body, headers),
-                    JsonNode.class
+                    String.class
             );
 
+            if (jsonString == null || jsonString.isBlank()) {
+                return;
+            }
+
+            JsonNode response = OBJECT_MAPPER.readTree(jsonString);
             if (response == null || !response.has("data") || !response.get("data").has("userContestRankingHistory")) {
                 return;
             }
@@ -205,8 +213,11 @@ public class ContestHistorySyncService {
 
                 String contestTitle = contest.get("title").asText();
                 String extId = contestTitle.toLowerCase().replaceAll("[^a-z0-9]+", "-");
-                int newRating = (int) Math.round(entry.get("rating").asDouble());
-                Integer rank = entry.has("ranking") ? entry.get("ranking").asInt() : null;
+                Integer newRating = entry.has("rating") && !entry.get("rating").isNull()
+                        ? (int) Math.round(entry.get("rating").asDouble())
+                        : null;
+                if (newRating == null) continue;
+                Integer rank = entry.has("ranking") && !entry.get("ranking").isNull() ? entry.get("ranking").asInt() : null;
                 long startTime = contest.has("startTime") ? contest.get("startTime").asLong() : 0;
 
                 ContestParticipation participation = contestParticipationRepository
