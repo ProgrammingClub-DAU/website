@@ -19,6 +19,8 @@ public class MemberStatsDto {
     private String name;
     private StatsPeriod period;
     private List<PlatformStatsDto> platforms;
+    private PlatformStatsDto codeforces;
+    private PlatformStatsDto leetcode;
     private OverallStatsDto overall;
     private MemberScoreDto overallScore;
 }

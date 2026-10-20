@@ -253,11 +253,20 @@ public class StatsService {
 
         MemberScoreDto memberScore = statsQueryRepository.getMemberScore(user.getId());
 
+        PlatformStatsDto cfPlatform = platformStats.stream()
+                .filter(p -> p.getPlatform() == StatsPlatform.CODEFORCES)
+                .findFirst().orElse(null);
+        PlatformStatsDto lcPlatform = platformStats.stream()
+                .filter(p -> p.getPlatform() == StatsPlatform.LEETCODE)
+                .findFirst().orElse(null);
+
         return MemberStatsDto.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .period(period)
                 .platforms(platformStats)
+                .codeforces(cfPlatform)
+                .leetcode(lcPlatform)
                 .overall(overall)
                 .overallScore(memberScore)
                 .build();

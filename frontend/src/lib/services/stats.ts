@@ -7,6 +7,7 @@ import type {
   LeaderboardFilter,
   StatsLeaderboardResponse,
   MemberStats,
+  PlatformStatsDetail,
   RatingPointDto,
   CompareResult,
   TopicStrengthResponse,
@@ -55,15 +56,34 @@ export const statsService = {
   /**
    * Fetches full member statistics for a specific period.
    * Endpoint: /api/stats/users/{id}?period={period}
+   *
+   * The backend serialises platform data as `platforms: PlatformStatsDetail[]`
+   * (an array keyed by platform name). The frontend MemberStats type expects
+   * top-level `codeforces` and `leetcode` named fields. We reshape the response
+   * here so every component gets the expected structure without backend changes.
    */
   getMemberStats: async (
     userId: number,
     period: StatsPeriod = "ALL_TIME"
   ): Promise<MemberStats> => {
-    const res = await apiClient.get<ApiResponse<MemberStats>>(
+    const res = await apiClient.get<ApiResponse<MemberStats & { platforms?: PlatformStatsDetail[] }>>(
       `/api/stats/users/${userId}?period=${period}`
     );
-    return res.data.data;
+    const raw = res.data.data;
+
+    // Backend returns a `platforms` array — reshape into named top-level fields
+    // that the MemberStats interface (and every component) expects.
+    if (Array.isArray((raw as { platforms?: unknown }).platforms)) {
+      const platforms = (raw as { platforms: PlatformStatsDetail[] }).platforms;
+      return {
+        ...raw,
+        codeforces: platforms.find((p) => p.platform === "CODEFORCES") ?? null,
+        leetcode:   platforms.find((p) => p.platform === "LEETCODE")   ?? null,
+      };
+    }
+
+    // Already shaped correctly (future-proof if backend ever changes shape)
+    return raw;
   },
 
   /**
