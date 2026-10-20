@@ -48,17 +48,23 @@ export const statsService = {
       params.set("platform", platform);
     }
 
-    const res = await apiClient.get<ApiResponse<StatsLeaderboardResponse & { entries?: StatsLeaderboardEntry[] }>>(
-      `/api/leaderboard/stats?${params.toString()}`
-    );
+    const res = await apiClient.get<
+      ApiResponse<
+        StatsLeaderboardResponse & {
+          entries?: StatsLeaderboardEntry[];
+          page?: number;
+          size?: number;
+        }
+      >
+    >(`/api/leaderboard/stats?${params.toString()}`);
     const data = res.data.data;
     const list = data.content ?? data.entries ?? [];
     return {
       ...data,
       content: list,
       entries: list,
-      pageNumber: data.pageNumber ?? (data as any).page ?? page,
-      pageSize: data.pageSize ?? (data as any).size ?? size,
+      pageNumber: data.pageNumber ?? data.page ?? page,
+      pageSize: data.pageSize ?? data.size ?? size,
     };
   },
 

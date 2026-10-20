@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { Search, Trophy, Users, User, Code, LogIn, Swords } from "lucide-react";
+import { Search, Trophy, Users, User, LogIn, Swords } from "lucide-react";
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
