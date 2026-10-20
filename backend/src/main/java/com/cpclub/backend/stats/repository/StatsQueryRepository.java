@@ -127,7 +127,7 @@ public class StatsQueryRepository {
                     FROM filtered_users fu
                     JOIN cf_solves s ON fu.id = s.user_id
                     JOIN cf_problems p ON s.problem_id = p.id
-                    WHERE p.contest_id < 100000
+                    WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                       AND s.first_ac_at >= :startUtc
                       AND s.first_ac_at < :endUtc
                     GROUP BY fu.id, fu.name, fu.codeforces_handle, fu.leetcode_handle, fu.avatar_url, fu.club_role
@@ -235,7 +235,7 @@ public class StatsQueryRepository {
                         SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_val
                         FROM cf_solves s
                         JOIN cf_problems p ON s.problem_id = p.id
-                        WHERE p.contest_id < 100000
+                        WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                           AND s.first_ac_at >= :startUtc
                           AND s.first_ac_at < :endUtc
                         GROUP BY s.user_id
@@ -275,7 +275,7 @@ public class StatsQueryRepository {
                         SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_val
                         FROM cf_solves s
                         JOIN cf_problems p ON s.problem_id = p.id
-                        WHERE p.contest_id < 100000
+                        WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                           AND s.first_ac_at >= :startUtc
                           AND s.first_ac_at < :endUtc
                         GROUP BY s.user_id
@@ -388,7 +388,7 @@ public class StatsQueryRepository {
                 FROM filtered_users fu
                 JOIN cf_solves s ON fu.id = s.user_id
                 JOIN cf_problems p ON s.problem_id = p.id
-                WHERE p.contest_id < 100000
+                WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                   AND p.rating IS NOT NULL
                   AND s.first_ac_at >= :startUtc
                   AND s.first_ac_at < :endUtc
@@ -483,7 +483,7 @@ public class StatsQueryRepository {
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
             WHERE s.user_id = :userId
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
               AND s.first_ac_at >= :startUtc
               AND s.first_ac_at < :endUtc
             """;
@@ -519,7 +519,7 @@ public class StatsQueryRepository {
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
             WHERE s.user_id = :userId
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
               AND p.rating IS NOT NULL
               AND s.first_ac_at >= :startUtc
               AND s.first_ac_at < :endUtc

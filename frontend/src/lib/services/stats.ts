@@ -6,6 +6,7 @@ import type {
   StatsPeriod,
   LeaderboardFilter,
   StatsLeaderboardResponse,
+  StatsLeaderboardEntry,
   MemberStats,
   PlatformStatsDetail,
   RatingPointDto,
@@ -30,7 +31,7 @@ export const statsService = {
   getLeaderboard: async ({
     metric,
     platform = "OVERALL",
-    period = "WEEK",
+    period = "ALL_TIME",
     filter = "ALL",
     page = 0,
     size = 50,
@@ -47,10 +48,18 @@ export const statsService = {
       params.set("platform", platform);
     }
 
-    const res = await apiClient.get<ApiResponse<StatsLeaderboardResponse>>(
+    const res = await apiClient.get<ApiResponse<StatsLeaderboardResponse & { entries?: StatsLeaderboardEntry[] }>>(
       `/api/leaderboard/stats?${params.toString()}`
     );
-    return res.data.data;
+    const data = res.data.data;
+    const list = data.content ?? data.entries ?? [];
+    return {
+      ...data,
+      content: list,
+      entries: list,
+      pageNumber: data.pageNumber ?? (data as any).page ?? page,
+      pageSize: data.pageSize ?? (data as any).size ?? size,
+    };
   },
 
   /**

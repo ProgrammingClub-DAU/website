@@ -202,7 +202,7 @@ export function StatsLeaderboardTable({
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-col items-end">
                       <div className="font-heading text-base font-semibold text-foreground">
-                        {entry.value.toLocaleString()}{" "}
+                        {(entry.value ?? 0).toLocaleString()}{" "}
                         <span className="font-mono text-nano text-fg-muted uppercase font-normal">
                           {getMetricSuffix(metric)}
                         </span>

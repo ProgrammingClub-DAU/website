@@ -57,8 +57,8 @@ public class LeaderboardController {
     @Operation(summary = "Get ranked leaderboard across metrics, platforms, periods, and filters")
     public ResponseEntity<ApiResponse<com.cpclub.backend.stats.dto.StatsLeaderboardResponseDto>> getStatsLeaderboard(
             @RequestParam(defaultValue = "SOLVED") com.cpclub.backend.stats.dto.StatsMetric metric,
-            @RequestParam(defaultValue = "CODEFORCES") com.cpclub.backend.stats.dto.StatsPlatform platform,
-            @RequestParam(defaultValue = "WEEK") com.cpclub.backend.stats.dto.StatsPeriod period,
+            @RequestParam(required = false) com.cpclub.backend.stats.dto.StatsPlatform platform,
+            @RequestParam(required = false) com.cpclub.backend.stats.dto.StatsPeriod period,
             @RequestParam(defaultValue = "ALL") com.cpclub.backend.leaderboard.dto.LeaderboardFilter filter,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "50") @Min(1) @Max(2000) int size
@@ -68,4 +68,3 @@ public class LeaderboardController {
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched stats leaderboard successfully"));
     }
 }
-

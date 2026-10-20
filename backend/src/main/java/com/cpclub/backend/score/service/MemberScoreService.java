@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import com.cpclub.backend.sync.entity.SyncJob;
 import com.cpclub.backend.sync.event.SyncTriggerEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,6 +49,20 @@ public class MemberScoreService {
         computeScores();
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        try {
+            Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM member_scores", new MapSqlParameterSource(), Long.class);
+            if (count == null || count == 0) {
+                log.info("Member scores table is empty on startup, computing initial scores");
+                computeScores();
+            } else {
+                log.info("Member scores table already has {} records on startup", count);
+            }
+        } catch (Exception e) {
+            log.warn("Could not check/initialize member scores on startup: {}", e.getMessage());
+        }
+    }
     @EventListener
     public void onSyncTrigger(SyncTriggerEvent event) {
         if (event.getJob() == SyncJob.CF_SUBMISSIONS 
@@ -74,7 +89,7 @@ public class MemberScoreService {
                 SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_solved
                 FROM cf_solves s
                 JOIN cf_problems p ON s.problem_id = p.id
-                WHERE p.contest_id < 100000
+                WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                 GROUP BY s.user_id
             ),
             contests_year AS (

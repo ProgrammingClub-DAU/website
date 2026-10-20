@@ -71,7 +71,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   // URL param parsing
   const urlMetric = (searchParams.get("metric") as MetricTabKey) || "RATING";
   const urlPlatform = (searchParams.get("platform") as StatsPlatform) || "OVERALL";
-  const urlPeriod = (searchParams.get("period") as StatsPeriod) || "WEEK";
+  const urlPeriod = (searchParams.get("period") as StatsPeriod) || "ALL_TIME";
   const urlFilter = (searchParams.get("filter") as LeaderboardFilter) || "ALL";
 
   // Tab State
@@ -108,7 +108,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
         if (ratingPlatform !== "CODEFORCES") p.set("platform", ratingPlatform);
       } else {
         if (platformVal !== "OVERALL") p.set("platform", platformVal);
-        if (periodVal !== "WEEK") p.set("period", periodVal);
+        if (periodVal !== "ALL_TIME") p.set("period", periodVal);
       }
       if (filterVal !== "ALL") p.set("filter", filterVal);
 
@@ -227,10 +227,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
   // Client-side search filtering for stats entries
   const filteredStatsEntries = useMemo(() => {
-    if (!statsResponse?.content) return [];
+    const list = statsResponse?.content ?? statsResponse?.entries ?? [];
+    if (!list || list.length === 0) return [];
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return statsResponse.content;
-    return statsResponse.content.filter((e) => {
+    if (!query) return list;
+    return list.filter((e) => {
       const matchesName = e.name.toLowerCase().includes(query);
       const matchesHandle = (e.codeforcesHandle ?? "").toLowerCase().includes(query);
       const matchesLc = (e.leetcodeHandle ?? "").toLowerCase().includes(query);

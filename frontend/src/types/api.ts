@@ -338,7 +338,7 @@ export interface StatsLeaderboardEntry {
   codeforcesHandle: string | null;
   leetcodeHandle: string | null;
   value: number;
-  basis: string | null;
+  basis: string | number | null;
 }
 
 export interface StatsLeaderboardResponse {
@@ -348,6 +348,7 @@ export interface StatsLeaderboardResponse {
   trackingSince: string | null;
   computedAt: string | null;
   content: StatsLeaderboardEntry[];
+  entries?: StatsLeaderboardEntry[];
   totalElements: number;
   totalPages: number;
   pageNumber: number;
