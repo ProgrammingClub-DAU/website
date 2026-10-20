@@ -46,8 +46,6 @@ public class StatsService {
             int page,
             int size
     ) {
-        validateLeaderboardParams(metric, platform, period);
-
         if (filter == null) {
             filter = LeaderboardFilter.ALL;
         }
@@ -57,6 +55,8 @@ public class StatsService {
         if (platform == null) {
             platform = (metric == StatsMetric.AVG_PROBLEM_RATING) ? StatsPlatform.CODEFORCES : StatsPlatform.OVERALL;
         }
+
+        validateLeaderboardParams(metric, platform, period);
 
         StatsPeriodResolved resolved = statsPeriodResolver.resolve(period);
 
