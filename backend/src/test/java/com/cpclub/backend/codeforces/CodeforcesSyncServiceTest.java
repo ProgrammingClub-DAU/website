@@ -5,6 +5,9 @@ import com.cpclub.backend.codeforces.dto.CodeforcesUserDto;
 import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
+import com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService;
+import com.cpclub.backend.score.service.MemberScoreService;
+import com.cpclub.backend.stats.service.ContestHistorySyncService;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.google.common.util.concurrent.RateLimiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +44,15 @@ public class CodeforcesSyncServiceTest {
      */
     @Mock
     private LeetCodeSyncService leetCodeSyncService;
+
+    @Mock
+    private CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
+
+    @Mock
+    private ContestHistorySyncService contestHistorySyncService;
+
+    @Mock
+    private MemberScoreService memberScoreService;
 
     @InjectMocks
     private CodeforcesSyncService codeforcesSyncService;

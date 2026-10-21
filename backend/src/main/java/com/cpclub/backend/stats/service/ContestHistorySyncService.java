@@ -72,8 +72,13 @@ public class ContestHistorySyncService {
     }
 
     private Map<Integer, JsonNode> codeforcesContestCache = new HashMap<>();
+    private Instant lastCacheRefresh = null;
 
-    public void refreshCodeforcesContestCache() {
+    public synchronized void refreshCodeforcesContestCache() {
+        if (!codeforcesContestCache.isEmpty() && lastCacheRefresh != null
+                && Instant.now().minus(java.time.Duration.ofHours(12)).isBefore(lastCacheRefresh)) {
+            return;
+        }
         try {
             List<JsonNode> contests = codeforcesApiClient.contestList(false);
             Map<Integer, JsonNode> newCache = new HashMap<>();
@@ -83,6 +88,7 @@ public class ContestHistorySyncService {
                 }
             }
             this.codeforcesContestCache = newCache;
+            this.lastCacheRefresh = Instant.now();
         } catch (Exception e) {
             log.error("Failed to refresh CF contest cache", e);
         }
@@ -243,7 +249,6 @@ public class ContestHistorySyncService {
         }
     }
 
-    @Transactional
     public void syncAllCodeforcesContests() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_CONTESTS);
         int ok = 0;
@@ -267,7 +272,6 @@ public class ContestHistorySyncService {
         run.complete(ok, failed, errorSample);
     }
 
-    @Transactional
     public void syncAllLeetCodeContests() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.LC_CONTESTS);
         int ok = 0;

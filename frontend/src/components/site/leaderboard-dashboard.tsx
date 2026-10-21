@@ -96,7 +96,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
-  const [lastUpdatedMin, setLastUpdatedMin] = useState(4);
+  const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
   const [displayLimit, setDisplayLimit] = useState(50);
 
   // Synchronize URL with active controls
@@ -129,7 +129,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       .then((data) => {
         if (!ignore) {
           setRatingEntries(data);
-          setLastUpdatedMin(Math.floor(Math.random() * 8) + 2);
+          setLastFetchedAt(new Date());
         }
       })
       .catch((err) => {
@@ -177,7 +177,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       .then((res) => {
         if (!ignore) {
           setStatsResponse(res);
-          setLastUpdatedMin(Math.floor(Math.random() * 8) + 2);
+          setLastFetchedAt(new Date());
         }
       })
       .catch((err) => {
@@ -303,7 +303,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-mono text-white/70 mb-3 shadow-inner">
               <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Synced {lastUpdatedMin} min ago</span>
+              <span>
+                {lastFetchedAt
+                  ? `Updated ${lastFetchedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : "Live synced"}
+              </span>
               <span className="text-white/30">•</span>
               <span className="text-purple-300 flex items-center gap-1">
                 <Sparkles className="size-3 text-purple-400" /> Live Board

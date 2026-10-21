@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
+import com.cpclub.backend.score.service.MemberScoreService;
+import com.cpclub.backend.stats.service.ContestHistorySyncService;
 
 import java.util.List;
 import java.util.Map;
@@ -61,6 +63,9 @@ public class CodeforcesSyncService {
      * expressions would only have them block each other.
      */
     private final LeetCodeSyncService leetCodeSyncService;
+    private final CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
+    private final ContestHistorySyncService contestHistorySyncService;
+    private final MemberScoreService memberScoreService;
 
     /**
      * Application-wide gate on outbound Codeforces calls.
@@ -75,18 +80,52 @@ public class CodeforcesSyncService {
      * and intentionally not rethrown because the next scheduled execution can retry.</p>
      */
     @Scheduled(cron = "${cpclub.codeforces.sync-cron:0 0 */6 * * *}", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
-    @Transactional
     public void syncCodeforcesRatings() {
-        syncCodeforcesHandles();
+        log.info("Starting scheduled platform synchronization pipeline...");
 
-        // Chained here rather than given its own @Scheduled. Both syncs draw on
-        // the same rate limiter, so two cron expressions would mostly have the
-        // second job waiting on the first.
-        //
-        // Outside syncCodeforcesHandles() on purpose: that method returns early
-        // when no member has linked a Codeforces handle, and LeetCode ratings
-        // still need refreshing in a club where nobody has.
-        leetCodeSyncService.syncAllUsers();
+        // 1. Refresh CF ratings & rank
+        try {
+            syncCodeforcesHandles();
+        } catch (Exception e) {
+            log.error("Failed to sync Codeforces handles: {}", e.getMessage());
+        }
+
+        // 2. Refresh CF submissions and accepted solves
+        try {
+            codeforcesSubmissionSyncService.syncAll();
+        } catch (Exception e) {
+            log.error("Failed to sync Codeforces submissions: {}", e.getMessage());
+        }
+
+        // 3. Refresh LeetCode user ratings & total solves
+        try {
+            leetCodeSyncService.syncAllUsers();
+        } catch (Exception e) {
+            log.error("Failed to sync LeetCode users: {}", e.getMessage());
+        }
+
+        // 4. Refresh CF contest history
+        try {
+            contestHistorySyncService.syncAllCodeforcesContests();
+        } catch (Exception e) {
+            log.error("Failed to sync Codeforces contest history: {}", e.getMessage());
+        }
+
+        // 5. Refresh LeetCode contest history
+        try {
+            contestHistorySyncService.syncAllLeetCodeContests();
+        } catch (Exception e) {
+            log.error("Failed to sync LeetCode contest history: {}", e.getMessage());
+        }
+
+        // 6. Recompute aggregated member scores
+        try {
+            memberScoreService.computeScores();
+        } catch (Exception e) {
+            log.error("Failed to recompute member scores: {}", e.getMessage());
+        }
+
+        log.info("Platform synchronization pipeline completed successfully.");
     }
 
     /**

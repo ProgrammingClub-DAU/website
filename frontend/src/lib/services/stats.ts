@@ -121,10 +121,87 @@ export const statsService = {
    * Endpoint: /api/stats/compare?a={aId}&b={bId}
    */
   compare: async (aId: number, bId: number): Promise<CompareResult> => {
-    const res = await apiClient.get<ApiResponse<CompareResult>>(
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const res = await apiClient.get<ApiResponse<any>>(
       `/api/stats/compare?a=${aId}&b=${bId}`
     );
-    return res.data.data;
+    const raw = res.data.data;
+    if (!raw) {
+      throw new Error("No comparison data returned from server");
+    }
+
+    const reshapeStats = (s: any): MemberStats => {
+      if (!s) {
+        return {
+          userId: 0,
+          period: "ALL_TIME" as StatsPeriod,
+          codeforces: null,
+          leetcode: null,
+          overall: { solved: 0, solvedPartial: false, contests: 0 },
+          overallScore: null,
+        };
+      }
+      if (Array.isArray(s.platforms)) {
+        return {
+          ...s,
+          codeforces: s.platforms.find((p: any) => p.platform === "CODEFORCES") ?? null,
+          leetcode: s.platforms.find((p: any) => p.platform === "LEETCODE") ?? null,
+        };
+      }
+      return s;
+    };
+
+    const reshapeMember = (
+      user: any,
+      statsAllTime: any,
+      statsYear: any,
+      historyCf: any[],
+      historyLc: any[]
+    ) => ({
+      id: user?.id ?? 0,
+      name: user?.name ?? "Unknown",
+      avatarUrl: user?.avatarUrl ?? null,
+      codeforcesHandle: user?.codeforcesHandle ?? null,
+      leetcodeHandle: user?.leetcodeHandle ?? null,
+      rating: user?.rating ?? null,
+      leetcodeRating: user?.leetcodeRating ?? null,
+      allTime: reshapeStats(statsAllTime),
+      year: reshapeStats(statsYear),
+      ratingHistoryCf: historyCf ?? [],
+      ratingHistoryLc: historyLc ?? [],
+    });
+
+    const h2h = raw.headToHead ?? {};
+    const sharedContests = (h2h.recentContests ?? h2h.sharedContests ?? []).map((c: any) => ({
+      contestId: c.externalContestId ?? c.contestId ?? "",
+      contestName: c.contestName ?? "Contest",
+      startedAt: c.startedAt ?? "",
+      aRank: c.rankA ?? c.aRank ?? 0,
+      bRank: c.rankB ?? c.bRank ?? 0,
+    }));
+
+    return {
+      memberA: raw.memberA ?? reshapeMember(
+        raw.userA,
+        raw.statsAAllTime,
+        raw.statsAYear,
+        raw.ratingHistoryACodeforces,
+        raw.ratingHistoryALeetcode
+      ),
+      memberB: raw.memberB ?? reshapeMember(
+        raw.userB,
+        raw.statsBAllTime,
+        raw.statsBYear,
+        raw.ratingHistoryBCodeforces,
+        raw.ratingHistoryBLeetcode
+      ),
+      headToHead: {
+        aAhead: h2h.aAhead ?? 0,
+        bAhead: h2h.bAhead ?? 0,
+        ties: h2h.tied ?? h2h.ties ?? 0,
+        sharedContests,
+      },
+    };
   },
 
   /**

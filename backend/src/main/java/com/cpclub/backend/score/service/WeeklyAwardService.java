@@ -113,23 +113,27 @@ public class WeeklyAwardService {
                 SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_solved
                 FROM cf_solves s
                 JOIN cf_problems p ON s.problem_id = p.id
-                WHERE p.contest_id < 100000
+                WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                   AND s.first_ac_at >= :startUtc
                   AND s.first_ac_at < :endUtc
                 GROUP BY s.user_id
             ),
             start_bl AS (
-                SELECT user_id, total_solved FROM platform_daily_totals
-                WHERE platform = 'LEETCODE' AND captured_on = :weekStartIst
+                SELECT user_id, total_solved,
+                       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY captured_on DESC) AS rn
+                FROM platform_daily_totals
+                WHERE platform = 'LEETCODE' AND captured_on <= :weekStartIst
             ),
             end_bl AS (
-                SELECT user_id, total_solved FROM platform_daily_totals
-                WHERE platform = 'LEETCODE' AND captured_on = :weekEndIst
+                SELECT user_id, total_solved,
+                       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY captured_on DESC) AS rn
+                FROM platform_daily_totals
+                WHERE platform = 'LEETCODE' AND captured_on <= :weekEndIst
             ),
             lc_solves_week AS (
                 SELECT s.user_id, GREATEST(0, e.total_solved - s.total_solved) AS lc_solved
-                FROM start_bl s
-                JOIN end_bl e ON s.user_id = e.user_id
+                FROM (SELECT user_id, total_solved FROM start_bl WHERE rn = 1) s
+                JOIN (SELECT user_id, total_solved FROM end_bl WHERE rn = 1) e ON s.user_id = e.user_id
             ),
             totals AS (
                 SELECT vu.id AS user_id,
@@ -243,26 +247,30 @@ public class WeeklyAwardService {
                        SUM(CASE WHEN p.rating IS NOT NULL THEN GREATEST(8, p.rating / 100) ELSE 8 END) AS cf_pts
                 FROM cf_solves s
                 JOIN cf_problems p ON s.problem_id = p.id
-                WHERE p.contest_id < 100000
+                WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
                   AND s.first_ac_at >= :startUtc
                   AND s.first_ac_at < :endUtc
                 GROUP BY s.user_id
             ),
             start_bl AS (
-                SELECT user_id, easy_solved, medium_solved, hard_solved FROM platform_daily_totals
-                WHERE platform = 'LEETCODE' AND captured_on = :weekStartIst
+                SELECT user_id, easy_solved, medium_solved, hard_solved,
+                       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY captured_on DESC) AS rn
+                FROM platform_daily_totals
+                WHERE platform = 'LEETCODE' AND captured_on <= :weekStartIst
             ),
             end_bl AS (
-                SELECT user_id, easy_solved, medium_solved, hard_solved FROM platform_daily_totals
-                WHERE platform = 'LEETCODE' AND captured_on = :weekEndIst
+                SELECT user_id, easy_solved, medium_solved, hard_solved,
+                       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY captured_on DESC) AS rn
+                FROM platform_daily_totals
+                WHERE platform = 'LEETCODE' AND captured_on <= :weekEndIst
             ),
             lc_points AS (
                 SELECT s.user_id,
                        (GREATEST(0, COALESCE(e.easy_solved, 0) - COALESCE(s.easy_solved, 0)) * 5 +
                         GREATEST(0, COALESCE(e.medium_solved, 0) - COALESCE(s.medium_solved, 0)) * 12 +
                         GREATEST(0, COALESCE(e.hard_solved, 0) - COALESCE(s.hard_solved, 0)) * 25) AS lc_pts
-                FROM start_bl s
-                JOIN end_bl e ON s.user_id = e.user_id
+                FROM (SELECT user_id, easy_solved, medium_solved, hard_solved FROM start_bl WHERE rn = 1) s
+                JOIN (SELECT user_id, easy_solved, medium_solved, hard_solved FROM end_bl WHERE rn = 1) e ON s.user_id = e.user_id
             ),
             contest_points AS (
                 SELECT cp.user_id, COUNT(*) * 20 AS contest_pts

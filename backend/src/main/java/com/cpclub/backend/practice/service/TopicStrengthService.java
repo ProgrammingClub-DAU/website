@@ -64,7 +64,7 @@ public class TopicStrengthService {
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
             WHERE s.user_id = :userId
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
             """;
         Integer memberTotal = jdbcTemplate.queryForObject(memberTotalSql, new MapSqlParameterSource("userId", userId), Integer.class);
         int totalMemberSolves = memberTotal != null ? memberTotal : 0;
@@ -76,7 +76,7 @@ public class TopicStrengthService {
             JOIN cf_problems p ON s.problem_id = p.id
             JOIN cf_problem_tags pt ON p.id = pt.problem_id
             WHERE s.user_id = :userId
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
             GROUP BY pt.tag
             """;
         Map<String, Integer> memberTagCounts = new HashMap<>();
@@ -90,7 +90,7 @@ public class TopicStrengthService {
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
             WHERE s.user_id = :userId
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
               AND s.problem_id NOT IN (
                   SELECT pt.problem_id
                   FROM cf_problem_tags pt
@@ -106,7 +106,7 @@ public class TopicStrengthService {
             SELECT COUNT(DISTINCT s.id)
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
-            WHERE p.contest_id < 100000
+            WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
             """;
         Integer clubTotal = jdbcTemplate.queryForObject(clubTotalSql, new MapSqlParameterSource(), Integer.class);
         int totalClubSolves = clubTotal != null ? clubTotal : 0;
@@ -117,7 +117,7 @@ public class TopicStrengthService {
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
             JOIN cf_problem_tags pt ON p.id = pt.problem_id
-            WHERE p.contest_id < 100000
+            WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
             GROUP BY pt.tag
             """;
         Map<String, Integer> clubTagCounts = new HashMap<>();
@@ -130,7 +130,7 @@ public class TopicStrengthService {
             SELECT COUNT(DISTINCT s.id)
             FROM cf_solves s
             JOIN cf_problems p ON s.problem_id = p.id
-            WHERE p.contest_id < 100000
+            WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
               AND s.problem_id NOT IN (
                   SELECT pt.problem_id
                   FROM cf_problem_tags pt

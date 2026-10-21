@@ -99,7 +99,7 @@ public class PracticeSuggestionService {
             SELECT p.id, p.problem_key, p.contest_id, p.problem_index, p.name, p.rating, p.solved_count
             FROM cf_problems p
             WHERE p.rating >= :minBand AND p.rating <= :maxBand
-              AND p.contest_id < 100000
+              AND (p.contest_id IS NULL OR p.contest_id < 100000)
               AND p.id NOT IN (SELECT s.problem_id FROM cf_solves s WHERE s.user_id = :userId)
               AND p.id NOT IN (SELECT sk.problem_id FROM practice_suggestion_skips sk WHERE sk.user_id = :userId)
             """);
@@ -136,6 +136,39 @@ public class PracticeSuggestionService {
                     .url(url)
                     .build();
         });
+
+        // Fallback: If weak tags query produced 0 candidates, fallback to rating band candidates
+        if (candidates.isEmpty() && !weakTags.isEmpty()) {
+            String fallbackSql = """
+                SELECT p.id, p.problem_key, p.contest_id, p.problem_index, p.name, p.rating, p.solved_count
+                FROM cf_problems p
+                WHERE p.rating >= :minBand AND p.rating <= :maxBand
+                  AND (p.contest_id IS NULL OR p.contest_id < 100000)
+                  AND p.id NOT IN (SELECT s.problem_id FROM cf_solves s WHERE s.user_id = :userId)
+                  AND p.id NOT IN (SELECT sk.problem_id FROM practice_suggestion_skips sk WHERE sk.user_id = :userId)
+                ORDER BY p.solved_count DESC NULLS LAST, p.problem_key ASC LIMIT 10
+                """;
+            candidates = jdbcTemplate.query(fallbackSql, params, (rs, rowNum) -> {
+                Long problemId = rs.getLong("id");
+                Integer contestId = (Integer) rs.getObject("contest_id");
+                String problemIndex = rs.getString("problem_index");
+                String url = contestId != null
+                        ? "https://codeforces.com/problemset/problem/" + contestId + "/" + problemIndex
+                        : null;
+
+                return PracticeSuggestionDto.builder()
+                        .problemId(problemId)
+                        .problemKey(rs.getString("problem_key"))
+                        .contestId(contestId)
+                        .problemIndex(problemIndex)
+                        .name(rs.getString("name"))
+                        .rating((Integer) rs.getObject("rating"))
+                        .solvedCount((Integer) rs.getObject("solved_count"))
+                        .tags(new ArrayList<>())
+                        .url(url)
+                        .build();
+            });
+        }
 
         // 4. Populate tags for suggestions
         if (!candidates.isEmpty()) {
