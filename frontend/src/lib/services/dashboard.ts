@@ -148,5 +148,24 @@ export const dashboardService = {
   syncStats: async (): Promise<string> => {
     const response = await apiClient.post<ApiResponse<string>>("/api/users/profile/sync");
     return response.data?.data || "Sync started";
-  }
+  },
+
+  /** Public members directory lookup for member search and comparison */
+  getMembers: async (
+    query?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: PublicMember[]; totalElements: number }> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    if (query && query.trim()) {
+      params.set("query", query.trim());
+    }
+    const response = await apiClient.get<ApiResponse<{ content: PublicMember[]; totalElements: number }>>(
+      `/api/users?${params.toString()}`
+    );
+    return response.data?.data ?? { content: [], totalElements: 0 };
+  },
 };

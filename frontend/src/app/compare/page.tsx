@@ -4,11 +4,11 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ArrowRightLeft, Users, AlertCircle, Loader2 } from "lucide-react";
 import { statsService } from "@/lib/services/stats";
-import { eventsService } from "@/lib/services/events";
+import { dashboardService } from "@/lib/services/dashboard";
 import { CompareView } from "@/components/site/compare-view";
 import { PageTitle, Eyebrow } from "@/components/site/primitives";
 import { useAuthStore } from "@/store/auth";
-import type { CompareResult, UserLookup } from "@/types/api";
+import type { CompareResult, PublicMember } from "@/types/api";
 
 function CompareContent() {
   const router = useRouter();
@@ -27,8 +27,8 @@ function CompareContent() {
 
   const [searchA, setSearchA] = useState("");
   const [searchB, setSearchB] = useState("");
-  const [resultsA, setResultsA] = useState<UserLookup[]>([]);
-  const [resultsB, setResultsB] = useState<UserLookup[]>([]);
+  const [resultsA, setResultsA] = useState<PublicMember[]>([]);
+  const [resultsB, setResultsB] = useState<PublicMember[]>([]);
   const [isSearchingA, setIsSearchingA] = useState(false);
   const [isSearchingB, setIsSearchingB] = useState(false);
 
@@ -89,8 +89,8 @@ function CompareContent() {
     const timer = setTimeout(async () => {
       setIsSearchingA(true);
       try {
-        const res = await eventsService.lookupMembers(searchA.trim());
-        setResultsA(res);
+        const res = await dashboardService.getMembers(searchA.trim(), 0, 10);
+        setResultsA(res.content);
       } catch {
         setResultsA([]);
       } finally {
@@ -109,8 +109,8 @@ function CompareContent() {
     const timer = setTimeout(async () => {
       setIsSearchingB(true);
       try {
-        const res = await eventsService.lookupMembers(searchB.trim());
-        setResultsB(res);
+        const res = await dashboardService.getMembers(searchB.trim(), 0, 10);
+        setResultsB(res.content);
       } catch {
         setResultsB([]);
       } finally {
@@ -172,7 +172,7 @@ function CompareContent() {
                 >
                   <span className="font-medium text-foreground">{m.name}</span>
                   <span className="font-mono text-nano text-fg-muted">
-                    {m.codeforcesHandle ? `@${m.codeforcesHandle}` : m.email}
+                    {m.codeforcesHandle ? `@${m.codeforcesHandle}` : m.clubRole ? m.clubRole : "Member"}
                   </span>
                 </button>
               ))}
@@ -226,7 +226,7 @@ function CompareContent() {
                 >
                   <span className="font-medium text-foreground">{m.name}</span>
                   <span className="font-mono text-nano text-fg-muted">
-                    {m.codeforcesHandle ? `@${m.codeforcesHandle}` : m.email}
+                    {m.codeforcesHandle ? `@${m.codeforcesHandle}` : m.clubRole ? m.clubRole : "Member"}
                   </span>
                 </button>
               ))}

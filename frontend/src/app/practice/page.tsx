@@ -15,18 +15,22 @@ import {
 } from "lucide-react";
 import { practiceService } from "@/lib/services/practice";
 import { contestService } from "@/lib/services/contests";
+import { statsService } from "@/lib/services/stats";
+import { TopicStrengthChart } from "@/components/site/topic-strength-chart";
 import { useAuthStore } from "@/store/auth";
 import type {
   PracticeSuggestionsResponseDto,
   PracticeSuggestion,
   MyUpsolvesDto,
+  TopicStrengthResponse,
 } from "@/types/api";
 
 export default function PracticePage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user: currentUser } = useAuthStore();
 
   const [suggestions, setSuggestions] = useState<PracticeSuggestionsResponseDto | null>(null);
   const [myUpsolves, setMyUpsolves] = useState<MyUpsolvesDto | null>(null);
+  const [topicStrength, setTopicStrength] = useState<TopicStrengthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [skippingId, setSkippingId] = useState<number | null>(null);
 
@@ -37,6 +41,13 @@ export default function PracticePage() {
     }
 
     let ignore = false;
+    const topicPromise = currentUser?.id
+      ? statsService.getTopics(currentUser.id).catch((err) => {
+          console.error("Failed to load topic strength:", err);
+          return null;
+        })
+      : Promise.resolve(null);
+
     Promise.all([
       practiceService.getSuggestions().catch((err) => {
         console.error("Failed to load practice suggestions:", err);
@@ -46,11 +57,13 @@ export default function PracticePage() {
         console.error("Failed to load pending upsolves:", err);
         return null;
       }),
+      topicPromise,
     ])
-      .then(([sugRes, upsolveRes]) => {
+      .then(([sugRes, upsolveRes, topicRes]) => {
         if (!ignore) {
           setSuggestions(sugRes);
           setMyUpsolves(upsolveRes);
+          setTopicStrength(topicRes);
         }
       })
       .finally(() => {
@@ -60,7 +73,7 @@ export default function PracticePage() {
     return () => {
       ignore = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUser?.id]);
 
   const handleSkip = async (problemId: number) => {
     setSkippingId(problemId);
@@ -129,6 +142,13 @@ export default function PracticePage() {
         </div>
       ) : (
         <div className="space-y-10">
+          {/* Topic Strength Breakdown */}
+          {topicStrength && (
+            <section className="space-y-4">
+              <TopicStrengthChart data={topicStrength} />
+            </section>
+          )}
+
           {/* Practice Recommendations Section */}
           <section className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">

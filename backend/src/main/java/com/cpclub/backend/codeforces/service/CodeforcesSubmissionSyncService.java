@@ -38,6 +38,7 @@ public class CodeforcesSubmissionSyncService {
     private final UserRepository userRepository;
     private final SyncRunRecorder syncRunRecorder;
 
+    @Transactional
     public void syncMember(User user) {
         if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
             return;
@@ -97,7 +98,6 @@ public class CodeforcesSubmissionSyncService {
         userRepository.save(user);
     }
 
-    @Transactional
     public void syncAll() {
         SyncRunRecorder.RunHandle run = syncRunRecorder.start(SyncJob.CF_SUBMISSIONS);
         int ok = 0;
