@@ -25,6 +25,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -33,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -78,6 +80,9 @@ public class CodeforcesAuthorizedClient {
     public static final int GYM_ID_FLOOR = 100_000;
 
     private static final Pattern SECRET_PARAMS = Pattern.compile("(apiKey|apiSig)=[^&\\s\"']*");
+    private static final Pattern MISSING_HANDLE = Pattern.compile("User with handle (\\S+) not found");
+    /** Bad handles dropped from one standings call before giving up; each costs one request. */
+    private static final int MAX_DROPPED_HANDLES = 25;
     private static final String ALNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -157,29 +162,50 @@ public class CodeforcesAuthorizedClient {
                 .map(h -> h.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
 
-        URI uri;
-        if (isGym(cfContestId)) {
-            if (!isConfigured()) {
-                throw new CodeforcesApiException("Codeforces API key not configured");
-            }
-            Map<String, String> params = new LinkedHashMap<>();
-            params.put("contestId", Integer.toString(cfContestId));
-            if (headerOnly) {
-                // Only the contest and its problems are wanted; one row keeps the reply tiny.
-                params.put("from", "1");
-                params.put("count", "1");
-            } else if (!asStored.isEmpty()) {
-                // Codeforces filters on its side: one row per club member at most.
-                params.put("handles", String.join(";", asStored));
-            }
-            // Out-of-competition entries are unofficial on Codeforces; without this they
-            // are dropped before the club's own filter ever sees them.
-            params.put("showUnofficial", "true");
-            uri = signedUri("contest.standings", params);
-        } else {
-            uri = URI.create(API_BASE + "contest.standings?contestId=" + cfContestId);
+        if (!isGym(cfContestId)) {
+            return execute(URI.create(API_BASE + "contest.standings?contestId=" + cfContestId), wanted, headerOnly);
         }
-        return execute(uri, wanted, headerOnly);
+        if (!isConfigured()) {
+            throw new CodeforcesApiException("Codeforces API key not configured");
+        }
+
+        // Codeforces fails the whole call when any one handle in the filter does not
+        // exist, and names it: "handles: User with handle X not found". One member
+        // with a mistyped or renamed handle used to make every sync of every gym
+        // contest fail. That handle is dropped and the call re-signed and repeated.
+        List<String> sendable = new ArrayList<>(asStored);
+        for (int dropped = 0; ; dropped++) {
+            try {
+                return execute(gymStandingsUri(cfContestId, sendable, headerOnly), wanted, headerOnly);
+            } catch (CodeforcesApiException e) {
+                Matcher missing = MISSING_HANDLE.matcher(String.valueOf(e.getMessage()));
+                if (headerOnly || dropped >= MAX_DROPPED_HANDLES || !missing.find()) {
+                    throw e;
+                }
+                String bad = missing.group(1);
+                if (!sendable.removeIf(h -> h.equalsIgnoreCase(bad))) {
+                    throw e;
+                }
+                log.warn("Codeforces has no user '{}'; leaving them out of contest {} standings", bad, cfContestId);
+            }
+        }
+    }
+
+    private URI gymStandingsUri(int cfContestId, List<String> handles, boolean headerOnly) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("contestId", Integer.toString(cfContestId));
+        if (headerOnly) {
+            // Only the contest and its problems are wanted; one row keeps the reply tiny.
+            params.put("from", "1");
+            params.put("count", "1");
+        } else if (!handles.isEmpty()) {
+            // Codeforces filters on its side: one row per club member at most.
+            params.put("handles", String.join(";", handles));
+        }
+        // Out-of-competition entries are unofficial on Codeforces; without this they
+        // are dropped before the club's own filter ever sees them.
+        params.put("showUnofficial", "true");
+        return signedUri("contest.standings", params);
     }
 
     private CfStandings execute(URI uri, Set<String> wanted, boolean headerOnly) {

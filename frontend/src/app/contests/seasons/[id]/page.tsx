@@ -4,6 +4,7 @@ import React, { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { seasonService } from "@/lib/services/seasons";
+import { apiErrorMessage } from "@/lib/api-error";
 import { ChampionshipTable } from "@/components/site/championship-table";
 import type { ChampionshipDto } from "@/types/api";
 
@@ -26,7 +27,7 @@ export default function SeasonChampionshipPage({ params }: SeasonChampionshipPag
       })
       .catch((err: unknown) => {
         console.error("Failed to load championship standings:", err);
-        if (!ignore) setError("Failed to load season championship standings.");
+        if (!ignore) setError(apiErrorMessage(err, "Failed to load season championship standings."));
       })
       .finally(() => {
         if (!ignore) setLoading(false);

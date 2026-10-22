@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { commentsService } from "@/lib/services/comments";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/store/auth";
 import type { CommentDto } from "@/types/api";
 import { serverDate } from "@/lib/utils";
@@ -73,7 +74,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
       await loadComments();
     } catch (err) {
       console.error("Failed to post comment:", err);
-      alert("Failed to post comment. Please try again.");
+      alert(`Failed to post comment: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +92,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
       await loadComments();
     } catch (err) {
       console.error("Failed to post reply:", err);
-      alert("Failed to post reply.");
+      alert(`Failed to post reply: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setIsReplying(false);
     }
@@ -121,7 +122,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
       await loadComments();
     } catch (err) {
       console.error("Failed to delete comment:", err);
-      alert("Failed to delete comment.");
+      alert(`Failed to delete comment: ${apiErrorMessage(err, "Please try again.")}`);
     }
   };
 

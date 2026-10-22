@@ -184,6 +184,52 @@ class CodeforcesAuthorizedClientTest {
         assertTrue(sent.contains("handles=Alice%3Bbob"), sent);
     }
 
+    /**
+     * Codeforces fails a filtered standings call outright when any one handle in it
+     * does not exist. With a single mistyped member handle, every gym contest sync
+     * failed with "Failed to sync standings".
+     */
+    @Test
+    @DisplayName("An unknown handle in the filter is dropped and the call repeated, re-signed")
+    void gymContest_unknownHandleIsDroppedAndRetried() {
+        ArgumentCaptor<URI> uri = ArgumentCaptor.forClass(URI.class);
+        when(restTemplate.execute(uri.capture(), eq(HttpMethod.GET), isNull(), any(ResponseExtractor.class)))
+                .thenThrow(org.springframework.web.client.HttpClientErrorException.create(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        "{\"status\":\"FAILED\",\"comment\":\"handles: User with handle ghost_handle not found\"}"
+                                .getBytes(StandardCharsets.UTF_8),
+                        StandardCharsets.UTF_8))
+                .thenAnswer(inv -> extract(inv.getArgument(3), fixture()));
+
+        CfStandings standings = client.contestStandings(102345, List.of("Alice", "Ghost_Handle", "bob"));
+
+        List<URI> sent = uri.getAllValues();
+        assertEquals(2, sent.size());
+        assertTrue(sent.get(0).toString().contains("Ghost_Handle"), sent.get(0).toString());
+        assertTrue(sent.get(1).toString().contains("handles=Alice%3Bbob"), sent.get(1).toString());
+        assertFalse(sent.get(1).toString().contains("Ghost"));
+        assertTrue(standings.getContest() != null);
+    }
+
+    @Test
+    @DisplayName("A failure that names no handle is not retried")
+    void gymContest_otherFailuresAreNotRetried() {
+        when(restTemplate.execute(any(URI.class), eq(HttpMethod.GET), isNull(), any(ResponseExtractor.class)))
+                .thenThrow(org.springframework.web.client.HttpClientErrorException.create(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        "{\"status\":\"FAILED\",\"comment\":\"contestId: You have no access to the contest\"}"
+                                .getBytes(StandardCharsets.UTF_8),
+                        StandardCharsets.UTF_8));
+
+        CodeforcesApiException e = assertThrows(CodeforcesApiException.class,
+                () -> client.contestStandings(102345, List.of("Alice")));
+        assertTrue(e.getMessage().contains("no access"));
+        org.mockito.Mockito.verify(restTemplate, org.mockito.Mockito.times(1))
+                .execute(any(URI.class), eq(HttpMethod.GET), isNull(), any(ResponseExtractor.class));
+    }
+
     @Test
     @DisplayName("The captured real response parses, and rows are matched case-insensitively")
     void parsesTheCapturedResponse() throws Exception {

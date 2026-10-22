@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, UserPlus, UserMinus, Loader2, Users, AlertCircle } from "lucide-react";
 import { eventsService } from "@/lib/services/events";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/store/auth";
 import type { RegistrationStatus } from "@/types/api";
 
@@ -49,7 +50,7 @@ export function RegistrationButton({ eventId }: RegistrationButtonProps) {
       setStatus(res);
     } catch (err: unknown) {
       console.error("Failed to RSVP:", err);
-      alert("Failed to RSVP for event. It may be full or closed.");
+      alert(`Failed to RSVP for event: ${apiErrorMessage(err, "It may be full or closed.")}`);
     } finally {
       setActionLoading(false);
     }
@@ -73,7 +74,7 @@ export function RegistrationButton({ eventId }: RegistrationButtonProps) {
       );
     } catch (err) {
       console.error("Failed to cancel RSVP:", err);
-      alert("Failed to cancel RSVP.");
+      alert(`Failed to cancel RSVP: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setActionLoading(false);
     }

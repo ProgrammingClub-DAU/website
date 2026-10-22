@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { practiceService } from "@/lib/services/practice";
+import { apiErrorMessage } from "@/lib/api-error";
 import { contestService } from "@/lib/services/contests";
 import { statsService } from "@/lib/services/stats";
 import { TopicStrengthChart } from "@/components/site/topic-strength-chart";
@@ -93,7 +94,7 @@ export default function PracticePage() {
       );
     } catch (err) {
       console.error("Failed to skip problem:", err);
-      alert("Failed to skip problem. Please try again.");
+      alert(`Failed to skip problem: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setSkippingId(null);
     }
