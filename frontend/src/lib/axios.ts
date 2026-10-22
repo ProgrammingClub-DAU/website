@@ -13,6 +13,14 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/auth";
 
+/**
+ * For the few calls that legitimately wait on a third party: an admin contest
+ * sync makes several Codeforces requests, spaced at least two seconds apart by the
+ * backend's rate limiter, so it routinely ran past the 15-second default below and
+ * reported a timeout for a sync that went on to succeed on the server.
+ */
+export const SLOW_REQUEST_TIMEOUT_MS = 120_000;
+
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   // Axios defaults to no timeout at all. Server Components await these calls, so

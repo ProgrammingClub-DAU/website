@@ -1,4 +1,4 @@
-import apiClient from "@/lib/axios";
+import apiClient, { SLOW_REQUEST_TIMEOUT_MS } from "@/lib/axios";
 import type { ApiResponse } from "@/store/auth";
 import type {
   ClubContestSummaryDto,
@@ -29,7 +29,10 @@ export const contestService = {
    * Admin: Add a Codeforces contest (gym/mashup/group/official) as a club contest.
    */
   async create(data: ClubContestCreateRequest): Promise<ClubContestSummaryDto> {
-    const res = await apiClient.post<ApiResponse<ClubContestSummaryDto>>("/api/club-contests", data);
+    // Reads the contest from Codeforces before saving it.
+    const res = await apiClient.post<ApiResponse<ClubContestSummaryDto>>("/api/club-contests", data, {
+      timeout: SLOW_REQUEST_TIMEOUT_MS,
+    });
     return res.data.data;
   },
 
@@ -37,7 +40,10 @@ export const contestService = {
    * Admin: Trigger an immediate standings sync from Codeforces for this contest.
    */
   async sync(id: number | string): Promise<ClubContestDetailDto> {
-    const res = await apiClient.post<ApiResponse<ClubContestDetailDto>>(`/api/club-contests/${id}/sync`);
+    // Several rate-limited Codeforces requests; see SLOW_REQUEST_TIMEOUT_MS.
+    const res = await apiClient.post<ApiResponse<ClubContestDetailDto>>(`/api/club-contests/${id}/sync`, undefined, {
+      timeout: SLOW_REQUEST_TIMEOUT_MS,
+    });
     return res.data.data;
   },
 
