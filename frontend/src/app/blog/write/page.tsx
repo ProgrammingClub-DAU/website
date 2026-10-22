@@ -15,6 +15,12 @@ import {
 import { blogService } from "@/lib/services/blog";
 import { MarkdownRenderer } from "@/components/site/markdown-renderer";
 import { useAuthStore } from "@/store/auth";
+import { apiErrorMessage } from "@/lib/api-error";
+
+/** Column limits on blog_posts; checked here so the member hears about them before saving. */
+const TITLE_MIN = 3;
+const TITLE_MAX = 255;
+const TAGS_MAX = 255;
 
 export default function BlogWritePage() {
   const router = useRouter();
@@ -28,6 +34,9 @@ export default function BlogWritePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set once the post exists on the server. A retry after a failed submit used to
+  // create the post again, leaving a duplicate draft behind for every attempt.
+  const [draftId, setDraftId] = useState<number | null>(null);
 
   if (!isAuthenticated) {
     return (
@@ -48,8 +57,17 @@ export default function BlogWritePage() {
   }
 
   const validate = () => {
-    if (!title.trim()) {
+    const t = title.trim();
+    if (!t) {
       setError("Article title is required.");
+      return false;
+    }
+    if (t.length < TITLE_MIN || t.length > TITLE_MAX) {
+      setError(`The title must be between ${TITLE_MIN} and ${TITLE_MAX} characters.`);
+      return false;
+    }
+    if (tags.trim().length > TAGS_MAX) {
+      setError(`Tags can be at most ${TAGS_MAX} characters in total.`);
       return false;
     }
     if (!content.trim()) {
@@ -59,21 +77,28 @@ export default function BlogWritePage() {
     return true;
   };
 
+  /** Creates the draft the first time, updates it after that. Returns its id. */
+  const saveDraft = async (): Promise<number> => {
+    const fields = { title: title.trim(), content: content.trim(), tags: tags.trim() || undefined };
+    if (draftId != null) {
+      await blogService.update(draftId, fields);
+      return draftId;
+    }
+    const created = await blogService.create({ ...fields, published: false });
+    setDraftId(created.id);
+    return created.id;
+  };
+
   const handleSaveDraft = async () => {
     if (!validate() || isSaving) return;
     setIsSaving(true);
     setError(null);
     try {
-      await blogService.create({
-        title: title.trim(),
-        content: content.trim(),
-        tags: tags.trim() || undefined,
-        published: false,
-      });
+      await saveDraft();
       router.push("/blog/mine");
     } catch (err) {
       console.error("Failed to save draft:", err);
-      setError("Failed to save draft. Please check your inputs.");
+      setError(apiErrorMessage(err, "Failed to save the draft. Please try again."));
     } finally {
       setIsSaving(false);
     }
@@ -83,18 +108,19 @@ export default function BlogWritePage() {
     if (!validate() || isSubmitting) return;
     setIsSubmitting(true);
     setError(null);
+    let savedId: number | null = null;
     try {
-      const created = await blogService.create({
-        title: title.trim(),
-        content: content.trim(),
-        tags: tags.trim() || undefined,
-        published: false,
-      });
-      await blogService.submit(created.id);
+      savedId = await saveDraft();
+      await blogService.submit(savedId);
       router.push("/blog/mine");
     } catch (err) {
       console.error("Failed to submit for review:", err);
-      setError("Failed to submit post for review.");
+      const reason = apiErrorMessage(err, "Please try again.");
+      setError(
+        savedId != null
+          ? `Your post is saved as a draft, but submitting it for review failed: ${reason}`
+          : `Could not save your post: ${reason}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -135,7 +161,7 @@ export default function BlogWritePage() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-400">
+        <div role="alert" className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-400">
           {error}
         </div>
       )}
@@ -147,6 +173,8 @@ export default function BlogWritePage() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            maxLength={TITLE_MAX}
+            aria-label="Article title"
             placeholder="Article Title..."
             className="w-full bg-transparent text-2xl sm:text-3xl font-black text-white placeholder:text-white/20 focus:outline-none tracking-tight border-b border-white/10 pb-3"
           />
@@ -157,6 +185,8 @@ export default function BlogWritePage() {
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
+            maxLength={TAGS_MAX}
+            aria-label="Tags"
             placeholder="Tags (comma-separated, e.g. dp, graph, editorial, tutorial)"
             className="w-full rounded-xl border border-white/10 bg-surface-2 px-4 py-2 text-xs font-mono text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />

@@ -1,6 +1,9 @@
 package com.cpclub.backend.common.exception;
 
 import com.cpclub.backend.common.dto.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,6 +25,7 @@ import java.util.Map;
  * <p>Keeping error mapping at this boundary prevents controllers from duplicating HTTP concerns and
  * avoids leaking internal exception details for expected client mistakes.</p>
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -150,15 +154,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * A write the database refused: a value longer than its column, a duplicate of a
+     * unique value, a missing required field.
+     *
+     * <p>Answered as 400 with a plain message. It used to fall through to the 500
+     * handler below, which put the failing SQL statement into the response.</p>
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Database rejected {} {}: {}", request.getMethod(), request.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(
+                        "Could not save: a value is too long, missing, or already in use. Check the form and try again."));
+    }
+
+    /**
      * Provides a final consistent error response for unexpected failures.
+     *
+     * <p>Logs the full exception -- it logged nothing before, so a 500 left no trace in
+     * the server logs at all -- and returns no internals: the exception message used
+     * to be echoed to the client, SQL statements included.</p>
      *
      * @param ex unhandled exception
      * @return standardized internal-server-error response
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex) {
+    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, HttpServletRequest request) {
+        log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage()));
+                .body(ApiResponse.error("An unexpected error occurred on the server. Please try again in a moment."));
     }
 }

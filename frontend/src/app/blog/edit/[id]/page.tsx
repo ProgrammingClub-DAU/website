@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { blogService } from "@/lib/services/blog";
+import { apiErrorMessage } from "@/lib/api-error";
 import { MarkdownRenderer } from "@/components/site/markdown-renderer";
 import type { BlogEditDto } from "@/types/api";
 
@@ -75,7 +76,7 @@ export default function BlogEditPage({ params }: BlogEditPageProps) {
       router.push("/blog/mine");
     } catch (err) {
       console.error("Failed to update post:", err);
-      setError("Failed to update post.");
+      setError(apiErrorMessage(err, "Failed to update post."));
     } finally {
       setIsSaving(false);
     }
@@ -95,7 +96,7 @@ export default function BlogEditPage({ params }: BlogEditPageProps) {
       router.push("/blog/mine");
     } catch (err) {
       console.error("Failed to re-submit post:", err);
-      setError("Failed to re-submit post for review.");
+      setError(`Failed to re-submit post for review: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +110,7 @@ export default function BlogEditPage({ params }: BlogEditPageProps) {
       router.push("/blog/mine");
     } catch (err) {
       console.error("Failed to delete post:", err);
-      alert("Failed to delete post.");
+      alert(`Failed to delete post: ${apiErrorMessage(err, "Please try again.")}`);
       setIsDeleting(false);
     }
   };

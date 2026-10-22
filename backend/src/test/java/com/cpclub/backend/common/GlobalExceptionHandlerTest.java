@@ -51,11 +51,27 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Should map unexpected exceptions to 500")
     void shouldHandleGeneralException() {
-        ResponseEntity<ApiResponse<Void>> response = handler.handleGlobalException(new RuntimeException("database down"));
+        ResponseEntity<ApiResponse<Void>> response = handler.handleGlobalException(
+                new RuntimeException("database down"), new org.springframework.mock.web.MockHttpServletRequest("POST", "/api/blogs"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse(response.getBody().isSuccess());
         assertTrue(response.getBody().getMessage().contains("unexpected error occurred"));
+        // Internals stay in the log, not in the response.
+        assertFalse(response.getBody().getMessage().contains("database down"));
+    }
+
+    @Test
+    @DisplayName("A value too long for its column is a 400 with no SQL in it")
+    void dataIntegrityViolationIsBadRequestWithoutSql() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(
+                new org.springframework.dao.DataIntegrityViolationException(
+                        "could not execute statement [insert into blog_posts ...]",
+                        new RuntimeException("value too long for type character varying(255)")),
+                new org.springframework.mock.web.MockHttpServletRequest("POST", "/api/blogs"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().getMessage().contains("insert into"));
     }
 }

@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { blogService } from "@/lib/services/blog";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/store/auth";
 import type { BlogEditDto } from "@/types/api";
 import { serverDate } from "@/lib/utils";
@@ -49,7 +50,7 @@ export default function MyBlogsPage() {
       await loadPosts();
     } catch (err) {
       console.error("Failed to submit post:", err);
-      alert("Failed to submit post for review.");
+      alert(`Failed to submit post for review: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setActionLoadingId(null);
     }
@@ -62,7 +63,7 @@ export default function MyBlogsPage() {
       setPosts((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error("Failed to delete post:", err);
-      alert("Failed to delete post.");
+      alert(`Failed to delete post: ${apiErrorMessage(err, "Please try again.")}`);
     }
   };
 
