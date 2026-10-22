@@ -14,16 +14,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.json.JsonMapper;
 import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.score.service.MemberScoreService;
 import com.cpclub.backend.stats.service.ContestHistorySyncService;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +60,9 @@ public class CodeforcesSyncService {
     private static final String CODEFORCES_API_URL = "https://codeforces.com/api/user.info?handles=";
 
     private static final Pattern MISSING_HANDLE = Pattern.compile("User with handle (\\S+) not found");
+
+    /** Reads the JSON body Codeforces sends with a 400. */
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     /**
      * Handles per request. Codeforces accepts a semicolon-separated list, but a
@@ -164,7 +171,7 @@ public class CodeforcesSyncService {
 
         log.info("Codeforces sync complete. Updated {} of {} handles; {} rejected.",
                 outcome.updated, handles.size(), outcome.failed);
-        run.complete(handles.size() - outcome.failed, outcome.failed, outcome.firstError);
+        run.complete(handles.size() - outcome.failed, outcome.failed, outcome.errorSample());
     }
 
     /**
@@ -188,12 +195,27 @@ public class CodeforcesSyncService {
         int updated;
         int failed;
         String firstError;
+        /** Every handle Codeforces says does not exist, so the admin can contact all of them. */
+        final Set<String> missing = new LinkedHashSet<>();
 
         void reject(String handle, String reason) {
             failed++;
-            if (firstError == null) {
+            if (reason != null && reason.contains("not found")) {
+                missing.add(handle);
+            } else if (firstError == null) {
                 firstError = handle + ": " + reason;
             }
+        }
+
+        String errorSample() {
+            List<String> parts = new ArrayList<>();
+            if (!missing.isEmpty()) {
+                parts.add("Not found on Codeforces -- ask these members to fix their handle: " + String.join(", ", missing));
+            }
+            if (firstError != null) {
+                parts.add(firstError);
+            }
+            return parts.isEmpty() ? null : String.join("; ", parts);
         }
     }
 
@@ -270,14 +292,35 @@ public class CodeforcesSyncService {
      * Single outbound call. Acquires one permit from the global rate limiter before
      * sending -- this is the single choke point for every user.info request.
      * Never throws: a provider failure must not abort the run.
+     *
+     * <p>Codeforces answers an unknown handle with HTTP 400 and its usual JSON
+     * envelope, which RestTemplate raises as an exception. That body is read here
+     * rather than discarded: it names the missing handle, which lets
+     * {@link #syncBatch} drop it and retry once instead of bisecting -- about eight
+     * extra requests, two seconds apart, for every bad handle.</p>
      */
     private CodeforcesResponse fetch(List<String> handles) {
         codeforcesRateLimiter.acquire();
         try {
             return restTemplate.getForObject(
                     CODEFORCES_API_URL + String.join(";", handles), CodeforcesResponse.class);
+        } catch (HttpStatusCodeException e) {
+            CodeforcesResponse body = readErrorBody(e.getResponseBodyAsString());
+            if (body == null) {
+                log.warn("Codeforces returned HTTP {} for {} handle(s)", e.getStatusCode().value(), handles.size());
+            }
+            return body;
         } catch (Exception e) {
             log.warn("Codeforces request failed for {} handle(s): {}", handles.size(), e.getMessage());
+            return null;
+        }
+    }
+
+    private static CodeforcesResponse readErrorBody(String raw) {
+        if (raw == null || !raw.trim().startsWith("{")) return null;
+        try {
+            return JSON.readValue(raw, CodeforcesResponse.class);
+        } catch (RuntimeException e) {
             return null;
         }
     }
