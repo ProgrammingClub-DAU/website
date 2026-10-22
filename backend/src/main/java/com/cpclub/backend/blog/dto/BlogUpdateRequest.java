@@ -15,6 +15,7 @@ public record BlogUpdateRequest(
         String title,
         @NotBlank(message = "Content is required")
         String content,
+        @Size(max = 255, message = "Tags must be at most 255 characters in total")
         String tags,
         Boolean published
 ) {

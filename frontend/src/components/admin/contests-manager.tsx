@@ -21,6 +21,10 @@ import type {
   SeasonRequest,
 } from "@/types/api";
 import { serverDate } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/api-error";
+
+/** Codeforces numbers every gym, mashup and group contest from this id up. */
+const GYM_ID_FLOOR = 100000;
 
 export function ContestsManager() {
   const [contests, setContests] = useState<ClubContestSummaryDto[]>([]);
@@ -64,12 +68,35 @@ export function ContestsManager() {
     loadData();
   }, []);
 
+  /**
+   * Accepts a bare id or a pasted link -- codeforces.com/contest/1843,
+   * codeforces.com/gym/724781, codeforces.com/group/<code>/contest/123456 -- and
+   * picks the kind the id implies. Codeforces numbers every gym, mashup and group
+   * contest from 100000, and the backend refuses a kind that does not match the id;
+   * with "Official Round" preselected, every gym id used to be refused.
+   */
+  const handleContestInput = (value: string) => {
+    const trimmed = value.trim();
+    const link = trimmed.match(/codeforces\.com\/(group\/[^/]+\/contest|gym|contest)\/(\d+)/i);
+    const id = link ? link[2] : trimmed;
+    setCfContestId(id);
+    const numId = parseInt(id, 10);
+    if (!Number.isFinite(numId)) return;
+    if (link?.[1].toLowerCase().startsWith("group")) {
+      setKind("GROUP");
+    } else if (numId >= GYM_ID_FLOOR) {
+      if (kind === "OFFICIAL") setKind("GYM");
+    } else {
+      setKind("OFFICIAL");
+    }
+  };
+
   const handleCreateContest = async (e: React.FormEvent) => {
     e.preventDefault();
     setContestError(null);
     const numId = parseInt(cfContestId, 10);
     if (isNaN(numId) || numId <= 0) {
-      setContestError("Enter a valid positive Codeforces contest ID.");
+      setContestError("Enter a valid Codeforces contest ID or paste the contest link.");
       return;
     }
 
@@ -85,7 +112,9 @@ export function ContestsManager() {
       await loadData();
     } catch (err: unknown) {
       console.error("Failed to add contest:", err);
-      setContestError("Failed to add contest. Check if the CF contest ID exists.");
+      // The backend says exactly why: wrong kind for the id, API key not configured,
+      // no access to a private gym, no start time yet...
+      setContestError(apiErrorMessage(err, "Failed to add contest. Check the Codeforces contest ID."));
     } finally {
       setIsAddingContest(false);
     }
@@ -188,14 +217,23 @@ export function ContestsManager() {
             )}
 
             <div>
-              <label className="block text-nano font-mono uppercase tracking-caps text-fg-muted mb-1">
-                Codeforces Contest ID
+              <label
+                htmlFor="cf-contest-id"
+                className="block text-nano font-mono uppercase tracking-caps text-fg-muted mb-1"
+              >
+                Codeforces Contest ID or link
               </label>
               <input
-                type="number"
+                id="cf-contest-id"
+                type="text"
+                inputMode="numeric"
                 value={cfContestId}
-                onChange={(e) => setCfContestId(e.target.value)}
-                placeholder="e.g. 1843 or 104250 (Gym)"
+                onChange={(e) => handleContestInput(e.target.value)}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  handleContestInput(e.clipboardData.getData("text"));
+                }}
+                placeholder="1843, 724781, or codeforces.com/gym/724781"
                 required
                 className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
               />
@@ -216,6 +254,12 @@ export function ContestsManager() {
                   <option value="MASHUP">Mashup</option>
                   <option value="GROUP">Group Round</option>
                 </select>
+                {parseInt(cfContestId, 10) >= GYM_ID_FLOOR && (
+                  <p className="mt-1 text-[10px] text-fg-muted">
+                    Gym, mashup and group contests are read with the club&apos;s Codeforces API key. For a
+                    private gym, the key&apos;s account must be a manager of the gym.
+                  </p>
+                )}
               </div>
 
               <div>

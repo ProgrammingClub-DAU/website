@@ -214,6 +214,50 @@ public class CodeforcesSyncServiceTest {
         verify(leetCodeSyncService).syncAllUsers();
     }
 
+    /**
+     * What Codeforces really does, as seen in production: an unknown handle comes
+     * back as HTTP 400 with the JSON envelope in the body, raised by RestTemplate as
+     * an exception. The body used to be discarded, so every bad handle was found by
+     * bisecting (about eight extra requests each) and recorded as "no response".
+     */
+    @Test
+    @DisplayName("A 400 naming the missing handle drops it and retries once, and the run lists it")
+    void syncCodeforcesRatings_http400NamingHandle_retriesOnceAndRecordsIt() {
+        com.cpclub.backend.sync.repository.SyncRunRepository runRepo =
+                mock(com.cpclub.backend.sync.repository.SyncRunRepository.class);
+        when(runRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        // Built before when(): calling another mock inside thenReturn(...) confuses the stubbing.
+        SyncRunRecorder.RunHandle realRun = new SyncRunRecorder(runRepo).start(SyncJob.CF_RATINGS);
+        when(syncRunRecorder.start(SyncJob.CF_RATINGS)).thenReturn(realRun);
+
+        when(userRepository.findByCodeforcesHandleIsNotNull()).thenReturn(List.of(tourist, badHandle));
+        when(restTemplate.getForObject(eq(API + "tourist;not_a_real_handle"), eq(CodeforcesResponse.class)))
+                .thenThrow(org.springframework.web.client.HttpClientErrorException.create(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        "{\"status\":\"FAILED\",\"comment\":\"handles: User with handle not_a_real_handle not found\"}"
+                                .getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        java.nio.charset.StandardCharsets.UTF_8));
+        when(restTemplate.getForObject(eq(API + "tourist"), eq(CodeforcesResponse.class)))
+                .thenReturn(ok(cfUser("tourist", 3900)));
+
+        codeforcesSyncService.syncCodeforcesRatings();
+
+        assertEquals(3900, tourist.getRating());
+        verify(restTemplate, times(2)).getForObject(anyString(), eq(CodeforcesResponse.class));
+
+        org.mockito.ArgumentCaptor<com.cpclub.backend.sync.entity.SyncRun> saved =
+                org.mockito.ArgumentCaptor.forClass(com.cpclub.backend.sync.entity.SyncRun.class);
+        verify(runRepo, atLeastOnce()).save(saved.capture());
+        com.cpclub.backend.sync.entity.SyncRun finished = saved.getValue();
+        assertEquals(1, finished.getMembersOk());
+        assertEquals(1, finished.getMembersFailed());
+        org.junit.jupiter.api.Assertions.assertTrue(
+                finished.getErrorSample().contains("Not found on Codeforces")
+                        && finished.getErrorSample().contains("not_a_real_handle"),
+                finished.getErrorSample());
+    }
+
     @Test
     @DisplayName("A step already running by hand is skipped by the scheduled pipeline, not run twice")
     void syncCodeforcesRatings_skipsStepAlreadyRunning() {
