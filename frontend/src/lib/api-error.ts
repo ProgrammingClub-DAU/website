@@ -14,7 +14,7 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
 
   if (!err.response) {
     return err.code === "ECONNABORTED"
-      ? "The server took too long to answer. It may be waking up after being idle; try again in a minute."
+      ? "The server took too long to answer. It may still finish the work: refresh in a minute. If it was idle, it can take up to two minutes to wake up."
       : "Could not reach the server. Check your connection and try again.";
   }
 

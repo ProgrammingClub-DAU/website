@@ -25,6 +25,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HexFormat;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,6 +86,8 @@ public class CodeforcesAuthorizedClient {
     private static final Pattern MISSING_HANDLE = Pattern.compile("User with handle (\\S+) not found");
     /** Bad handles dropped from one standings call before giving up; each costs one request. */
     private static final int MAX_DROPPED_HANDLES = 25;
+    /** How long a handle Codeforces reported missing is left out of standings calls. */
+    private static final Duration MISSING_HANDLE_TTL = Duration.ofHours(24);
     private static final String ALNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -92,6 +97,12 @@ public class CodeforcesAuthorizedClient {
     private final String apiSecret;
     private final Clock clock;
     private final Supplier<String> randSource;
+    /**
+     * Handles Codeforces said do not exist, lowercased, with when it said so. Without
+     * this, every sync re-learned each bad handle at the cost of one rate-limited
+     * request apiece, which pushed a manual sync past the browser's timeout.
+     */
+    private final Map<String, Instant> knownMissing = new ConcurrentHashMap<>();
     /**
      * Jackson 3 turns on FAIL_ON_TRAILING_TOKENS by default, which treats everything
      * after the first value as an error. Reading one row at a time from a stream is
@@ -173,7 +184,11 @@ public class CodeforcesAuthorizedClient {
         // exist, and names it: "handles: User with handle X not found". One member
         // with a mistyped or renamed handle used to make every sync of every gym
         // contest fail. That handle is dropped and the call re-signed and repeated.
-        List<String> sendable = new ArrayList<>(asStored);
+        Instant now = clock.instant();
+        knownMissing.entrySet().removeIf(e -> e.getValue().plus(MISSING_HANDLE_TTL).isBefore(now));
+        List<String> sendable = asStored.stream()
+                .filter(h -> !knownMissing.containsKey(h.toLowerCase(Locale.ROOT)))
+                .collect(Collectors.toCollection(ArrayList::new));
         for (int dropped = 0; ; dropped++) {
             try {
                 return execute(gymStandingsUri(cfContestId, sendable, headerOnly), wanted, headerOnly);
@@ -186,6 +201,7 @@ public class CodeforcesAuthorizedClient {
                 if (!sendable.removeIf(h -> h.equalsIgnoreCase(bad))) {
                     throw e;
                 }
+                knownMissing.put(bad.toLowerCase(Locale.ROOT), clock.instant());
                 log.warn("Codeforces has no user '{}'; leaving them out of contest {} standings", bad, cfContestId);
             }
         }

@@ -213,6 +213,28 @@ class CodeforcesAuthorizedClientTest {
     }
 
     @Test
+    @DisplayName("A handle reported missing is left out of later syncs from the start")
+    void gymContest_knownMissingHandleIsSkippedNextTime() {
+        ArgumentCaptor<URI> uri = ArgumentCaptor.forClass(URI.class);
+        when(restTemplate.execute(uri.capture(), eq(HttpMethod.GET), isNull(), any(ResponseExtractor.class)))
+                .thenThrow(org.springframework.web.client.HttpClientErrorException.create(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        "{\"status\":\"FAILED\",\"comment\":\"handles: User with handle ghost_handle not found\"}"
+                                .getBytes(StandardCharsets.UTF_8),
+                        StandardCharsets.UTF_8))
+                .thenAnswer(inv -> extract(inv.getArgument(3), fixture()));
+
+        client.contestStandings(102345, List.of("Alice", "ghost_handle"));
+        client.contestStandings(102345, List.of("Alice", "Ghost_Handle"));
+
+        // First sync: failed call + retry. Second sync: one call, ghost never sent.
+        List<URI> sent = uri.getAllValues();
+        assertEquals(3, sent.size());
+        assertFalse(sent.get(2).toString().toLowerCase().contains("ghost"), sent.get(2).toString());
+    }
+
+    @Test
     @DisplayName("A failure that names no handle is not retried")
     void gymContest_otherFailuresAreNotRetried() {
         when(restTemplate.execute(any(URI.class), eq(HttpMethod.GET), isNull(), any(ResponseExtractor.class)))
