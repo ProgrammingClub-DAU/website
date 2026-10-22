@@ -15,6 +15,7 @@ import {
 import { commentsService } from "@/lib/services/comments";
 import { useAuthStore } from "@/store/auth";
 import type { CommentDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 interface CommentThreadProps {
   postId: number | string;
@@ -291,7 +292,7 @@ function CommentCard({
           </Link>
 
           <span className="text-nano font-mono text-fg-subtle">
-            {new Date(comment.createdAt).toLocaleDateString("en-IN", {
+            {serverDate(comment.createdAt).toLocaleDateString("en-IN", {
               month: "short",
               day: "numeric",
               hour: "2-digit",
@@ -437,7 +438,7 @@ function CommentCard({
                     </span>
                   </Link>
                   <span className="text-[10px] font-mono text-fg-subtle">
-                    {new Date(reply.createdAt).toLocaleDateString("en-IN", {
+                    {serverDate(reply.createdAt).toLocaleDateString("en-IN", {
                       month: "short",
                       day: "numeric",
                     })}

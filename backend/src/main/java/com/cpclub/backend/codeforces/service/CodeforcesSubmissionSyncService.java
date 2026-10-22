@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -38,7 +37,11 @@ public class CodeforcesSubmissionSyncService {
     private final UserRepository userRepository;
     private final SyncRunRecorder syncRunRecorder;
 
-    @Transactional
+    /**
+     * Not transactional: a first sync pages through up to a hundred rate-limited
+     * requests, and a transaction around it held one of three pooled connections
+     * for the whole backfill. Each write commits on its own.
+     */
     public void syncMember(User user) {
         if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) {
             return;
@@ -95,7 +98,10 @@ public class CodeforcesSubmissionSyncService {
             user.setCfLastSubmissionId(Math.max(highestIdSeen, cursor));
         }
         user.setCfSyncedAt(LocalDateTime.now(ZoneOffset.UTC));
-        userRepository.save(user);
+        // Only the sync columns: save(user) would write back a profile as it was
+        // when this run loaded it, minutes ago.
+        userRepository.updateCodeforcesSubmissionCursor(
+                user.getId(), user.getCodeforcesHandle(), user.getCfLastSubmissionId(), user.getCfSyncedAt());
     }
 
     public void syncAll() {

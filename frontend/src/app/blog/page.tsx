@@ -15,6 +15,7 @@ import {
 import { blogService } from "@/lib/services/blog";
 import { useAuthStore } from "@/store/auth";
 import type { BlogResponseDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export default function BlogPage() {
   const { isAuthenticated } = useAuthStore();
@@ -195,12 +196,12 @@ export default function BlogPage() {
             const excerpt = plainText.slice(0, 140) + (plainText.length > 140 ? "..." : "");
 
             const dateStr = post.publishedAt
-              ? new Date(post.publishedAt).toLocaleDateString("en-IN", {
+              ? serverDate(post.publishedAt).toLocaleDateString("en-IN", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
                 })
-              : new Date(post.createdAt).toLocaleDateString("en-IN", {
+              : serverDate(post.createdAt).toLocaleDateString("en-IN", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",

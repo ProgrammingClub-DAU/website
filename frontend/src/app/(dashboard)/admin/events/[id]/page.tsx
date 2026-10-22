@@ -37,6 +37,7 @@ import {
   Square,
   UserCheck,
 } from "lucide-react";
+import { serverDate } from "@/lib/utils";
 
 export default function EventAttendeesPage() {
   const params = useParams();
@@ -535,7 +536,7 @@ export default function EventAttendeesPage() {
       key: "addedAt",
       header: "Recorded At",
       className: "text-xs text-fg-muted",
-      render: (a) => (a.addedAt ? new Date(a.addedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"),
+      render: (a) => (a.addedAt ? serverDate(a.addedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"),
     },
     {
       key: "actions",
@@ -627,7 +628,7 @@ export default function EventAttendeesPage() {
       className: "text-xs text-fg-muted font-mono",
       render: (r) =>
         r.registeredAt
-          ? new Date(r.registeredAt).toLocaleDateString("en-IN", {
+          ? serverDate(r.registeredAt).toLocaleDateString("en-IN", {
               day: "numeric",
               month: "short",
               hour: "2-digit",
@@ -1254,7 +1255,7 @@ export default function EventAttendeesPage() {
                         <div className="flex items-center justify-between text-micro text-fg-muted pt-2 border-t border-border">
                           <span>{r.phoneNumber ?? "No Phone"}</span>
                           <span>
-                            {r.registeredAt ? new Date(r.registeredAt).toLocaleDateString() : ""}
+                            {r.registeredAt ? serverDate(r.registeredAt).toLocaleDateString() : ""}
                           </span>
                         </div>
                       </div>

@@ -11,4 +11,7 @@ import java.util.Optional;
 @Repository
 public interface PlatformDailyTotalRepository extends JpaRepository<PlatformDailyTotal, Long> {
     Optional<PlatformDailyTotal> findByUserAndPlatformAndCapturedOn(User user, String platform, LocalDate capturedOn);
+
+    /** Baselines from a previous LeetCode account would make every period total wrong. */
+    void deleteByUserAndPlatform(User user, String platform);
 }

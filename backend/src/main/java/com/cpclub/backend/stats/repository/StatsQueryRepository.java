@@ -31,6 +31,14 @@ public class StatsQueryRepository {
     public record BaselineResult(int totalSolved, Integer easySolved, Integer mediumSolved, Integer hardSolved) {}
     public record LeaderboardQueryResult(List<StatsLeaderboardEntryDto> entries, long totalElements) {}
 
+    /** Club-role filter and the email-verification gate (D16), shared by the member-scoped boards. */
+    private static final String MEMBER_FILTER = """
+            (:filter = 'ALL'
+                   OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
+                   OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
+                   OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
+                  AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)""";
+
     private static final RowMapper<StatsLeaderboardEntryDto> LEADERBOARD_ROW_MAPPER = (rs, rowNum) -> {
         String roleStr = rs.getString("club_role");
         ClubRole role = null;
@@ -103,18 +111,35 @@ public class StatsQueryRepository {
         };
     }
 
+    /**
+     * Who appears on the SOLVED and CONTESTS boards.
+     *
+     * <p>Every member who has linked the platform in question, including those whose
+     * count for the period is a genuine zero; they share the last rank. The boards
+     * used to drop anyone at zero, which -- with the contest-history sync failing for
+     * half the club -- read as "the leaderboard only shows some members".</p>
+     *
+     * <p>Members with <em>no data</em> are still omitted, never shown as 0: no handle
+     * for the platform, a LeetCode account never synced, or no LeetCode baseline on or
+     * before the period start (the response carries {@code trackingSince} for that).</p>
+     */
     private String buildSolvedCte(StatsPlatform platform, StatsPeriod period) {
         if (platform == StatsPlatform.CODEFORCES) {
             return """
                 WITH filtered_users AS (
                     SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role
                     FROM users u
-                    WHERE (:filter = 'ALL'
-                       OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                       OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                       OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                      AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                    WHERE %1$s
                       AND u.codeforces_handle IS NOT NULL
+                ),
+                cf_counts AS (
+                    SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_val
+                    FROM cf_solves s
+                    JOIN cf_problems p ON s.problem_id = p.id
+                    WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
+                      AND s.first_ac_at >= :startUtc
+                      AND s.first_ac_at < :endUtc
+                    GROUP BY s.user_id
                 ),
                 user_solves AS (
                     SELECT fu.id AS user_id,
@@ -123,15 +148,9 @@ public class StatsQueryRepository {
                            fu.leetcode_handle,
                            fu.avatar_url,
                            fu.club_role,
-                           COUNT(DISTINCT s.problem_id) AS metric_value
+                           COALESCE(c.cf_val, 0) AS metric_value
                     FROM filtered_users fu
-                    JOIN cf_solves s ON fu.id = s.user_id
-                    JOIN cf_problems p ON s.problem_id = p.id
-                    WHERE (p.contest_id IS NULL OR p.contest_id < 100000)
-                      AND s.first_ac_at >= :startUtc
-                      AND s.first_ac_at < :endUtc
-                    GROUP BY fu.id, fu.name, fu.codeforces_handle, fu.leetcode_handle, fu.avatar_url, fu.club_role
-                    HAVING COUNT(DISTINCT s.problem_id) > 0
+                    LEFT JOIN cf_counts c ON fu.id = c.user_id
                 ),
                 ranked AS (
                     SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -140,7 +159,7 @@ public class StatsQueryRepository {
                            RANK() OVER (ORDER BY metric_value DESC) AS placement
                     FROM user_solves
                 )
-                """;
+                """.formatted(MEMBER_FILTER);
         } else if (platform == StatsPlatform.LEETCODE) {
             if (period == StatsPeriod.ALL_TIME) {
                 return """
@@ -153,14 +172,9 @@ public class StatsQueryRepository {
                                u.club_role,
                                u.leetcode_total_solved AS metric_value
                         FROM users u
-                        WHERE (:filter = 'ALL'
-                           OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                           OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                           OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                          AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                        WHERE %1$s
                           AND u.leetcode_handle IS NOT NULL
                           AND u.leetcode_total_solved IS NOT NULL
-                          AND u.leetcode_total_solved > 0
                     ),
                     ranked AS (
                         SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -169,17 +183,13 @@ public class StatsQueryRepository {
                                RANK() OVER (ORDER BY metric_value DESC) AS placement
                         FROM filtered_users
                     )
-                    """;
+                    """.formatted(MEMBER_FILTER);
             } else {
                 return """
                     WITH filtered_users AS (
                         SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role, u.leetcode_total_solved
                         FROM users u
-                        WHERE (:filter = 'ALL'
-                           OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                           OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                           OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                          AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                        WHERE %1$s
                           AND u.leetcode_handle IS NOT NULL
                           AND u.leetcode_total_solved IS NOT NULL
                     ),
@@ -203,10 +213,9 @@ public class StatsQueryRepository {
                                fu.leetcode_handle,
                                fu.avatar_url,
                                fu.club_role,
-                               (fu.leetcode_total_solved - lb.baseline_solved) AS metric_value
+                               GREATEST(0, fu.leetcode_total_solved - lb.baseline_solved) AS metric_value
                         FROM filtered_users fu
                         JOIN latest_baselines lb ON fu.id = lb.user_id
-                        WHERE (fu.leetcode_total_solved - lb.baseline_solved) > 0
                     ),
                     ranked AS (
                         SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -215,7 +224,7 @@ public class StatsQueryRepository {
                                RANK() OVER (ORDER BY metric_value DESC) AS placement
                         FROM user_diffs
                     )
-                    """;
+                    """.formatted(MEMBER_FILTER);
             }
         } else {
             // OVERALL
@@ -223,13 +232,11 @@ public class StatsQueryRepository {
                 return """
                     WITH filtered_users AS (
                         SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role,
-                               COALESCE(u.leetcode_total_solved, 0) AS lc_val
+                               u.leetcode_total_solved
                         FROM users u
-                        WHERE (:filter = 'ALL'
-                           OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                           OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                           OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                          AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                        WHERE %1$s
+                          AND (u.codeforces_handle IS NOT NULL
+                               OR (u.leetcode_handle IS NOT NULL AND u.leetcode_total_solved IS NOT NULL))
                     ),
                     cf_counts AS (
                         SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_val
@@ -247,10 +254,9 @@ public class StatsQueryRepository {
                                fu.leetcode_handle,
                                fu.avatar_url,
                                fu.club_role,
-                               (COALESCE(c.cf_val, 0) + fu.lc_val) AS metric_value
+                               (COALESCE(c.cf_val, 0) + COALESCE(fu.leetcode_total_solved, 0)) AS metric_value
                         FROM filtered_users fu
                         LEFT JOIN cf_counts c ON fu.id = c.user_id
-                        WHERE (COALESCE(c.cf_val, 0) + fu.lc_val) > 0
                     ),
                     ranked AS (
                         SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -259,17 +265,13 @@ public class StatsQueryRepository {
                                RANK() OVER (ORDER BY metric_value DESC) AS placement
                         FROM user_totals
                     )
-                    """;
+                    """.formatted(MEMBER_FILTER);
             } else {
                 return """
                     WITH filtered_users AS (
                         SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role, u.leetcode_total_solved
                         FROM users u
-                        WHERE (:filter = 'ALL'
-                           OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                           OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                           OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                          AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                        WHERE %1$s
                     ),
                     cf_counts AS (
                         SELECT s.user_id, COUNT(DISTINCT s.problem_id) AS cf_val
@@ -306,9 +308,8 @@ public class StatsQueryRepository {
                         FROM filtered_users fu
                         LEFT JOIN cf_counts c ON fu.id = c.user_id
                         LEFT JOIN latest_baselines lb ON fu.id = lb.user_id
-                        WHERE (COALESCE(c.cf_val, 0) + CASE WHEN lb.baseline_solved IS NOT NULL AND fu.leetcode_total_solved IS NOT NULL
-                                                            THEN GREATEST(0, fu.leetcode_total_solved - lb.baseline_solved)
-                                                            ELSE 0 END) > 0
+                        WHERE fu.codeforces_handle IS NOT NULL
+                           OR (lb.baseline_solved IS NOT NULL AND fu.leetcode_total_solved IS NOT NULL)
                     ),
                     ranked AS (
                         SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -317,7 +318,7 @@ public class StatsQueryRepository {
                                RANK() OVER (ORDER BY metric_value DESC) AS placement
                         FROM user_totals
                     )
-                    """;
+                    """.formatted(MEMBER_FILTER);
             }
         }
     }
@@ -327,16 +328,20 @@ public class StatsQueryRepository {
             WITH filtered_users AS (
                 SELECT u.id, u.name, u.codeforces_handle, u.leetcode_handle, u.avatar_url, u.club_role
                 FROM users u
-                WHERE (:filter = 'ALL'
-                   OR (:filter = 'CORE' AND u.club_role IN ('CONVENOR', 'DEPUTY_CONVENOR', 'CORE', 'ASSOCIATE_CORE'))
-                   OR (:filter = 'BATCH_REP' AND u.club_role = 'BATCH_REPRESENTATIVE')
-                   OR (:filter = 'STUDENTS' AND (u.club_role = 'STUDENT' OR u.club_role IS NULL)))
-                  AND (:requireEmailVerification = false OR u.email_verified_at IS NOT NULL)
+                WHERE %1$s
                   AND (
                       (:platform = 'CODEFORCES' AND u.codeforces_handle IS NOT NULL) OR
                       (:platform = 'LEETCODE' AND u.leetcode_handle IS NOT NULL) OR
                       (:platform = 'OVERALL' AND (u.codeforces_handle IS NOT NULL OR u.leetcode_handle IS NOT NULL))
                   )
+            ),
+            contest_counts AS (
+                SELECT cp.user_id, COUNT(*) AS contest_val
+                FROM contest_participations cp
+                WHERE cp.started_at >= :startUtc
+                  AND cp.started_at < :endUtc
+                  AND (:platform = 'OVERALL' OR cp.platform = :platform)
+                GROUP BY cp.user_id
             ),
             user_contests AS (
                 SELECT fu.id AS user_id,
@@ -345,14 +350,9 @@ public class StatsQueryRepository {
                        fu.leetcode_handle,
                        fu.avatar_url,
                        fu.club_role,
-                       COUNT(*) AS metric_value
+                       COALESCE(cc.contest_val, 0) AS metric_value
                 FROM filtered_users fu
-                JOIN contest_participations cp ON fu.id = cp.user_id
-                WHERE cp.started_at >= :startUtc
-                  AND cp.started_at < :endUtc
-                  AND (:platform = 'OVERALL' OR cp.platform = :platform)
-                GROUP BY fu.id, fu.name, fu.codeforces_handle, fu.leetcode_handle, fu.avatar_url, fu.club_role
-                HAVING COUNT(*) > 0
+                LEFT JOIN contest_counts cc ON fu.id = cc.user_id
             ),
             ranked AS (
                 SELECT user_id, name, codeforces_handle, leetcode_handle, avatar_url, club_role,
@@ -361,7 +361,7 @@ public class StatsQueryRepository {
                        RANK() OVER (ORDER BY metric_value DESC) AS placement
                 FROM user_contests
             )
-            """;
+            """.formatted(MEMBER_FILTER);
     }
 
     private String buildAvgProblemRatingCte() {

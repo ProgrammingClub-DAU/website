@@ -1,1 +1,0 @@
-import lombok.Getter; import lombok.Setter; @Getter @Setter public class TestLombok { private boolean isPlatformCreator; public static void main(String[] args) { java.util.Arrays.stream(TestLombok.class.getDeclaredMethods()).map(java.lang.reflect.Method::getName).forEach(System.out::println); } }

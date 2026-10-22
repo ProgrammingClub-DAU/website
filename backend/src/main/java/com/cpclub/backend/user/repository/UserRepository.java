@@ -7,10 +7,13 @@ import com.cpclub.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -236,4 +239,40 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE " +
            "(:query IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.codeforcesHandle) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<User> searchUsers(@Param("query") String query, Pageable pageable);
+
+    /** Case-insensitive twin of {@link #existsByLeetcodeHandle}; LeetCode usernames are not case-sensitive. */
+    Boolean existsByLeetcodeHandleIgnoreCase(String leetcodeHandle);
+
+    // ── Sync writes ──────────────────────────────────────────────────────────
+    //
+    // The syncs load every member at the start of a run and reach each one up to
+    // several minutes later. Saving that loaded entity wrote back every column as
+    // it was at load time, so a member who edited their profile meanwhile lost the
+    // edit -- and one who changed a handle had the old handle written back. These
+    // touch only the columns a sync owns, and only while the handle the data was
+    // fetched for is still the member's handle.
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.rating = :rating, u.maxRating = :maxRating "
+            + "WHERE u.id = :id AND u.codeforcesHandle = :handle")
+    int updateCodeforcesRating(@Param("id") Long id, @Param("handle") String handle,
+                               @Param("rating") Integer rating, @Param("maxRating") Integer maxRating);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.cfLastSubmissionId = :cursor, u.cfSyncedAt = :syncedAt "
+            + "WHERE u.id = :id AND u.codeforcesHandle = :handle")
+    int updateCodeforcesSubmissionCursor(@Param("id") Long id, @Param("handle") String handle,
+                                         @Param("cursor") Long cursor, @Param("syncedAt") LocalDateTime syncedAt);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.leetcodeRating = :rating, u.leetcodeTotalSolved = :total, "
+            + "u.leetcodeEasySolved = :easy, u.leetcodeMediumSolved = :medium, u.leetcodeHardSolved = :hard, "
+            + "u.leetcodeSyncedAt = :syncedAt WHERE u.id = :id AND u.leetcodeHandle = :handle")
+    int updateLeetcodeStats(@Param("id") Long id, @Param("handle") String handle,
+                            @Param("rating") Integer rating, @Param("total") Integer total,
+                            @Param("easy") Integer easy, @Param("medium") Integer medium,
+                            @Param("hard") Integer hard, @Param("syncedAt") LocalDateTime syncedAt);
 }

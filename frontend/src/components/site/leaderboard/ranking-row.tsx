@@ -48,21 +48,25 @@ export const RankingRow: React.FC<RankingRowProps> = ({
     );
   };
 
-  // Sparkline generator
-  const history = entry.contestHistory && entry.contestHistory.length > 0 ? entry.contestHistory : [1200, 1220, 1210, 1250, 1280, 1270, 1310, 1350, 1340, entry.rating ?? 1360];
-  const minVal = Math.min(...history);
-  const maxVal = Math.max(...history);
+  // Sparkline of the member's real recent contests. Nothing is drawn for fewer
+  // than two: there used to be a made-up fallback curve here.
+  const history = entry.contestHistory ?? [];
+  const hasTrend = history.length >= 2;
+  const minVal = hasTrend ? Math.min(...history) : 0;
+  const maxVal = hasTrend ? Math.max(...history) : 0;
   const range = Math.max(maxVal - minVal, 1);
-  const points = history
-    .map((val, idx) => {
-      const x = (idx / (history.length - 1)) * 70;
-      const y = 24 - ((val - minVal) / range) * 20;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const points = hasTrend
+    ? history
+        .map((val, idx) => {
+          const x = (idx / (history.length - 1)) * 70;
+          const y = 24 - ((val - minVal) / range) * 20;
+          return `${x},${y}`;
+        })
+        .join(" ")
+    : "";
 
-  const isPositiveChange = (entry.ratingChange ?? 0) > 0;
-  const isZeroChange = (entry.ratingChange ?? 0) === 0;
+  const change = entry.ratingChange;
+  const hasChange = change != null;
 
   return (
     <motion.div
@@ -72,8 +76,17 @@ export const RankingRow: React.FC<RankingRowProps> = ({
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.25 }}
       whileHover={{ y: -2 }}
-      className="group relative h-[62px] w-full rounded-xl overflow-hidden border border-white/[0.08] transition-all duration-200 hover:border-white/30 hover:shadow-[0_4px_24px_rgba(0,0,0,0.5)] cursor-pointer"
+      className="group relative h-[62px] w-full rounded-xl overflow-hidden border border-white/[0.08] transition-all duration-200 hover:border-white/30 hover:shadow-[0_4px_24px_rgba(0,0,0,0.5)] cursor-pointer focus-visible:outline-2 focus-visible:outline-cyan-400"
+      role="button"
+      tabIndex={0}
+      aria-label={`${entry.name}, rank ${rankNum}. Open banner locker`}
       onClick={() => onSelectMember?.(entry)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelectMember?.(entry);
+        }
+      }}
     >
       {/* Background Banner Graphic */}
       <BannerGraphic banner={banner} showEffects={false} withScrim={true} />
@@ -125,37 +138,49 @@ export const RankingRow: React.FC<RankingRowProps> = ({
           </div>
         </div>
 
-        {/* Middle: 10-Contest Sparkline */}
-        <div className="hidden lg:flex items-center gap-2 px-2 shrink-0">
-          <svg className="w-[70px] h-[24px] overflow-visible" aria-label="Rating trend sparkline">
-            <polyline
-              fill="none"
-              stroke={banner.colors.accent}
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={points}
-              opacity="0.85"
-            />
-          </svg>
-          <div className="flex items-center text-nano font-mono tabular-nums">
-            {isZeroChange ? (
-              <span className="text-white/40 flex items-center">
-                <Minus className="size-2.5 mr-0.5" />0
-              </span>
-            ) : isPositiveChange ? (
-              <span className="text-emerald-400 flex items-center">
-                <TrendingUp className="size-3 mr-0.5" />
-                +{entry.ratingChange}
-              </span>
-            ) : (
-              <span className="text-rose-400 flex items-center">
-                <TrendingDown className="size-3 mr-0.5" />
-                {entry.ratingChange}
-              </span>
+        {/* Middle: real recent-contest trend and last change */}
+        {(hasTrend || hasChange) && (
+          <div className="hidden lg:flex items-center gap-2 px-2 shrink-0">
+            {hasTrend && (
+              <svg
+                className="w-[70px] h-[24px] overflow-visible"
+                role="img"
+                aria-label={`Rating over the last ${history.length} contests`}
+              >
+                <polyline
+                  fill="none"
+                  stroke={banner.colors.accent}
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={points}
+                  opacity="0.85"
+                />
+              </svg>
+            )}
+            {hasChange && (
+              <div
+                className="flex items-center text-nano font-mono tabular-nums"
+                title="Rating change in the latest rated contest"
+              >
+                {change === 0 ? (
+                  <span className="text-white/40 flex items-center">
+                    <Minus className="size-2.5 mr-0.5" />0
+                  </span>
+                ) : change > 0 ? (
+                  <span className="text-emerald-400 flex items-center">
+                    <TrendingUp className="size-3 mr-0.5" />+{change}
+                  </span>
+                ) : (
+                  <span className="text-rose-400 flex items-center">
+                    <TrendingDown className="size-3 mr-0.5" />
+                    {change}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        </div>
+        )}
 
         {/* Right: Rating & Tier */}
         <div className="text-right shrink-0">

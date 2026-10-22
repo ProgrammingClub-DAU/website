@@ -46,6 +46,7 @@ import {
   UserCheck,
   Search,
 } from "lucide-react";
+import { serverDate } from "@/lib/utils";
 
 const ALL_CLUB_ROLES: ClubRole[] = [
   "CONVENOR",
@@ -1519,7 +1520,7 @@ function MemberGalleryManager() {
                     {photo.caption || `Batch ${photo.batchYear}`}
                   </p>
                   <p className="text-micro text-fg-subtle">
-                    {new Date(photo.uploadedAt).toLocaleDateString()}
+                    {serverDate(photo.uploadedAt).toLocaleDateString()}
                   </p>
                 </div>
                 <button
@@ -1800,7 +1801,7 @@ function EventGalleryManager() {
                 <div className="p-2.5">
                   <p className="truncate text-xs font-medium text-foreground">{photo.caption || "—"}</p>
                   <p className="text-micro text-fg-subtle">
-                    {new Date(photo.uploadedAt).toLocaleDateString()}
+                    {serverDate(photo.uploadedAt).toLocaleDateString()}
                   </p>
                 </div>
                 <button

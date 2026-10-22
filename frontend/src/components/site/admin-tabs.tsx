@@ -32,8 +32,17 @@ export function AdminTabs({ activeTab, onChange, className }: AdminTabsProps) {
     { id: "blogs", label: "Blog Reviews", icon: FileText },
   ];
 
+  // One scrolling row on phones -- eight wrapped tabs filled the first screen
+  // before any admin content -- and wrapped rows from md up.
   return (
-    <div className={cn("flex flex-wrap gap-2 border-b border-border pb-4", className)}>
+    <div
+      role="tablist"
+      aria-label="Admin sections"
+      className={cn(
+        "-mx-4 flex gap-2 overflow-x-auto border-b border-border px-4 pb-4 no-scrollbar md:mx-0 md:flex-wrap md:overflow-visible md:px-0",
+        className
+      )}
+    >
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -41,9 +50,11 @@ export function AdminTabs({ activeTab, onChange, className }: AdminTabsProps) {
           <button
             key={tab.id}
             type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "inline-flex items-center gap-2 rounded-control px-4 py-2 text-sm font-medium transition-all",
+              "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control px-4 py-2 text-sm font-medium transition-all",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border bg-surface-2 text-fg-muted hover:border-hairline-strong hover:text-foreground"

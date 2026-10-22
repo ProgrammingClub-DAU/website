@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import com.cpclub.backend.sync.service.SyncRunRecorder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,6 +52,9 @@ class LeetCodeSyncServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private SyncRunRecorder syncRunRecorder;
+
     @InjectMocks
     private LeetCodeSyncService leetCodeSyncService;
 
@@ -63,6 +68,7 @@ class LeetCodeSyncServiceTest {
         // unthrottled real limiter keeps the acquire() call on the tested path.
         ReflectionTestUtils.setField(
                 leetCodeSyncService, "leetcodeRateLimiter", RateLimiter.create(Double.MAX_VALUE));
+        lenient().when(syncRunRecorder.start(any())).thenReturn(SyncRunRecorder.RunHandle.detached());
     }
 
     private static LeetCodeGraphQLResponse rated(double rating) {
@@ -83,7 +89,7 @@ class LeetCodeSyncServiceTest {
         leetCodeSyncService.syncSingleUser(alice);
 
         assertEquals(1523, alice.getLeetcodeRating());
-        verify(userRepository).save(alice);
+        verify(userRepository).updateLeetcodeStats(eq(1L), eq("alice_lc"), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -110,7 +116,7 @@ class LeetCodeSyncServiceTest {
         leetCodeSyncService.syncSingleUser(alice);
 
         verifyNoInteractions(restTemplate);
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).updateLeetcodeStats(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -127,14 +133,31 @@ class LeetCodeSyncServiceTest {
     @DisplayName("A member who has never entered a contest is recorded as 0")
     void sync_noContest() {
         // LeetCode answers a valid handle with no contest history by returning
-        // data with a null userContestRanking. That is a real answer, so it
-        // writes 0 rather than leaving the old rating in place.
-        respondWith(new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(null, null)));
+        // data with a null userContestRanking but a matchedUser. That is a real
+        // answer, so it writes 0 rather than leaving the old rating in place.
+        respondWith(new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(null,
+                new LeetCodeGraphQLResponse.MatchedUser(new LeetCodeGraphQLResponse.SubmitStats(List.of(
+                        new LeetCodeGraphQLResponse.AcSubmissionNum("All", 42)))))));
 
         leetCodeSyncService.syncSingleUser(alice);
 
         assertEquals(0, alice.getLeetcodeRating());
-        verify(userRepository).save(alice);
+        assertEquals(42, alice.getLeetcodeTotalSolved());
+        verify(userRepository).updateLeetcodeStats(eq(1L), eq("alice_lc"), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("A username LeetCode does not know is a failure, not an unrated member")
+    void sync_unknownUser() {
+        // No ranking and no matchedUser: what LeetCode returns for a username that
+        // does not exist. It used to be stored as a successful sync with rating 0.
+        respondWith(new LeetCodeGraphQLResponse(new LeetCodeGraphQLResponse.Data(null, null)));
+
+        boolean updated = leetCodeSyncService.syncSingleUser(alice);
+
+        assertEquals(false, updated);
+        assertEquals(1400, alice.getLeetcodeRating());
+        verify(userRepository, never()).updateLeetcodeStats(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -145,7 +168,7 @@ class LeetCodeSyncServiceTest {
         leetCodeSyncService.syncSingleUser(alice);
 
         assertEquals(1400, alice.getLeetcodeRating());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).updateLeetcodeStats(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -157,7 +180,7 @@ class LeetCodeSyncServiceTest {
         assertDoesNotThrow(() -> leetCodeSyncService.syncSingleUser(alice));
 
         assertEquals(1400, alice.getLeetcodeRating());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).updateLeetcodeStats(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -173,7 +196,7 @@ class LeetCodeSyncServiceTest {
 
         assertEquals(1400, alice.getLeetcodeRating(), "the failed member keeps their rating");
         assertEquals(1813, bob.getLeetcodeRating(), "the next member is still updated");
-        verify(userRepository, never()).save(alice);
-        verify(userRepository).save(bob);
+        verify(userRepository, never()).updateLeetcodeStats(eq(1L), any(), any(), any(), any(), any(), any(), any());
+        verify(userRepository).updateLeetcodeStats(eq(bob.getId()), eq(bob.getLeetcodeHandle()), any(), any(), any(), any(), any(), any());
     }
 }

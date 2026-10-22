@@ -7,8 +7,6 @@ import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import com.cpclub.backend.sync.entity.SyncJob;
-import com.cpclub.backend.sync.event.SyncTriggerEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -63,15 +61,9 @@ public class MemberScoreService {
             log.warn("Could not check/initialize member scores on startup: {}", e.getMessage());
         }
     }
-    @EventListener
-    public void onSyncTrigger(SyncTriggerEvent event) {
-        if (event.getJob() == SyncJob.CF_SUBMISSIONS 
-                || event.getJob() == SyncJob.CF_CONTESTS 
-                || event.getJob() == SyncJob.LC_TOTALS) {
-            log.info("Recomputing member scores in response to sync job: {}", event.getJob());
-            computeScores();
-        }
-    }
+    // Manual syncs recompute scores once the job has finished -- see
+    // SyncJobDispatcher. This used to listen for the trigger event itself, which
+    // ran alongside the sync rather than after it and scored the old data.
 
     @Transactional
     public int computeScores() {

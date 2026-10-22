@@ -32,6 +32,9 @@ interface LeaderboardRow {
   maxRating?: number | null;
   isPlatformCreator?: boolean;
   platformCreator?: boolean;
+  /** New rating after each of the last rated contests on this platform, oldest first. */
+  recentRatings?: number[];
+  lastRatingChange?: number | null;
 }
 
 interface PagedLeaderboardResponse {
@@ -39,22 +42,6 @@ interface PagedLeaderboardResponse {
 }
 
 function toEntry(row: LeaderboardRow): LeaderboardEntry {
-  const baseRating = row.rating ?? 1200;
-  // Deterministic 10-point sparkline based on member ID and current rating
-  const seed = (row.userId * 17) % 50;
-  const pseudoHistory = [
-    baseRating - 45 + seed,
-    baseRating - 30 + (seed % 20),
-    baseRating - 15 - (seed % 10),
-    baseRating - 25 + (seed % 15),
-    baseRating - 10 + (seed % 25),
-    baseRating - 5 - (seed % 12),
-    baseRating + 10 - (seed % 18),
-    baseRating + 5 + (seed % 14),
-    baseRating - 15 + (seed % 8),
-    baseRating,
-  ];
-
   const defaultRankBanner =
     row.rank === 1 ? "rank-gold" : row.rank === 2 ? "rank-silver" : row.rank === 3 ? "rank-bronze" : null;
 
@@ -71,8 +58,10 @@ function toEntry(row: LeaderboardRow): LeaderboardEntry {
     rankBannerId: row.rankBannerId ?? defaultRankBanner,
     activeBannerId: row.activeBannerId ?? (defaultRankBanner ?? row.equippedBannerId ?? "rookie"),
     maxRating: row.maxRating ?? row.rating,
-    contestHistory: pseudoHistory,
-    ratingChange: (row.userId % 3 === 0 ? -1 : 1) * (12 + (row.userId % 28)),
+    // Real contest history from the backend. This used to be a sparkline and a
+    // "+23" generated from the member's id: invented numbers shown as their trend.
+    contestHistory: row.recentRatings ?? [],
+    ratingChange: row.lastRatingChange ?? null,
     isPlatformCreator: row.isPlatformCreator ?? row.platformCreator ?? false,
   };
 }

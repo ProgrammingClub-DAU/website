@@ -17,6 +17,7 @@ import {
   Award,
   CalendarCheck,
   Target,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { leaderboardService } from "@/lib/services/leaderboard";
@@ -63,6 +64,14 @@ interface LeaderboardDashboardProps {
   initialEntries?: LeaderboardEntry[];
 }
 
+/** Rows shown before "Load more", on both the rating and the stats boards. */
+const PAGE_STEP = 50;
+/**
+ * Stats boards are fetched whole. The request used to ask for 100 rows, so any
+ * board with more eligible members silently stopped at the 100th.
+ */
+const STATS_FETCH_SIZE = 2000;
+
 export default function LeaderboardDashboard({ initialEntries = [] }: LeaderboardDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,11 +86,15 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   // Tab State
   const [activeMetric, setActiveMetric] = useState<MetricTabKey>(urlMetric);
 
-  // Rating Leaderboard State
-  const [ratingPlatform, setRatingPlatform] = useState<LeaderboardPlatform>("CODEFORCES");
+  // Rating Leaderboard State. The platform is read from the URL too, so a shared
+  // ?platform=LEETCODE link opens the LeetCode board rather than Codeforces.
+  const [ratingPlatform, setRatingPlatform] = useState<LeaderboardPlatform>(
+    urlMetric === "RATING" && urlPlatform === "LEETCODE" ? "LEETCODE" : "CODEFORCES"
+  );
   const [roleFilter, setRoleFilter] = useState<LeaderboardFilter>(urlFilter);
   const [ratingEntries, setRatingEntries] = useState<LeaderboardEntry[]>(initialEntries);
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
 
   // Stats Leaderboard State
   const [statsPlatform, setStatsPlatform] = useState<StatsPlatform>(
@@ -92,20 +105,25 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
   );
   const [statsResponse, setStatsResponse] = useState<StatsLeaderboardResponse | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMemberForLocker, setSelectedMemberForLocker] = useState<LeaderboardEntry | null>(null);
   const [isLockerOpen, setIsLockerOpen] = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
-  const [displayLimit, setDisplayLimit] = useState(50);
+  const [displayLimit, setDisplayLimit] = useState(PAGE_STEP);
+  const [statsDisplayLimit, setStatsDisplayLimit] = useState(PAGE_STEP);
 
-  // Synchronize URL with active controls
+  // Synchronize URL with active controls. platformVal is the rating platform on the
+  // RATING tab and the stats platform elsewhere; it used to read the rating
+  // platform from a stale closure, so switching to LeetCode wrote CODEFORCES.
   const updateUrl = useCallback(
     (metric: MetricTabKey, platformVal: string, periodVal: string, filterVal: string) => {
       const p = new URLSearchParams();
       if (metric !== "RATING") p.set("metric", metric);
       if (metric === "RATING") {
-        if (ratingPlatform !== "CODEFORCES") p.set("platform", ratingPlatform);
+        if (platformVal !== "CODEFORCES") p.set("platform", platformVal);
       } else {
         if (platformVal !== "OVERALL") p.set("platform", platformVal);
         if (periodVal !== "ALL_TIME") p.set("period", periodVal);
@@ -115,7 +133,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       const qs = p.toString();
       router.replace(`/leaderboard${qs ? `?${qs}` : ""}`, { scroll: false });
     },
-    [ratingPlatform, router]
+    [router]
   );
 
   // Fetch Rating Leaderboard
@@ -123,17 +141,22 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     if (activeMetric !== "RATING") return;
     let ignore = false;
     setRatingLoading(true);
+    setRatingError(null);
 
     leaderboardService
       .getLeaderboard(ratingPlatform, roleFilter)
       .then((data) => {
         if (!ignore) {
           setRatingEntries(data);
+          setDisplayLimit(PAGE_STEP);
           setLastFetchedAt(new Date());
         }
       })
       .catch((err) => {
-        if (!ignore) console.error("Failed to load rating leaderboard:", err);
+        if (!ignore) {
+          console.error("Failed to load rating leaderboard:", err);
+          setRatingError("The leaderboard could not be loaded. The server may be waking up.");
+        }
       })
       .finally(() => {
         if (!ignore) setRatingLoading(false);
@@ -142,13 +165,14 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     return () => {
       ignore = true;
     };
-  }, [activeMetric, ratingPlatform, roleFilter]);
+  }, [activeMetric, ratingPlatform, roleFilter, reloadKey]);
 
   // Fetch Stats Leaderboard
   useEffect(() => {
     if (activeMetric === "RATING") return;
     let ignore = false;
     setStatsLoading(true);
+    setStatsError(null);
 
     // Enforce business rules
     const effectivePlatform: StatsPlatform =
@@ -172,16 +196,21 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
         period: effectivePeriod,
         filter: roleFilter,
         page: 0,
-        size: 100,
+        size: STATS_FETCH_SIZE,
       })
       .then((res) => {
         if (!ignore) {
           setStatsResponse(res);
+          setStatsDisplayLimit(PAGE_STEP);
           setLastFetchedAt(new Date());
         }
       })
       .catch((err) => {
-        if (!ignore) console.error("Failed to load stats leaderboard:", err);
+        if (!ignore) {
+          console.error("Failed to load stats leaderboard:", err);
+          setStatsResponse(null);
+          setStatsError("This board could not be loaded. The server may be waking up.");
+        }
       })
       .finally(() => {
         if (!ignore) setStatsLoading(false);
@@ -190,7 +219,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     return () => {
       ignore = true;
     };
-  }, [activeMetric, statsPlatform, statsPeriod, roleFilter]);
+  }, [activeMetric, statsPlatform, statsPeriod, roleFilter, reloadKey]);
 
   // Handle banner equip callback
   const handleBannerEquipped = (newBannerId: string) => {
@@ -221,9 +250,9 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     });
   }, [ratingEntries, searchQuery]);
 
-  const sortedRatingEntries = useMemo(() => {
-    return [...filteredRatingEntries].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-  }, [filteredRatingEntries]);
+  // The server already ranks the board, ties included; it is not re-sorted here.
+  const sortedRatingEntries = filteredRatingEntries;
+  const isSearching = searchQuery.trim().length > 0;
 
   // Client-side search filtering for stats entries
   const filteredStatsEntries = useMemo(() => {
@@ -239,12 +268,22 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
     });
   }, [statsResponse, searchQuery]);
 
-  // Podium splits
-  const top1 = sortedRatingEntries[0];
-  const top2 = sortedRatingEntries[1];
-  const top3 = sortedRatingEntries[2];
-  const rank4Onwards = sortedRatingEntries.slice(3, displayLimit);
-  const hasMore = sortedRatingEntries.length > displayLimit;
+  // Podium: the first three *rated* members, and only when not searching. A search
+  // used to put whoever matched onto the podium as #1, #2 and #3, and number the
+  // rest from #4 -- the ranks shown were positions in the search result.
+  const podium = isSearching
+    ? []
+    : sortedRatingEntries.slice(0, 3).filter((e) => e.rating != null && e.rating > 0);
+  const [top1, top2, top3] = podium;
+  // The club's actual #1, whatever the search box holds.
+  const spotlightMember = ratingEntries.find((e) => e.rating != null && e.rating > 0) ?? null;
+  const listEntries = sortedRatingEntries.slice(podium.length);
+  const visibleListEntries = listEntries.slice(0, displayLimit);
+  const hasMore = listEntries.length > displayLimit;
+
+  const allStatsEntries = filteredStatsEntries;
+  const visibleStatsEntries = allStatsEntries.slice(0, statsDisplayLimit);
+  const hasMoreStats = allStatsEntries.length > statsDisplayLimit;
 
   // Club stats
   const clubStats = useMemo(() => {
@@ -267,7 +306,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
   const handleTabChange = (tab: MetricTabKey) => {
     setActiveMetric(tab);
-    updateUrl(tab, statsPlatform, statsPeriod, roleFilter);
+    updateUrl(tab, tab === "RATING" ? ratingPlatform : statsPlatform, statsPeriod, roleFilter);
   };
 
   return (
@@ -280,6 +319,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
             <button
               key={tab.key}
               type="button"
+              aria-pressed={isActive}
               onClick={() => handleTabChange(tab.key)}
               className={`flex items-center gap-2 rounded-control px-4 py-2 font-mono text-label tracking-caps uppercase whitespace-nowrap transition-all ${
                 isActive
@@ -417,8 +457,14 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
                   key={r.key}
                   onClick={() => {
                     setRoleFilter(r.key);
-                    updateUrl(activeMetric, statsPlatform, statsPeriod, r.key);
+                    updateUrl(
+                      activeMetric,
+                      activeMetric === "RATING" ? ratingPlatform : statsPlatform,
+                      statsPeriod,
+                      r.key
+                    );
                   }}
+                  aria-pressed={active}
                   className={`relative rounded-full px-3 py-1 text-xs font-semibold border transition-all ${
                     active
                       ? "border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]"
@@ -435,7 +481,8 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
           <div className="relative min-w-[200px] lg:max-w-xs flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search members"
               placeholder="Search member or handle..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -443,6 +490,8 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
             />
             {searchQuery && (
               <button
+                type="button"
+                aria-label="Clear search"
                 onClick={() => setSearchQuery("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
               >
@@ -456,8 +505,12 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       {/* ── CONDITIONAL RENDER: RATING VIEW vs STATS VIEW ── */}
       {activeMetric === "RATING" ? (
         <>
+          {ratingError && !ratingLoading && (
+            <LoadError message={ratingError} onRetry={() => setReloadKey((k) => k + 1)} />
+          )}
+
           {/* 3D Podium */}
-          {!ratingLoading && sortedRatingEntries.length > 0 && (
+          {!ratingLoading && podium.length > 0 && (
             <PodiumSection
               top1={top1}
               top2={top2}
@@ -473,9 +526,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
               <div className="flex items-center justify-between">
                 <h2 className="font-heading text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                   <Trophy className="size-4 text-amber-400" />
-                  Rankings ({sortedRatingEntries.length})
+                  {isSearching
+                    ? `Matches (${sortedRatingEntries.length})`
+                    : `Rankings (${sortedRatingEntries.length})`}
                 </h2>
-                <span className="text-xs text-white/50 font-mono">
+                <span className="hidden sm:inline text-xs text-white/50 font-mono">
                   Click any row to inspect locker
                 </span>
               </div>
@@ -498,11 +553,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
               ) : (
                 <div className="space-y-2.5">
                   <AnimatePresence>
-                    {rank4Onwards.map((entry, idx) => (
+                    {visibleListEntries.map((entry) => (
                       <RankingRow
                         key={entry.id}
                         entry={entry}
-                        rankNum={idx + 4}
+                        rankNum={entry.rank}
                         platform={ratingPlatform}
                         searchQuery={searchQuery}
                         onSelectMember={openLockerForMember}
@@ -512,10 +567,11 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
                   {hasMore && (
                     <button
-                      onClick={() => setDisplayLimit((prev) => prev + 50)}
+                      type="button"
+                      onClick={() => setDisplayLimit((prev) => prev + PAGE_STEP)}
                       className="w-full rounded-xl border border-white/10 bg-white/[0.02] py-3 text-xs font-semibold text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors"
                     >
-                      Load More Members (+50)
+                      Show more ({listEntries.length - displayLimit} remaining)
                     </button>
                   )}
                 </div>
@@ -525,7 +581,7 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
             {/* Sidebar */}
             <div className="space-y-6 lg:col-span-5">
               <SpotlightTopCard
-                topMember={top1}
+                topMember={spotlightMember}
                 platform={ratingPlatform}
                 onOpenLocker={openLockerForMember}
               />
@@ -601,12 +657,35 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
       ) : (
         /* Stats Leaderboard Table View */
         <div className="space-y-4">
-          <StatsLeaderboardTable
-            entries={filteredStatsEntries}
-            metric={activeMetric as StatsMetric}
-            trackingSince={statsResponse?.trackingSince}
-            loading={statsLoading}
-          />
+          {statsError && !statsLoading ? (
+            <LoadError message={statsError} onRetry={() => setReloadKey((k) => k + 1)} />
+          ) : (
+            <>
+              {!statsLoading && allStatsEntries.length > 0 && (
+                <p className="text-xs font-mono text-white/50">
+                  {isSearching ? "Matches" : "Members"}: {allStatsEntries.length}
+                  {statsResponse?.trackingSince && statsPlatform !== "CODEFORCES" && (
+                    <> · LeetCode tracked since {statsResponse.trackingSince}</>
+                  )}
+                </p>
+              )}
+              <StatsLeaderboardTable
+                entries={visibleStatsEntries}
+                metric={activeMetric as StatsMetric}
+                trackingSince={statsResponse?.trackingSince}
+                loading={statsLoading}
+              />
+              {!statsLoading && hasMoreStats && (
+                <button
+                  type="button"
+                  onClick={() => setStatsDisplayLimit((prev) => prev + PAGE_STEP)}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.02] py-3 text-xs font-semibold text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors"
+                >
+                  Show more ({allStatsEntries.length - statsDisplayLimit} remaining)
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -622,6 +701,25 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
         onClose={() => setIsLockerOpen(false)}
         onBannerEquipped={handleBannerEquipped}
       />
+    </div>
+  );
+}
+
+function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100"
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400/40 px-3 py-1.5 text-xs font-semibold hover:bg-rose-500/20"
+      >
+        <RefreshCw className="size-3.5" />
+        Try again
+      </button>
     </div>
   );
 }

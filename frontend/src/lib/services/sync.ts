@@ -21,10 +21,10 @@ export const syncService = {
   },
 
   /**
-   * Admin: Triggers an immediate execution of a specific sync job.
+   * Admin: Queues a job to run in the background. Rejects with a 409 when the
+   * same job is already running.
    */
-  async trigger(job: SyncJobType): Promise<number> {
-    const res = await apiClient.post<number>(`/api/admin/sync/${job}`);
-    return res.data;
+  async trigger(job: SyncJobType): Promise<void> {
+    await apiClient.post(`/api/admin/sync/${job}`);
   },
 };

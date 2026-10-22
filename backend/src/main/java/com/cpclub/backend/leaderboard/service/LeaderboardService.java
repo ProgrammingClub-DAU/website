@@ -5,6 +5,7 @@ import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
 import com.cpclub.backend.leaderboard.dto.LeaderboardFilter;
 import com.cpclub.backend.leaderboard.dto.LeaderboardPlatform;
 import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
+import com.cpclub.backend.leaderboard.repository.RatingTrendRepository;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service class performing leaderboard computations, rank mappings,
@@ -23,7 +25,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LeaderboardService {
 
+    /** Contests per member on the trend line. */
+    private static final int TREND_POINTS = 10;
+
     private final UserRepository userRepository;
+    private final RatingTrendRepository ratingTrendRepository;
 
     /**
      * Resolves ranked users sorted by current rating.
@@ -66,8 +72,21 @@ public class LeaderboardService {
         Page<LeaderboardEntryProjection> rankedPage = userRepository.findFilteredLeaderboardPage(
                 resolvedPlatform.name(), resolvedFilter.name(), pageable);
 
-        List<LeaderboardResponseDto> content = rankedPage.getContent().stream()
+        List<LeaderboardResponseDto> ranked = rankedPage.getContent().stream()
                 .map(LeaderboardResponseDto::fromProjection)
+                .toList();
+
+        // The member's real recent contests on this platform, for the trend line and
+        // last change. One query for the whole page.
+        Map<Long, RatingTrendRepository.Trend> trends = ratingTrendRepository.findRecentTrends(
+                ranked.stream().map(LeaderboardResponseDto::userId).toList(),
+                resolvedPlatform.name(),
+                TREND_POINTS);
+        List<LeaderboardResponseDto> content = ranked.stream()
+                .map(entry -> {
+                    RatingTrendRepository.Trend trend = trends.get(entry.userId());
+                    return trend == null ? entry : entry.withTrend(trend.recentRatings(), trend.lastChange());
+                })
                 .toList();
 
         return new PagedResponse<>(

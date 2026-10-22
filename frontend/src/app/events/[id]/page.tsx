@@ -20,6 +20,7 @@ import { RegistrationButton } from "@/components/site/registration-button";
 import { AddToCalendar } from "@/components/site/add-to-calendar";
 import { eventsService } from "@/lib/services/events";
 import type { EventDetail, EventWinner } from "@/types/api";
+import { istDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 title={event.title}
                 description={event.description}
                 location={event.location}
-                startDateIso={event.eventDate}
+                startDateIso={istDate(event.eventDate).toISOString()}
               />
             </div>
           </div>

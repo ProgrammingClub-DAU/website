@@ -32,6 +32,15 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
 
+  task:
+    scheduling:
+      # Spring's default is ONE scheduler thread. The six-hourly platform pipeline
+      # takes several minutes, and while it ran nothing else scheduled could: the
+      # 15-minute club contest tick during a live round, reminders, scores.
+      pool:
+        size: 3
+      thread-name-prefix: cpclub-sched-
+
   mail:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:587}

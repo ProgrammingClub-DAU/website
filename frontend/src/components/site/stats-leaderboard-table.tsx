@@ -66,13 +66,18 @@ export function StatsLeaderboardTable({
     );
   }
 
-  // Helper to format rank representation (e.g., ties shown as "=3")
+  // Ties shown as "=3". Judged on the server's rank, which is what defines a tie.
   const formatRank = (entry: StatsLeaderboardEntry, index: number) => {
     const isTie =
-      (index > 0 && entries[index - 1].value === entry.value) ||
-      (index < entries.length - 1 && entries[index + 1].value === entry.value);
+      (index > 0 && entries[index - 1].rank === entry.rank) ||
+      (index < entries.length - 1 && entries[index + 1].rank === entry.rank);
 
     return isTie ? `=${entry.rank}` : `#${entry.rank}`;
+  };
+
+  const formatBasis = (entry: StatsLeaderboardEntry) => {
+    if (entry.basis == null) return null;
+    return metric === "AVG_PROBLEM_RATING" ? `over ${entry.basis} rated solves` : String(entry.basis);
   };
 
   const getMetricSuffix = (metric: StatsMetric) => {
@@ -119,13 +124,16 @@ export function StatsLeaderboardTable({
             {entries.map((entry, idx) => {
               const isCurrentUser = currentUserId === entry.userId;
               const rankDisplay = formatRank(entry, idx);
-              const isPodium = entry.rank <= 3;
+              const isZero = entry.value === 0;
+              const isPodium = entry.rank <= 3 && !isZero;
+              const basis = formatBasis(entry);
 
               return (
                 <tr
                   key={`${entry.userId}-${entry.rank}`}
                   className={cn(
                     "group transition-colors duration-100 hover:bg-surface-elevated/40",
+                    isZero && !isCurrentUser && "opacity-60",
                     isCurrentUser && "bg-primary/5 ring-1 ring-inset ring-primary/20"
                   )}
                 >
@@ -134,9 +142,9 @@ export function StatsLeaderboardTable({
                     <span
                       className={cn(
                         "inline-flex items-center justify-center rounded px-2 py-0.5 text-label font-semibold",
-                        entry.rank === 1 && "bg-amber-500/15 text-amber-400 border border-amber-500/30",
-                        entry.rank === 2 && "bg-slate-300/15 text-slate-300 border border-slate-300/30",
-                        entry.rank === 3 && "bg-amber-700/15 text-amber-600 border border-amber-700/30",
+                        isPodium && entry.rank === 1 && "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+                        isPodium && entry.rank === 2 && "bg-slate-300/15 text-slate-300 border border-slate-300/30",
+                        isPodium && entry.rank === 3 && "bg-amber-700/15 text-amber-600 border border-amber-700/30",
                         !isPodium && "text-muted-foreground"
                       )}
                     >
@@ -181,7 +189,7 @@ export function StatsLeaderboardTable({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-nano font-mono text-fg-muted truncate">
+                        <div className="flex items-center gap-2 text-nano font-mono text-fg-muted truncate max-w-[42vw] sm:max-w-none">
                           {entry.codeforcesHandle && (
                             <span>@{entry.codeforcesHandle}</span>
                           )}
@@ -201,15 +209,15 @@ export function StatsLeaderboardTable({
                   {/* ── Metric Value & Basis Column ── */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-col items-end">
-                      <div className="font-heading text-base font-semibold text-foreground">
-                        {(entry.value ?? 0).toLocaleString()}{" "}
+                      <div className="font-heading text-base font-semibold text-foreground whitespace-nowrap">
+                        {entry.value == null ? "—" : entry.value.toLocaleString("en-IN")}{" "}
                         <span className="font-mono text-nano text-fg-muted uppercase font-normal">
                           {getMetricSuffix(metric)}
                         </span>
                       </div>
-                      {entry.basis && (
+                      {basis && (
                         <div className="text-nano font-mono text-fg-muted truncate max-w-[180px]">
-                          {entry.basis}
+                          {basis}
                         </div>
                       )}
                     </div>
@@ -221,6 +229,7 @@ export function StatsLeaderboardTable({
                       <Link
                         href={`/compare?a=${currentUserId}&b=${entry.userId}`}
                         title={`Compare with ${entry.name}`}
+                        aria-label={`Compare with ${entry.name}`}
                         className="inline-flex size-8 items-center justify-center rounded-control text-fg-subtle transition-colors hover:bg-surface-elevated hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
                       >
                         <ArrowRightLeft className="size-3.5" />
