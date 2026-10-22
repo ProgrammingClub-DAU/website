@@ -52,7 +52,7 @@ export default function BlogEditPage({ params }: BlogEditPageProps) {
       })
       .catch((err: unknown) => {
         console.error("Failed to load post for editing:", err);
-        if (!ignore) setError("Failed to load post. You may not have permission to edit it.");
+        if (!ignore) setError(apiErrorMessage(err, "Failed to load post. You may not have permission to edit it."));
       })
       .finally(() => {
         if (!ignore) setLoading(false);

@@ -144,7 +144,7 @@ export function ContestsManager() {
       await loadData();
     } catch (err: unknown) {
       console.error("Failed to create season:", err);
-      setSeasonError("Failed to create season. Please check your inputs.");
+      setSeasonError(apiErrorMessage(err, "Failed to create season. Please check your inputs."));
     } finally {
       setIsAddingSeason(false);
     }
@@ -157,7 +157,7 @@ export function ContestsManager() {
       await loadData();
     } catch (err) {
       console.error("Sync failed:", err);
-      alert("Failed to sync contest with Codeforces.");
+      alert(`Failed to sync contest with Codeforces: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setSyncingId(null);
     }
@@ -170,7 +170,7 @@ export function ContestsManager() {
       setContests((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error("Failed to remove contest:", err);
-      alert("Failed to delete contest.");
+      alert(`Failed to delete contest: ${apiErrorMessage(err, "Please try again.")}`);
     }
   };
 
@@ -181,7 +181,7 @@ export function ContestsManager() {
       setSeasons((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error("Failed to remove season:", err);
-      alert("Failed to delete season.");
+      alert(`Failed to delete season: ${apiErrorMessage(err, "Please try again.")}`);
     }
   };
 

@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { blogService } from "@/lib/services/blog";
+import { apiErrorMessage } from "@/lib/api-error";
 import { MarkdownRenderer } from "@/components/site/markdown-renderer";
 import type { BlogEditDto } from "@/types/api";
 import { serverDate } from "@/lib/utils";
@@ -48,7 +49,7 @@ export function BlogReviewManager() {
       await loadQueue();
     } catch (err) {
       console.error("Failed to publish post:", err);
-      alert("Failed to publish post.");
+      alert(`Failed to publish post: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setActionLoadingId(null);
     }
@@ -68,7 +69,7 @@ export function BlogReviewManager() {
       await loadQueue();
     } catch (err) {
       console.error("Failed to reject post:", err);
-      alert("Failed to reject post.");
+      alert(`Failed to reject post: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setActionLoadingId(null);
     }

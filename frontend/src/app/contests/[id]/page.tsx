@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Trophy, ArrowLeft, RefreshCw, Layers } from "lucide-react";
 import { contestService } from "@/lib/services/contests";
+import { apiErrorMessage } from "@/lib/api-error";
 import { RanklistTable } from "@/components/site/ranklist-table";
 import { UpsolveMatrix } from "@/components/site/upsolve-matrix";
 import { useAuthStore } from "@/store/auth";
@@ -41,7 +42,7 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
       setUpsolveData(upsolveMatrix);
     } catch (err: unknown) {
       console.error("Failed to load contest detail:", err);
-      setError("Failed to load contest standings. The contest may not exist.");
+      setError(apiErrorMessage(err, "Failed to load contest standings. The contest may not exist."));
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
       setUpsolveData(updatedUpsolve);
     } catch (err: unknown) {
       console.error("Sync failed:", err);
-      alert("Failed to sync standings with Codeforces.");
+      alert(`Failed to sync standings with Codeforces: ${apiErrorMessage(err, "Please try again.")}`);
     } finally {
       setSyncing(false);
     }
