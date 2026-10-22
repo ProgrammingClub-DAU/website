@@ -45,6 +45,15 @@ public class ClubContestSyncScheduler {
 
     @Scheduled(cron = "0 */15 * * * *", zone = "${cpclub.scheduling.zone:Asia/Kolkata}")
     public void syncDueContests() {
+        syncDueContests(false);
+    }
+
+    /**
+     * @param recordWhenIdle record a run even when nothing is due. A manual trigger
+     *        does, so the admin who pressed Run Now sees that it ran; the 15-minute
+     *        tick does not, for the reason in the class comment.
+     */
+    void syncDueContests(boolean recordWhenIdle) {
         LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         List<ClubContest> due = contestRepository
                 .findSyncCandidates(now, now.minusDays(CANDIDATE_WINDOW_DAYS)).stream()
@@ -52,6 +61,9 @@ public class ClubContestSyncScheduler {
                         c.getStartsAt(), c.getDurationSeconds(), c.getLastSyncedAt(), now))
                 .toList();
         if (due.isEmpty()) {
+            if (recordWhenIdle) {
+                syncRunRecorder.start(SyncJob.CLUB_CONTEST).complete(0, 0, null);
+            }
             return;
         }
 
@@ -72,6 +84,6 @@ public class ClubContestSyncScheduler {
     /** {@code POST /api/admin/sync/CLUB_CONTEST} runs the same check on demand. */
     @EventListener(condition = "#event.job.name() == 'CLUB_CONTEST'")
     public void handleManualTrigger(SyncTriggerEvent event) {
-        syncDueContests();
+        syncDueContests(true);
     }
 }

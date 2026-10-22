@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, ExternalLink, Clock } from "lucide-react";
 import type { ClubContestDetailDto, RanklistRowDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 interface RanklistTableProps {
   data: ClubContestDetailDto;
@@ -62,7 +63,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
             </span>
             <span>Participants: {data.contest.participantCount}</span>
             {data.contest.lastSyncedAt && (
-              <span>Last synced: {new Date(data.contest.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</span>
+              <span>Last synced: {serverDate(data.contest.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</span>
             )}
           </div>
         </div>

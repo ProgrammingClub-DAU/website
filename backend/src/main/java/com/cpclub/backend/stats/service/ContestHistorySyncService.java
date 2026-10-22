@@ -1,7 +1,10 @@
 package com.cpclub.backend.stats.service;
 
 import com.cpclub.backend.codeforces.client.CodeforcesApiClient;
+import com.cpclub.backend.codeforces.dto.CfContest;
+import com.cpclub.backend.codeforces.dto.CfRatingChange;
 import com.cpclub.backend.common.model.Platform;
+import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.stats.entity.ContestParticipation;
 import com.cpclub.backend.stats.repository.ContestParticipationRepository;
 import com.cpclub.backend.sync.entity.SyncJob;
@@ -9,8 +12,6 @@ import com.cpclub.backend.sync.event.SyncTriggerEvent;
 import com.cpclub.backend.sync.service.SyncRunRecorder;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -19,9 +20,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -29,7 +32,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+/**
+ * Keeps contest_participations in step with each member's Codeforces and
+ * LeetCode contest history.
+ *
+ * <p>Every timestamp is UTC (D31). None of these methods is transactional: each
+ * save commits on its own, so one member's bad data cannot roll back another's,
+ * and no connection is held across a rate-limited HTTP call.</p>
+ */
 @Service
 @Slf4j
 public class ContestHistorySyncService {
@@ -49,119 +62,143 @@ public class ContestHistorySyncService {
             }
             """;
 
+    /** What a row gets when its contest is not in the cache. Healed on a later sync. */
+    private static final LocalDateTime UNKNOWN_START = LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
+    private static final Duration CONTEST_CACHE_TTL = Duration.ofHours(12);
+
     private final CodeforcesApiClient codeforcesApiClient;
     private final ContestParticipationRepository contestParticipationRepository;
     private final UserRepository userRepository;
     private final SyncRunRecorder syncRunRecorder;
     private final RateLimiter leetcodeRateLimiter;
-    private final RestTemplate restTemplate = new RestTemplate();
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final RestTemplate restTemplate;
+    private final JsonMapper json = JsonMapper.builder().build();
 
     public ContestHistorySyncService(
             CodeforcesApiClient codeforcesApiClient,
             ContestParticipationRepository contestParticipationRepository,
             UserRepository userRepository,
             SyncRunRecorder syncRunRecorder,
-            @Qualifier("leetcodeRateLimiter") RateLimiter leetcodeRateLimiter
+            @Qualifier("leetcodeRateLimiter") RateLimiter leetcodeRateLimiter,
+            RestTemplate restTemplate
     ) {
         this.codeforcesApiClient = codeforcesApiClient;
         this.contestParticipationRepository = contestParticipationRepository;
         this.userRepository = userRepository;
         this.syncRunRecorder = syncRunRecorder;
         this.leetcodeRateLimiter = leetcodeRateLimiter;
+        this.restTemplate = restTemplate;
     }
 
-    private Map<Integer, JsonNode> codeforcesContestCache = new HashMap<>();
-    private Instant lastCacheRefresh = null;
+    /** Replaced wholesale on refresh, so readers on other threads never see a half-built map. */
+    private volatile Map<Integer, CfContest> codeforcesContestCache = Map.of();
+    private volatile Instant lastCacheRefresh = null;
 
     public synchronized void refreshCodeforcesContestCache() {
         if (!codeforcesContestCache.isEmpty() && lastCacheRefresh != null
-                && Instant.now().minus(java.time.Duration.ofHours(12)).isBefore(lastCacheRefresh)) {
+                && Instant.now().minus(CONTEST_CACHE_TTL).isBefore(lastCacheRefresh)) {
             return;
         }
         try {
-            List<JsonNode> contests = codeforcesApiClient.contestList(false);
-            Map<Integer, JsonNode> newCache = new HashMap<>();
-            for (JsonNode c : contests) {
-                if (c.has("id")) {
-                    newCache.put(c.get("id").asInt(), c);
+            Map<Integer, CfContest> fresh = new HashMap<>();
+            for (CfContest c : codeforcesApiClient.contestList(false)) {
+                if (c.getId() != null) {
+                    fresh.put(c.getId(), c);
                 }
             }
-            this.codeforcesContestCache = newCache;
+            this.codeforcesContestCache = fresh;
             this.lastCacheRefresh = Instant.now();
         } catch (Exception e) {
-            log.error("Failed to refresh CF contest cache", e);
+            log.error("Failed to refresh CF contest cache: {}", e.getMessage());
         }
     }
 
-    @Transactional
-    public void syncCodeforcesRated(User user, List<JsonNode> ratingChanges) {
-        if (ratingChanges == null) return;
-        
-        for (JsonNode rc : ratingChanges) {
-            int contestId = rc.get("contestId").asInt();
+    public void syncCodeforcesRated(User user, List<CfRatingChange> ratingChanges) {
+        if (ratingChanges == null || ratingChanges.isEmpty()) return;
+
+        Map<String, ContestParticipation> existing = existingByContestId(user, Platform.CODEFORCES);
+        for (CfRatingChange rc : ratingChanges) {
+            if (rc.getContestId() == null) continue;
+            int contestId = rc.getContestId();
             String externalContestId = String.valueOf(contestId);
-            
-            ContestParticipation participation = contestParticipationRepository
-                .findByUserAndPlatformAndExternalContestId(user, Platform.CODEFORCES, externalContestId)
-                .orElseGet(() -> ContestParticipation.builder()
-                    .user(user)
-                    .platform(Platform.CODEFORCES)
-                    .externalContestId(externalContestId)
-                    .build());
-            
+
+            ContestParticipation participation = existing.getOrDefault(externalContestId,
+                    ContestParticipation.builder()
+                            .user(user)
+                            .platform(Platform.CODEFORCES)
+                            .externalContestId(externalContestId)
+                            .build());
+
             participation.setRated(true);
-            participation.setContestName(rc.has("contestName") ? rc.get("contestName").asText() : "Contest " + contestId);
-            participation.setContestRank(rc.has("rank") ? rc.get("rank").asInt() : null);
-            participation.setOldRating(rc.has("oldRating") ? rc.get("oldRating").asInt() : null);
-            participation.setNewRating(rc.has("newRating") ? rc.get("newRating").asInt() : null);
-            
-            long startTimeSeconds = 0;
-            JsonNode cached = codeforcesContestCache.get(contestId);
-            if (cached != null && cached.has("startTimeSeconds")) {
-                startTimeSeconds = cached.get("startTimeSeconds").asLong();
-            } else if (rc.has("ratingUpdateTimeSeconds")) {
-                startTimeSeconds = rc.get("ratingUpdateTimeSeconds").asLong();
+            participation.setContestName(rc.getContestName() != null ? rc.getContestName() : "Contest " + contestId);
+            participation.setContestRank(rc.getRank());
+            participation.setOldRating(rc.getOldRating());
+            participation.setNewRating(rc.getNewRating());
+
+            CfContest cached = codeforcesContestCache.get(contestId);
+            if (cached != null && cached.getStartTimeSeconds() != null) {
+                participation.setStartedAt(fromEpoch(cached.getStartTimeSeconds()));
+            } else if (rc.getRatingUpdateTimeSeconds() != null) {
+                participation.setStartedAt(fromEpoch(rc.getRatingUpdateTimeSeconds()));
+            } else if (participation.getStartedAt() == null) {
+                participation.setStartedAt(UNKNOWN_START);
             }
-            participation.setStartedAt(LocalDateTime.ofInstant(Instant.ofEpochSecond(startTimeSeconds), ZoneOffset.UTC));
-            
+
             contestParticipationRepository.save(participation);
         }
     }
 
-    @Transactional
+    /**
+     * Records the contests a member entered without a rating change.
+     *
+     * <p>Fills the contest cache first. It used to read whatever happened to be
+     * cached, and the six-hourly pipeline calls this (via the submission sync)
+     * before anything has filled it -- so after every restart these rows were
+     * saved as "Contest 1234" starting on 1 January 1970, and were invisible to
+     * every week, month and year board. Rows already saved that way are repaired
+     * here when the contest is found.</p>
+     */
     public void syncCodeforcesUnrated(User user, Set<Integer> contestIds) {
+        if (contestIds == null || contestIds.isEmpty()) return;
+        refreshCodeforcesContestCache();
+
+        Map<String, ContestParticipation> existing = existingByContestId(user, Platform.CODEFORCES);
         for (Integer cid : contestIds) {
             String externalContestId = String.valueOf(cid);
-            if (contestParticipationRepository.findByUserAndPlatformAndExternalContestId(user, Platform.CODEFORCES, externalContestId).isEmpty()) {
-                long startTimeSeconds = 0;
-                String contestName = "Contest " + cid;
-                JsonNode cached = codeforcesContestCache.get(cid);
-                if (cached != null) {
-                    if (cached.has("startTimeSeconds")) startTimeSeconds = cached.get("startTimeSeconds").asLong();
-                    if (cached.has("name")) contestName = cached.get("name").asText();
-                }
-                
-                ContestParticipation p = ContestParticipation.builder()
-                    .user(user)
-                    .platform(Platform.CODEFORCES)
-                    .externalContestId(externalContestId)
-                    .contestName(contestName)
-                    .startedAt(LocalDateTime.ofInstant(Instant.ofEpochSecond(startTimeSeconds), ZoneOffset.UTC))
-                    .rated(false)
-                    .build();
-                contestParticipationRepository.save(p);
+            CfContest cached = codeforcesContestCache.get(cid);
+            ContestParticipation row = existing.get(externalContestId);
+
+            if (row == null) {
+                contestParticipationRepository.save(ContestParticipation.builder()
+                        .user(user)
+                        .platform(Platform.CODEFORCES)
+                        .externalContestId(externalContestId)
+                        .contestName(cached != null && cached.getName() != null ? cached.getName() : "Contest " + cid)
+                        .startedAt(cached != null && cached.getStartTimeSeconds() != null
+                                ? fromEpoch(cached.getStartTimeSeconds()) : UNKNOWN_START)
+                        .rated(false)
+                        .build());
+            } else if (cached != null && needsRepair(row)) {
+                if (cached.getStartTimeSeconds() != null) row.setStartedAt(fromEpoch(cached.getStartTimeSeconds()));
+                if (cached.getName() != null) row.setContestName(cached.getName());
+                contestParticipationRepository.save(row);
             }
         }
     }
 
-    @Transactional
+    private static boolean needsRepair(ContestParticipation row) {
+        return row.getStartedAt() == null
+                || !row.getStartedAt().isAfter(UNKNOWN_START)
+                || row.getContestName() == null
+                || row.getContestName().startsWith("Contest ");
+    }
+
+    /** Refreshes one member's history on both platforms. Never throws. */
     public void syncUserContests(User user) {
         if (user.getCodeforcesHandle() != null && !user.getCodeforcesHandle().isBlank()) {
             try {
                 refreshCodeforcesContestCache();
-                List<JsonNode> ratingChanges = codeforcesApiClient.userRating(user.getCodeforcesHandle());
-                syncCodeforcesRated(user, ratingChanges);
+                syncCodeforcesRated(user, codeforcesApiClient.userRating(user.getCodeforcesHandle()));
             } catch (Exception e) {
                 log.error("Failed to sync CF contest history for {}: {}", user.getCodeforcesHandle(), e.getMessage());
             }
@@ -175,78 +212,87 @@ public class ContestHistorySyncService {
         }
     }
 
-    @Transactional
+    /**
+     * Refreshes one member's LeetCode contest history.
+     *
+     * @throws IllegalStateException when LeetCode does not answer usefully. This used
+     *         to be logged and swallowed, so LC_CONTESTS reported every member as a
+     *         success even while LeetCode was refusing every request.
+     */
     public void syncLeetCodeContests(User user) {
         leetcodeRateLimiter.acquire();
         String handle = user.getLeetcodeHandle();
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set(HttpHeaders.REFERER, "https://leetcode.com");
-            headers.set(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
-            Map<String, Object> body = Map.of(
-                    "query", LC_CONTEST_HISTORY_QUERY,
-                    "variables", Map.of("username", handle)
-            );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(HttpHeaders.REFERER, "https://leetcode.com");
+        headers.set(HttpHeaders.USER_AGENT, LeetCodeSyncService.BROWSER_USER_AGENT);
 
-            String jsonString = restTemplate.postForObject(
-                    LEETCODE_GRAPHQL_URL,
-                    new HttpEntity<>(body, headers),
-                    String.class
-            );
+        Map<String, Object> body = Map.of(
+                "query", LC_CONTEST_HISTORY_QUERY,
+                "variables", Map.of("username", handle)
+        );
 
-            if (jsonString == null || jsonString.isBlank()) {
-                return;
-            }
-
-            JsonNode response = OBJECT_MAPPER.readTree(jsonString);
-            if (response == null || !response.has("data") || !response.get("data").has("userContestRankingHistory")) {
-                return;
-            }
-
-            JsonNode history = response.get("data").get("userContestRankingHistory");
-            if (!history.isArray()) return;
-
-            Integer prevRating = null;
-            for (JsonNode entry : history) {
-                if (!entry.has("attended") || !entry.get("attended").asBoolean()) {
-                    continue;
-                }
-
-                JsonNode contest = entry.get("contest");
-                if (contest == null || !contest.has("title")) continue;
-
-                String contestTitle = contest.get("title").asText();
-                String extId = contestTitle.toLowerCase().replaceAll("[^a-z0-9]+", "-");
-                Integer newRating = entry.has("rating") && !entry.get("rating").isNull()
-                        ? (int) Math.round(entry.get("rating").asDouble())
-                        : null;
-                if (newRating == null) continue;
-                Integer rank = entry.has("ranking") && !entry.get("ranking").isNull() ? entry.get("ranking").asInt() : null;
-                long startTime = contest.has("startTime") ? contest.get("startTime").asLong() : 0;
-
-                ContestParticipation participation = contestParticipationRepository
-                        .findByUserAndPlatformAndExternalContestId(user, Platform.LEETCODE, extId)
-                        .orElseGet(() -> ContestParticipation.builder()
-                                .user(user)
-                                .platform(Platform.LEETCODE)
-                                .externalContestId(extId)
-                                .build());
-
-                participation.setRated(true);
-                participation.setContestName(contestTitle);
-                participation.setContestRank(rank);
-                participation.setOldRating(prevRating);
-                participation.setNewRating(newRating);
-                participation.setStartedAt(LocalDateTime.ofInstant(Instant.ofEpochSecond(startTime), ZoneOffset.UTC));
-
-                contestParticipationRepository.save(participation);
-                prevRating = newRating;
-            }
-        } catch (Exception e) {
-            log.error("Failed to query LeetCode contest ranking history for {}: {}", handle, e.getMessage());
+        String jsonString = restTemplate.postForObject(LEETCODE_GRAPHQL_URL, new HttpEntity<>(body, headers), String.class);
+        if (jsonString == null || jsonString.isBlank()) {
+            throw new IllegalStateException("empty response from LeetCode");
         }
+
+        JsonNode response = json.readTree(jsonString);
+        JsonNode data = response.path("data");
+        if (data.isMissingNode() || data.isNull()) {
+            throw new IllegalStateException("LeetCode returned no data" + firstGraphQlError(response));
+        }
+
+        JsonNode history = data.path("userContestRankingHistory");
+        // Null history is LeetCode's answer for a valid user who has never contested.
+        if (!history.isArray()) return;
+
+        Map<String, ContestParticipation> existing = existingByContestId(user, Platform.LEETCODE);
+        Integer prevRating = null;
+        for (JsonNode entry : history) {
+            if (!entry.path("attended").asBoolean(false)) {
+                continue;
+            }
+
+            JsonNode contest = entry.path("contest");
+            String contestTitle = contest.path("title").asString("");
+            if (contestTitle.isBlank()) continue;
+
+            JsonNode ratingNode = entry.path("rating");
+            if (ratingNode.isMissingNode() || ratingNode.isNull()) continue;
+            int newRating = (int) Math.round(ratingNode.asDouble());
+
+            JsonNode rankingNode = entry.path("ranking");
+            Integer rank = rankingNode.isMissingNode() || rankingNode.isNull() ? null : rankingNode.asInt(0);
+            long startTime = contest.path("startTime").asLong(0L);
+            String extId = contestTitle.toLowerCase().replaceAll("[^a-z0-9]+", "-");
+
+            ContestParticipation participation = existing.getOrDefault(extId,
+                    ContestParticipation.builder()
+                            .user(user)
+                            .platform(Platform.LEETCODE)
+                            .externalContestId(extId)
+                            .build());
+
+            participation.setRated(true);
+            participation.setContestName(contestTitle);
+            participation.setContestRank(rank);
+            participation.setOldRating(prevRating);
+            participation.setNewRating(newRating);
+            participation.setStartedAt(fromEpoch(startTime));
+
+            contestParticipationRepository.save(participation);
+            prevRating = newRating;
+        }
+    }
+
+    private static String firstGraphQlError(JsonNode response) {
+        JsonNode errors = response.path("errors");
+        if (errors.isArray() && !errors.isEmpty()) {
+            return ": " + errors.get(0).path("message").asString("");
+        }
+        return "";
     }
 
     public void syncAllCodeforcesContests() {
@@ -260,11 +306,10 @@ public class ContestHistorySyncService {
         for (User user : users) {
             if (user.getCodeforcesHandle() == null || user.getCodeforcesHandle().isBlank()) continue;
             try {
-                List<JsonNode> ratingChanges = codeforcesApiClient.userRating(user.getCodeforcesHandle());
-                syncCodeforcesRated(user, ratingChanges);
+                syncCodeforcesRated(user, codeforcesApiClient.userRating(user.getCodeforcesHandle()));
                 ok++;
             } catch (Exception e) {
-                log.error("Failed to sync CF contests for user {}", user.getCodeforcesHandle(), e);
+                log.warn("Failed to sync CF contests for user {}: {}", user.getCodeforcesHandle(), e.getMessage());
                 failed++;
                 if (errorSample == null) errorSample = user.getCodeforcesHandle() + ": " + e.getMessage();
             }
@@ -285,7 +330,7 @@ public class ContestHistorySyncService {
                 syncLeetCodeContests(user);
                 ok++;
             } catch (Exception e) {
-                log.error("Failed to sync LC contests for user {}", user.getLeetcodeHandle(), e);
+                log.warn("Failed to sync LC contests for user {}: {}", user.getLeetcodeHandle(), e.getMessage());
                 failed++;
                 if (errorSample == null) errorSample = user.getLeetcodeHandle() + ": " + e.getMessage();
             }
@@ -301,5 +346,15 @@ public class ContestHistorySyncService {
     @EventListener(condition = "#event.job.name() == 'LC_CONTESTS'")
     public void handleManualLcContestsTrigger(SyncTriggerEvent event) {
         syncAllLeetCodeContests();
+    }
+
+    /** One query per member instead of one per contest. */
+    private Map<String, ContestParticipation> existingByContestId(User user, Platform platform) {
+        return contestParticipationRepository.findByUserAndPlatform(user, platform).stream()
+                .collect(Collectors.toMap(ContestParticipation::getExternalContestId, Function.identity(), (a, b) -> a));
+    }
+
+    private static LocalDateTime fromEpoch(long epochSeconds) {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC);
     }
 }

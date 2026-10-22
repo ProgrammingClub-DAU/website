@@ -6,6 +6,7 @@ import { Trophy, Calendar, Users, ExternalLink, ArrowRight, Clock, Sparkles } fr
 import { contestService } from "@/lib/services/contests";
 import { seasonService } from "@/lib/services/seasons";
 import type { ClubContestSummaryDto, SeasonDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export default function ContestsPage() {
   const [contests, setContests] = useState<ClubContestSummaryDto[]>([]);
@@ -159,7 +160,7 @@ export default function ContestsPage() {
                       <div className="flex flex-wrap items-center gap-4 mt-2 text-micro font-mono text-fg-muted">
                         <span className="flex items-center gap-1">
                           <Calendar className="size-3.5" />
-                          {new Date(contest.startsAt).toLocaleDateString("en-IN", {
+                          {serverDate(contest.startsAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
                             year: "numeric",

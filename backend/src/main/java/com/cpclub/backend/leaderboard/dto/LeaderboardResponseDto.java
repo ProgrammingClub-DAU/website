@@ -20,7 +20,11 @@ public record LeaderboardResponseDto(
         String activeBannerId,
         Integer maxRating,
         @com.fasterxml.jackson.annotation.JsonProperty("isPlatformCreator")
-        boolean isPlatformCreator
+        boolean isPlatformCreator,
+        /** New rating after each of the member's last rated contests on this platform, oldest first. */
+        java.util.List<Integer> recentRatings,
+        /** Rating change in the member's most recent rated contest, or null when unknown. */
+        Integer lastRatingChange
 ) {
     /** Backwards-compatible constructor for existing callers and tests. */
     public LeaderboardResponseDto(
@@ -46,8 +50,17 @@ public record LeaderboardResponseDto(
                 calculateRankBanner(rank),
                 calculateActiveBanner(rank, "rookie"),
                 rating,
-                false
+                false,
+                java.util.List.of(),
+                null
         );
+    }
+
+    /** This entry with the member's real contest trend attached. */
+    public LeaderboardResponseDto withTrend(java.util.List<Integer> ratings, Integer lastChange) {
+        return new LeaderboardResponseDto(rank, userId, name, codeforcesHandle, rating, tier, clubRole, avatarUrl,
+                equippedBannerId, rankBannerId, activeBannerId, maxRating, isPlatformCreator,
+                ratings != null ? ratings : java.util.List.of(), lastChange);
     }
 
     public static String calculateRankBanner(int rank) {
@@ -109,7 +122,9 @@ public record LeaderboardResponseDto(
                 rankBanner,
                 rankBanner != null ? rankBanner : equipped,
                 maxR,
-                user.isPlatformCreator()
+                user.isPlatformCreator(),
+                java.util.List.of(),
+                null
         );
     }
 
@@ -137,7 +152,9 @@ public record LeaderboardResponseDto(
                 rankBanner,
                 rankBanner != null ? rankBanner : equipped,
                 maxR,
-                row.getIsplatformcreator() != null ? row.getIsplatformcreator() : false
+                row.getIsplatformcreator() != null ? row.getIsplatformcreator() : false,
+                java.util.List.of(),
+                null
         );
     }
 }

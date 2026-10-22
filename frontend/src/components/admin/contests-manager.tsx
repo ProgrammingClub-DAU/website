@@ -20,6 +20,7 @@ import type {
   ClubContestCreateRequest,
   SeasonRequest,
 } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export function ContestsManager() {
   const [contests, setContests] = useState<ClubContestSummaryDto[]>([]);
@@ -380,7 +381,7 @@ export function ContestsManager() {
                     <td className="py-3 px-3 text-fg-muted">{c.seasonName || "—"}</td>
                     <td className="py-3 px-3 text-center text-white tabular-nums">{c.participantCount}</td>
                     <td className="py-3 px-3 text-fg-subtle text-[11px]">
-                      {c.lastSyncedAt ? new Date(c.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Never"}
+                      {c.lastSyncedAt ? serverDate(c.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Never"}
                     </td>
                     <td className="py-3 px-4 text-right space-x-2">
                       <button

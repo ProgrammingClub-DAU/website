@@ -14,6 +14,7 @@ import { blogService } from "@/lib/services/blog";
 import { MarkdownRenderer } from "@/components/site/markdown-renderer";
 import { CommentThread } from "@/components/site/comment-thread";
 import type { BlogResponseDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -76,12 +77,12 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   }
 
   const dateStr = post.publishedAt
-    ? new Date(post.publishedAt).toLocaleDateString("en-IN", {
+    ? serverDate(post.publishedAt).toLocaleDateString("en-IN", {
         month: "long",
         day: "numeric",
         year: "numeric",
       })
-    : new Date(post.createdAt).toLocaleDateString("en-IN", {
+    : serverDate(post.createdAt).toLocaleDateString("en-IN", {
         month: "long",
         day: "numeric",
         year: "numeric",

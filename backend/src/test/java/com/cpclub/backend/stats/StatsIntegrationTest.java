@@ -306,6 +306,24 @@ public class StatsIntegrationTest {
     }
 
     @Test
+    @DisplayName("leaderboard_listsLinkedMembersWithZero: a linked member with no solves is listed last, not dropped")
+    void leaderboard_listsLinkedMembersWithZero() {
+        CfProblem p1 = createProblem(1950, "A", 1000);
+        createSolve(userA, p1, LocalDateTime.now(ZoneId.of("UTC")));
+        entityManager.flush();
+
+        StatsLeaderboardResponseDto lb = statsService.getLeaderboard(
+                StatsMetric.SOLVED, StatsPlatform.CODEFORCES, StatsPeriod.WEEK, LeaderboardFilter.ALL, 0, 50);
+
+        assertThat(lb.getEntries()).extracting(StatsLeaderboardEntryDto::getUserId)
+                .containsExactly(userA.getId(), userB.getId(), userC.getId());
+        assertThat(lb.getEntries().get(0).getRank()).isEqualTo(1);
+        assertThat(lb.getEntries().get(1).getValue()).isEqualTo(0.0);
+        assertThat(lb.getEntries().get(1).getRank()).isEqualTo(2);
+        assertThat(lb.getEntries().get(2).getRank()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("leaderboard_clubFilterApplies: filter=CORE returns only CORE and ASSOCIATE_CORE")
     void leaderboard_clubFilterApplies() {
         // userA is CORE

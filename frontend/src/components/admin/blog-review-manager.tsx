@@ -12,6 +12,7 @@ import {
 import { blogService } from "@/lib/services/blog";
 import { MarkdownRenderer } from "@/components/site/markdown-renderer";
 import type { BlogEditDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export function BlogReviewManager() {
   const [queue, setQueue] = useState<BlogEditDto[]>([]);
@@ -134,8 +135,8 @@ export function BlogReviewManager() {
                       <span>
                         Submitted:{" "}
                         {post.submittedAt
-                          ? new Date(post.submittedAt).toLocaleDateString("en-IN")
-                          : new Date(post.createdAt).toLocaleDateString("en-IN")}
+                          ? serverDate(post.submittedAt).toLocaleDateString("en-IN")
+                          : serverDate(post.createdAt).toLocaleDateString("en-IN")}
                       </span>
                     </div>
                   </div>

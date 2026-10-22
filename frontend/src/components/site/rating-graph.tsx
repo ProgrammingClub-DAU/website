@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CF_RANKS, ratingToRank } from "@/lib/cf-ranks";
 import { lcRankColor, ratingToLcRank, lcRankName } from "@/lib/lc-ranks";
-import { cn } from "@/lib/utils";
+import { cn, serverDate } from "@/lib/utils";
 import type { LeaderboardPlatform } from "@/types/api";
 
 export type RatingPoint = {
@@ -161,7 +161,7 @@ export function RatingGraph({
 
     activeSeries.forEach((s) => {
       s.points.forEach((p) => {
-        allTimes.push(new Date(p.date).getTime());
+        allTimes.push(serverDate(p.date).getTime());
         allRatings.push(p.rating);
       });
     });
@@ -182,10 +182,10 @@ export function RatingGraph({
 
     const plottedSeries = activeSeries.map((s, sIdx) => {
       const sortedPoints = [...s.points].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        (a, b) => serverDate(a.date).getTime() - serverDate(b.date).getTime()
       );
       const points = sortedPoints.map((p) => ({
-        x: x(new Date(p.date).getTime()),
+        x: x(serverDate(p.date).getTime()),
         y: y(p.rating),
         seriesIdx: sIdx,
         ...p,
@@ -369,7 +369,7 @@ export function RatingGraph({
               {geometry?.plottedSeries[activeItem!.seriesIdx]?.platform}
             </span>
             <span className="font-mono text-nano text-fg-muted">
-              {new Date(activePoint.date).toLocaleDateString("en-US", {
+              {serverDate(activePoint.date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -419,7 +419,7 @@ export function RatingGraph({
             s.points.map((p, i) => (
               <tr key={`${s.platform}-${p.date}-${i}`}>
                 <td>{s.platform}</td>
-                <td>{new Date(p.date).toLocaleDateString()}</td>
+                <td>{serverDate(p.date).toLocaleDateString()}</td>
                 <td>{p.contestName ?? "Contest"}</td>
                 <td>{p.rating}</td>
               </tr>

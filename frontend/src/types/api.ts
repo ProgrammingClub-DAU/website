@@ -141,8 +141,10 @@ export interface LeaderboardEntry {
   rankBannerId?: string | null;
   activeBannerId?: string;
   maxRating?: number | null;
+  /** New rating after each of the member's last rated contests, oldest first. Real data; may be empty. */
   contestHistory?: number[];
-  ratingChange?: number;
+  /** Rating change in the member's latest rated contest; null when unknown. */
+  ratingChange?: number | null;
   isPlatformCreator?: boolean;
   platformCreator?: boolean;
 }
@@ -337,7 +339,7 @@ export interface StatsLeaderboardEntry {
   clubRole: ClubRole | null;
   codeforcesHandle: string | null;
   leetcodeHandle: string | null;
-  value: number;
+  value: number | null;
   basis: string | number | null;
 }
 
@@ -831,37 +833,36 @@ export interface CalendarItem {
 // ── Sync Health & Admin Sync (Stage 1A / 3A / 4B) ────────────────────────────
 
 export type SyncJobType =
+  | "CF_RATINGS"
   | "CF_SUBMISSIONS"
   | "CF_PROBLEMSET"
   | "CF_CONTESTS"
+  | "LC_RATINGS"
   | "LC_CONTESTS"
   | "LC_TOTALS"
   | "EXTERNAL_CONTESTS"
   | "CLUB_CONTEST";
 
+export type SyncHealthStatus =
+  | "RUNNING"
+  | "HEALTHY"
+  | "DEGRADED"
+  | "FAILING"
+  | "STALE"
+  | "NEVER_RUN";
+
+/** Health of one job, as SyncHealthService reports it. Every timestamp is UTC. */
 export interface SyncHealthDto {
   job: SyncJobType;
+  status: SyncHealthStatus;
   startedAt: string | null;
   finishedAt: string | null;
   membersOk: number;
   membersFailed: number;
+  errorSample: string | null;
   lastSuccessfulRun: string | null;
   stale: boolean;
-}
-
-export interface SyncJobHealth {
-  job: SyncJobType;
-  lastStartedAt: string | null;
-  lastFinishedAt: string | null;
-  lastSuccessAt: string | null;
-  membersOk: number;
-  membersFailed: number;
-  stale: boolean;
-  lastError: string | null;
-}
-
-export interface SyncHealthResponse {
-  jobs: SyncJobHealth[];
+  running: boolean;
 }
 
 export interface SyncRunRecord {

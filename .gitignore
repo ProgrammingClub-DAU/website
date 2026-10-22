@@ -25,9 +25,22 @@ Thumbs.db
 /CLAUDE.md
 
 # Scratch files from local tooling. Six of these were committed to the repo root
-# before this rule existed (one-off scripts and a 317 KB diff dump).
+# before this rule existed (one-off scripts and a 317 KB diff dump), and eight
+# more later (PR diff dumps, throwaway Java classes, a shell error log named "null").
 /*.py
 /*_diff.txt
+/*.diff
+/*.patch
+/*.java
+/*.class
+/pr_body.txt
+/null
+
+# Spring profiles holding real credentials. application-supabase.yml was committed
+# with the production database password; keep such profiles local, or better,
+# read them from environment variables.
+/backend/src/main/resources/application-supabase.yml
+/backend/src/main/resources/application-*-local.yml
 
 # Local database dumps — never commit member data
 /backend/backups/

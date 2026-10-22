@@ -7,6 +7,7 @@ import { Award, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
 import { awardsService } from "@/lib/services/awards";
 import { AwardBadge } from "@/components/site/award-badge";
 import type { WeeklyAwardDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export function AwardsManager() {
   const [weekStart, setWeekStart] = useState("");
@@ -168,7 +169,7 @@ export function AwardsManager() {
                 </Link>
 
                 <div className="pt-3 border-t border-white/5 text-[11px] font-mono text-fg-subtle">
-                  Computed: {new Date(award.computedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
+                  Computed: {serverDate(award.computedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
                 </div>
               </div>
             ))}

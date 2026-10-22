@@ -3,6 +3,7 @@ package com.cpclub.backend.leaderboard;
 import com.cpclub.backend.common.dto.PagedResponse;
 import com.cpclub.backend.leaderboard.dto.LeaderboardEntryProjection;
 import com.cpclub.backend.leaderboard.dto.LeaderboardResponseDto;
+import com.cpclub.backend.leaderboard.repository.RatingTrendRepository;
 import com.cpclub.backend.leaderboard.service.LeaderboardService;
 import com.cpclub.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -65,7 +66,7 @@ class LeaderboardServiceTest {
     @Test
     void getLeaderboard_returnsEmptyPageWhenNoMembersExist() {
         UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
+        LeaderboardService service = new LeaderboardService(repository, mock(RatingTrendRepository.class));
         when(repository.findFilteredLeaderboardPage(any(), any(), any()))
                 .thenReturn(Page.empty(PageRequest.of(0, 20)));
 
@@ -80,7 +81,7 @@ class LeaderboardServiceTest {
     @DisplayName("Every projection field reaches the response, and the tier is derived from the rating")
     void getLeaderboard_mapsProjectionOntoResponse() {
         UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
+        LeaderboardService service = new LeaderboardService(repository, mock(RatingTrendRepository.class));
         when(repository.findFilteredLeaderboardPage(any(), any(), any())).thenReturn(new PageImpl<>(
                 List.of(row(7L, "Ada", "ada_cf", 1650, 4L)),
                 PageRequest.of(0, 20), 1));
@@ -99,7 +100,7 @@ class LeaderboardServiceTest {
     @DisplayName("A member with no linked handle maps to nulls, not to a crash")
     void getLeaderboard_toleratesUnratedMemberWithoutHandle() {
         UserRepository repository = mock(UserRepository.class);
-        LeaderboardService service = new LeaderboardService(repository);
+        LeaderboardService service = new LeaderboardService(repository, mock(RatingTrendRepository.class));
         when(repository.findFilteredLeaderboardPage(any(), any(), any())).thenReturn(new PageImpl<>(
                 List.of(row(9L, "Newcomer", null, null, 12L)),
                 PageRequest.of(0, 20), 1));

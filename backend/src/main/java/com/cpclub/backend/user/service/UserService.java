@@ -16,10 +16,9 @@ import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
-import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
-import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.codeforces.repository.CfSolveRepository;
 import com.cpclub.backend.stats.repository.ContestParticipationRepository;
+import com.cpclub.backend.stats.repository.PlatformDailyTotalRepository;
 import com.cpclub.backend.common.model.Platform;
 import com.cpclub.backend.leaderboard.dto.BannerConfig;
 import lombok.RequiredArgsConstructor;
@@ -43,44 +42,21 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final CodeforcesSyncService codeforcesSyncService;
-    private final LeetCodeSyncService leetCodeSyncService;
     private final CfSolveRepository cfSolveRepository;
     private final ContestParticipationRepository contestParticipationRepository;
-    private final com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
-    private final com.cpclub.backend.stats.service.ContestHistorySyncService contestHistorySyncService;
-    private final com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService leetCodeTotalsSnapshotService;
-    private final com.cpclub.backend.score.service.MemberScoreService memberScoreService;
+    private final PlatformDailyTotalRepository platformDailyTotalRepository;
+    private final MemberStatsSyncService memberStatsSyncService;
 
     /**
-     * Triggers asynchronous background backfill and stat sync for a member.
-     * Backfills lifetime CF submissions (1200+ solves), CF/LC contest history,
-     * LeetCode live totals, and recomputes the Overall Score.
+     * Queues a background refresh of the member's external stats, as the member
+     * asked for it from their profile.
+     *
+     * @return false when a refresh for them is already queued or running
+     * @throws com.cpclub.backend.common.exception.TooManyRequestsException when they
+     *         asked within the last few minutes
      */
-    public void syncMemberExternalStatsAsync(Long userId) {
-        new Thread(() -> {
-            try {
-                User user = userRepository.findById(userId).orElse(null);
-                if (user == null) return;
-                log.info("Starting background external stats backfill for user id {} ({})", userId, user.getName());
-
-                if (user.getCodeforcesHandle() != null && !user.getCodeforcesHandle().isBlank()) {
-                    codeforcesSyncService.syncSingleUser(user);
-                    codeforcesSubmissionSyncService.syncMember(user);
-                    contestHistorySyncService.syncUserContests(user);
-                }
-                if (user.getLeetcodeHandle() != null && !user.getLeetcodeHandle().isBlank()) {
-                    leetCodeSyncService.syncSingleUser(user);
-                    leetCodeTotalsSnapshotService.captureSingleUser(user);
-                    contestHistorySyncService.syncUserContests(user);
-                }
-
-                memberScoreService.computeScores();
-                log.info("Completed background external stats backfill for user id {}", userId);
-            } catch (Exception e) {
-                log.error("Background external stats backfill failed for user id {}", userId, e);
-            }
-        }).start();
+    public boolean syncMemberExternalStatsAsync(Long userId) {
+        return memberStatsSyncService.requestByMember(userId);
     }
 
     /**
@@ -278,21 +254,21 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        String handle = request.handle().trim();
-        if (userRepository.existsByCodeforcesHandle(handle) &&
-            !handle.equalsIgnoreCase(user.getCodeforcesHandle())) {
-            throw new BadRequestException("Codeforces handle '" + handle + "' is already in use by another user!");
+        String handle = PlatformHandles.normalizeCodeforces(request.handle());
+        if (handle == null) {
+            throw new BadRequestException("Codeforces handle is required");
         }
+        requireCodeforcesHandleFree(handle, user);
 
         boolean handleChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
         user.setCodeforcesHandle(handle);
         if (handleChanged) {
-            user.setCfLastSubmissionId(null);
-            cfSolveRepository.deleteByUser(user);
-            contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+            resetCodeforcesData(user);
         }
         User savedUser = userRepository.save(user);
-        syncMemberExternalStatsAsync(savedUser.getId());
+        if (handleChanged) {
+            memberStatsSyncService.requestAfterHandleChange(savedUser.getId());
+        }
         log.info("Updated Codeforces handle for user id {} to '{}'", userId, handle);
         return UserResponseDto.fromEntity(savedUser);
     }
@@ -339,51 +315,81 @@ public class UserService {
             user.setNotifyContests(request.notifyContests());
         }
 
+        // A blank handle leaves the linked account as it is: the form always sends
+        // both fields, and an empty one means "not editing this", not "unlink".
         boolean codeforcesChanged = false;
-        if (request.codeforcesHandle() != null && !request.codeforcesHandle().isBlank()) {
-            String handle = request.codeforcesHandle().trim();
-            if (userRepository.existsByCodeforcesHandle(handle) &&
-                !handle.equalsIgnoreCase(user.getCodeforcesHandle())) {
-                throw new BadRequestException("Codeforces handle '" + handle + "' is already in use!");
-            }
-            codeforcesChanged = !handle.equalsIgnoreCase(user.getCodeforcesHandle());
-            user.setCodeforcesHandle(handle);
+        String codeforcesHandle = PlatformHandles.normalizeCodeforces(request.codeforcesHandle());
+        if (codeforcesHandle != null) {
+            requireCodeforcesHandleFree(codeforcesHandle, user);
+            codeforcesChanged = !codeforcesHandle.equalsIgnoreCase(user.getCodeforcesHandle());
+            user.setCodeforcesHandle(codeforcesHandle);
             if (codeforcesChanged) {
-                user.setCfLastSubmissionId(null);
-                cfSolveRepository.deleteByUser(user);
-                contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+                resetCodeforcesData(user);
             }
         }
 
         boolean leetcodeChanged = false;
-        if (request.leetcodeHandle() != null && !request.leetcodeHandle().isBlank()) {
-            String handle = request.leetcodeHandle().trim();
-            if (Boolean.TRUE.equals(userRepository.existsByLeetcodeHandle(handle)) &&
-                !handle.equalsIgnoreCase(user.getLeetcodeHandle())) {
-                throw new BadRequestException("LeetCode handle '" + handle + "' is already in use!");
+        String leetcodeHandle = PlatformHandles.normalizeLeetcode(request.leetcodeHandle());
+        if (leetcodeHandle != null) {
+            if (Boolean.TRUE.equals(userRepository.existsByLeetcodeHandleIgnoreCase(leetcodeHandle)) &&
+                !leetcodeHandle.equalsIgnoreCase(user.getLeetcodeHandle())) {
+                throw new BadRequestException("LeetCode username '" + leetcodeHandle + "' is already linked to another member.");
             }
-            leetcodeChanged = !handle.equalsIgnoreCase(user.getLeetcodeHandle());
-            user.setLeetcodeHandle(handle);
+            leetcodeChanged = !leetcodeHandle.equalsIgnoreCase(user.getLeetcodeHandle());
+            user.setLeetcodeHandle(leetcodeHandle);
+            if (leetcodeChanged) {
+                resetLeetcodeData(user);
+            }
         }
 
         User saved = userRepository.save(user);
 
-        boolean cfNeedsSync = (saved.getCodeforcesHandle() != null && !saved.getCodeforcesHandle().isBlank())
+        boolean cfNeedsSync = saved.getCodeforcesHandle() != null
                 && (codeforcesChanged || saved.getCfLastSubmissionId() == null);
-        boolean lcNeedsSync = (saved.getLeetcodeHandle() != null && !saved.getLeetcodeHandle().isBlank())
+        boolean lcNeedsSync = saved.getLeetcodeHandle() != null
                 && (leetcodeChanged || saved.getLeetcodeTotalSolved() == null);
 
         if (cfNeedsSync || lcNeedsSync) {
-            syncMemberExternalStatsAsync(saved.getId());
-        } else {
-            if (codeforcesChanged) {
-                codeforcesSyncService.syncSingleUser(saved);
-            }
-            if (leetcodeChanged) {
-                leetCodeSyncService.syncSingleUser(saved);
-            }
+            memberStatsSyncService.requestAfterHandleChange(saved.getId());
         }
         return UserResponseDto.fromEntity(saved);
+    }
+
+    /**
+     * Codeforces handles are case-insensitive, so "Tourist" and "tourist" are the
+     * same account; the check used to be case-sensitive and let both be linked.
+     */
+    private void requireCodeforcesHandleFree(String handle, User owner) {
+        if (Boolean.TRUE.equals(userRepository.existsByCodeforcesHandleIgnoreCase(handle))
+                && !handle.equalsIgnoreCase(owner.getCodeforcesHandle())) {
+            throw new BadRequestException("Codeforces handle '" + handle + "' is already linked to another member.");
+        }
+    }
+
+    /**
+     * Drops everything fetched for the previous Codeforces account. The rating and
+     * peak used to survive a handle change, so a member who switched to an unrated
+     * account kept the old account's place on the leaderboard indefinitely.
+     */
+    private void resetCodeforcesData(User user) {
+        user.setCfLastSubmissionId(null);
+        user.setCfSyncedAt(null);
+        user.setRating(null);
+        user.setMaxRating(null);
+        cfSolveRepository.deleteByUser(user);
+        contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
+    }
+
+    /** As {@link #resetCodeforcesData}, for LeetCode; that previously kept everything. */
+    private void resetLeetcodeData(User user) {
+        user.setLeetcodeRating(null);
+        user.setLeetcodeTotalSolved(null);
+        user.setLeetcodeEasySolved(null);
+        user.setLeetcodeMediumSolved(null);
+        user.setLeetcodeHardSolved(null);
+        user.setLeetcodeSyncedAt(null);
+        contestParticipationRepository.deleteByUserAndPlatform(user, Platform.LEETCODE);
+        platformDailyTotalRepository.deleteByUserAndPlatform(user, Platform.LEETCODE.name());
     }
 
     /**

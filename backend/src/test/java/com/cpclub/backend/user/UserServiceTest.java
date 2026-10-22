@@ -13,8 +13,6 @@ import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.cpclub.backend.user.service.UserService;
-import com.cpclub.backend.codeforces.service.CodeforcesSyncService;
-import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,36 +30,24 @@ class UserServiceTest {
 
     private UserRepository userRepository;
     private UserService userService;
-    private CodeforcesSyncService codeforcesSyncService;
-    private LeetCodeSyncService leetCodeSyncService;
     private com.cpclub.backend.codeforces.repository.CfSolveRepository cfSolveRepository;
     private com.cpclub.backend.stats.repository.ContestParticipationRepository contestParticipationRepository;
-    private com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService codeforcesSubmissionSyncService;
-    private com.cpclub.backend.stats.service.ContestHistorySyncService contestHistorySyncService;
-    private com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService leetCodeTotalsSnapshotService;
-    private com.cpclub.backend.score.service.MemberScoreService memberScoreService;
+    private com.cpclub.backend.stats.repository.PlatformDailyTotalRepository platformDailyTotalRepository;
+    private com.cpclub.backend.user.service.MemberStatsSyncService memberStatsSyncService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
-        codeforcesSyncService = mock(CodeforcesSyncService.class);
-        leetCodeSyncService = mock(LeetCodeSyncService.class);
         cfSolveRepository = mock(com.cpclub.backend.codeforces.repository.CfSolveRepository.class);
         contestParticipationRepository = mock(com.cpclub.backend.stats.repository.ContestParticipationRepository.class);
-        codeforcesSubmissionSyncService = mock(com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService.class);
-        contestHistorySyncService = mock(com.cpclub.backend.stats.service.ContestHistorySyncService.class);
-        leetCodeTotalsSnapshotService = mock(com.cpclub.backend.leetcode.service.LeetCodeTotalsSnapshotService.class);
-        memberScoreService = mock(com.cpclub.backend.score.service.MemberScoreService.class);
+        platformDailyTotalRepository = mock(com.cpclub.backend.stats.repository.PlatformDailyTotalRepository.class);
+        memberStatsSyncService = mock(com.cpclub.backend.user.service.MemberStatsSyncService.class);
         userService = new UserService(
                 userRepository,
-                codeforcesSyncService,
-                leetCodeSyncService,
                 cfSolveRepository,
                 contestParticipationRepository,
-                codeforcesSubmissionSyncService,
-                contestHistorySyncService,
-                leetCodeTotalsSnapshotService,
-                memberScoreService
+                platformDailyTotalRepository,
+                memberStatsSyncService
         );
     }
 
@@ -116,7 +102,7 @@ class UserServiceTest {
         user.setId(1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByCodeforcesHandle("tourist_pro")).thenReturn(false);
+        when(userRepository.existsByCodeforcesHandleIgnoreCase("tourist_pro")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UpdateHandleRequest request = new UpdateHandleRequest("tourist_pro");
@@ -133,7 +119,7 @@ class UserServiceTest {
         User user = new User("John", "john@example.com", "pass", Role.ROLE_USER);
         user.setId(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByCodeforcesHandle("taken_handle")).thenReturn(true);
+        when(userRepository.existsByCodeforcesHandleIgnoreCase("taken_handle")).thenReturn(true);
 
         assertThrows(BadRequestException.class,
                 () -> userService.updateCodeforcesHandle(1L, new UpdateHandleRequest("taken_handle")));
@@ -147,7 +133,7 @@ class UserServiceTest {
         user.setId(1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByCodeforcesHandle("new_handle")).thenReturn(false);
+        when(userRepository.existsByCodeforcesHandleIgnoreCase("new_handle")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UserProfileUpdateRequest request = profileUpdate("New Name", "new_handle", null);
@@ -155,6 +141,70 @@ class UserServiceTest {
 
         assertEquals("New Name", result.name());
         assertEquals("new_handle", result.codeforcesHandle());
+    }
+
+    @Test
+    @DisplayName("A pasted Codeforces profile link is stored as the bare handle")
+    void profileLinkIsReducedToHandle() {
+        User user = new User("Ishaan", "ishaan@dau.ac.in", "pass", Role.ROLE_USER);
+        user.setId(5L);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        UserResponseDto result = userService.updateProfile(5L,
+                profileUpdate("Ishaan", "https://codeforces.com/profile/Ishaan-K", "https://leetcode.com/u/ishaan_k/"));
+
+        assertEquals("Ishaan-K", result.codeforcesHandle());
+        assertEquals("ishaan_k", user.getLeetcodeHandle());
+        verify(memberStatsSyncService).requestAfterHandleChange(5L);
+    }
+
+    @Test
+    @DisplayName("Something that is not a handle is refused, not saved and left to fail every sync")
+    void invalidHandleIsRejected() {
+        User user = new User("Bad", "bad@dau.ac.in", "pass", Role.ROLE_USER);
+        user.setId(6L);
+        when(userRepository.findById(6L)).thenReturn(Optional.of(user));
+
+        assertThrows(BadRequestException.class,
+                () -> userService.updateProfile(6L, profileUpdate("Bad", "https://example.com/me", null)));
+        assertThrows(BadRequestException.class,
+                () -> userService.updateProfile(6L, profileUpdate("Bad", "has spaces", null)));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Changing Codeforces handle drops the old account's rating, peak, solves and contests")
+    void handleChangeResetsStaleCodeforcesData() {
+        User user = new User("Old", "old@dau.ac.in", "pass", Role.ROLE_USER);
+        user.setId(7L);
+        user.setCodeforcesHandle("old_handle");
+        user.setRating(1900);
+        user.setMaxRating(2000);
+        user.setCfLastSubmissionId(123L);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        userService.updateCodeforcesHandle(7L, new UpdateHandleRequest("new_handle"));
+
+        assertEquals("new_handle", user.getCodeforcesHandle());
+        assertNull(user.getRating());
+        assertNull(user.getMaxRating());
+        assertNull(user.getCfLastSubmissionId());
+        verify(cfSolveRepository).deleteByUser(user);
+        verify(contestParticipationRepository).deleteByUserAndPlatform(user, com.cpclub.backend.common.model.Platform.CODEFORCES);
+    }
+
+    @Test
+    @DisplayName("Handle uniqueness ignores case: Tourist and tourist are one account")
+    void handleUniquenessIsCaseInsensitive() {
+        User user = new User("Copy", "copy@dau.ac.in", "pass", Role.ROLE_USER);
+        user.setId(8L);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByCodeforcesHandleIgnoreCase("Tourist")).thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> userService.updateCodeforcesHandle(8L, new UpdateHandleRequest("Tourist")));
     }
 
     @Test

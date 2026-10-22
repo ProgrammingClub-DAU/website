@@ -8,6 +8,9 @@ import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.codeforces.service.CodeforcesSubmissionSyncService;
 import com.cpclub.backend.score.service.MemberScoreService;
 import com.cpclub.backend.stats.service.ContestHistorySyncService;
+import com.cpclub.backend.sync.entity.SyncJob;
+import com.cpclub.backend.sync.service.SyncJobGuard;
+import com.cpclub.backend.sync.service.SyncRunRecorder;
 import com.cpclub.backend.user.repository.UserRepository;
 import com.google.common.util.concurrent.RateLimiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
@@ -25,6 +29,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -54,6 +59,12 @@ public class CodeforcesSyncServiceTest {
     @Mock
     private MemberScoreService memberScoreService;
 
+    @Mock
+    private SyncRunRecorder syncRunRecorder;
+
+    @Spy
+    private SyncJobGuard syncJobGuard = new SyncJobGuard();
+
     @InjectMocks
     private CodeforcesSyncService codeforcesSyncService;
 
@@ -72,6 +83,7 @@ public class CodeforcesSyncServiceTest {
         // while still exercising the real acquire() code path.
         ReflectionTestUtils.setField(
                 codeforcesSyncService, "codeforcesRateLimiter", RateLimiter.create(Double.MAX_VALUE));
+        lenient().when(syncRunRecorder.start(any())).thenReturn(SyncRunRecorder.RunHandle.detached());
     }
 
     private static CodeforcesResponse ok(CodeforcesUserDto... users) {
@@ -91,8 +103,9 @@ public class CodeforcesSyncServiceTest {
 
         codeforcesSyncService.syncCodeforcesRatings();
 
-        verify(userRepository, times(1)).save(tourist);
+        verify(userRepository).updateCodeforcesRating(1L, "tourist", 4000, 4000);
         assertEquals(4000, tourist.getRating());
+        assertEquals(4000, tourist.getMaxRating(), "peak rating is stored too");
     }
 
     /**
@@ -112,18 +125,18 @@ public class CodeforcesSyncServiceTest {
         when(restTemplate.getForObject(eq(API + "tourist;not_a_real_handle"), eq(CodeforcesResponse.class)))
                 .thenReturn(new CodeforcesResponse("FAILED",
                         "handles: User with handle not_a_real_handle not found", null));
-        // Retried individually: the good handle succeeds, the bad one still fails.
+        // Codeforces names the missing handle, so it is dropped and the rest retried
+        // in one request -- no need to probe each handle on its own.
         when(restTemplate.getForObject(eq(API + "tourist"), eq(CodeforcesResponse.class)))
                 .thenReturn(ok(cfUser("tourist", 3900)));
-        when(restTemplate.getForObject(eq(API + "not_a_real_handle"), eq(CodeforcesResponse.class)))
-                .thenReturn(new CodeforcesResponse("FAILED", "not found", null));
 
         codeforcesSyncService.syncCodeforcesRatings();
 
         assertEquals(3900, tourist.getRating(), "valid handle must still update");
         assertEquals(1500, badHandle.getRating(), "invalid handle keeps its previous rating");
-        verify(userRepository, times(1)).save(tourist);
-        verify(userRepository, never()).save(badHandle);
+        verify(userRepository).updateCodeforcesRating(eq(1L), eq("tourist"), eq(3900), any());
+        verify(userRepository, never()).updateCodeforcesRating(eq(2L), any(), any(), any());
+        verify(restTemplate, never()).getForObject(eq(API + "not_a_real_handle"), eq(CodeforcesResponse.class));
     }
 
     @Test
@@ -136,7 +149,7 @@ public class CodeforcesSyncServiceTest {
         codeforcesSyncService.syncCodeforcesRatings();
 
         assertEquals(3000, tourist.getRating(), "must not wipe the last known rating");
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).updateCodeforcesRating(anyLong(), any(), any(), any());
     }
 
     @Test
@@ -148,7 +161,7 @@ public class CodeforcesSyncServiceTest {
         codeforcesSyncService.syncCodeforcesRatings();
 
         assertEquals(3000, tourist.getRating());
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).updateCodeforcesRating(anyLong(), any(), any(), any());
     }
 
     @Test
@@ -162,7 +175,7 @@ public class CodeforcesSyncServiceTest {
         codeforcesSyncService.syncCodeforcesRatings();
 
         assertNull(unrated.getRating());
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).updateCodeforcesRating(anyLong(), any(), any(), any());
     }
 
     @Test
@@ -176,7 +189,7 @@ public class CodeforcesSyncServiceTest {
         codeforcesSyncService.syncCodeforcesRatings();
 
         assertEquals(3800, mixedCase.getRating());
-        verify(userRepository, times(1)).save(mixedCase);
+        verify(userRepository).updateCodeforcesRating(4L, "ToUrIsT", 3800, 3800);
     }
 
     @Test
@@ -198,6 +211,18 @@ public class CodeforcesSyncServiceTest {
 
         codeforcesSyncService.syncCodeforcesRatings();
 
+        verify(leetCodeSyncService).syncAllUsers();
+    }
+
+    @Test
+    @DisplayName("A step already running by hand is skipped by the scheduled pipeline, not run twice")
+    void syncCodeforcesRatings_skipsStepAlreadyRunning() {
+        syncJobGuard.tryStart(SyncJob.CF_SUBMISSIONS);
+        when(userRepository.findByCodeforcesHandleIsNotNull()).thenReturn(List.of());
+
+        codeforcesSyncService.syncCodeforcesRatings();
+
+        verify(codeforcesSubmissionSyncService, never()).syncAll();
         verify(leetCodeSyncService).syncAllUsers();
     }
 

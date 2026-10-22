@@ -15,6 +15,7 @@ import {
 import { blogService } from "@/lib/services/blog";
 import { useAuthStore } from "@/store/auth";
 import type { BlogEditDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export default function MyBlogsPage() {
   const { isAuthenticated } = useAuthStore();
@@ -165,7 +166,7 @@ export default function MyBlogsPage() {
                       )}
 
                       <span className="text-nano font-mono text-fg-subtle">
-                        Updated {new Date(post.updatedAt || post.createdAt).toLocaleDateString("en-IN")}
+                        Updated {serverDate(post.updatedAt || post.createdAt).toLocaleDateString("en-IN")}
                       </span>
                     </div>
 

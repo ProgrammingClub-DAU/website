@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
@@ -1138,7 +1139,7 @@ function ProfileDashboardContent({
             <span className="text-fg-muted">Member Since</span>
             <span>
               {profile.createdAt
-                ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+                ? serverDate(profile.createdAt).toLocaleDateString("en-US", {
                     month: "long",
                     year: "numeric",
                   })

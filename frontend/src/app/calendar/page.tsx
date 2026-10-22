@@ -11,6 +11,7 @@ import {
 import { calendarService } from "@/lib/services/calendar";
 import { AddToCalendar } from "@/components/site/add-to-calendar";
 import type { CalendarItemDto } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 type PlatformFilter = "ALL" | "CODEFORCES" | "LEETCODE" | "CODECHEF" | "ATCODER" | "CLUB_EVENT";
 
@@ -67,7 +68,7 @@ export default function CalendarPage() {
   const groupedByDate = useMemo(() => {
     const map = new Map<string, CalendarItemDto[]>();
     for (const item of filteredItems) {
-      const dateKey = new Date(item.startsAt).toLocaleDateString("en-IN", {
+      const dateKey = serverDate(item.startsAt).toLocaleDateString("en-IN", {
         timeZone: "Asia/Kolkata",
         weekday: "short",
         day: "numeric",
@@ -161,7 +162,7 @@ export default function CalendarPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {dateItems.map((item) => {
-                  const startTime = new Date(item.startsAt).toLocaleTimeString("en-IN", {
+                  const startTime = serverDate(item.startsAt).toLocaleTimeString("en-IN", {
                     timeZone: "Asia/Kolkata",
                     hour: "2-digit",
                     minute: "2-digit",
@@ -206,7 +207,7 @@ export default function CalendarPage() {
                         <AddToCalendar
                           eventId={isClub ? item.id.replace("event-", "") : undefined}
                           title={item.title}
-                          startDateIso={item.startsAt}
+                          startDateIso={serverDate(item.startsAt).toISOString()}
                         />
 
                         {item.url && (

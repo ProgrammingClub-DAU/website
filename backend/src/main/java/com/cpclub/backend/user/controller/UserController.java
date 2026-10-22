@@ -232,7 +232,14 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UserResponseDto currentUser = userService.getUserByEmail(userDetails.getUsername());
-        userService.syncMemberExternalStatsAsync(currentUser.id());
+        // 429 with Retry-After when asked again within the cooldown.
+        boolean queued = userService.syncMemberExternalStatsAsync(currentUser.id());
+        if (!queued) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    "A refresh of your stats is already in progress. It usually takes a few minutes.",
+                    "Sync already running"
+            ));
+        }
         return ResponseEntity.ok(ApiResponse.success(
                 "Sync started in the background. Your submissions, contest history, and overall score will be updated shortly.",
                 "Sync started"

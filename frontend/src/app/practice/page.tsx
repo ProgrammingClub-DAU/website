@@ -24,6 +24,7 @@ import type {
   MyUpsolvesDto,
   TopicStrengthResponse,
 } from "@/types/api";
+import { serverDate } from "@/lib/utils";
 
 export default function PracticePage() {
   const { isAuthenticated, user: currentUser } = useAuthStore();
@@ -281,7 +282,7 @@ export default function PracticePage() {
               {myUpsolves?.cfSyncedAt && (
                 <div className="text-nano font-mono text-fg-subtle flex items-center gap-1">
                   <Clock className="size-3" />
-                  Synced: {new Date(myUpsolves.cfSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
+                  Synced: {serverDate(myUpsolves.cfSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
                 </div>
               )}
             </div>
