@@ -3,26 +3,77 @@
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, ExternalLink, Clock } from "lucide-react";
-import type { ClubContestDetailDto, RanklistRowDto } from "@/types/api";
-import { serverDate } from "@/lib/utils";
+import { Search, ExternalLink, Clock, Trophy } from "lucide-react";
+import type { AcademicYear, ClubContestDetailDto, RanklistRowDto } from "@/types/api";
+import { ACADEMIC_YEAR_LABELS } from "@/types/api";
+import { cn, serverDate } from "@/lib/utils";
 
 interface RanklistTableProps {
   data: ClubContestDetailDto;
 }
 
+type Division = "ALL" | AcademicYear;
+
+const DIVISIONS: { key: Division; label: string }[] = [
+  { key: "ALL", label: "Everyone" },
+  { key: "FIRST_YEAR", label: ACADEMIC_YEAR_LABELS.FIRST_YEAR },
+  { key: "SECOND_YEAR_ONWARDS", label: ACADEMIC_YEAR_LABELS.SECOND_YEAR_ONWARDS },
+];
+
+const MEDAL = ["🥇", "🥈", "🥉"];
+
+/** A row with its rank among the rows shown, which for a division is the division rank. */
+interface ShownRow {
+  row: RanklistRowDto;
+  rank: number;
+  tied: boolean;
+}
+
+/**
+ * Ranks rows that are already in club order. Members tied in the club ranklist
+ * stay tied; the next distinct rank skips, as in the club ranklist itself.
+ */
+function rankWithin(rows: RanklistRowDto[]): ShownRow[] {
+  const ranked: ShownRow[] = [];
+  rows.forEach((row, i) => {
+    const prev = ranked[i - 1];
+    const rank = prev && prev.row.rank === row.rank ? prev.rank : i + 1;
+    ranked.push({ row, rank, tied: false });
+  });
+  ranked.forEach((r, i) => {
+    r.tied = ranked[i - 1]?.rank === r.rank || ranked[i + 1]?.rank === r.rank;
+  });
+  return ranked;
+}
+
 export function RanklistTable({ data }: RanklistTableProps) {
   const [search, setSearch] = useState("");
+  const [division, setDivision] = useState<Division>("ALL");
 
-  const filteredRows = useMemo(() => {
-    if (!search.trim()) return data.rows;
+  // The club ranklist is ordered by rank already; sorted here so the division
+  // ranks below never depend on that.
+  const ordered = useMemo(() => [...data.rows].sort((a, b) => a.rank - b.rank), [data.rows]);
+
+  const byDivision = useMemo(
+    () => ({
+      FIRST_YEAR: rankWithin(ordered.filter((r) => r.member.academicYear === "FIRST_YEAR")),
+      SECOND_YEAR_ONWARDS: rankWithin(ordered.filter((r) => r.member.academicYear === "SECOND_YEAR_ONWARDS")),
+    }),
+    [ordered]
+  );
+  const yearNotSet = ordered.filter((r) => !r.member.academicYear).length;
+  const hasDivisions = byDivision.FIRST_YEAR.length + byDivision.SECOND_YEAR_ONWARDS.length > 0;
+
+  const shownRows = useMemo(() => {
+    const base = division === "ALL" ? rankWithin(ordered) : byDivision[division];
+    if (!search.trim()) return base;
     const q = search.toLowerCase();
-    return data.rows.filter(
-      (r) =>
-        r.member.name.toLowerCase().includes(q) ||
-        (r.member.codeforcesHandle && r.member.codeforcesHandle.toLowerCase().includes(q))
+    return base.filter(
+      ({ row }) =>
+        row.member.name.toLowerCase().includes(q) ||
+        (row.member.codeforcesHandle && row.member.codeforcesHandle.toLowerCase().includes(q))
     );
-  }, [data.rows, search]);
+  }, [ordered, byDivision, division, search]);
 
   const durationHours = Math.floor(data.contest.durationSeconds / 3600);
   const durationMins = Math.floor((data.contest.durationSeconds % 3600) / 60);
@@ -72,14 +123,87 @@ export function RanklistTable({ data }: RanklistTableProps) {
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fg-muted" />
           <input
-            type="text"
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search member..."
+            aria-label="Search members"
             className="w-full rounded-xl border border-white/10 bg-surface-2 pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />
         </div>
       </div>
+
+      {/* Year-wise prize podiums: the club gives 1st years and 2nd year onwards separate prizes. */}
+      {hasDivisions && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {(["FIRST_YEAR", "SECOND_YEAR_ONWARDS"] as AcademicYear[]).map((year) => {
+            const top = byDivision[year].filter((r) => r.rank <= 3);
+            return (
+              <section
+                key={year}
+                aria-label={`Top 3, ${ACADEMIC_YEAR_LABELS[year]}`}
+                className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4"
+              >
+                <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white">
+                  <Trophy className="size-3.5 text-amber-400" />
+                  Top 3 · {ACADEMIC_YEAR_LABELS[year]}
+                </h3>
+                {top.length === 0 ? (
+                  <p className="text-xs text-fg-muted">No {ACADEMIC_YEAR_LABELS[year]} participants yet.</p>
+                ) : (
+                  <ol className="space-y-2">
+                    {top.map(({ row, rank, tied }) => (
+                      <li key={row.member.id} className="flex items-center gap-3 text-sm">
+                        <span className="w-6 text-center text-lg" aria-label={`${tied ? "Tied " : ""}place ${rank}`}>
+                          {MEDAL[rank - 1]}
+                        </span>
+                        <Link
+                          href={`/profile/${row.member.id}`}
+                          className="min-w-0 flex-1 truncate font-medium text-white hover:text-primary"
+                        >
+                          {row.member.name}
+                          {tied && <span className="ml-1 text-[10px] text-fg-muted">(tied)</span>}
+                        </Link>
+                        <span className="shrink-0 font-mono text-xs text-fg-muted tabular-nums">
+                          {row.solvedCount} solved · club #{row.rank}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
+      {hasDivisions && yearNotSet > 0 && (
+        <p className="text-xs text-amber-300/90">
+          {yearNotSet} participant{yearNotSet === 1 ? " has" : "s have"} not set their year on their
+          profile, so {yearNotSet === 1 ? "is" : "are"} not in either year-wise top 3.
+        </p>
+      )}
+
+      {/* Division filter */}
+      {hasDivisions && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Show ranking for">
+          {DIVISIONS.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              aria-pressed={division === d.key}
+              onClick={() => setDivision(d.key)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                division === d.key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-white/10 bg-white/[0.03] text-fg-muted hover:text-white"
+              )}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Standings Table */}
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
@@ -102,32 +226,40 @@ export function RanklistTable({ data }: RanklistTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {filteredRows.length === 0 ? (
+            {shownRows.length === 0 ? (
               <tr>
                 <td colSpan={5 + data.problems.length} className="py-12 text-center text-fg-muted font-mono text-xs">
-                  {search ? "No members match your search." : "No standings recorded for this contest."}
+                  {search
+                    ? "No members match your search."
+                    : division !== "ALL"
+                    ? "No participants from this year."
+                    : "No standings recorded for this contest."}
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row: RanklistRowDto) => {
+              shownRows.map(({ row, rank, tied }) => {
                 return (
                   <tr key={row.member.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Rank */}
+                    {/* Rank: within the division when one is selected */}
                     <td className="py-3 px-4 text-center font-mono">
-                      {row.rank === 1 ? (
+                      {rank === 1 ? (
                         <span className="inline-flex items-center justify-center size-6 rounded-full bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40">
                           1
                         </span>
-                      ) : row.rank === 2 ? (
+                      ) : rank === 2 ? (
                         <span className="inline-flex items-center justify-center size-6 rounded-full bg-slate-300/20 text-slate-200 font-bold border border-slate-300/40">
                           2
                         </span>
-                      ) : row.rank === 3 ? (
+                      ) : rank === 3 ? (
                         <span className="inline-flex items-center justify-center size-6 rounded-full bg-amber-600/20 text-amber-500 font-bold border border-amber-600/40">
                           3
                         </span>
                       ) : (
-                        <span className="text-fg-muted">={row.rank}</span>
+                        // "=" only for a real tie; it used to prefix every rank from 4 down.
+                        <span className="text-fg-muted">{tied ? `=${rank}` : rank}</span>
+                      )}
+                      {division !== "ALL" && (
+                        <div className="mt-0.5 text-[10px] text-fg-subtle">club #{row.rank}</div>
                       )}
                     </td>
 

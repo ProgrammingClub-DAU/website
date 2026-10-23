@@ -200,6 +200,18 @@ export interface Event {
   registrationCount?: number | null;
 }
 
+/**
+ * Which podium a placing is on. The club awards separate prizes to 1st-year
+ * students and to 2nd year onwards; OVERALL is a single podium for everyone.
+ */
+export type WinnerCategory = "OVERALL" | "FIRST_YEAR" | "SECOND_YEAR_ONWARDS";
+
+export const WINNER_CATEGORY_LABELS: Record<WinnerCategory, string> = {
+  OVERALL: "Overall",
+  FIRST_YEAR: "1st year",
+  SECOND_YEAR_ONWARDS: "2nd year onwards",
+};
+
 /** One placing on an event's podium. */
 export interface EventWinner {
   position: number;
@@ -208,6 +220,9 @@ export interface EventWinner {
   avatarUrl: string | null;
   codeforcesHandle: string | null;
   rating: number | null;
+  /** Absent from responses made before divisions existed; treat as OVERALL. */
+  category?: WinnerCategory;
+  academicYear?: AcademicYear | null;
 }
 
 export interface EventDetail extends Event {
@@ -216,6 +231,8 @@ export interface EventDetail extends Event {
   winners: EventWinner[];
   /** Null when the turnout has not been published -- not zero, which would be a claim. */
   attendeeCount: number | null;
+  /** The club contest behind the event's Codeforces link, for its live ranklist. */
+  clubContestId?: number | null;
 }
 
 export interface EventPhoto {
@@ -242,6 +259,8 @@ export interface EventAttendee {
   linkedinUrl: string | null;
   addedAt: string;
   clubRole: ClubRole | null;
+  /** Sent by the API; picks which year-wise podium the member can be placed on. */
+  academicYear?: AcademicYear | null;
 }
 
 export interface UserLookup {
@@ -699,6 +718,8 @@ export interface MemberRefDto {
   name: string;
   avatarUrl?: string | null;
   codeforcesHandle?: string | null;
+  /** For the per-year prize podiums; null when the member has not set it. */
+  academicYear?: AcademicYear | null;
 }
 
 export interface ContestProblemDto {

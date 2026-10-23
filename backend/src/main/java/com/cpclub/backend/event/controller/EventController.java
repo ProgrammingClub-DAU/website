@@ -18,6 +18,7 @@ import com.cpclub.backend.event.dto.RegistrationStatusDto;
 import com.cpclub.backend.event.dto.MarkAttendedResultDto;
 import com.cpclub.backend.event.dto.MarkAttendedRequest;
 import com.cpclub.backend.event.dto.EventRegistrationDto;
+import com.cpclub.backend.contest.service.EventContestLinker;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -64,6 +65,7 @@ public class EventController {
     private final EventService eventService;
     private final EventExportService eventExportService;
     private final EventRegistrationService eventRegistrationService;
+    private final EventContestLinker eventContestLinker;
 
     // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -82,7 +84,9 @@ public class EventController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         EventResponseDto created = eventService.createEvent(request, userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(created, "Event created successfully"));
+        // After the event is saved, so a Codeforces problem can never undo it.
+        String note = eventContestLinker.linkIfNeeded(request.codeforcesContestUrl(), userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(created, withNote("Event created successfully.", note)));
     }
 
     /**
@@ -137,7 +141,7 @@ public class EventController {
     @Operation(summary = "Get one event with photos and attendee count")
     public ResponseEntity<ApiResponse<EventDetailDto>> getEventDetail(
             @PathVariable Long id, Authentication authentication) {
-        EventDetailDto event = eventService.getEventDetail(id, isAdmin(authentication));
+        EventDetailDto event = withLinkedContest(eventService.getEventDetail(id, isAdmin(authentication)));
         return ResponseEntity.ok(ApiResponse.success(event, "Fetched event successfully"));
     }
 
@@ -161,7 +165,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventDetailDto>> setWinners(
             @PathVariable Long id,
             @Valid @RequestBody SetEventWinnersRequest request) {
-        EventDetailDto event = eventService.setWinners(id, request);
+        EventDetailDto event = withLinkedContest(eventService.setWinners(id, request));
         return ResponseEntity.ok(ApiResponse.success(event, "Winners updated successfully"));
     }
 
@@ -193,10 +197,26 @@ public class EventController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<EventResponseDto>> updateEvent(
             @PathVariable Long id,
-            @Valid @RequestBody EventCreateRequest request
+            @Valid @RequestBody EventCreateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
         EventResponseDto updated = eventService.updateEvent(id, request);
-        return ResponseEntity.ok(ApiResponse.success(updated, "Event updated successfully"));
+        String note = eventContestLinker.linkIfNeeded(request.codeforcesContestUrl(), userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(updated, withNote("Event updated successfully.", note)));
+    }
+
+    /**
+     * Attaches the club contest behind the event's link. The link in the view is
+     * already redacted for a viewer who may not see it, so no contest is revealed
+     * through this either.
+     */
+    private EventDetailDto withLinkedContest(EventDetailDto event) {
+        return event.withClubContestId(
+                eventContestLinker.findClubContestId(event.codeforcesContestUrl()).orElse(null));
+    }
+
+    private static String withNote(String message, String note) {
+        return note == null ? message : message + " " + note;
     }
 
     /**

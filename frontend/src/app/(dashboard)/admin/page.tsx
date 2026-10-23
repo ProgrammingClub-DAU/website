@@ -605,11 +605,12 @@ function EventsTab() {
       };
 
       if (editingEvent) {
-        await eventsService.updateEvent(editingEvent.id, payload);
-        setStatusMessage({ type: "success", text: "Event updated successfully." });
+        const saved = await eventsService.updateEvent(editingEvent.id, payload);
+        // The message also says whether its Codeforces contest was added to Contests.
+        setStatusMessage({ type: "success", text: saved.message || "Event updated successfully." });
       } else {
-        await eventsService.createEvent(payload);
-        setStatusMessage({ type: "success", text: "Event created successfully." });
+        const saved = await eventsService.createEvent(payload);
+        setStatusMessage({ type: "success", text: saved.message || "Event created successfully." });
       }
 
       setShowCreateModal(false);

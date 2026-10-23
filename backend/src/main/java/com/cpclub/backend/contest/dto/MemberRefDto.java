@@ -1,5 +1,6 @@
 package com.cpclub.backend.contest.dto;
 
+import com.cpclub.backend.user.entity.AcademicYear;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,4 +16,6 @@ public class MemberRefDto {
     private String name;
     private String avatarUrl;
     private String codeforcesHandle;
+    /** For the per-year prize podiums; null when the member has not set it. Public on profiles too. */
+    private AcademicYear academicYear;
 }

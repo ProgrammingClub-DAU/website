@@ -20,6 +20,7 @@ final class ContestViews {
                 .name(user.getName())
                 .avatarUrl(user.getAvatarUrl())
                 .codeforcesHandle(user.getCodeforcesHandle())
+                .academicYear(user.getAcademicYear())
                 .build();
     }
 

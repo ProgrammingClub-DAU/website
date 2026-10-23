@@ -14,7 +14,8 @@ import {
 } from "@/lib/google-sheets";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { ClubRoleBadge } from "@/components/ui/club-role-badge";
-import type { EventDetail, EventAttendee, UserLookup, EventRegistrationRow } from "@/types/api";
+import type { EventDetail, EventAttendee, UserLookup, EventRegistrationRow, WinnerCategory } from "@/types/api";
+import { WINNER_CATEGORY_LABELS } from "@/types/api";
 import {
   ArrowLeft,
   Search,
@@ -38,6 +39,17 @@ import {
   UserCheck,
 } from "lucide-react";
 import { serverDate } from "@/lib/utils";
+
+/** Division podiums first; overall last, for events without year-wise prizes. */
+const PODIUM_ORDER: WinnerCategory[] = ["FIRST_YEAR", "SECOND_YEAR_ONWARDS", "OVERALL"];
+
+function emptyPodiums(): Record<WinnerCategory, Record<number, number | "">> {
+  return {
+    FIRST_YEAR: { 1: "", 2: "", 3: "" },
+    SECOND_YEAR_ONWARDS: { 1: "", 2: "", 3: "" },
+    OVERALL: { 1: "", 2: "", 3: "" },
+  };
+}
 
 export default function EventAttendeesPage() {
   const params = useParams();
@@ -89,7 +101,9 @@ export default function EventAttendeesPage() {
    * refetch, and so Save has something definite to send: three selects, three
    * placings, whatever is set.
    */
-  const [podium, setPodium] = useState<Record<number, number | "">>({ 1: "", 2: "", 3: "" });
+  // One 1st-3rd per podium: the club gives 1st years and 2nd year onwards separate
+  // prizes, and an overall podium is still available for events without divisions.
+  const [podiums, setPodiums] = useState<Record<WinnerCategory, Record<number, number | "">>>(emptyPodiums);
   const [isSavingPodium, setIsSavingPodium] = useState(false);
 
   const loadEventData = useCallback(async () => {
@@ -100,11 +114,11 @@ export default function EventAttendeesPage() {
       setEvent(data);
 
       // Seeded from the server so the selects show what is actually recorded.
-      const loaded: Record<number, number | ""> = { 1: "", 2: "", 3: "" };
+      const loaded = emptyPodiums();
       data.winners.forEach((w) => {
-        loaded[w.position] = w.userId;
+        loaded[w.category ?? "OVERALL"][w.position] = w.userId;
       });
-      setPodium(loaded);
+      setPodiums(loaded);
     } catch (err) {
       console.error("Failed to load event:", err);
       setStatusMessage({ type: "error", text: "Failed to load event details." });
@@ -140,7 +154,6 @@ export default function EventAttendeesPage() {
   }, [eventId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadEventData();
     loadAttendees();
     loadRegistrations();
@@ -343,9 +356,11 @@ export default function EventAttendeesPage() {
   const handleSavePodium = async () => {
     if (!eventId) return;
 
-    const winners = [1, 2, 3]
-      .filter((position) => podium[position] !== "")
-      .map((position) => ({ position, userId: Number(podium[position]) }));
+    const winners = PODIUM_ORDER.flatMap((category) =>
+      [1, 2, 3]
+        .filter((position) => podiums[category][position] !== "")
+        .map((position) => ({ position, userId: Number(podiums[category][position]), category }))
+    );
 
     setIsSavingPodium(true);
     setStatusMessage(null);
@@ -959,36 +974,76 @@ export default function EventAttendeesPage() {
               </p>
             ) : (
               <>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {[1, 2, 3].map((position) => (
-                    <div key={position}>
-                      <label
-                        htmlFor={`podium-${position}`}
-                        className="mb-1 block text-xs font-medium text-fg-muted"
-                      >
-                        {position === 1 ? "1st" : position === 2 ? "2nd" : "3rd"} place
-                      </label>
-                      <select
-                        id={`podium-${position}`}
-                        value={podium[position]}
-                        onChange={(e) =>
-                          setPodium({
-                            ...podium,
-                            [position]: e.target.value === "" ? "" : Number(e.target.value),
-                          })
-                        }
-                        className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
-                      >
-                        <option value="">Nobody</option>
-                        {attendees.map((a) => (
-                          <option key={a.userId} value={a.userId}>
-                            {a.name}
-                            {a.codeforcesHandle ? ` (@${a.codeforcesHandle})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+                <p className="mt-3 text-xs text-fg-muted">
+                  Each division has its own 1st to 3rd. A division only lists attendees from that
+                  year, plus anyone who has not set their year on their profile.
+                  {event?.clubContestId != null && (
+                    <>
+                      {" "}
+                      The{" "}
+                      <Link href={`/contests/${event.clubContestId}`} className="text-primary hover:underline">
+                        contest ranklist
+                      </Link>{" "}
+                      shows the top 3 of each year.
+                    </>
+                  )}
+                </p>
+                <div className="mt-4 space-y-5">
+                  {PODIUM_ORDER.map((category) => {
+                    const eligible = attendees.filter(
+                      (a) =>
+                        category === "OVERALL" ||
+                        a.academicYear == null ||
+                        a.academicYear === category
+                    );
+                    return (
+                      <fieldset key={category}>
+                        <legend className="mb-2 text-xs font-semibold text-foreground">
+                          {WINNER_CATEGORY_LABELS[category]}
+                          {category === "OVERALL" && (
+                            <span className="ml-1.5 font-normal text-fg-subtle">
+                              (only for events without year-wise prizes)
+                            </span>
+                          )}
+                        </legend>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          {[1, 2, 3].map((position) => (
+                            <div key={position}>
+                              <label
+                                htmlFor={`podium-${category}-${position}`}
+                                className="mb-1 block text-xs font-medium text-fg-muted"
+                              >
+                                {position === 1 ? "1st" : position === 2 ? "2nd" : "3rd"} place
+                              </label>
+                              <select
+                                id={`podium-${category}-${position}`}
+                                value={podiums[category][position]}
+                                onChange={(e) =>
+                                  setPodiums({
+                                    ...podiums,
+                                    [category]: {
+                                      ...podiums[category],
+                                      [position]: e.target.value === "" ? "" : Number(e.target.value),
+                                    },
+                                  })
+                                }
+                                className="w-full rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                              >
+                                <option value="">Nobody</option>
+                                {eligible.map((a) => (
+                                  <option key={a.userId} value={a.userId}>
+                                    {a.name}
+                                    {a.codeforcesHandle ? ` (@${a.codeforcesHandle})` : ""}
+                                    {a.academicYear == null ? " · year not set" : ""}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </fieldset>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-3">

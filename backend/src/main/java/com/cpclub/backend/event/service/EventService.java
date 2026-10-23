@@ -15,6 +15,8 @@ import com.cpclub.backend.event.entity.Event;
 import com.cpclub.backend.event.entity.EventAttendee;
 import com.cpclub.backend.event.entity.EventPhoto;
 import com.cpclub.backend.event.entity.EventStatus;
+import com.cpclub.backend.event.entity.WinnerCategory;
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.event.repository.EventAttendeeRepository;
 import com.cpclub.backend.event.repository.EventPhotoRepository;
 import com.cpclub.backend.event.repository.EventRegistrationRepository;
@@ -513,9 +515,9 @@ public class EventService {
         Event event = requireEvent(eventId);
         List<SetEventWinnersRequest.Winner> placings = request.winners();
 
-        if (placings.stream().map(SetEventWinnersRequest.Winner::position).distinct().count()
+        if (placings.stream().map(w -> w.categoryOrOverall() + "#" + w.position()).distinct().count()
                 != placings.size()) {
-            throw new BadRequestException("Each placing can only be awarded once.");
+            throw new BadRequestException("Each placing can only be awarded once per podium.");
         }
 
         if (placings.stream().map(SetEventWinnersRequest.Winner::userId).distinct().count()
@@ -538,10 +540,22 @@ public class EventService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "User not found with id: " + placing.userId()));
 
+            // A member who set their year can only place in that year's division. One
+            // who never set it is left to the admin's judgement rather than blocked.
+            WinnerCategory category = placing.categoryOrOverall();
+            AcademicYear required = category.requiredYear();
+            if (required != null && winner.getAcademicYear() != null && winner.getAcademicYear() != required) {
+                throw new BadRequestException(winner.getName() + " is "
+                        + (winner.getAcademicYear() == AcademicYear.FIRST_YEAR ? "a 1st year" : "in 2nd year or later")
+                        + ", so they cannot be placed on the "
+                        + (category == WinnerCategory.FIRST_YEAR ? "1st year" : "2nd year onwards") + " podium.");
+            }
+
             event.getWinners().add(EventWinner.builder()
                     .event(event)
                     .user(winner)
                     .position(placing.position())
+                    .category(category)
                     .build());
         }
 

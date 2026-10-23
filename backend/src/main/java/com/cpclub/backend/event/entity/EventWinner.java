@@ -3,6 +3,8 @@ package com.cpclub.backend.event.entity;
 import com.cpclub.backend.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -62,4 +64,10 @@ public class EventWinner {
     /** 1, 2 or 3. */
     @Column(nullable = false)
     private Integer position;
+
+    /** The podium this placing is on: overall, or a year division (V28). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private WinnerCategory category = WinnerCategory.OVERALL;
 }

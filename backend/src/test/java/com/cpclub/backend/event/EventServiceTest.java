@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -431,6 +432,52 @@ class EventServiceTest {
         assertEquals(1, upcoming.getWinners().size());
         assertEquals(5L, upcoming.getWinners().get(0).getUser().getId());
         assertEquals(1, upcoming.getWinners().get(0).getPosition());
+    }
+
+    @Test
+    @DisplayName("Each year division gets its own 1st-3rd: two firsts in different divisions are allowed")
+    void setWinners_recordsAPodiumPerDivision() {
+        User junior = new User("Asha", "asha@dau.ac.in", null, com.cpclub.backend.user.entity.Role.ROLE_USER);
+        junior.setId(5L);
+        junior.setAcademicYear(com.cpclub.backend.user.entity.AcademicYear.FIRST_YEAR);
+        User senior = new User("Ravi", "ravi@dau.ac.in", null, com.cpclub.backend.user.entity.Role.ROLE_USER);
+        senior.setId(6L);
+        senior.setAcademicYear(com.cpclub.backend.user.entity.AcademicYear.SECOND_YEAR_ONWARDS);
+
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventAttendeeRepository.existsByEventIdAndUserId(eq(10L), any())).thenReturn(true);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(junior));
+        when(userRepository.findById(6L)).thenReturn(Optional.of(senior));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i -> i.getArgument(0));
+        when(eventPhotoRepository.findByEventIdOrderByUploadedAtAsc(10L)).thenReturn(List.of());
+        when(eventAttendeeRepository.countByEventId(10L)).thenReturn(2L);
+
+        eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                new SetEventWinnersRequest.Winner(1, 5L, com.cpclub.backend.event.entity.WinnerCategory.FIRST_YEAR),
+                new SetEventWinnersRequest.Winner(1, 6L, com.cpclub.backend.event.entity.WinnerCategory.SECOND_YEAR_ONWARDS))));
+
+        assertEquals(2, upcoming.getWinners().size());
+        assertEquals(com.cpclub.backend.event.entity.WinnerCategory.FIRST_YEAR, upcoming.getWinners().get(0).getCategory());
+        assertEquals(com.cpclub.backend.event.entity.WinnerCategory.SECOND_YEAR_ONWARDS, upcoming.getWinners().get(1).getCategory());
+    }
+
+    @Test
+    @DisplayName("A senior cannot be placed on the 1st year podium")
+    void setWinners_rejectsTheWrongDivision() {
+        User senior = new User("Ravi", "ravi@dau.ac.in", null, com.cpclub.backend.user.entity.Role.ROLE_USER);
+        senior.setId(6L);
+        senior.setAcademicYear(com.cpclub.backend.user.entity.AcademicYear.SECOND_YEAR_ONWARDS);
+
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcoming));
+        when(eventAttendeeRepository.existsByEventIdAndUserId(10L, 6L)).thenReturn(true);
+        when(userRepository.findById(6L)).thenReturn(Optional.of(senior));
+
+        BadRequestException thrown = assertThrows(BadRequestException.class,
+                () -> eventService.setWinners(10L, new SetEventWinnersRequest(List.of(
+                        new SetEventWinnersRequest.Winner(1, 6L, com.cpclub.backend.event.entity.WinnerCategory.FIRST_YEAR)))));
+
+        assertTrue(thrown.getMessage().contains("1st year podium"), thrown.getMessage());
+        verify(eventRepository, never()).save(any());
     }
 
     @Test
