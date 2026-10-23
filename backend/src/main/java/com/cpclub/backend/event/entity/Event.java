@@ -130,7 +130,7 @@ public class Event {
      */
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("position ASC")
+    @OrderBy("category ASC, position ASC")
     @Builder.Default
     private List<EventWinner> winners = new ArrayList<>();
 

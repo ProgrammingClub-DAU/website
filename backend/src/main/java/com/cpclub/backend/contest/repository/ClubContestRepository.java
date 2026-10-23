@@ -15,6 +15,8 @@ public interface ClubContestRepository extends JpaRepository<ClubContest, Long> 
 
     boolean existsByCfContestId(Integer cfContestId);
 
+    java.util.Optional<ClubContest> findByCfContestId(Integer cfContestId);
+
     @Query("SELECT c FROM ClubContest c LEFT JOIN FETCH c.season ORDER BY c.startsAt DESC")
     List<ClubContest> findAllWithSeasonNewestFirst();
 

@@ -1,4 +1,4 @@
-import apiClient from "@/lib/axios";
+import apiClient, { SLOW_REQUEST_TIMEOUT_MS } from "@/lib/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "@/store/auth";
 import type {
@@ -8,6 +8,7 @@ import type {
   EventPhoto,
   EventType,
   UserLookup,
+  WinnerCategory,
   RegistrationStatus,
   EventRegistrationRow,
 } from "@/types/api";
@@ -36,6 +37,8 @@ export interface EventRequest {
 export interface WinnerRequest {
   position: number;
   userId: number;
+  /** Omitted means OVERALL. */
+  category?: WinnerCategory;
 }
 
 export interface EventPhotoRequest {
@@ -64,14 +67,24 @@ export const eventsService = {
     return response.data.data;
   },
 
-  createEvent: async (data: EventRequest): Promise<Event> => {
-    const response = await apiClient.post<ApiResponse<Event>>("/api/events", data);
-    return response.data.data;
+  /**
+   * The message is returned too: when the event has a Codeforces contest link,
+   * saving also adds that contest to the Contests page, and the message says
+   * whether that worked. Slow timeout, because that reads the contest from
+   * Codeforces.
+   */
+  createEvent: async (data: EventRequest): Promise<{ event: Event; message: string }> => {
+    const response = await apiClient.post<ApiResponse<Event>>("/api/events", data, {
+      timeout: SLOW_REQUEST_TIMEOUT_MS,
+    });
+    return { event: response.data.data, message: response.data.message };
   },
 
-  updateEvent: async (id: number, data: EventRequest): Promise<Event> => {
-    const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}`, data);
-    return response.data.data;
+  updateEvent: async (id: number, data: EventRequest): Promise<{ event: Event; message: string }> => {
+    const response = await apiClient.put<ApiResponse<Event>>(`/api/events/${id}`, data, {
+      timeout: SLOW_REQUEST_TIMEOUT_MS,
+    });
+    return { event: response.data.data, message: response.data.message };
   },
 
   markCompleted: async (id: number): Promise<Event> => {

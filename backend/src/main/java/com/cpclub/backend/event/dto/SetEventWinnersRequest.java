@@ -1,5 +1,6 @@
 package com.cpclub.backend.event.dto;
 
+import com.cpclub.backend.event.entity.WinnerCategory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -21,7 +22,7 @@ import java.util.List;
 public record SetEventWinnersRequest(
 
         @NotNull(message = "Winners must not be null; send an empty list to clear the podium")
-        @Size(max = 3, message = "An event has at most three placings")
+        @Size(max = 9, message = "An event has at most three placings per podium")
         List<@Valid Winner> winners
 ) {
 
@@ -44,7 +45,18 @@ public record SetEventWinnersRequest(
             Integer position,
 
             @NotNull(message = "Winner must be an existing member")
-            Long userId
+            Long userId,
+
+            /** Overall, or a year division. Omitted means OVERALL, as before divisions existed. */
+            WinnerCategory category
     ) {
+        /** An overall placing, as every placing was before divisions existed. */
+        public Winner(Integer position, Long userId) {
+            this(position, userId, null);
+        }
+
+        public WinnerCategory categoryOrOverall() {
+            return category != null ? category : WinnerCategory.OVERALL;
+        }
     }
 }

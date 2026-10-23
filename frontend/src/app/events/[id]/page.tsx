@@ -19,7 +19,8 @@ import { PhotoGrid } from "@/components/site/photo-grid";
 import { RegistrationButton } from "@/components/site/registration-button";
 import { AddToCalendar } from "@/components/site/add-to-calendar";
 import { eventsService } from "@/lib/services/events";
-import type { EventDetail, EventWinner } from "@/types/api";
+import { WINNER_CATEGORY_LABELS } from "@/types/api";
+import type { EventDetail, EventWinner, WinnerCategory } from "@/types/api";
 import { istDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const date = new Date(event.eventDate);
   const podium = [...event.winners].sort((a, b) => a.position - b.position);
+  // One podium per division -- the club gives 1st years and 2nd year onwards
+  // separate prizes. A placing recorded before divisions existed is overall.
+  const podiums = (["OVERALL", "FIRST_YEAR", "SECOND_YEAR_ONWARDS"] as WinnerCategory[])
+    .map((category) => ({
+      category,
+      winners: podium.filter((w) => (w.category ?? "OVERALL") === category),
+    }))
+    .filter((p) => p.winners.length > 0);
+  const showDivisionHeadings = podiums.some((p) => p.category !== "OVERALL");
 
   // An event with no published contest link shows no results section at all.
   // A workshop is not a contest with an empty podium.
@@ -157,6 +167,21 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               </a>
             )}
 
+            {event.clubContestId != null && (
+              <Link
+                href={`/contests/${event.clubContestId}`}
+                className="group flex flex-col justify-between rounded-panel border border-border bg-surface-2 p-5 transition-colors hover:border-primary"
+              >
+                <span className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
+                  Club ranklist
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground group-hover:text-primary">
+                  Standings and year-wise top 3
+                  <Trophy className="size-3.5" />
+                </span>
+              </Link>
+            )}
+
             {event.attendeeCount !== null && (
               <div className="rounded-panel border border-border bg-surface-2 p-5">
                 <span className="font-mono text-micro tracking-caps-wide text-fg-subtle uppercase">
@@ -175,9 +200,20 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs font-bold tracking-caps-wide text-primary uppercase">
                 <Trophy className="size-3.5" /> Winners
               </h2>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {podium.map((winner) => (
-                  <WinnerCard key={winner.userId} winner={winner} />
+              <div className="space-y-6">
+                {podiums.map(({ category, winners }) => (
+                  <div key={category}>
+                    {showDivisionHeadings && (
+                      <h3 className="mb-3 text-xs font-semibold text-fg-muted">
+                        {WINNER_CATEGORY_LABELS[category]}
+                      </h3>
+                    )}
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      {winners.map((winner) => (
+                        <WinnerCard key={winner.userId} winner={winner} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

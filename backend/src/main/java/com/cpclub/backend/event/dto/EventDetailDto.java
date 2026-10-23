@@ -43,8 +43,20 @@ public record EventDetailDto(
         /** RSVP cap; null when unlimited. */
         Integer capacity,
         /** RSVPs so far. Public, like the cap, so the page can say "23 going". */
-        long registrationCount
+        long registrationCount,
+        /**
+         * The club contest for this event's Codeforces link, so the page can link to
+         * its live ranklist. Null when there is none, or when the link is hidden.
+         */
+        Long clubContestId
 ) {
+
+    /** This view with the linked club contest attached. */
+    public EventDetailDto withClubContestId(Long contestId) {
+        return new EventDetailDto(id, title, description, eventDate, location, status, coverImageUrl, eventType,
+                codeforcesContestUrl, showContestLink, showWinners, showAttendeeCount, createdByName, createdAt,
+                photos, winners, attendeeCount, capacity, registrationCount, contestId);
+    }
 
     /**
      * Builds the detail view.
@@ -88,7 +100,8 @@ public record EventDetailDto(
                 podium,
                 visibleCount,
                 event.getCapacity(),
-                registrationCount
+                registrationCount,
+                null
         );
     }
 }

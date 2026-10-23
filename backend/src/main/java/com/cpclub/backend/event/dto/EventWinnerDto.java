@@ -1,6 +1,8 @@
 package com.cpclub.backend.event.dto;
 
 import com.cpclub.backend.event.entity.EventWinner;
+import com.cpclub.backend.event.entity.WinnerCategory;
+import com.cpclub.backend.user.entity.AcademicYear;
 import com.cpclub.backend.user.entity.User;
 
 /**
@@ -23,7 +25,9 @@ public record EventWinnerDto(
         String name,
         String avatarUrl,
         String codeforcesHandle,
-        Integer rating
+        Integer rating,
+        WinnerCategory category,
+        AcademicYear academicYear
 ) {
 
     public static EventWinnerDto fromEntity(EventWinner winner) {
@@ -34,7 +38,9 @@ public record EventWinnerDto(
                 user.getName(),
                 user.getAvatarUrl(),
                 user.getCodeforcesHandle(),
-                user.getRating()
+                user.getRating(),
+                winner.getCategory(),
+                user.getAcademicYear()
         );
     }
 }
