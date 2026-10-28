@@ -5,6 +5,7 @@
 // scroll-lock rule, and per-photo event metadata shown when a tile opens.
 import { useEffect, useMemo, useRef, useCallback, type CSSProperties } from 'react';
 import { useGesture } from '@use-gesture/react';
+import { cloudinaryUrl } from '@/lib/image-loader';
 
 // local: extended with the event a photo belongs to, so opening a tile can
 // name it rather than showing a bare image.
@@ -139,12 +140,14 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
     );
   }
 
+  // Originals can be several MB each and the dome shows dozens at once; 1200px is
+  // plenty for both the tile and the enlarged view. Non-Cloudinary files are untouched.
   const normalizedImages = pool.map(image => {
     if (typeof image === 'string') {
-      return { src: image, alt: '' };
+      return { src: cloudinaryUrl(image, 1200), alt: '' };
     }
     return {
-      src: image.src || '',
+      src: image.src ? cloudinaryUrl(image.src, 1200) : '',
       alt: image.alt || '',
       title: image.title,
       date: image.date,
