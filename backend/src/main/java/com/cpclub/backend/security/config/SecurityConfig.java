@@ -109,7 +109,9 @@ public class SecurityConfig {
                         // profile and the committee list are all open. "team" is matched
                         // before the authenticated() catch-all below, and cannot collide
                         // with the numeric {id} pattern beside it.
-                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/{id:[0-9]+}").permitAll()
+                        // platform-creators is the members page's credits section, read
+                        // signed out like the rest of that page (public DTO, no email).
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/team", "/api/users/platform-creators", "/api/users/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
 
                         // ---- BEFORE the existing GET "/api/blogs/**" permitAll ----

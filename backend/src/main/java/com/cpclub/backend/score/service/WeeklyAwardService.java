@@ -336,6 +336,10 @@ public class WeeklyAwardService {
         return awards;
     }
 
+    // The three reads below are transactional because toDto() reads the award's
+    // user, which is LAZY. Without a transaction (open-in-view is off) that threw
+    // LazyInitializationException, and every week that had winners was a 500.
+    @Transactional(readOnly = true)
     public LatestWeeklyAwardsResponseDto getLatestWeeklyAwards() {
         LocalDate latestWeek = weeklyAwardRepository.findLatestWeekStart();
         if (latestWeek == null) {
@@ -356,11 +360,13 @@ public class WeeklyAwardService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public List<WeeklyAwardDto> getAwardsByWeek(LocalDate weekStart) {
         List<WeeklyAward> entities = weeklyAwardRepository.findByWeekStartOrderByAwardTypeAscUserIdAsc(weekStart);
         return entities.stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<WeeklyAwardDto> getUserAwards(Long userId) {
         List<WeeklyAward> entities = weeklyAwardRepository.findByUserIdOrderByWeekStartDescAwardTypeAsc(userId);
         return entities.stream().map(this::toDto).toList();
