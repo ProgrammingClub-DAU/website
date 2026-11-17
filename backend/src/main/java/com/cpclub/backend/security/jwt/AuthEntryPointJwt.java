@@ -50,7 +50,10 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
-        log.error("Unauthorized error: {}", authException.getMessage());
+        // DEBUG, not ERROR: a request without a valid token is routine (an expired
+        // session, a signed-out visitor), and logging each one as an error buried the
+        // real errors in the server log.
+        log.debug("Unauthorized request to {}: {}", request.getRequestURI(), authException.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
