@@ -137,6 +137,9 @@ public class CodeforcesSyncServiceTest {
         verify(userRepository).updateCodeforcesRating(eq(1L), eq("tourist"), eq(3900), any());
         verify(userRepository, never()).updateCodeforcesRating(eq(2L), any(), any(), any());
         verify(restTemplate, never()).getForObject(eq(API + "not_a_real_handle"), eq(CodeforcesResponse.class));
+        // The member's profile is told: the missing handle is flagged, the found one cleared.
+        verify(userRepository).markCodeforcesHandleInvalid(eq("not_a_real_handle"), any());
+        verify(userRepository).clearCodeforcesHandleInvalid(java.util.List.of("tourist"));
     }
 
     @Test

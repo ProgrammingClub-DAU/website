@@ -374,6 +374,7 @@ public class UserService {
     private void resetCodeforcesData(User user) {
         user.setCfLastSubmissionId(null);
         user.setCfSyncedAt(null);
+        user.setCfHandleInvalidAt(null);
         user.setRating(null);
         user.setMaxRating(null);
         cfSolveRepository.deleteByUser(user);
@@ -388,6 +389,7 @@ public class UserService {
         user.setLeetcodeMediumSolved(null);
         user.setLeetcodeHardSolved(null);
         user.setLeetcodeSyncedAt(null);
+        user.setLeetcodeHandleInvalidAt(null);
         contestParticipationRepository.deleteByUserAndPlatform(user, Platform.LEETCODE);
         platformDailyTotalRepository.deleteByUserAndPlatform(user, Platform.LEETCODE.name());
     }

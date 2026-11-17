@@ -64,6 +64,7 @@ import {
 import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 import { serverDate } from "@/lib/utils";
+import { ProfileSetupNotice } from "@/components/site/profile-setup-notice";
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
@@ -552,6 +553,9 @@ function ProfileDashboardContent({
                 )}
               </p>
             </div>
+
+            {/* Only the owner sees what is wrong with their own setup. */}
+            {isOwner && <ProfileSetupNotice profile={profile} onFix={openEditor} />}
 
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2.5">

@@ -254,7 +254,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE User u SET u.rating = :rating, u.maxRating = :maxRating "
+    @Query("UPDATE User u SET u.rating = :rating, u.maxRating = :maxRating, u.cfHandleInvalidAt = NULL "
             + "WHERE u.id = :id AND u.codeforcesHandle = :handle")
     int updateCodeforcesRating(@Param("id") Long id, @Param("handle") String handle,
                                @Param("rating") Integer rating, @Param("maxRating") Integer maxRating);
@@ -270,9 +270,29 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("UPDATE User u SET u.leetcodeRating = :rating, u.leetcodeTotalSolved = :total, "
             + "u.leetcodeEasySolved = :easy, u.leetcodeMediumSolved = :medium, u.leetcodeHardSolved = :hard, "
-            + "u.leetcodeSyncedAt = :syncedAt WHERE u.id = :id AND u.leetcodeHandle = :handle")
+            + "u.leetcodeSyncedAt = :syncedAt, u.leetcodeHandleInvalidAt = NULL "
+            + "WHERE u.id = :id AND u.leetcodeHandle = :handle")
     int updateLeetcodeStats(@Param("id") Long id, @Param("handle") String handle,
                             @Param("rating") Integer rating, @Param("total") Integer total,
                             @Param("easy") Integer easy, @Param("medium") Integer medium,
                             @Param("hard") Integer hard, @Param("syncedAt") LocalDateTime syncedAt);
+
+    /** Codeforces said this handle does not exist. Matched case-insensitively, as Codeforces handles are. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.cfHandleInvalidAt = :at WHERE LOWER(u.codeforcesHandle) = :handleLower")
+    int markCodeforcesHandleInvalid(@Param("handleLower") String handleLower, @Param("at") LocalDateTime at);
+
+    /** Codeforces returned these handles, so they exist -- rated or not. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.cfHandleInvalidAt = NULL "
+            + "WHERE u.cfHandleInvalidAt IS NOT NULL AND LOWER(u.codeforcesHandle) IN :handlesLower")
+    int clearCodeforcesHandleInvalid(@Param("handlesLower") java.util.Collection<String> handlesLower);
+
+    /** LeetCode said this username does not exist. Only while it is still the member's username. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.leetcodeHandleInvalidAt = :at WHERE u.id = :id AND u.leetcodeHandle = :handle")
+    int markLeetcodeHandleInvalid(@Param("id") Long id, @Param("handle") String handle, @Param("at") LocalDateTime at);
 }
