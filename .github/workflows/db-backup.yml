@@ -41,7 +41,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.cfg.outputs.configured == 'true'
 
       # The production server is PostgreSQL 17, and an older pg_dump refuses to dump
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload encrypted backup
         if: steps.cfg.outputs.configured == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cpclub-db-backup-${{ github.run_id }}
           path: encrypted/*.dump.gpg
