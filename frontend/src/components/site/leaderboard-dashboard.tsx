@@ -25,6 +25,7 @@ import { statsService } from "@/lib/services/stats";
 import { PeriodToggle } from "@/components/site/period-toggle";
 import { PlatformToggle } from "@/components/site/platform-toggle";
 import { StatsLeaderboardTable } from "@/components/site/stats-leaderboard-table";
+import { MyProfileSetupNotice } from "@/components/site/profile-setup-notice";
 
 import { PodiumSection } from "./leaderboard/podium-section";
 import { RankingRow } from "./leaderboard/ranking-row";
@@ -311,6 +312,9 @@ export default function LeaderboardDashboard({ initialEntries = [] }: Leaderboar
 
   return (
     <div className="space-y-6">
+      {/* Tells a signed-in member why they might be missing from these boards. */}
+      <MyProfileSetupNotice />
+
       {/* ── TOP-LEVEL METRIC SELECTOR TABS ── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-white/10 no-scrollbar">
         {METRIC_TABS.map((tab) => {

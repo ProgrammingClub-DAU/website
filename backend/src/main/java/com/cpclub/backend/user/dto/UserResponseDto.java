@@ -82,7 +82,11 @@ public record UserResponseDto(
          * carries them.
          */
         boolean notifyEvents,
-        boolean notifyContests
+        boolean notifyContests,
+        /** Codeforces said the linked handle does not exist (last sync). */
+        boolean codeforcesHandleInvalid,
+        /** LeetCode said the linked username does not exist (last sync). */
+        boolean leetcodeHandleInvalid
 ) {
     public UserResponseDto(
             Long id,
@@ -112,7 +116,7 @@ public record UserResponseDto(
         this(id, name, email, avatarUrl, phoneNumber, codeforcesHandle, rating,
                 leetcodeHandle, leetcodeRating, codechefUrl, atcoderUrl, githubUrl,
                 linkedinUrl, clubRole, batchYear, academicYear, profileComplete,
-                role, createdAt, updatedAt, maxRating, equippedBannerId, isPlatformCreator, true, false, false);
+                role, createdAt, updatedAt, maxRating, equippedBannerId, isPlatformCreator, true, false, false, false, false);
     }
 
     /**
@@ -148,7 +152,9 @@ public record UserResponseDto(
                 user.isPlatformCreator(),
                 user.isEmailVerified(),
                 user.isNotifyEvents(),
-                user.isNotifyContests()
+                user.isNotifyContests(),
+                user.getCfHandleInvalidAt() != null,
+                user.getLeetcodeHandleInvalidAt() != null
         );
     }
 

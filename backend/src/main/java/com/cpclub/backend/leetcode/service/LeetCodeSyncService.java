@@ -217,6 +217,8 @@ public class LeetCodeSyncService {
                 // exist. This used to be read as "never contested" and stored as a
                 // successful sync with rating 0, hiding a mistyped username for good.
                 log.warn("LeetCode sync: LeetCode has no user '{}'. The member should fix the username.", handle);
+                userRepository.markLeetcodeHandleInvalid(user.getId(), handle,
+                        java.time.LocalDateTime.now(java.time.ZoneOffset.UTC));
                 return false;
             } else if (response.isUnratedMember()) {
                 user.setLeetcodeRating(UNRATED);

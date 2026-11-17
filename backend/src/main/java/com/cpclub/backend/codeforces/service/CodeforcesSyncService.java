@@ -21,6 +21,8 @@ import com.cpclub.backend.leetcode.service.LeetCodeSyncService;
 import com.cpclub.backend.score.service.MemberScoreService;
 import com.cpclub.backend.stats.service.ContestHistorySyncService;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -234,6 +236,16 @@ public class CodeforcesSyncService {
 
         if (response != null && "OK".equalsIgnoreCase(response.status()) && response.result() != null) {
             outcome.updated += applyResults(response.result(), userMap);
+            // Every handle Codeforces returned exists, rated or not: clear any earlier
+            // "not found" so the member's profile stops warning about it.
+            List<String> found = response.result().stream()
+                    .map(CodeforcesUserDto::handle)
+                    .filter(Objects::nonNull)
+                    .map(h -> h.toLowerCase(Locale.ROOT))
+                    .toList();
+            if (!found.isEmpty()) {
+                userRepository.clearCodeforcesHandleInvalid(found);
+            }
             return;
         }
 
@@ -253,6 +265,9 @@ public class CodeforcesSyncService {
             log.warn("Codeforces rejected handle '{}' -- leaving its rating unchanged. "
                     + "The member should correct it on their profile. CF comment: {}", batch.get(0), comment);
             outcome.reject(batch.get(0), comment);
+            if (comment.contains("not found")) {
+                markMissing(batch.get(0));
+            }
             return;
         }
 
@@ -264,6 +279,7 @@ public class CodeforcesSyncService {
             if (rest.size() < batch.size()) {
                 log.warn("Codeforces has no user '{}' -- leaving that member's rating unchanged.", bad);
                 outcome.reject(bad, comment);
+                markMissing(bad);
                 syncBatch(new ArrayList<>(rest), userMap, outcome);
                 return;
             }
@@ -273,6 +289,11 @@ public class CodeforcesSyncService {
         int mid = batch.size() / 2;
         syncBatch(new ArrayList<>(batch.subList(0, mid)), userMap, outcome);
         syncBatch(new ArrayList<>(batch.subList(mid, batch.size())), userMap, outcome);
+    }
+
+    /** Records that Codeforces has no such handle, for the member's own profile to show. */
+    private void markMissing(String handle) {
+        userRepository.markCodeforcesHandleInvalid(handle.toLowerCase(Locale.ROOT), LocalDateTime.now(ZoneOffset.UTC));
     }
 
     /**

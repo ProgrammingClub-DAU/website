@@ -44,6 +44,8 @@ interface UserProfileResponse {
   emailVerified?: boolean;
   notifyEvents?: boolean;
   notifyContests?: boolean;
+  codeforcesHandleInvalid?: boolean;
+  leetcodeHandleInvalid?: boolean;
 }
 
 export interface ProfileUpdateRequest {
@@ -91,6 +93,8 @@ function mapUserToProfile(user: UserProfileResponse): Profile {
     emailVerified: user.emailVerified ?? true,
     notifyEvents: user.notifyEvents ?? false,
     notifyContests: user.notifyContests ?? false,
+    codeforcesHandleInvalid: user.codeforcesHandleInvalid ?? false,
+    leetcodeHandleInvalid: user.leetcodeHandleInvalid ?? false,
   };
 }
 

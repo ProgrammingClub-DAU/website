@@ -157,6 +157,8 @@ class LeetCodeSyncServiceTest {
 
         assertEquals(false, updated);
         assertEquals(1400, alice.getLeetcodeRating());
+        // Flagged so Alice's own profile can tell her the username is wrong.
+        verify(userRepository).markLeetcodeHandleInvalid(eq(1L), eq("alice_lc"), any());
         verify(userRepository, never()).updateLeetcodeStats(any(), any(), any(), any(), any(), any(), any(), any());
     }
 

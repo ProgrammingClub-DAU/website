@@ -123,6 +123,10 @@ export interface Profile {
   emailVerified?: boolean;
   notifyEvents?: boolean;
   notifyContests?: boolean;
+  /** The linked Codeforces handle does not exist, per the last sync. Own profile only. */
+  codeforcesHandleInvalid?: boolean;
+  /** The linked LeetCode username does not exist, per the last sync. Own profile only. */
+  leetcodeHandleInvalid?: boolean;
 }
 
 export interface LeaderboardEntry {

@@ -158,6 +158,16 @@ public class User {
     @Column(name = "leetcode_synced_at")
     private LocalDateTime leetcodeSyncedAt;
 
+    /**
+     * When Codeforces / LeetCode last said this member's handle does not exist (V30).
+     * Null when it is fine or unchecked. Shown on the member's own profile.
+     */
+    @Column(name = "cf_handle_invalid_at")
+    private LocalDateTime cfHandleInvalidAt;
+
+    @Column(name = "leetcode_handle_invalid_at")
+    private LocalDateTime leetcodeHandleInvalidAt;
+
     /** Sign-in is Google-only, so existing accounts are implicitly verified. */
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
