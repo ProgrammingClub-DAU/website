@@ -3,8 +3,13 @@ package com.cpclub.backend.common.exception;
 import com.cpclub.backend.common.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -183,9 +188,44 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, HttpServletRequest request) {
+        HttpStatusCode clientError = clientErrorStatus(ex);
+        if (clientError != null) {
+            // The caller's mistake, not ours: an unknown path, a wrong method, a
+            // malformed or out-of-range parameter. These all used to fall through to
+            // the 500 below, which made a typo in a URL look like a server crash and
+            // buried real crashes in the log among them.
+            log.debug("{} on {} {}: {}", clientError.value(), request.getMethod(), request.getRequestURI(), ex.getMessage());
+            return ResponseEntity.status(clientError).body(ApiResponse.error(clientErrorMessage(clientError)));
+        }
+
         log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred on the server. Please try again in a moment."));
+    }
+
+    /** The 4xx status for an exception that describes a bad request, or null for a real failure. */
+    private static HttpStatusCode clientErrorStatus(Exception ex) {
+        // Spring MVC's own request errors carry their status: NoResourceFoundException
+        // (404), HttpRequestMethodNotSupportedException (405),
+        // MissingServletRequestParameterException and HandlerMethodValidationException (400).
+        if (ex instanceof ErrorResponse errorResponse && errorResponse.getStatusCode().is4xxClientError()) {
+            return errorResponse.getStatusCode();
+        }
+        if (ex instanceof TypeMismatchException
+                || ex instanceof HttpMessageNotReadableException
+                || ex instanceof ConstraintViolationException) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        return null;
+    }
+
+    private static String clientErrorMessage(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 404 -> "Not found.";
+            case 405 -> "That request method is not supported here.";
+            case 400 -> "The request was not valid. Check its parameters and try again.";
+            default -> "The request could not be processed.";
+        };
     }
 }

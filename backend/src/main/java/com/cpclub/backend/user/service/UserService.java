@@ -135,10 +135,22 @@ public class UserService {
      * @param size page size limit
      * @return standardized paginated wrapper containing results page
      */
+    /**
+     * The search text for {@code searchUsers}, never null.
+     *
+     * <p>PostgreSQL cannot type a null bound into {@code LOWER(CONCAT(..., :query))}
+     * and fails the whole request, so the directory with no search text was a 500
+     * (H2, which the tests used, accepts it). An empty string matches every member,
+     * which is what no search means.</p>
+     */
+    private static String searchText(String query) {
+        return query == null ? "" : query.trim();
+    }
+
     @Transactional(readOnly = true)
     public PagedResponse<UserResponseDto> getMembersDirectory(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        Page<User> userPage = userRepository.searchUsers(query, pageable);
+        Page<User> userPage = userRepository.searchUsers(searchText(query), pageable);
 
         List<UserResponseDto> content = userPage.getContent().stream()
                 .map(UserResponseDto::fromEntity)
@@ -168,7 +180,7 @@ public class UserService {
     public PagedResponse<PublicUserResponseDto> getMembersDirectoryPublic(
             String query, int page, int size, boolean viewerIsAdmin) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        Page<User> userPage = userRepository.searchUsers(query, pageable);
+        Page<User> userPage = userRepository.searchUsers(searchText(query), pageable);
 
         List<PublicUserResponseDto> content = userPage.getContent().stream()
                 .map(user -> PublicUserResponseDto.fromEntity(user, viewerIsAdmin))
