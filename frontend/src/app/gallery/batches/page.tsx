@@ -18,7 +18,7 @@ import Link from "next/link";
 import { GalleryTabs } from "@/components/site/gallery-tabs";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { PhotoGrid } from "@/components/site/photo-grid";
-import { galleryService } from "@/lib/services/gallery";
+import { getPublicBatchPhotos, getPublicBatchYears } from "@/lib/public-data";
 import { cn } from "@/lib/utils";
 import type { MemberGalleryPhoto } from "@/types/api";
 
@@ -43,14 +43,14 @@ export default async function BatchGalleryPage({
 
   try {
     // Newest batch first, whatever order the server returns.
-    years = [...(await galleryService.getAvailableBatchYears({ serverRender: true }))].sort((a, b) => b - a);
+    years = [...(await getPublicBatchYears())].sort((a, b) => b - a);
 
     // An unknown or missing year falls back to the newest batch rather than an
     // empty page -- a stale link should still land somewhere useful.
     selected = years.includes(requested) ? requested : (years[0] ?? null);
 
     if (selected !== null) {
-      photos = await galleryService.getPhotosByBatch(selected, { serverRender: true });
+      photos = await getPublicBatchPhotos(selected);
     }
   } catch (error) {
     console.error("Batch gallery: could not load photos:", error);

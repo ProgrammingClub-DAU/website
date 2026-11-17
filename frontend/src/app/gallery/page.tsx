@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DomeGalleryStage } from "@/components/site/dome-gallery-stage";
 import { GalleryTabs } from "@/components/site/gallery-tabs";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
-import { galleryService } from "@/lib/services/gallery";
+import { getPublicGalleryPhotos } from "@/lib/public-data";
 import type { GalleryPhoto } from "@/types/api";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default async function GalleryPage() {
   let unreachable = false;
 
   try {
-    photos = await galleryService.listPhotos();
+    photos = await getPublicGalleryPhotos();
   } catch (error) {
     console.error("Gallery page: could not load photos:", error);
     unreachable = true;

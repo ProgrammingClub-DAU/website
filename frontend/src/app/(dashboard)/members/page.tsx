@@ -1,7 +1,8 @@
 // Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
 // Public route remains /members.
 
-// Never statically pre-render — this page fetches live member data from the backend.
+// Rendered per request, never at build time; the data is cached for 60 seconds
+// (lib/public-data.ts), so a visit does not wait on the backend.
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
@@ -9,7 +10,8 @@ import type { Metadata } from "next";
 import { PageTitle, Section } from "@/components/site/primitives";
 import { MembersDirectory } from "@/components/site/members-directory";
 import { WebsiteDeveloperCredits } from "@/components/site/website-developer-credits";
-import { dashboardService } from "@/lib/services/dashboard";
+import { getPublicPlatformCreators, getPublicTeam } from "@/lib/public-data";
+import type { PublicMember } from "@/types/api";
 
 export const metadata: Metadata = {
   title: "Members & Credits",
@@ -18,14 +20,14 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  let team: Awaited<ReturnType<typeof dashboardService.getTeam>> = [];
-  let creators: Awaited<ReturnType<typeof dashboardService.getPlatformCreators>> = [];
+  let team: PublicMember[] = [];
+  let creators: PublicMember[] = [];
   let unreachable = false;
 
   try {
     const [teamData, creatorsData] = await Promise.all([
-      dashboardService.getTeam(),
-      dashboardService.getPlatformCreators().catch(() => []),
+      getPublicTeam(),
+      getPublicPlatformCreators().catch(() => []),
     ]);
     team = teamData;
     creators = creatorsData;

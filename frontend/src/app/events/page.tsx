@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { EventsList } from "@/components/site/events-list";
 import { InDevelopment } from "@/components/site/in-development";
-import { eventsService } from "@/lib/services/events";
+import { getPublicCompletedEvents, getPublicUpcomingEvents } from "@/lib/public-data";
 import type { Event } from "@/types/api";
 
 // The listing is live, so it must not be baked at build time: an event created
-// this morning has to appear without a redeploy.
+// this morning has to appear without a redeploy. The data is cached for 60
+// seconds (lib/public-data.ts), so a visit does not wait on the backend.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -29,8 +30,8 @@ export default async function EventsPage() {
 
   try {
     [upcoming, completed] = await Promise.all([
-      eventsService.listUpcoming(),
-      eventsService.listCompleted(),
+      getPublicUpcomingEvents(),
+      getPublicCompletedEvents(),
     ]);
   } catch {
     // Backend unreachable - the page still renders its explanatory panel.
