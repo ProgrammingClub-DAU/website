@@ -26,8 +26,17 @@ public class JwtUtils {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-ms:86400000}")
-    private int jwtExpirationMs;
+    /**
+     * How long a token stays valid. 30 days by default, and renewed on every visit
+     * through POST /api/auth/refresh, so a member who uses the site at least once a
+     * month stays signed in. A long lifetime is safe here because the token only names
+     * the member: {@code AuthTokenFilter} reloads their role from the database on
+     * every request, so a demoted admin loses admin at once, not when the token ends.
+     *
+     * <p>A {@code long}: 30 days in milliseconds is past the range of an {@code int}.</p>
+     */
+    @Value("${app.jwt.expiration-ms:2592000000}")
+    private long jwtExpirationMs;
 
     /**
      * Secrets that must never sign a real token.

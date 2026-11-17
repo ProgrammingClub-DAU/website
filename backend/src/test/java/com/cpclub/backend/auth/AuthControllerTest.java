@@ -155,4 +155,27 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/verify-email"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh - a signed-in member gets a fresh token")
+    void refreshSession_returnsNewToken() throws Exception {
+        when(authService.renewSession("202401226@dau.ac.in")).thenReturn(new AuthResponse(
+                "fresh-jwt", 1L, "Ravi Patel", "202401226@dau.ac.in",
+                Role.ROLE_USER, "ravi_cf", AcademicYear.SECOND_YEAR_ONWARDS));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .principal(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                "202401226@dau.ac.in", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.token").value("fresh-jwt"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh - without a session it is 401, never a new token")
+    void refreshSession_withoutPrincipalIs401() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized());
+
+        org.mockito.Mockito.verifyNoInteractions(authService);
+    }
 }

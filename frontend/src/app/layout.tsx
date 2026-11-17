@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/site/theme-provider";
 import { Navbar } from "@/components/site/navbar";
 import { FooterSlot } from "@/components/site/footer-slot";
 import { CommandPalette } from "@/components/site/command-palette";
+import { SessionKeeper } from "@/components/site/session-keeper";
 import { site } from "@/lib/site";
 
 import { siteUrl } from "@/lib/site-url";
@@ -123,6 +124,7 @@ export default function RootLayout({
           </main>
           <FooterSlot />
           <CommandPalette />
+          <SessionKeeper />
 
           {/* beforeInteractive so the element is defined as early as possible:
               it is the first thing on screen, and a late upgrade would show

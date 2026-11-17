@@ -231,6 +231,31 @@ class AuthServiceTest {
         verify(userRepository).findByEmail(MEMBER_EMAIL);
     }
 
+    // ----------------------------------------------------------------- renewal
+
+    @Test
+    @DisplayName("Renewing a session issues a new token from the member's current account")
+    void shouldRenewTheSessionOfAnExistingMember() {
+        when(userRepository.findByEmail(MEMBER_EMAIL)).thenReturn(Optional.of(existingMember()));
+        when(jwtUtils.generateTokenFromEmail(MEMBER_EMAIL, 7L, Role.ROLE_USER.name())).thenReturn("fresh-jwt");
+
+        AuthResponse response = authService.renewSession(MEMBER_EMAIL);
+
+        assertEquals("fresh-jwt", response.token());
+        assertEquals(7L, response.id());
+        assertEquals(AcademicYear.SECOND_YEAR_ONWARDS, response.academicYear());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("A deleted account cannot renew a token it still holds")
+    void shouldRefuseToRenewForAMissingAccount() {
+        when(userRepository.findByEmail(MEMBER_EMAIL)).thenReturn(Optional.empty());
+
+        assertThrows(BadCredentialsException.class, () -> authService.renewSession(MEMBER_EMAIL));
+        verify(jwtUtils, never()).generateTokenFromEmail(anyString(), anyLong(), anyString());
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private AuthResponse signIn() {

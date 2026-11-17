@@ -4,8 +4,9 @@
  * Auth Connection: Provides user, token, role, login(), logout(), and isAuthenticated state across components.
  *
  * The store, token included, is persisted to localStorage under "cpclub-auth", so
- * a member stays signed in across refreshes and tabs until the JWT expires (24 h,
- * app.jwt.expiration-ms) or they sign out. The cost is that any script running on
+ * a member stays signed in across refreshes, tabs and restarts until they sign out
+ * or the JWT expires (30 days, app.jwt.expiration-ms). SessionKeeper renews the
+ * token on each visit, so in practice only a month away signs a member out. The cost is that any script running on
  * the site could read the token, which is why third-party scripts are kept to Google
  * Sign-In and the Cloudinary upload widget, and a new one needs a good reason.
  * Moving to an httpOnly cookie would need the backend to issue it; change both together.
@@ -75,6 +76,34 @@ export function mapAuthResponseToUser(authData: AuthResponse): User {
   };
 }
 
+/** The parts of our JWT the browser reads. Seconds since the epoch, as in the spec. */
+export interface TokenClaims {
+  iat?: number;
+  exp?: number;
+}
+
+/**
+ * Reads a token's claims without verifying it. Only for deciding when to renew or
+ * drop the token; the backend verifies the signature on every request.
+ */
+export function tokenClaims(token: string): TokenClaims | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    return JSON.parse(atob(padded)) as TokenClaims;
+  } catch {
+    return null;
+  }
+}
+
+/** True when the token says it has expired. A token we cannot read is left to the backend. */
+function isExpired(token: string): boolean {
+  const exp = tokenClaims(token)?.exp;
+  return typeof exp === "number" && exp * 1000 <= Date.now();
+}
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -89,6 +118,8 @@ interface AuthState {
    * admin would keep seeing admin links the API already refuses.
    */
   syncUser: (patch: Partial<User>) => void;
+  /** Swaps in a renewed token for the same member; see SessionKeeper. */
+  setToken: (token: string) => void;
   logout: () => void;
 }
 
@@ -115,6 +146,9 @@ export const useAuthStore = create<AuthState>()(
             : state
         ),
 
+      setToken: (token: string) =>
+        set((state) => (state.isAuthenticated ? { token } : state)),
+
       logout: () =>
         set({
           user: null,
@@ -127,6 +161,15 @@ export const useAuthStore = create<AuthState>()(
       name: "cpclub-auth",
       storage: createJSONStorage(() => localStorage),
       version: 1,
+      // A token that expired while the site was closed is dropped on load, before
+      // anything renders. Otherwise the page showed the member as signed in, its
+      // first request came back 401, and the interceptor bounced them to /login
+      // from whatever public page they had opened.
+      onRehydrateStorage: () => (state) => {
+        if (state?.token && isExpired(state.token)) {
+          state.logout();
+        }
+      },
       migrate: (persistedState: unknown) => {
         const state = persistedState as AuthState;
 
