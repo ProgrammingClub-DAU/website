@@ -45,6 +45,10 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
               Unsolved
             </span>
           </div>
+          <p className="mt-2 text-[11px] text-fg-muted">
+            Counts problems solved in this contest on Codeforces after it ended. Updates once a
+            day for 30 days after the contest.
+          </p>
         </div>
 
         {/* Search */}

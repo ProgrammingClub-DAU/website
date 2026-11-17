@@ -57,6 +57,7 @@ class UpsolveIntegrationTest extends PostgresIntegrationTest {
     @Autowired private CfProblemRepository cfProblemRepository;
     @Autowired private CfSolveRepository cfSolveRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private com.cpclub.backend.contest.repository.ClubContestUpsolveRepository upsolveRepository;
 
     private ClubContest contest;
     private User alice;
@@ -88,6 +89,19 @@ class UpsolveIntegrationTest extends PostgresIntegrationTest {
         solve(bob, GYM_ID, "A", END.plusHours(1));
 
         assertEquals(UpsolveStatus.UPSOLVED, cell(bob, "A"));
+    }
+
+    /**
+     * A private gym: Codeforces leaves its submissions out of the member's public
+     * history, so the only record is the practice row in the gym's own standings.
+     */
+    @Test
+    @DisplayName("An upsolve read from the contest's practice rows counts, with no submission history at all")
+    void upsolveFromStandingsPracticeRow_isUpsolved() {
+        upsolveRepository.save(new com.cpclub.backend.contest.entity.ClubContestUpsolve(contest.getId(), bob.getId(), "B"));
+
+        assertEquals(UpsolveStatus.UPSOLVED, cell(bob, "B"));
+        assertEquals(UpsolveStatus.UNSOLVED, cell(bob, "A"));
     }
 
     @Test
