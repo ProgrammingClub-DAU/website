@@ -223,7 +223,6 @@ function MembersTab() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     fetchMembers();
   }, [fetchMembers]);
 
@@ -564,7 +563,6 @@ function EventsTab() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     fetchEvents();
   }, [fetchEvents]);
 
@@ -1317,13 +1315,11 @@ function MemberGalleryManager() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadYears();
   }, [loadYears]);
 
   useEffect(() => {
     if (selectedYear) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
       loadPhotos(selectedYear);
     }
   }, [selectedYear, loadPhotos]);
@@ -1571,7 +1567,6 @@ function EventGalleryManager() {
 
   useEffect(() => {
     if (selectedEventId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
       loadPhotos(selectedEventId);
     }
   }, [selectedEventId, loadPhotos]);

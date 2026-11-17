@@ -1,11 +1,14 @@
 /**
  * Auth Zustand State Store
- * Purpose: Centralized in-memory global state store managing authentication status and user details.
+ * Purpose: Centralized global state store managing authentication status and user details.
  * Auth Connection: Provides user, token, role, login(), logout(), and isAuthenticated state across components.
  *
- * The token is held in memory only, so a refresh or any full page load signs the
- * user out. That keeps it out of localStorage and away from XSS, at the cost of
- * session continuity — revisit together, not one without the other.
+ * The store, token included, is persisted to localStorage under "cpclub-auth", so
+ * a member stays signed in across refreshes and tabs until the JWT expires (24 h,
+ * app.jwt.expiration-ms) or they sign out. The cost is that any script running on
+ * the site could read the token, which is why third-party scripts are kept to Google
+ * Sign-In and the Cloudinary upload widget, and a new one needs a good reason.
+ * Moving to an httpOnly cookie would need the backend to issue it; change both together.
  */
 
 import type { AcademicYear } from "@/types/api";
