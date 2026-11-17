@@ -366,6 +366,9 @@ export default function DomeGallery({
 
   const startInertia = useCallback(
     (vx: number, vy: number) => {
+      // With reduced motion asked for, the dome stops where the drag let go
+      // instead of gliding on for up to six seconds.
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
       const MAX_V = 1.4;
       let vX = clamp(vx, -MAX_V, MAX_V) * 80;
       let vY = clamp(vy, -MAX_V, MAX_V) * 80;
