@@ -158,10 +158,8 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
     // local: an intro sweep is a mount-time animation by definition, so the
     // rule's usual advice — derive the value during render instead — has
     // nothing to derive from. The rAF chains below drive the same two setters.
-    /* eslint-disable react-hooks/set-state-in-effect */
     setSweepActive(true);
     setCursorAngle(angleStart);
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     animateValue({ duration: 500, onUpdate: v => setEdgeProximity(v / 100) });
     animateValue({ ease: easeInCubic, duration: 1500, end: 50, onUpdate: v => {

@@ -1,6 +1,34 @@
 import type { NextConfig } from "next";
 
+/**
+ * Sent with every page and asset. These are the safe, no-breakage ones.
+ *
+ * Deliberately left out:
+ * - Content-Security-Policy: Google Sign-In, Cloudinary uploads and the inline
+ *   styles of the animated backgrounds all need allowances; a CSP that has not
+ *   been tested against each of them breaks sign-in first.
+ * - Cross-Origin-Opener-Policy: `same-origin` cuts the window link the Google
+ *   sign-in popup reports back through.
+ * Strict-Transport-Security is already sent by Vercel on every HTTPS response.
+ */
+const securityHeaders = [
+  // Do not guess a content type: a file served as text is never run as a script.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Other sites get the origin only, never the path (member handles, contest ids).
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Nobody may show the site in a frame, which is what clickjacking needs.
+  { key: "X-Frame-Options", value: "DENY" },
+  // The site uses none of these; a script that somehow got in cannot either.
+  // Not camera: the Cloudinary upload widget (lib/cloudinary.ts) offers it as a
+  // photo source, from inside its own frame.
+  { key: "Permissions-Policy", value: "microphone=(), geolocation=(), payment=(), usb=()" },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   images: {
     // Images are resized by the hosts they live on, not by Vercel: see
     // src/lib/image-loader.ts. Vercel's optimizer counts every image x width x

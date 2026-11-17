@@ -165,7 +165,6 @@ export default function ProfileDashboard({ userId }: { userId: string }) {
   }, [userId, isOwner]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount, not derived state
     loadProfile();
   }, [loadProfile]);
 

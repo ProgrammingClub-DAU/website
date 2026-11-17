@@ -55,7 +55,8 @@ export default async function Image() {
             padding: "0 84px",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}<img src={logoSrc} width={260} height={260} alt="" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- next/og renders plain <img> only */}
+          <img src={logoSrc} width={260} height={260} alt="" />
           <div
             style={{
               display: "flex",
