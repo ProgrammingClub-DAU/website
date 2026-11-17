@@ -98,10 +98,10 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   return (
     <article className="container mx-auto max-w-4xl px-4 py-8 space-y-10">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="flex items-center justify-between border-b border-foreground/10 pb-4">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Back to Articles
@@ -110,7 +110,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
         <button
           type="button"
           onClick={handleShare}
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
         >
           {copiedLink ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
           {copiedLink ? "Link Copied" : "Share"}
@@ -132,14 +132,14 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           </div>
         )}
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
           {post.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-fg-muted pt-2 border-t border-white/5">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-fg-muted pt-2 border-t border-foreground/5">
           <Link
             href={post.authorId ? `/profile/${post.authorId}` : "#"}
-            className="flex items-center gap-1.5 text-white hover:text-primary transition-colors font-semibold"
+            className="flex items-center gap-1.5 text-foreground hover:text-primary transition-colors font-semibold"
           >
             <User className="size-3.5 text-primary" />
             {post.authorName}
@@ -156,23 +156,23 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       </header>
 
       {/* Article Body */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d0d16]/80 p-6 sm:p-10 backdrop-blur-md shadow-2xl">
+      <div className="rounded-3xl border border-foreground/10 bg-card/80 p-6 sm:p-10 backdrop-blur-md shadow-2xl">
         <MarkdownRenderer content={post.content} />
       </div>
 
       {/* Author Card */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex items-center justify-between gap-4">
+      <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-5 flex items-center justify-between gap-4">
         <div className="space-y-0.5">
           <div className="text-nano font-mono uppercase tracking-caps text-fg-subtle">
             Published by
           </div>
-          <div className="font-semibold text-white text-sm">{post.authorName}</div>
+          <div className="font-semibold text-foreground text-sm">{post.authorName}</div>
           <div className="text-nano text-fg-muted">Programming Club Member @ DAU</div>
         </div>
         {post.authorId && (
           <Link
             href={`/profile/${post.authorId}`}
-            className="rounded-xl border border-white/10 bg-surface-2 px-3.5 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
+            className="rounded-xl border border-foreground/10 bg-surface-2 px-3.5 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
           >
             View Profile
           </Link>

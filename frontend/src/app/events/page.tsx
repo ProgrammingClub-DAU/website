@@ -5,7 +5,6 @@ import BorderGlow from "@/components/site/border-glow";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { EventsList } from "@/components/site/events-list";
-import { InDevelopment } from "@/components/site/in-development";
 import { getPublicCompletedEvents, getPublicUpcomingEvents } from "@/lib/public-data";
 import type { Event } from "@/types/api";
 
@@ -147,16 +146,40 @@ export default async function EventsPage() {
         <EventsList upcoming={upcoming} completed={completed} />
       </Section>
 
+      {/* This used to list RSVP, the calendar, club contests and seasons as "in
+          development" -- all four have shipped. RSVP is on each event's page. */}
       <Section className="border-t border-hairline pb-16 pt-14">
-        <InDevelopment
-          title="Registration and the club calendar"
-          items={[
-            "RSVP for events",
-            "Club calendar",
-            "Club contests",
-            "Season championship",
-          ]}
-        />
+        <h2 className="font-heading text-lg font-semibold tracking-tight">More from the club</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              href: "/calendar",
+              title: "Contest calendar",
+              body: "Every upcoming round on Codeforces, LeetCode, CodeChef and AtCoder, beside club events.",
+            },
+            {
+              href: "/contests",
+              title: "Club contests",
+              body: "Ranklists for every IPC round, the year-wise top 3, upsolves and the season championship.",
+            },
+            {
+              href: "/leaderboard",
+              title: "Leaderboard",
+              body: "Members ranked by Codeforces and LeetCode, updated automatically.",
+            },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="group rounded-panel border border-border bg-surface-2 p-5 transition-colors hover:border-primary"
+            >
+              <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+                {link.title} &rarr;
+              </span>
+              <p className="mt-2 text-sm leading-5 text-fg-muted text-pretty">{link.body}</p>
+            </Link>
+          ))}
+        </div>
       </Section>
 
     </>

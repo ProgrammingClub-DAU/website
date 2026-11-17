@@ -44,7 +44,7 @@ export function AddToCalendar({
         href={googleCalendarUrl}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:bg-surface-3 transition-colors shadow-xs"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:bg-surface-3 transition-colors shadow-xs"
       >
         <ExternalLink className="size-3.5 text-primary" />
         Google Calendar
@@ -55,7 +55,7 @@ export function AddToCalendar({
         <a
           href={icsDownloadUrl}
           download={`${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground hover:border-hairline-strong hover:bg-surface-3 transition-colors shadow-xs"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-foreground hover:border-hairline-strong hover:bg-surface-3 transition-colors shadow-xs"
         >
           <Download className="size-3.5 text-fg-muted" />
           Apple / Outlook (.ics)

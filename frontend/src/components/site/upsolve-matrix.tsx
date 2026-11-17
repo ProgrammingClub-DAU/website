@@ -26,9 +26,9 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
   return (
     <div className="space-y-6">
       {/* Header and Legend */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-white/10 bg-[#0d0d16]/80 backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-foreground/10 bg-card/80 backdrop-blur-md">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">
             {data.contestName} — Upsolve Matrix
           </h2>
           <div className="flex flex-wrap items-center gap-4 mt-2 text-xs">
@@ -41,7 +41,7 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
               Upsolved Later
             </span>
             <span className="flex items-center gap-1.5 text-fg-subtle font-mono">
-              <span className="size-2.5 rounded-full bg-white/20" />
+              <span className="size-2.5 rounded-full bg-foreground/20" />
               Unsolved
             </span>
           </div>
@@ -59,20 +59,20 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search member..."
-            className="w-full rounded-xl border border-white/10 bg-surface-2 pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+            className="w-full rounded-xl border border-foreground/10 bg-surface-2 pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+      <div className="overflow-x-auto rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
+            <tr className="border-b border-foreground/10 bg-foreground/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
               <th className="py-3 px-4 min-w-[200px]">Member</th>
               {data.problems.map((prob) => (
                 <th key={prob.index} className="py-3 px-3 text-center min-w-[70px]">
-                  <div className="font-bold text-white">{prob.index}</div>
+                  <div className="font-bold text-foreground">{prob.index}</div>
                   {prob.rating && (
                     <div className="text-[10px] text-fg-subtle">{prob.rating}</div>
                   )}
@@ -85,7 +85,7 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-foreground/5">
             {filteredRows.length === 0 ? (
               <tr>
                 <td colSpan={1 + data.problems.length} className="py-12 text-center text-fg-muted font-mono text-xs">
@@ -94,10 +94,10 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
               </tr>
             ) : (
               filteredRows.map((row) => (
-                <tr key={row.member.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={row.member.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="py-3 px-4">
                     <Link href={`/profile/${row.member.id}`} className="group flex items-center gap-2.5">
-                      <div className="size-7 rounded-full overflow-hidden bg-surface-3 border border-white/10 shrink-0">
+                      <div className="size-7 rounded-full overflow-hidden bg-surface-3 border border-foreground/10 shrink-0">
                         {row.member.avatarUrl ? (
                           <Image
                             src={row.member.avatarUrl}
@@ -113,7 +113,7 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-white group-hover:text-primary transition-colors">
+                        <div className="font-medium text-foreground group-hover:text-primary transition-colors">
                           {row.member.name}
                         </div>
                         {row.member.codeforcesHandle && (
@@ -142,7 +142,7 @@ export function UpsolveMatrix({ data }: UpsolveMatrixProps) {
                           +U
                         </span>
                       ) : (
-                        <span className="inline-flex items-center justify-center size-7 text-white/10 font-mono text-xs">
+                        <span className="inline-flex items-center justify-center size-7 text-foreground/10 font-mono text-xs">
                           ·
                         </span>
                       )}

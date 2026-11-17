@@ -85,9 +85,9 @@ export function TeamsForm({ onTeamsChange }: TeamsFormProps) {
   return (
     <div className="space-y-4">
       {teams.map((team, i) => (
-        <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl p-6 mb-4">
+        <div key={i} className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] backdrop-blur-xl p-6 mb-4">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="font-semibold text-white">Team {i + 1}</h4>
+            <h4 className="font-semibold text-foreground">Team {i + 1}</h4>
             <button
               type="button"
               onClick={() => removeTeam(i)}
@@ -99,18 +99,18 @@ export function TeamsForm({ onTeamsChange }: TeamsFormProps) {
 
           <input
             type="text"
-            className="flex h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent mb-3"
+            className="flex h-10 w-full rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-transparent mb-3"
             placeholder="Team name"
             value={team.name}
             onChange={(e) => updateTeam(i, "name", e.target.value)}
           />
 
           <select
-            className="flex h-10 w-full rounded-md border border-white/10 bg-[#1a1d24] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent mb-4"
+            className="flex h-10 w-full rounded-md border border-foreground/10 bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-transparent mb-4"
             value={team.color}
             onChange={(e) => updateTeam(i, "color", e.target.value)}
           >
-            <option value="" className="bg-[#1a1d24] text-white/50">Select Team Color</option>
+            <option value="" className="bg-surface-2 text-foreground/50">Select Team Color</option>
             {COLOR_OPTIONS.filter((c) => 
               !teams.some((t, idx) => t.color === c && idx !== i)
             ).map((color) => (
@@ -124,7 +124,7 @@ export function TeamsForm({ onTeamsChange }: TeamsFormProps) {
             ))}
           </select>
           
-          <label className="block text-sm font-medium text-white/80 mb-2">
+          <label className="block text-sm font-medium text-foreground/80 mb-2">
             Codeforces Handles (case-sensitive)
           </label>
 
@@ -133,7 +133,7 @@ export function TeamsForm({ onTeamsChange }: TeamsFormProps) {
               <div key={j} className="flex gap-2">
                 <input
                   type="text"
-                  className="flex h-10 flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent"
+                  className="flex h-10 flex-1 rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-transparent"
                   placeholder={`Handle ${j + 1}`}
                   value={member}
                   onChange={(e) => updateMember(i, j, e.target.value)}
@@ -167,7 +167,7 @@ export function TeamsForm({ onTeamsChange }: TeamsFormProps) {
         <button
           type="button"
           onClick={addTeam}
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 hover:border-white/20 transition-all shadow-sm"
+          className="rounded-xl border border-foreground/10 bg-foreground/5 px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/10 hover:border-foreground/20 transition-all shadow-sm"
         >
           + Add Team
         </button>

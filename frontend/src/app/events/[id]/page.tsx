@@ -107,7 +107,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         )}
 
         {event.status !== "COMPLETED" && (
-          <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-2xl border border-white/10 bg-surface-2/60 p-5 backdrop-blur-md">
+          <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-2xl border border-foreground/10 bg-surface-2/60 p-5 backdrop-blur-md">
             <div>
               <div className="font-mono text-micro tracking-caps uppercase text-fg-subtle mb-2">
                 Event Attendance & RSVP
@@ -115,7 +115,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               <RegistrationButton eventId={event.id} />
             </div>
 
-            <div className="md:border-l md:border-white/10 md:pl-6">
+            <div className="md:border-l md:border-foreground/10 md:pl-6">
               <div className="font-mono text-micro tracking-caps uppercase text-fg-subtle mb-2">
                 Add to your Calendar
               </div>

@@ -639,7 +639,7 @@ export default function MatchPage() {
               </p>
               <button
                 onClick={() => setConfettiActive(false)}
-                className="mt-6 px-6 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium transition-colors"
+                className="mt-6 px-6 py-2 rounded-full bg-foreground/20 hover:bg-foreground/30 text-foreground font-medium transition-colors"
               >
                 Close
               </button>

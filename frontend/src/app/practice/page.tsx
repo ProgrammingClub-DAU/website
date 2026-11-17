@@ -108,7 +108,7 @@ export default function PracticePage() {
           <Code2 className="size-3.5" />
           Member Practice
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
           Personalized Practice & Upsolving
         </h1>
         <p className="text-sm text-fg-muted max-w-2xl">
@@ -118,11 +118,11 @@ export default function PracticePage() {
 
       {/* Auth Guard State */}
       {!isAuthenticated ? (
-        <div className="rounded-3xl border border-white/10 bg-[#0d0d16]/80 p-8 md:p-12 text-center backdrop-blur-md shadow-2xl space-y-4">
+        <div className="rounded-3xl border border-foreground/10 bg-card/80 p-8 md:p-12 text-center backdrop-blur-md shadow-2xl space-y-4">
           <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/15 text-primary border border-primary/30">
             <Target className="size-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Sign In for Personalized Practice
           </h2>
           <p className="text-sm text-fg-muted max-w-md mx-auto">
@@ -139,7 +139,7 @@ export default function PracticePage() {
           </div>
         </div>
       ) : loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
           Analyzing your solves and tailoring recommendations...
         </div>
       ) : (
@@ -153,9 +153,9 @@ export default function PracticePage() {
 
           {/* Practice Recommendations Section */}
           <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-foreground/10 pb-4">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
                   <Sparkles className="size-4 text-amber-400" />
                   Recommended for You
                 </h2>
@@ -182,7 +182,7 @@ export default function PracticePage() {
             {suggestions?.reason === "NO_CODEFORCES_HANDLE" ? (
               <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 text-center space-y-3">
                 <AlertCircle className="size-8 text-amber-400 mx-auto" />
-                <h3 className="font-semibold text-white text-base">
+                <h3 className="font-semibold text-foreground text-base">
                   No Codeforces Handle Linked
                 </h3>
                 <p className="text-xs text-fg-muted max-w-md mx-auto">
@@ -197,7 +197,7 @@ export default function PracticePage() {
                 </Link>
               </div>
             ) : !suggestions || suggestions.suggestions.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center text-fg-muted font-mono text-xs">
+              <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center text-fg-muted font-mono text-xs">
                 No active suggestions right now. Keep solving or check back after the next sync!
               </div>
             ) : (
@@ -209,11 +209,11 @@ export default function PracticePage() {
                   return (
                     <div
                       key={pid || prob.problemKey}
-                      className="group rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md hover:border-white/20 transition-all flex flex-col justify-between shadow-lg"
+                      className="group rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md hover:border-foreground/20 transition-all flex flex-col justify-between shadow-lg"
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-nano font-mono font-bold px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white">
+                          <span className="text-nano font-mono font-bold px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 text-foreground">
                             {prob.problemKey}
                           </span>
                           {prob.rating && (
@@ -224,14 +224,14 @@ export default function PracticePage() {
                         </div>
 
                         <div>
-                          <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors line-clamp-1">
+                          <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                             {prob.name}
                           </h3>
                           <div className="flex flex-wrap gap-1 mt-2">
                             {prob.tags.slice(0, 3).map((tag) => (
                               <span
                                 key={tag}
-                                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.03] text-fg-subtle border border-white/5"
+                                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground/[0.03] text-fg-subtle border border-foreground/5"
                               >
                                 {tag}
                               </span>
@@ -240,7 +240,7 @@ export default function PracticePage() {
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                      <div className="mt-5 pt-3 border-t border-foreground/5 flex items-center justify-between gap-2">
                         <button
                           type="button"
                           onClick={() => handleSkip(pid)}
@@ -269,10 +269,10 @@ export default function PracticePage() {
           </section>
 
           {/* Pending Upsolves Section */}
-          <section className="space-y-6 pt-6 border-t border-white/10">
+          <section className="space-y-6 pt-6 border-t border-foreground/10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
                   <BookmarkCheck className="size-4 text-cyan-400" />
                   Pending Club Contest Upsolves
                 </h2>
@@ -289,7 +289,7 @@ export default function PracticePage() {
             </div>
 
             {!myUpsolves || myUpsolves.contests.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center text-fg-muted font-mono text-xs">
+              <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center text-fg-muted font-mono text-xs">
                 No pending upsolves. You&apos;ve solved all attempted problems in club contests, or haven&apos;t participated in any yet!
               </div>
             ) : (
@@ -297,12 +297,12 @@ export default function PracticePage() {
                 {myUpsolves.contests.map((c) => (
                   <div
                     key={c.clubContestId}
-                    className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4"
+                    className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4"
                   >
                     <div className="flex items-center justify-between">
                       <Link
                         href={`/contests/${c.clubContestId}`}
-                        className="text-base font-bold text-white hover:text-cyan-400 transition-colors flex items-center gap-2"
+                        className="text-base font-bold text-foreground hover:text-cyan-400 transition-colors flex items-center gap-2"
                       >
                         {c.name}
                         <ArrowRight className="size-3.5 text-fg-muted" />
@@ -319,13 +319,13 @@ export default function PracticePage() {
                           href={p.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="group flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
+                          className="group flex items-center justify-between p-3 rounded-xl border border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] hover:border-cyan-500/30 transition-all"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="size-6 rounded-md bg-white/5 flex items-center justify-center font-mono font-bold text-xs text-white shrink-0">
+                            <span className="size-6 rounded-md bg-foreground/5 flex items-center justify-center font-mono font-bold text-xs text-foreground shrink-0">
                               {p.index}
                             </span>
-                            <span className="text-xs font-medium text-fg-muted group-hover:text-white truncate">
+                            <span className="text-xs font-medium text-fg-muted group-hover:text-foreground truncate">
                               {p.name}
                             </span>
                           </div>

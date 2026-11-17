@@ -34,7 +34,7 @@ export function AwardBadge({ awardType, metricValue, platform, size = "md" }: Aw
   }[awardType] || {
     label: "Club Award",
     icon: <Award className="size-4" />,
-    bg: "bg-white/10 border-white/20 text-white",
+    bg: "bg-foreground/10 border-foreground/20 text-foreground",
     valueSuffix: "",
   };
 

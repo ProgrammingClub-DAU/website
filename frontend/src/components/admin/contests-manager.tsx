@@ -198,9 +198,9 @@ export function ContestsManager() {
       {/* Forms Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Register Contest Form */}
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4">
-          <div className="border-b border-white/10 pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+        <div className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4">
+          <div className="border-b border-foreground/10 pb-3">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <Trophy className="size-4 text-primary" />
               Register Club Contest
             </h3>
@@ -235,7 +235,7 @@ export function ContestsManager() {
                 }}
                 placeholder="1843, 724781, or codeforces.com/gym/724781"
                 required
-                className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+                className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
               />
             </div>
 
@@ -247,7 +247,7 @@ export function ContestsManager() {
                 <select
                   value={kind}
                   onChange={(e) => setKind(e.target.value as ClubContestKind)}
-                  className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                  className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                 >
                   <option value="OFFICIAL">Official Round</option>
                   <option value="GYM">Gym Contest</option>
@@ -269,7 +269,7 @@ export function ContestsManager() {
                 <select
                   value={selectedSeasonId}
                   onChange={(e) => setSelectedSeasonId(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                  className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                 >
                   <option value="">None (Independent)</option>
                   {seasons.map((s) => (
@@ -293,9 +293,9 @@ export function ContestsManager() {
         </div>
 
         {/* Create Season Form */}
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4">
-          <div className="border-b border-white/10 pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+        <div className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4">
+          <div className="border-b border-foreground/10 pb-3">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <Calendar className="size-4 text-amber-400" />
               Create Championship Season
             </h3>
@@ -321,7 +321,7 @@ export function ContestsManager() {
                 onChange={(e) => setSeasonName(e.target.value)}
                 placeholder="e.g. Autumn 2026 Championship"
                 required
-                className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+                className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
               />
             </div>
 
@@ -335,7 +335,7 @@ export function ContestsManager() {
                   value={startsOn}
                   onChange={(e) => setStartsOn(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                  className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                 />
               </div>
 
@@ -348,7 +348,7 @@ export function ContestsManager() {
                   value={endsOn}
                   onChange={(e) => setEndsOn(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                  className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                 />
               </div>
             </div>
@@ -362,7 +362,7 @@ export function ContestsManager() {
                 value={countBest}
                 onChange={(e) => setCountBest(e.target.value)}
                 placeholder="Leave blank to count all contests"
-                className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+                className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
               />
             </div>
 
@@ -380,14 +380,14 @@ export function ContestsManager() {
 
       {/* Contests Table */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <h3 className="text-base font-bold text-white">Registered Contests ({contests.length})</h3>
+        <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
+          <h3 className="text-base font-bold text-foreground">Registered Contests ({contests.length})</h3>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+        <div className="overflow-x-auto rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
+              <tr className="border-b border-foreground/10 bg-foreground/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
                 <th className="py-3 px-4">Contest</th>
                 <th className="py-3 px-3">Kind</th>
                 <th className="py-3 px-3">Season</th>
@@ -396,7 +396,7 @@ export function ContestsManager() {
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 font-mono">
+            <tbody className="divide-y divide-foreground/5 font-mono">
               {contests.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-fg-muted">
@@ -405,12 +405,12 @@ export function ContestsManager() {
                 </tr>
               ) : (
                 contests.map((c) => (
-                  <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                  <tr key={c.id} className="hover:bg-foreground/[0.02] transition-colors">
                     <td className="py-3 px-4">
-                      <div className="font-sans font-medium text-white flex items-center gap-1.5">
+                      <div className="font-sans font-medium text-foreground flex items-center gap-1.5">
                         {c.name}
                         {c.url && (
-                          <a href={c.url} target="_blank" rel="noreferrer" className="text-fg-subtle hover:text-white">
+                          <a href={c.url} target="_blank" rel="noreferrer" className="text-fg-subtle hover:text-foreground">
                             <ExternalLink className="size-3" />
                           </a>
                         )}
@@ -418,12 +418,12 @@ export function ContestsManager() {
                       <div className="text-[11px] text-fg-muted">CF #{c.cfContestId}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-fg-muted">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/5 border border-foreground/10 text-fg-muted">
                         {c.kind}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-fg-muted">{c.seasonName || "—"}</td>
-                    <td className="py-3 px-3 text-center text-white tabular-nums">{c.participantCount}</td>
+                    <td className="py-3 px-3 text-center text-foreground tabular-nums">{c.participantCount}</td>
                     <td className="py-3 px-3 text-fg-subtle text-[11px]">
                       {c.lastSyncedAt ? serverDate(c.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Never"}
                     </td>
@@ -455,21 +455,21 @@ export function ContestsManager() {
 
       {/* Seasons Table */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <h3 className="text-base font-bold text-white">Championship Seasons ({seasons.length})</h3>
+        <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
+          <h3 className="text-base font-bold text-foreground">Championship Seasons ({seasons.length})</h3>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+        <div className="overflow-x-auto rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
+              <tr className="border-b border-foreground/10 bg-foreground/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
                 <th className="py-3 px-4">Season</th>
                 <th className="py-3 px-3">Timeline</th>
                 <th className="py-3 px-3">Rule</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 font-mono">
+            <tbody className="divide-y divide-foreground/5 font-mono">
               {seasons.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-fg-muted">
@@ -478,8 +478,8 @@ export function ContestsManager() {
                 </tr>
               ) : (
                 seasons.map((s) => (
-                  <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3 px-4 font-sans font-medium text-white">{s.name}</td>
+                  <tr key={s.id} className="hover:bg-foreground/[0.02] transition-colors">
+                    <td className="py-3 px-4 font-sans font-medium text-foreground">{s.name}</td>
                     <td className="py-3 px-3 text-fg-muted">
                       {s.startsOn} to {s.endsOn}
                     </td>
@@ -489,7 +489,7 @@ export function ContestsManager() {
                     <td className="py-3 px-4 text-right space-x-2">
                       <Link
                         href={`/contests/seasons/${s.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white hover:bg-white/10 transition-all"
+                        className="inline-flex items-center gap-1 rounded-lg border border-foreground/10 bg-foreground/5 px-2.5 py-1 text-[11px] text-foreground hover:bg-foreground/10 transition-all"
                       >
                         Standings
                       </Link>

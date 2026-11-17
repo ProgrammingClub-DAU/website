@@ -79,7 +79,7 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
       <div className="flex items-center justify-between">
         <Link
           href="/contests"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Back to Contests
@@ -98,21 +98,21 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
           Loading contest standings...
         </div>
       ) : error || !detail ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-rose-400">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-rose-400">
           {error || "Contest not found."}
         </div>
       ) : (
         <div className="space-y-6">
           {/* Tabs header */}
-          <div className="flex border-b border-white/10 gap-6">
+          <div className="flex border-b border-foreground/10 gap-6">
             <button
               onClick={() => handleTabChange("ranklist")}
               className={`pb-3 text-sm font-semibold tracking-tight transition-colors relative ${
-                activeTab === "ranklist" ? "text-white" : "text-fg-muted hover:text-white"
+                activeTab === "ranklist" ? "text-foreground" : "text-fg-muted hover:text-foreground"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
             <button
               onClick={() => handleTabChange("upsolve")}
               className={`pb-3 text-sm font-semibold tracking-tight transition-colors relative ${
-                activeTab === "upsolve" ? "text-white" : "text-fg-muted hover:text-white"
+                activeTab === "upsolve" ? "text-foreground" : "text-fg-muted hover:text-foreground"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function ContestDetailPage({ params }: ContestDetailPageProps) {
           ) : upsolveData ? (
             <UpsolveMatrix data={upsolveData} />
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center font-mono text-xs text-fg-muted">
+            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center font-mono text-xs text-fg-muted">
               No upsolve matrix available.
             </div>
           )}

@@ -52,7 +52,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
             <Globe className="size-4" />
           </div>
           <div>
-            <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Who Built This Website
             </h2>
           </div>
@@ -64,7 +64,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
           href="https://github.com/ProgrammingClub-DAU/website"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-white/80 transition-all duration-200 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/5 px-4 py-2 font-mono text-xs text-foreground/80 transition-all duration-200 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-foreground"
         >
           <GitHubMark className="size-4" />
           <span>View on GitHub</span>
@@ -103,10 +103,10 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
               key={contributor.name}
               className={`
                 group relative flex flex-col items-center
-                rounded-2xl border border-white/[0.1] bg-white/[0.04] backdrop-blur-xl
+                rounded-2xl border border-foreground/[0.1] bg-foreground/[0.04] backdrop-blur-xl
                 p-5 pb-5 min-h-[260px] w-full
                 transition-all duration-300 cursor-pointer
-                hover:-translate-y-1.5 hover:border-rose-500/40 hover:bg-white/[0.07]
+                hover:-translate-y-1.5 hover:border-rose-500/40 hover:bg-foreground/[0.07]
                 hover:shadow-[0_20px_40px_-10px_rgba(244,63,94,0.25)]
               `}
             >
@@ -123,7 +123,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                     className="relative shrink-0 overflow-hidden rounded-full p-[2.5px] bg-gradient-to-br from-rose-500/50 via-purple-500/40 to-indigo-500/50 transition-all duration-300 group-hover:scale-105 group-hover:from-rose-500 group-hover:to-indigo-500 shadow-md"
                     style={{ width: "104px", height: "104px" }}
                   >
-                    <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+                    <div className="size-full overflow-hidden rounded-full bg-card">
                       {matchedCreator?.avatarUrl ? (
                         <Image
                           src={matchedCreator.avatarUrl}
@@ -134,7 +134,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         />
                       ) : (
                         <div
-                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
+                          className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-foreground`}
                         >
                           {getInitials(displayName)}
                         </div>
@@ -149,7 +149,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
 
                 {/* Name */}
                 <div className="text-center px-1">
-                  <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/95 transition-colors group-hover:text-rose-200 leading-tight line-clamp-2">
+                  <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-foreground/95 transition-colors group-hover:text-rose-200 leading-tight line-clamp-2">
                     {profileHref ? (
                       <Link href={profileHref} className="after:absolute after:inset-0">
                         {displayName}
@@ -162,7 +162,7 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
               </div>
 
               {/* ── Bottom: Platform Links ── */}
-              <div className="relative z-10 mt-auto pt-3 w-full border-t border-white/[0.08]">
+              <div className="relative z-10 mt-auto pt-3 w-full border-t border-foreground/[0.08]">
                 <div className="flex items-center justify-center gap-2">
                   {links.length > 0 ? (
                     links.slice(0, 4).map((link) => (
@@ -173,15 +173,18 @@ export function WebsiteDeveloperCredits({ creators = [] }: WebsiteDeveloperCredi
                         rel="noopener noreferrer"
                         aria-label={`${displayName} on ${link.label}`}
                         title={link.label}
-                        className="inline-flex size-7.5 items-center justify-center rounded-lg border border-white/10 bg-white/5
-                          text-white/60 transition-all duration-200 hover:scale-110 hover:border-rose-400/50 hover:text-white hover:bg-rose-500/20"
-                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex size-7.5 items-center justify-center rounded-lg border border-foreground/10 bg-foreground/5
+                          text-foreground/60 transition-all duration-200 hover:scale-110 hover:border-rose-400/50 hover:text-foreground hover:bg-rose-500/20"
+                        // No onClick here: this is a Server Component, and an event handler
+                        // crashed the whole members page once creators had linked profiles.
+                        // The profile link is a sibling overlay, not a parent, so there is
+                        // no click to stop.
                       >
                         <PlatformGlyph platform={link.platform} className="size-3.5" />
                       </a>
                     ))
                   ) : (
-                    <span className="font-mono text-[9px] text-white/25 uppercase tracking-wider">
+                    <span className="font-mono text-[9px] text-foreground/25 uppercase tracking-wider">
                       No profiles linked
                     </span>
                   )}

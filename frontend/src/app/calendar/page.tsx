@@ -16,7 +16,7 @@ import { serverDate } from "@/lib/utils";
 type PlatformFilter = "ALL" | "CODEFORCES" | "LEETCODE" | "CODECHEF" | "ATCODER" | "CLUB_EVENT";
 
 const PLATFORM_FILTERS: { key: PlatformFilter; label: string; color: string }[] = [
-  { key: "ALL", label: "All Platforms", color: "text-white" },
+  { key: "ALL", label: "All Platforms", color: "text-foreground" },
   { key: "CLUB_EVENT", label: "DAU Events", color: "text-amber-400" },
   { key: "CODEFORCES", label: "Codeforces", color: "text-blue-400" },
   { key: "LEETCODE", label: "LeetCode", color: "text-yellow-400" },
@@ -97,7 +97,7 @@ export default function CalendarPage() {
             <CalendarIcon className="size-3.5" />
             Schedule
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
             Contest & Event Calendar
           </h1>
           <p className="text-sm text-fg-muted max-w-2xl">
@@ -109,7 +109,7 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyFeed}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-4 py-2.5 text-xs font-mono font-medium text-foreground hover:bg-surface-3 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-4 py-2.5 text-xs font-mono font-medium text-foreground hover:bg-surface-3 transition-colors shadow-xs"
           >
             {copiedFeed ? (
               <Check className="size-3.5 text-emerald-400" />
@@ -122,7 +122,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Platform Filter Buttons */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
+      <div className="flex flex-wrap items-center gap-2 border-b border-foreground/10 pb-4">
         {PLATFORM_FILTERS.map((f) => {
           const isActive = selectedPlatform === f.key;
           return (
@@ -132,7 +132,7 @@ export default function CalendarPage() {
               className={`rounded-xl px-3.5 py-1.5 text-xs font-mono font-semibold transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "border border-white/10 bg-white/[0.02] text-fg-muted hover:border-white/20 hover:text-white"
+                  : "border border-foreground/10 bg-foreground/[0.02] text-fg-muted hover:border-foreground/20 hover:text-foreground"
               }`}
             >
               {f.label}
@@ -143,18 +143,18 @@ export default function CalendarPage() {
 
       {/* Events Stream */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
           Fetching upcoming contest schedule...
         </div>
       ) : groupedByDate.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted">
           No upcoming contests or events found for the selected filter.
         </div>
       ) : (
         <div className="space-y-8">
           {groupedByDate.map(([dateString, dateItems]) => (
             <div key={dateString} className="space-y-3">
-              <div className="sticky top-20 z-10 py-1.5 px-3 rounded-lg bg-surface/90 backdrop-blur-md border border-white/5 inline-block">
+              <div className="sticky top-20 z-10 py-1.5 px-3 rounded-lg bg-surface/90 backdrop-blur-md border border-foreground/5 inline-block">
                 <span className="text-xs font-mono font-bold uppercase tracking-caps text-primary">
                   {dateString}
                 </span>
@@ -173,7 +173,7 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={item.id}
-                      className="group rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md hover:border-white/20 transition-all flex flex-col justify-between shadow-lg"
+                      className="group rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md hover:border-foreground/20 transition-all flex flex-col justify-between shadow-lg"
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between gap-2">
@@ -185,7 +185,7 @@ export default function CalendarPage() {
                                 ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
                                 : item.platform === "LEETCODE"
                                 ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
-                                : "bg-white/10 text-white border-white/20"
+                                : "bg-foreground/10 text-foreground border-foreground/20"
                             }`}
                           >
                             {platformName}
@@ -197,13 +197,13 @@ export default function CalendarPage() {
                         </div>
 
                         <div>
-                          <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors">
+                          <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
                             {item.title}
                           </h3>
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
+                      <div className="mt-5 pt-3 border-t border-foreground/5 flex flex-wrap items-center justify-between gap-2">
                         <AddToCalendar
                           eventId={isClub ? item.id.replace("event-", "") : undefined}
                           title={item.title}
@@ -215,7 +215,7 @@ export default function CalendarPage() {
                             href={item.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+                            className="inline-flex items-center gap-1 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
                           >
                             Details
                             <ExternalLink className="size-3.5" />

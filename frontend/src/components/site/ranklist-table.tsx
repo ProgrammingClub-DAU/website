@@ -81,26 +81,26 @@ export function RanklistTable({ data }: RanklistTableProps) {
   return (
     <div className="space-y-6">
       {/* Contest Overview Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-white/10 bg-[#0d0d16]/80 backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-foreground/10 bg-card/80 backdrop-blur-md">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
               {data.contest.kind}
             </span>
             {data.contest.seasonName && (
-              <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-white/5 text-fg-muted border border-white/10">
+              <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-foreground/5 text-fg-muted border border-foreground/10">
                 {data.contest.seasonName}
               </span>
             )}
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             {data.contest.name}
             {data.contest.url && (
               <a
                 href={data.contest.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-fg-muted hover:text-white transition-colors"
+                className="text-fg-muted hover:text-foreground transition-colors"
                 title="View contest on Codeforces"
               >
                 <ExternalLink className="size-4" />
@@ -128,7 +128,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search member..."
             aria-label="Search members"
-            className="w-full rounded-xl border border-white/10 bg-surface-2 pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+            className="w-full rounded-xl border border-foreground/10 bg-surface-2 pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />
         </div>
       </div>
@@ -142,9 +142,9 @@ export function RanklistTable({ data }: RanklistTableProps) {
               <section
                 key={year}
                 aria-label={`Top 3, ${ACADEMIC_YEAR_LABELS[year]}`}
-                className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4"
+                className="rounded-2xl border border-foreground/10 bg-card/80 p-4"
               >
-                <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white">
+                <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
                   <Trophy className="size-3.5 text-amber-400" />
                   Top 3 · {ACADEMIC_YEAR_LABELS[year]}
                 </h3>
@@ -159,7 +159,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                         </span>
                         <Link
                           href={`/profile/${row.member.id}`}
-                          className="min-w-0 flex-1 truncate font-medium text-white hover:text-primary"
+                          className="min-w-0 flex-1 truncate font-medium text-foreground hover:text-primary"
                         >
                           {row.member.name}
                           {tied && <span className="ml-1 text-[10px] text-fg-muted">(tied)</span>}
@@ -196,7 +196,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                 "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
                 division === d.key
                   ? "border-primary bg-primary/15 text-primary"
-                  : "border-white/10 bg-white/[0.03] text-fg-muted hover:text-white"
+                  : "border-foreground/10 bg-foreground/[0.03] text-fg-muted hover:text-foreground"
               )}
             >
               {d.label}
@@ -206,10 +206,10 @@ export function RanklistTable({ data }: RanklistTableProps) {
       )}
 
       {/* Standings Table */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+      <div className="overflow-x-auto rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
+            <tr className="border-b border-foreground/10 bg-foreground/[0.02] text-nano font-mono uppercase tracking-caps text-fg-muted">
               <th className="py-3 px-4 w-14 text-center">#</th>
               <th className="py-3 px-4 min-w-[180px]">Member</th>
               <th className="py-3 px-3 text-center w-16">Solved</th>
@@ -217,7 +217,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
               <th className="py-3 px-3 text-center w-16">Penalty</th>
               {data.problems.map((prob) => (
                 <th key={prob.problemIndex} className="py-3 px-2 text-center min-w-[50px]">
-                  <div className="font-bold text-white">{prob.problemIndex}</div>
+                  <div className="font-bold text-foreground">{prob.problemIndex}</div>
                   {prob.rating && (
                     <div className="text-[10px] font-normal text-fg-subtle">{prob.rating}</div>
                   )}
@@ -225,7 +225,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-foreground/5">
             {shownRows.length === 0 ? (
               <tr>
                 <td colSpan={5 + data.problems.length} className="py-12 text-center text-fg-muted font-mono text-xs">
@@ -239,7 +239,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
             ) : (
               shownRows.map(({ row, rank, tied }) => {
                 return (
-                  <tr key={row.member.id} className="hover:bg-white/[0.02] transition-colors">
+                  <tr key={row.member.id} className="hover:bg-foreground/[0.02] transition-colors">
                     {/* Rank: within the division when one is selected */}
                     <td className="py-3 px-4 text-center font-mono">
                       {rank === 1 ? (
@@ -267,7 +267,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <Link href={`/profile/${row.member.id}`} className="group flex items-center gap-2.5">
-                          <div className="size-7 rounded-full overflow-hidden bg-surface-3 border border-white/10 shrink-0">
+                          <div className="size-7 rounded-full overflow-hidden bg-surface-3 border border-foreground/10 shrink-0">
                             {row.member.avatarUrl ? (
                               <Image
                                 src={row.member.avatarUrl}
@@ -283,7 +283,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                             )}
                           </div>
                           <div>
-                            <div className="font-medium text-white group-hover:text-primary transition-colors">
+                            <div className="font-medium text-foreground group-hover:text-primary transition-colors">
                               {row.member.name}
                             </div>
                             {row.member.codeforcesHandle && (
@@ -297,7 +297,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                     </td>
 
                     {/* Solved */}
-                    <td className="py-3 px-3 text-center font-mono font-bold text-white tabular-nums">
+                    <td className="py-3 px-3 text-center font-mono font-bold text-foreground tabular-nums">
                       {row.solvedCount}
                     </td>
 
@@ -323,7 +323,7 @@ export function RanklistTable({ data }: RanklistTableProps) {
                             -
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center size-7 text-white/10 font-mono text-xs">
+                          <span className="inline-flex items-center justify-center size-7 text-foreground/10 font-mono text-xs">
                             ·
                           </span>
                         )}
