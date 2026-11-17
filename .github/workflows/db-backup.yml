@@ -1,0 +1,84 @@
+name: Database backup
+
+# Weekly encrypted backup of the production database, kept as a workflow artifact.
+#
+# The repository is PUBLIC, and so are its workflow artifacts to anyone signed in
+# to GitHub. The dump holds every member's email and phone number, so it is
+# encrypted (AES-256, gpg) before upload and the plain file never leaves the runner.
+#
+# Does nothing until both repository secrets are set
+# (Settings -> Secrets and variables -> Actions):
+#   BACKUP_DATABASE_URL  postgres://user:password@host:5432/postgres  (Supabase "Session pooler" URI)
+#   BACKUP_PASSPHRASE    a long random passphrase, stored somewhere other than GitHub
+#
+# Restore: download the artifact, then
+#   gpg --batch --passphrase "$BACKUP_PASSPHRASE" -o cpclub.dump -d cpclub-*.dump.gpg
+#   backend/scripts/restore-db.sh cpclub.dump <target-uri>     (see documents/DATABASE-BACKUP.md)
+
+on:
+  schedule:
+    - cron: "30 21 * * 6"   # Saturday 21:30 UTC = Sunday 03:00 IST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check configuration
+        id: cfg
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$PASSPHRASE" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Backups are off: set BACKUP_DATABASE_URL and BACKUP_PASSPHRASE to enable them."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.configured == 'true'
+
+      # The production server is PostgreSQL 17, and an older pg_dump refuses to dump
+      # a newer server. Ubuntu's own packages lag, so take it from the PostgreSQL repo.
+      - name: Install pg_dump 17
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Dump, verify and encrypt
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_DIR: ${{ runner.temp }}/backups
+        run: |
+          set -euo pipefail
+          pg_dump --version
+          bash backend/scripts/backup-db.sh
+          DUMP="$(ls "$BACKUP_DIR"/cpclub-*.dump)"
+          gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$PASSPHRASE" \
+            -o "$DUMP.gpg" "$DUMP"
+          rm -f "$DUMP"
+          mkdir -p encrypted && mv "$DUMP.gpg" encrypted/
+          ls -l encrypted
+
+      - name: Upload encrypted backup
+        if: steps.cfg.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpclub-db-backup-${{ github.run_id }}
+          path: encrypted/*.dump.gpg
+          retention-days: 35
+          if-no-files-found: error

@@ -38,6 +38,26 @@ only copy that exists.
 
 `./backups/` is gitignored. Keep copies somewhere that is not one laptop.
 
+### Automatic weekly backups
+
+`.github/workflows/db-backup.yml` runs this script every Sunday at 03:00 IST and keeps
+the result for 35 days as a workflow artifact. The repository is public, so the dump
+is **encrypted** with a passphrase before upload. To switch it on, add two repository
+secrets (Settings > Secrets and variables > Actions):
+
+- `BACKUP_DATABASE_URL`: `postgres://user:password@host:5432/postgres` (Supabase session pooler URI)
+- `BACKUP_PASSPHRASE`: a long random passphrase. Keep a copy outside GitHub: without it
+  the backups cannot be decrypted.
+
+Run it once by hand (Actions > Database backup > Run workflow) to check it works. To
+restore, download the artifact and decrypt it first:
+
+```bash
+gpg --batch --passphrase "$BACKUP_PASSPHRASE" -o cpclub.dump -d cpclub-*.dump.gpg
+```
+
+then follow the restore steps below.
+
 ## Restore a backup
 
 ```bash
