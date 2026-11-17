@@ -1,0 +1,52 @@
+name: Keep backend awake
+
+# Render's free tier stops the backend after 15 minutes without a request. While it
+# sleeps, the first visitor waits about a minute for it to start again, and none of
+# the scheduled jobs run: the six-hourly rating sync, contest standings, event
+# reminders. A request every 10 minutes keeps it running.
+#
+# Cost:
+# - GitHub Actions minutes are free for a public repository.
+# - Render's free tier gives 750 instance hours a month per workspace. One service
+#   kept up all month is about 730, so this fits as long as it is the only free web
+#   service in that Render workspace.
+#
+# GitHub may start a scheduled run a few minutes late, which is fine here, and it
+# pauses scheduled workflows in a repository with no commits for 60 days (re-enable
+# it from the Actions tab).
+#
+# The backend address can be overridden with the repository variable BACKEND_URL
+# (Settings -> Secrets and variables -> Actions -> Variables).
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the health endpoint
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://programmingclubdau.onrender.com' }}
+        run: |
+          # A cold start takes up to two minutes, so wait that long, and try twice
+          # before reporting a failure. A failed run is the signal that the backend
+          # is down, so it is not swallowed.
+          for attempt in 1 2; do
+            if curl --silent --show-error --fail --max-time 150 -o /dev/null \
+                 -w "HTTP %{http_code} in %{time_total}s\n" "$BACKEND_URL/api/health"; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed"
+            sleep 10
+          done
+          exit 1
