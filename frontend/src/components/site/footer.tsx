@@ -5,22 +5,23 @@ import { site } from "@/lib/site";
 
 const columns = [
   {
-    heading: "Site",
+    heading: "Compete",
     links: [
-      { href: "/", label: "Home" },
-      { href: "/about", label: "About" },
-      { href: "/events", label: "Events" },
-      { href: "/hall-of-fame", label: "Hall of Fame" },
+      { href: "/contests", label: "Contests" },
+      { href: "/leaderboard", label: "Leaderboard" },
+      { href: "/calendar", label: "Calendar" },
+      { href: "/practice", label: "Practice" },
     ],
   },
   {
-    heading: "Members",
+    heading: "Club",
     links: [
+      { href: "/events", label: "Events" },
+      { href: "/hall-of-fame", label: "Hall of Fame" },
+      { href: "/gallery", label: "Gallery" },
       { href: "/blog", label: "Blog" },
-      { href: "/members", label: "Directory" },
-      // Leaderboard is intentionally absent until Role 3 builds /leaderboard —
-      // a footer link to a 404 is worse than no link.
-      { href: "/login", label: "Login" },
+      { href: "/members", label: "Members" },
+      { href: "/about", label: "About" },
     ],
   },
 ];

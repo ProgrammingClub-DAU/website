@@ -71,7 +71,7 @@ export default function MyBlogsPage() {
     return (
       <div className="container mx-auto max-w-md px-4 py-20 text-center space-y-4">
         <FileText className="size-10 text-primary mx-auto" />
-        <h1 className="text-xl font-bold text-white">Sign In to View Your Articles</h1>
+        <h1 className="text-xl font-bold text-foreground">Sign In to View Your Articles</h1>
         <Link
           href="/login"
           className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground"
@@ -85,16 +85,16 @@ export default function MyBlogsPage() {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8 space-y-8">
       {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-foreground/10 pb-4">
         <div>
           <Link
             href="/blog"
-            className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors mb-2"
+            className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors mb-2"
           >
             <ArrowLeft className="size-3.5" />
             Back to Public Blog
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
             My Articles ({posts.length})
           </h1>
         </div>
@@ -113,9 +113,9 @@ export default function MyBlogsPage() {
           Loading your articles...
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center space-y-3">
           <FileText className="size-8 text-fg-subtle mx-auto" />
-          <h3 className="font-semibold text-white text-base">You haven&apos;t written any posts yet</h3>
+          <h3 className="font-semibold text-foreground text-base">You haven&apos;t written any posts yet</h3>
           <p className="text-xs text-fg-muted font-mono max-w-sm mx-auto">
             Share an editorial, algorithm explanation, or problem-solving guide with fellow club members.
           </p>
@@ -140,13 +140,13 @@ export default function MyBlogsPage() {
             return (
               <div
                 key={post.id}
-                className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4 shadow-lg hover:border-white/20 transition-all"
+                className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4 shadow-lg hover:border-foreground/20 transition-all"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       {isDraft && (
-                        <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-white/10 text-fg-muted border border-white/15">
+                        <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-foreground/10 text-fg-muted border border-foreground/15">
                           Draft
                         </span>
                       )}
@@ -171,7 +171,7 @@ export default function MyBlogsPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-white tracking-tight">{post.title}</h3>
+                    <h3 className="text-lg font-bold text-foreground tracking-tight">{post.title}</h3>
                   </div>
 
                   {/* Actions */}
@@ -179,7 +179,7 @@ export default function MyBlogsPage() {
                     {isPublished && (
                       <Link
                         href={`/blog/${post.slug}`}
-                        className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
+                        className="inline-flex items-center gap-1 rounded-xl border border-foreground/10 bg-surface-2 px-3 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
                       >
                         <Eye className="size-3.5" />
                         View Live
@@ -190,7 +190,7 @@ export default function MyBlogsPage() {
                       <>
                         <Link
                           href={`/blog/edit/${post.id}`}
-                          className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
+                          className="inline-flex items-center gap-1 rounded-xl border border-foreground/10 bg-surface-2 px-3 py-1.5 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs"
                         >
                           <Edit2 className="size-3.5" />
                           Edit

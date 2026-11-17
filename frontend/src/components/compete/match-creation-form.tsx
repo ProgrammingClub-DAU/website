@@ -302,7 +302,7 @@ export function MatchCreationForm() {
               <select
                 value={selectedMode}
                 onChange={(e) => setSelectedMode(e.target.value as "classic" | "replace")}
-                className={inputClass + " bg-[#1a1d24]"}
+                className={inputClass + " bg-surface-2"}
               >
                 <option value="classic">Classic</option>
                 <option value="replace">Replace</option>
@@ -313,7 +313,7 @@ export function MatchCreationForm() {
               <select
                 value={selectedGridSize}
                 onChange={(e) => setSelectedGridSize(parseInt(e.target.value))}
-                className={inputClass + " bg-[#1a1d24]"}
+                className={inputClass + " bg-surface-2"}
               >
                 {[3, 4, 5, 6].map((size) => (
                   <option key={size} value={size}>

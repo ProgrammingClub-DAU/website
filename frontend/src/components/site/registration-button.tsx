@@ -96,7 +96,7 @@ export function RegistrationButton({ eventId }: RegistrationButtonProps) {
 
   if (loading) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-mono text-fg-muted">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/5 px-4 py-2 text-xs font-mono text-fg-muted">
         <Loader2 className="size-3.5 animate-spin" />
         Checking RSVP status...
       </div>
@@ -120,14 +120,14 @@ export function RegistrationButton({ eventId }: RegistrationButtonProps) {
               type="button"
               onClick={handleUnregister}
               disabled={actionLoading}
-              className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs font-medium text-fg-muted hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs font-medium text-fg-muted hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 transition-all disabled:opacity-50"
             >
               <UserMinus className="size-3.5" />
               Cancel RSVP
             </button>
           </div>
         ) : !status.open ? (
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-fg-muted">
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-foreground/5 px-4 py-2 text-xs font-medium text-fg-muted">
             <AlertCircle className="size-3.5" />
             RSVPs Closed
           </span>

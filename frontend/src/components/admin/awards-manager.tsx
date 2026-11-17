@@ -64,9 +64,9 @@ export function AwardsManager() {
   return (
     <div className="space-y-8">
       {/* Control Card */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4">
-        <div className="border-b border-white/10 pb-3">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
+      <div className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4">
+        <div className="border-b border-foreground/10 pb-3">
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <Award className="size-4 text-amber-400" />
             Weekly Honors & Awards Management
           </h3>
@@ -87,7 +87,7 @@ export function AwardsManager() {
                 setWeekStart(e.target.value);
                 loadWeekAwards(e.target.value);
               }}
-              className="w-full rounded-xl border border-white/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+              className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
@@ -107,7 +107,7 @@ export function AwardsManager() {
         </div>
 
         {message && (
-          <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-xs font-mono text-white flex items-center gap-2">
+          <div className="rounded-lg bg-foreground/5 border border-foreground/10 p-3 text-xs font-mono text-foreground flex items-center gap-2">
             <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
             {message}
           </div>
@@ -116,7 +116,7 @@ export function AwardsManager() {
 
       {/* Awards List */}
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-white">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">
           Awards for Week ({awards.length})
         </h4>
 
@@ -125,7 +125,7 @@ export function AwardsManager() {
             Loading awards...
           </div>
         ) : awards.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center text-fg-muted font-mono text-xs">
+          <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center text-fg-muted font-mono text-xs">
             No awards computed yet for week starting {weekStart}. Click &quot;Recompute Week Awards&quot; above to run the evaluation.
           </div>
         ) : (
@@ -133,7 +133,7 @@ export function AwardsManager() {
             {awards.map((award) => (
               <div
                 key={award.id}
-                className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md space-y-4 shadow-lg"
+                className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md space-y-4 shadow-lg"
               >
                 <AwardBadge
                   awardType={award.awardType}
@@ -143,7 +143,7 @@ export function AwardsManager() {
                 />
 
                 <Link href={`/profile/${award.userId}`} className="flex items-center gap-3 group">
-                  <div className="size-10 rounded-full overflow-hidden bg-surface-3 border border-white/10 shrink-0">
+                  <div className="size-10 rounded-full overflow-hidden bg-surface-3 border border-foreground/10 shrink-0">
                     {award.avatarUrl ? (
                       <Image
                         src={award.avatarUrl}
@@ -159,7 +159,7 @@ export function AwardsManager() {
                     )}
                   </div>
                   <div>
-                    <h5 className="font-semibold text-white group-hover:text-primary transition-colors text-sm">
+                    <h5 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                       {award.userName}
                     </h5>
                     <div className="text-micro font-mono text-fg-muted">
@@ -168,7 +168,7 @@ export function AwardsManager() {
                   </div>
                 </Link>
 
-                <div className="pt-3 border-t border-white/5 text-[11px] font-mono text-fg-subtle">
+                <div className="pt-3 border-t border-foreground/5 text-[11px] font-mono text-fg-subtle">
                   Computed: {serverDate(award.computedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
                 </div>
               </div>

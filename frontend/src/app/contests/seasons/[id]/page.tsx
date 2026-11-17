@@ -42,18 +42,18 @@ export default function SeasonChampionshipPage({ params }: SeasonChampionshipPag
     <div className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
       <Link
         href="/contests"
-        className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-3.5" />
         Back to Contests & Seasons
       </Link>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
           Loading season championship standings...
         </div>
       ) : error || !data ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-rose-400">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-rose-400">
           {error || "Season not found."}
         </div>
       ) : (

@@ -127,9 +127,9 @@ export function CommentThread({ postId }: CommentThreadProps) {
   };
 
   return (
-    <div className="space-y-8 pt-8 border-t border-white/10">
+    <div className="space-y-8 pt-8 border-t border-foreground/10">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
           <MessageSquare className="size-5 text-primary" />
           Discussion ({comments.length})
         </h3>
@@ -138,7 +138,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
       {/* New Top-Level Comment Form */}
       {isAuthenticated ? (
         <form onSubmit={handlePostTopComment} className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4 backdrop-blur-md">
+          <div className="rounded-2xl border border-foreground/10 bg-card/80 p-4 backdrop-blur-md">
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
@@ -146,7 +146,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
               rows={3}
               className="w-full bg-transparent text-sm text-foreground placeholder:text-fg-subtle focus:outline-none resize-none"
             />
-            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+            <div className="flex items-center justify-between pt-3 border-t border-foreground/5">
               <span className="text-nano font-mono text-fg-subtle">
                 {cooldown > 0 ? `Rate limit: wait ${cooldown}s` : "Plain text or Markdown"}
               </span>
@@ -166,7 +166,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
           </div>
         </form>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-center text-xs text-fg-muted">
+        <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-6 text-center text-xs text-fg-muted">
           <Link href="/login" className="text-primary hover:underline font-semibold">
             Sign in with your DAU account
           </Link>{" "}
@@ -180,7 +180,7 @@ export function CommentThread({ postId }: CommentThreadProps) {
           Loading comments...
         </div>
       ) : comments.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/50 p-8 text-center text-xs text-fg-muted font-mono">
+        <div className="rounded-2xl border border-foreground/10 bg-card/50 p-8 text-center text-xs text-fg-muted font-mono">
           No comments yet. Be the first to start the discussion!
         </div>
       ) : (
@@ -264,10 +264,10 @@ function CommentCard({
   return (
     <div className="space-y-4">
       {/* Top Comment Body */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4 backdrop-blur-md space-y-3">
+      <div className="rounded-2xl border border-foreground/10 bg-card/80 p-4 backdrop-blur-md space-y-3">
         <div className="flex items-center justify-between">
           <Link href={`/profile/${comment.author.id}`} className="flex items-center gap-2.5 group">
-            <div className="size-8 rounded-full overflow-hidden bg-surface-3 border border-white/10 shrink-0">
+            <div className="size-8 rounded-full overflow-hidden bg-surface-3 border border-foreground/10 shrink-0">
               {comment.author.avatarUrl ? (
                 <Image
                   src={comment.author.avatarUrl}
@@ -283,7 +283,7 @@ function CommentCard({
               )}
             </div>
             <div>
-              <div className="font-semibold text-white group-hover:text-primary transition-colors text-xs">
+              <div className="font-semibold text-foreground group-hover:text-primary transition-colors text-xs">
                 {comment.author.name}
               </div>
               <div className="text-nano font-mono text-fg-muted">
@@ -310,13 +310,13 @@ function CommentCard({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               rows={3}
-              className="w-full rounded-xl border border-white/10 bg-surface-2 p-3 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+              className="w-full rounded-xl border border-foreground/10 bg-surface-2 p-3 text-xs text-foreground focus:border-primary/50 focus:outline-none"
             />
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="rounded-lg px-3 py-1 text-xs text-fg-muted hover:text-white"
+                className="rounded-lg px-3 py-1 text-xs text-fg-muted hover:text-foreground"
               >
                 Cancel
               </button>
@@ -338,7 +338,7 @@ function CommentCard({
 
         {/* Actions bar */}
         {!comment.deleted && !isCurrentlyEditing && (
-          <div className="flex items-center gap-4 pt-2 border-t border-white/5 text-[11px] font-mono">
+          <div className="flex items-center gap-4 pt-2 border-t border-foreground/5 text-[11px] font-mono">
             <button
               type="button"
               onClick={() => onReply(comment.id)}
@@ -375,7 +375,7 @@ function CommentCard({
 
       {/* Reply input box */}
       {isReplyingToThis && (
-        <div className="ml-8 rounded-2xl border border-primary/30 bg-[#0d0d16]/90 p-3 space-y-2">
+        <div className="ml-8 rounded-2xl border border-primary/30 bg-card/90 p-3 space-y-2">
           <div className="flex items-center gap-1.5 text-nano font-mono text-primary">
             <CornerDownRight className="size-3" />
             Replying to {comment.author.name}
@@ -385,13 +385,13 @@ function CommentCard({
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Write your reply..."
             rows={2}
-            className="w-full rounded-xl border border-white/10 bg-surface-2 p-2.5 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+            className="w-full rounded-xl border border-foreground/10 bg-surface-2 p-2.5 text-xs text-foreground focus:border-primary/50 focus:outline-none"
           />
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onCancelReply}
-              className="rounded-lg px-3 py-1 text-xs text-fg-muted hover:text-white"
+              className="rounded-lg px-3 py-1 text-xs text-fg-muted hover:text-foreground"
             >
               Cancel
             </button>
@@ -409,17 +409,17 @@ function CommentCard({
 
       {/* Nested Replies */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-6 sm:ml-8 pl-4 border-l-2 border-white/10 space-y-3">
+        <div className="ml-6 sm:ml-8 pl-4 border-l-2 border-foreground/10 space-y-3">
           {comment.replies.map((reply) => {
             const isEditingReply = editingId === reply.id;
             return (
               <div
                 key={reply.id}
-                className="rounded-xl border border-white/5 bg-white/[0.02] p-3.5 space-y-2"
+                className="rounded-xl border border-foreground/5 bg-foreground/[0.02] p-3.5 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <Link href={`/profile/${reply.author.id}`} className="flex items-center gap-2 group">
-                    <div className="size-6 rounded-full overflow-hidden bg-surface-3 border border-white/10 shrink-0">
+                    <div className="size-6 rounded-full overflow-hidden bg-surface-3 border border-foreground/10 shrink-0">
                       {reply.author.avatarUrl ? (
                         <Image
                           src={reply.author.avatarUrl}
@@ -434,7 +434,7 @@ function CommentCard({
                         </div>
                       )}
                     </div>
-                    <span className="font-semibold text-white group-hover:text-primary transition-colors text-xs">
+                    <span className="font-semibold text-foreground group-hover:text-primary transition-colors text-xs">
                       {reply.author.name}
                     </span>
                   </Link>
@@ -452,13 +452,13 @@ function CommentCard({
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       rows={2}
-                      className="w-full rounded-lg border border-white/10 bg-surface-2 p-2 text-xs text-foreground focus:outline-none"
+                      className="w-full rounded-lg border border-foreground/10 bg-surface-2 p-2 text-xs text-foreground focus:outline-none"
                     />
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
                         onClick={onCancelEdit}
-                        className="text-xs text-fg-muted hover:text-white"
+                        className="text-xs text-fg-muted hover:text-foreground"
                       >
                         Cancel
                       </button>

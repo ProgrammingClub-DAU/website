@@ -42,7 +42,7 @@ export default function ContestsPage() {
           <Trophy className="size-3.5" />
           Club Competitions
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
           Contests & Championship
         </h1>
         <p className="text-sm text-fg-muted max-w-2xl">
@@ -53,8 +53,8 @@ export default function ContestsPage() {
       {/* Seasons Section */}
       {seasons.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <h2 className="text-lg font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
+            <h2 className="text-lg font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
               <Sparkles className="size-4 text-amber-400" />
               Championship Seasons
             </h2>
@@ -65,7 +65,7 @@ export default function ContestsPage() {
               <Link
                 key={season.id}
                 href={`/contests/seasons/${season.id}`}
-                className="group relative rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md hover:border-amber-500/40 hover:bg-[#0d0d16] transition-all flex flex-col justify-between shadow-lg"
+                className="group relative rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md hover:border-amber-500/40 hover:bg-card transition-all flex flex-col justify-between shadow-lg"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -78,7 +78,7 @@ export default function ContestsPage() {
                         : "All Contests Counted"}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <h3 className="text-lg font-bold text-foreground group-hover:text-amber-300 transition-colors">
                     {season.name}
                   </h3>
                   <p className="text-micro font-mono text-fg-muted flex items-center gap-1">
@@ -87,7 +87,7 @@ export default function ContestsPage() {
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono text-amber-400">
+                <div className="mt-5 pt-3 border-t border-foreground/5 flex items-center justify-between text-xs font-mono text-amber-400">
                   <span>View Championship Standings</span>
                   <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -99,8 +99,8 @@ export default function ContestsPage() {
 
       {/* Contests List Section */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <h2 className="text-lg font-bold uppercase tracking-wider text-white flex items-center gap-2">
+        <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
+          <h2 className="text-lg font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
             <Trophy className="size-4 text-primary" />
             Club Contests
           </h2>
@@ -110,11 +110,11 @@ export default function ContestsPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center text-fg-muted font-mono text-xs animate-pulse">
+          <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center text-fg-muted font-mono text-xs animate-pulse">
             Loading contests...
           </div>
         ) : contests.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-12 text-center text-fg-muted font-mono text-xs">
+          <div className="rounded-2xl border border-foreground/10 bg-card/70 p-12 text-center text-fg-muted font-mono text-xs">
             No club contests registered yet. Check back soon!
           </div>
         ) : (
@@ -126,7 +126,7 @@ export default function ContestsPage() {
               return (
                 <div
                   key={contest.id}
-                  className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md flex flex-col justify-between hover:border-white/20 transition-all shadow-lg"
+                  className="rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md flex flex-col justify-between hover:border-foreground/20 transition-all shadow-lg"
                 >
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -135,7 +135,7 @@ export default function ContestsPage() {
                           {contest.kind}
                         </span>
                         {contest.seasonName && (
-                          <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-white/5 text-fg-muted border border-white/10">
+                          <span className="text-nano font-mono uppercase tracking-caps px-2 py-0.5 rounded-full bg-foreground/5 text-fg-muted border border-foreground/10">
                             {contest.seasonName}
                           </span>
                         )}
@@ -145,7 +145,7 @@ export default function ContestsPage() {
                           href={contest.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-fg-muted hover:text-white transition-colors"
+                          className="text-fg-muted hover:text-foreground transition-colors"
                           title="View on Codeforces"
                         >
                           <ExternalLink className="size-4" />
@@ -154,7 +154,7 @@ export default function ContestsPage() {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-bold text-white tracking-tight">
+                      <h3 className="text-lg font-bold text-foreground tracking-tight">
                         {contest.name}
                       </h3>
                       <div className="flex flex-wrap items-center gap-4 mt-2 text-micro font-mono text-fg-muted">
@@ -178,7 +178,7 @@ export default function ContestsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-2">
+                  <div className="mt-5 pt-4 border-t border-foreground/5 flex items-center justify-between gap-2">
                     <Link
                       href={`/contests/${contest.id}?tab=upsolve`}
                       className="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors"
@@ -187,7 +187,7 @@ export default function ContestsPage() {
                     </Link>
                     <Link
                       href={`/contests/${contest.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary/50 hover:bg-surface-3 transition-colors shadow-xs"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary/50 hover:bg-surface-3 transition-colors shadow-xs"
                     >
                       Ranklist
                       <ArrowRight className="size-3.5" />

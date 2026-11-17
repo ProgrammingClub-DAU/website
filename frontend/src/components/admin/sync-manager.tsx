@@ -95,7 +95,7 @@ const STATUS_STYLE: Record<SyncHealthStatus, { label: string; className: string;
   },
   NEVER_RUN: {
     label: "Not run yet",
-    className: "bg-white/5 border-white/10 text-fg-muted",
+    className: "bg-foreground/5 border-foreground/10 text-fg-muted",
     icon: <CircleDashed className="size-3" />,
   },
 };
@@ -227,9 +227,9 @@ export function SyncManager() {
   return (
     <div className="space-y-8 md:space-y-10">
       {/* Header card */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4 sm:p-5 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-2xl border border-foreground/10 bg-card/80 p-4 sm:p-5 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <Activity className="size-4 text-primary" />
             Background Synchronization
           </h3>
@@ -246,7 +246,7 @@ export function SyncManager() {
           type="button"
           onClick={loadData}
           disabled={refreshing}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-3.5 py-2 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-3.5 py-2 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs disabled:opacity-60"
         >
           <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
           Refresh
@@ -266,7 +266,7 @@ export function SyncManager() {
           className={cn(
             "rounded-xl border p-3 text-xs font-mono flex items-center gap-2",
             message.tone === "ok"
-              ? "bg-white/5 border-white/10 text-white"
+              ? "bg-foreground/5 border-foreground/10 text-foreground"
               : "bg-rose-500/10 border-rose-500/30 text-rose-200"
           )}
         >
@@ -281,11 +281,11 @@ export function SyncManager() {
 
       {/* Jobs */}
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-white">Jobs</h4>
+        <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">Jobs</h4>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+        <div className="overflow-hidden rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
           {/* Column header, desktop only; rows become cards on small screens. */}
-          <div className="hidden md:grid grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.3fr)_90px_120px] gap-3 border-b border-white/10 bg-white/[0.02] px-4 py-3 text-nano font-mono uppercase tracking-caps text-fg-muted">
+          <div className="hidden md:grid grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.3fr)_90px_120px] gap-3 border-b border-foreground/10 bg-foreground/[0.02] px-4 py-3 text-nano font-mono uppercase tracking-caps text-fg-muted">
             <span>Job</span>
             <span>Status</span>
             <span>Last run</span>
@@ -293,7 +293,7 @@ export function SyncManager() {
             <span className="text-right">Action</span>
           </div>
 
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-foreground/5">
             {ALL_SYNC_JOBS.map(({ job, label, description }) => {
               const h = healthByJob.get(job);
               const status: SyncHealthStatus = h?.status ?? "NEVER_RUN";
@@ -303,11 +303,11 @@ export function SyncManager() {
               return (
                 <li
                   key={job}
-                  className="grid grid-cols-1 md:grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.3fr)_90px_120px] gap-2 md:gap-3 px-4 py-3.5 hover:bg-white/[0.02] transition-colors md:items-center"
+                  className="grid grid-cols-1 md:grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.3fr)_90px_120px] gap-2 md:gap-3 px-4 py-3.5 hover:bg-foreground/[0.02] transition-colors md:items-center"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center justify-between gap-2 md:block">
-                      <span className="font-semibold text-sm text-white">{label}</span>
+                      <span className="font-semibold text-sm text-foreground">{label}</span>
                       <span className="md:hidden">
                         <StatusBadge status={status} />
                       </span>
@@ -327,7 +327,7 @@ export function SyncManager() {
                   <div className="font-mono text-[11px] text-fg-muted">
                     {h?.startedAt ? (
                       <>
-                        <span className="text-white/80">{timeAgo(h.startedAt)}</span>
+                        <span className="text-foreground/80">{timeAgo(h.startedAt)}</span>
                         <span className="block text-fg-subtle">
                           {formatServerTimestamp(h.startedAt)}
                         </span>
@@ -381,15 +381,15 @@ export function SyncManager() {
 
       {/* Recent runs */}
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-white">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">
           Recent runs ({runs.length})
         </h4>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d16]/70 shadow-xl">
+        <div className="overflow-hidden rounded-2xl border border-foreground/10 bg-card/70 shadow-xl">
           {runs.length === 0 ? (
             <p className="py-8 text-center text-xs font-mono text-fg-muted">No run history recorded.</p>
           ) : (
-            <ul className="divide-y divide-white/5 font-mono text-[11px]">
+            <ul className="divide-y divide-foreground/5 font-mono text-[11px]">
               {runs.map((r) => {
                 const status = runStatus(r);
                 const expanded = expandedRun === r.id;
@@ -400,10 +400,10 @@ export function SyncManager() {
                       onClick={() => setExpandedRun(expanded ? null : r.id)}
                       disabled={!r.errorSample}
                       aria-expanded={r.errorSample ? expanded : undefined}
-                      className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1.2fr)_minmax(0,1.3fr)_100px_80px] items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-white/[0.02] disabled:cursor-default"
+                      className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1.2fr)_minmax(0,1.3fr)_100px_80px] items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-foreground/[0.02] disabled:cursor-default"
                     >
                       <span className="text-fg-muted">#{r.id}</span>
-                      <span className="font-semibold text-white truncate">{JOB_LABEL.get(r.job) ?? r.job}</span>
+                      <span className="font-semibold text-foreground truncate">{JOB_LABEL.get(r.job) ?? r.job}</span>
                       <span className="sm:hidden justify-self-end">
                         {status === "INTERRUPTED" ? (
                           <span className="inline-flex items-center gap-1 text-fg-muted">

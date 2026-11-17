@@ -11,7 +11,7 @@ interface TopicStrengthChartProps {
 export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
   if (!data.topics || data.topics.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#0d0d16] p-8 text-center text-fg-muted font-mono text-xs">
+      <div className="rounded-2xl border border-foreground/10 bg-card p-8 text-center text-fg-muted font-mono text-xs">
         No topic distribution data available yet.
       </div>
     );
@@ -24,10 +24,10 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
   );
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+    <div className="space-y-4 rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-foreground/10 pb-3">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
             <Target className="size-4 text-primary" />
             Topic Strength Profile
           </h3>
@@ -41,7 +41,7 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
             Your Share
           </span>
           <span className="flex items-center gap-1.5 text-fg-muted">
-            <span className="size-2 rounded-full bg-white/30" />
+            <span className="size-2 rounded-full bg-foreground/30" />
             Club Share
           </span>
         </div>
@@ -59,7 +59,7 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
           return (
             <div key={topic.tag} className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="font-semibold text-white capitalize">
+                <span className="font-semibold text-foreground capitalize">
                   {topic.tag.replace(/-/g, " ")}
                 </span>
                 <div className="flex items-center gap-2 text-micro">
@@ -80,10 +80,10 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
               </div>
 
               {/* Stacked comparison bar */}
-              <div className="relative h-2.5 w-full rounded-full bg-white/5 overflow-hidden">
+              <div className="relative h-2.5 w-full rounded-full bg-foreground/5 overflow-hidden">
                 {/* Club baseline marker */}
                 <div
-                  className="absolute top-0 bottom-0 bg-white/20 rounded-full"
+                  className="absolute top-0 bottom-0 bg-foreground/20 rounded-full"
                   style={{ width: `${clubBarWidth}%` }}
                 />
                 {/* Member share */}
@@ -105,7 +105,7 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
       </div>
 
       {data.note && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-white/[0.02] border border-white/5 p-3 text-nano text-fg-muted">
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-foreground/[0.02] border border-foreground/5 p-3 text-nano text-fg-muted">
           <Lightbulb className="size-3.5 text-primary shrink-0 mt-0.5" />
           <span>{data.note}</span>
         </div>

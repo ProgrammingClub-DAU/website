@@ -27,7 +27,6 @@ import { dashboardService } from "@/lib/services/dashboard";
 import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { WeeklyHighlights } from "@/components/site/weekly-highlights";
-import { InDevelopment } from "@/components/site/in-development";
 import { cn } from "@/lib/utils";
 import type { PublicMember } from "@/types/api";
 
@@ -333,16 +332,28 @@ export default async function HomePage() {
 
       <Section className="pb-16">
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Coder of the week teaser */}
-          <div>
-            <SectionHeader eyebrow="On the roadmap" title="What we are building next." />
-            <div className="mt-10">
-              <InDevelopment
-                headingLevel="h3"
-                title="Coder of the Week"
-                body="A weekly spotlight on one member, picked from what they solved and how they did in contests that week."
-              />
-            </div>
+          {/* The contest calendar. This slot used to announce Coder of the Week as
+              "on the roadmap" after it had shipped -- the live awards are the
+              Weekly Highlights section further down this page. */}
+          <div className="flex h-full flex-col">
+            <SectionHeader eyebrow="Stay in the loop" title="Never miss a round." />
+            <Link
+              href="/calendar"
+              className="group mt-10 flex h-full flex-col justify-between rounded-control border border-border bg-surface-2 p-8 transition-colors hover:border-primary/40 sm:p-10"
+            >
+              <div>
+                <h3 className="text-2xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                  Contest calendar
+                </h3>
+                <p className="mt-3 max-w-[48ch] text-base leading-6 text-fg-muted text-pretty">
+                  Codeforces, LeetCode, CodeChef and AtCoder rounds next to the club&apos;s own
+                  events, in IST, with a feed you can add to Google Calendar.
+                </p>
+              </div>
+              <span className="mt-8 font-mono text-xs font-semibold tracking-caps text-primary uppercase">
+                Open the calendar &rarr;
+              </span>
+            </Link>
           </div>
 
           {/* New Gamification / Compete CTA */}
@@ -362,7 +373,7 @@ export default async function HomePage() {
                     Gamification Live
                   </span>
                 </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-white group-hover:text-primary transition-colors">1v1 Battles & CP Bingo</h3>
+                <h3 className="mt-6 text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">1v1 Battles & CP Bingo</h3>
                 <p className="mt-3 max-w-[40ch] text-base leading-relaxed text-fg-muted">
                   Challenge your friends to a head-to-head Bingo duel. Solve Codeforces problems faster than your opponent to claim the grid and win the match!
                 </p>

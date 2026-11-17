@@ -21,17 +21,17 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         rehypePlugins={[rehypeKatex]}
         components={{
           h1: ({ children }) => (
-            <h1 className="text-2xl font-bold tracking-tight text-white mt-8 mb-4 border-b border-white/10 pb-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground mt-8 mb-4 border-b border-foreground/10 pb-2">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-xl font-bold tracking-tight text-white mt-6 mb-3 border-b border-white/5 pb-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground mt-6 mb-3 border-b border-foreground/5 pb-1">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-lg font-bold text-white mt-5 mb-2">
+            <h3 className="text-lg font-bold text-foreground mt-5 mb-2">
               {children}
             </h3>
           ),
@@ -54,7 +54,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
             );
           },
           blockquote: ({ children }) => (
-            <blockquote className="my-4 border-l-2 border-primary/60 bg-white/[0.02] py-2 px-4 italic text-fg-muted rounded-r-xl">
+            <blockquote className="my-4 border-l-2 border-primary/60 bg-foreground/[0.02] py-2 px-4 italic text-fg-muted rounded-r-xl">
               {children}
             </blockquote>
           ),
@@ -69,19 +69,19 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
             </ol>
           ),
           table: ({ children }) => (
-            <div className="my-5 overflow-x-auto rounded-xl border border-white/10 bg-[#0d0d16]/70 shadow-md">
+            <div className="my-5 overflow-x-auto rounded-xl border border-foreground/10 bg-card/70 shadow-md">
               <table className="w-full text-left text-xs border-collapse">
                 {children}
               </table>
             </div>
           ),
           th: ({ children }) => (
-            <th className="py-2.5 px-3 border-b border-white/10 bg-white/[0.03] font-mono uppercase tracking-caps text-nano text-fg-muted">
+            <th className="py-2.5 px-3 border-b border-foreground/10 bg-foreground/[0.03] font-mono uppercase tracking-caps text-nano text-fg-muted">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="py-2.5 px-3 border-b border-white/5 text-fg-muted">
+            <td className="py-2.5 px-3 border-b border-foreground/5 text-fg-muted">
               {children}
             </td>
           ),
@@ -90,7 +90,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
             if (isInline) {
               return (
                 <code
-                  className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[13px] text-amber-300"
+                  className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[13px] text-amber-300"
                   {...props}
                 >
                   {children}
@@ -119,13 +119,13 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   const language = className?.replace(/language-/, "") || "";
 
   return (
-    <div className="relative my-4 rounded-xl border border-white/10 bg-[#08080d] overflow-hidden group">
-      <div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-1.5 text-nano font-mono text-fg-subtle">
+    <div className="relative my-4 rounded-xl border border-foreground/10 bg-surface-3 overflow-hidden group">
+      <div className="flex items-center justify-between border-b border-foreground/5 bg-foreground/[0.02] px-4 py-1.5 text-nano font-mono text-fg-subtle">
         <span>{language ? language.toUpperCase() : "CODE"}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center gap-1 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
           title="Copy code"
         >
           {copied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}

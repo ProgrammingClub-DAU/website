@@ -88,7 +88,7 @@ export default function BlogPage() {
             <BookOpen className="size-3.5" />
             Club Publications
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
             Editorials & Blog
           </h1>
           <p className="text-sm text-fg-muted max-w-2xl">
@@ -101,7 +101,7 @@ export default function BlogPage() {
           {isAuthenticated && (
             <Link
               href="/blog/mine"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-4 py-2.5 text-xs font-mono font-medium text-foreground hover:bg-surface-3 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-4 py-2.5 text-xs font-mono font-medium text-foreground hover:bg-surface-3 transition-colors shadow-xs"
             >
               My Articles
             </Link>
@@ -117,7 +117,7 @@ export default function BlogPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-foreground/10 pb-4">
         {/* Tag pills */}
         <div className="flex flex-wrap items-center gap-1.5">
           <button
@@ -125,7 +125,7 @@ export default function BlogPage() {
             className={`rounded-xl px-3 py-1 text-xs font-mono transition-all ${
               selectedTag === "ALL"
                 ? "bg-primary text-primary-foreground font-semibold"
-                : "border border-white/10 bg-white/[0.02] text-fg-muted hover:text-white"
+                : "border border-foreground/10 bg-foreground/[0.02] text-fg-muted hover:text-foreground"
             }`}
           >
             All
@@ -137,7 +137,7 @@ export default function BlogPage() {
               className={`rounded-xl px-3 py-1 text-xs font-mono transition-all capitalize ${
                 selectedTag === tag
                   ? "bg-primary text-primary-foreground font-semibold"
-                  : "border border-white/10 bg-white/[0.02] text-fg-muted hover:text-white"
+                  : "border border-foreground/10 bg-foreground/[0.02] text-fg-muted hover:text-foreground"
               }`}
             >
               {tag}
@@ -153,20 +153,20 @@ export default function BlogPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search articles..."
-            className="w-full rounded-xl border border-white/10 bg-surface-2 pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+            className="w-full rounded-xl border border-foreground/10 bg-surface-2 pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Articles Grid */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center font-mono text-xs text-fg-muted animate-pulse">
           Loading published articles...
         </div>
       ) : filteredBlogs.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/70 p-16 text-center space-y-3">
+        <div className="rounded-2xl border border-foreground/10 bg-card/70 p-16 text-center space-y-3">
           <FileText className="size-8 text-fg-subtle mx-auto" />
-          <p className="text-sm font-semibold text-white">
+          <p className="text-sm font-semibold text-foreground">
             {search || selectedTag !== "ALL"
               ? "No articles match your search or filter."
               : "No blog posts published yet."}
@@ -211,7 +211,7 @@ export default function BlogPage() {
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
-                className="group relative rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-5 backdrop-blur-md hover:border-white/20 hover:bg-[#0d0d16] transition-all flex flex-col justify-between shadow-lg"
+                className="group relative rounded-2xl border border-foreground/10 bg-card/80 p-5 backdrop-blur-md hover:border-foreground/20 hover:bg-card transition-all flex flex-col justify-between shadow-lg"
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -226,7 +226,7 @@ export default function BlogPage() {
                       ))}
                   </div>
 
-                  <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors tracking-tight line-clamp-2">
+                  <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors tracking-tight line-clamp-2">
                     {post.title}
                   </h3>
 
@@ -235,7 +235,7 @@ export default function BlogPage() {
                   </p>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-nano font-mono text-fg-subtle">
+                <div className="mt-6 pt-4 border-t border-foreground/5 flex items-center justify-between text-nano font-mono text-fg-subtle">
                   <div className="flex items-center gap-1.5 text-fg-muted">
                     <User className="size-3" />
                     <span>{post.authorName}</span>

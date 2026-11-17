@@ -8,10 +8,11 @@ interface ClubRoleBadgeProps {
   showIcon?: boolean;
 }
 
-export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text: string; border: string; dot: string } {
+export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text: string; textLight: string; border: string; dot: string } {
   switch (role) {
     case "CONVENOR":
       return {
+        textLight: "#b45309",
         bg: "rgba(245, 158, 11, 0.12)",
         text: "rgba(253, 230, 138, 0.95)",
         border: "rgba(245, 158, 11, 0.35)",
@@ -19,6 +20,7 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
       };
     case "DEPUTY_CONVENOR":
       return {
+        textLight: "#7e22ce",
         bg: "rgba(169, 102, 255, 0.12)",
         text: "rgba(241, 227, 255, 0.95)",
         border: "rgba(169, 102, 255, 0.35)",
@@ -26,6 +28,7 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
       };
     case "CORE":
       return {
+        textLight: "#1d4ed8",
         bg: "rgba(61, 126, 255, 0.12)",
         text: "rgba(217, 230, 255, 0.95)",
         border: "rgba(61, 126, 255, 0.35)",
@@ -33,6 +36,7 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
       };
     case "ASSOCIATE_CORE":
       return {
+        textLight: "#0e7490",
         bg: "rgba(24, 181, 201, 0.12)",
         text: "rgba(203, 247, 252, 0.95)",
         border: "rgba(24, 181, 201, 0.35)",
@@ -40,6 +44,7 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
       };
     case "BATCH_REPRESENTATIVE":
       return {
+        textLight: "#15803d",
         bg: "rgba(47, 157, 100, 0.12)",
         text: "rgba(210, 247, 227, 0.95)",
         border: "rgba(47, 157, 100, 0.35)",
@@ -49,17 +54,19 @@ export function getClubRoleBadgeStyle(role: ClubRole | null): { bg: string; text
     case "EX_CORE":
     case "EX_CDC":
       return {
-        bg: "rgba(255, 255, 255, 0.03)",
+        textLight: "#64748b",
+        bg: "rgba(100, 116, 139, 0.08)",
         text: "rgba(148, 163, 184, 0.8)",
-        border: "rgba(255, 255, 255, 0.1)",
+        border: "rgba(100, 116, 139, 0.3)",
         dot: "#94a3b8",
       };
     case "STUDENT":
     default:
       return {
-        bg: "rgba(255, 255, 255, 0.04)",
+        textLight: "#475569",
+        bg: "rgba(100, 116, 139, 0.08)",
         text: "rgba(203, 213, 225, 0.8)",
-        border: "rgba(255, 255, 255, 0.1)",
+        border: "rgba(100, 116, 139, 0.3)",
         dot: "#64748b",
       };
   }
@@ -72,11 +79,14 @@ export function ClubRoleBadge({ clubRole, className, showIcon = true }: ClubRole
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium tracking-wide shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors",
+        // The pastel text is drawn for a dark page; on a light one it was all but
+        // invisible, so each role has a darker shade for light mode.
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium tracking-wide shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]",
         className
       )}
       style={{
-        color: style.text,
+        ["--badge-light" as string]: style.textLight,
+        ["--badge-dark" as string]: style.text,
         borderColor: style.border,
         backgroundColor: style.bg,
       }}

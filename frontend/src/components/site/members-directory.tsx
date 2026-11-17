@@ -106,14 +106,14 @@ export function MembersDirectory({
         <section>
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/5 text-foreground/80">
                 <Shield className="size-4" />
               </div>
               <div>
-                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Core Team
                 </h2>
-                {/* <p className="text-xs text-white/50">
+                {/* <p className="text-xs text-foreground/50">
                   Convenor, Deputy Convenor, Core &amp; Associate Core Members
                 </p> */}
               </div>
@@ -138,14 +138,14 @@ export function MembersDirectory({
         <section>
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/5 text-foreground/80">
                 <GraduationCap className="size-4" />
               </div>
               <div>
-                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Batch Representatives
                 </h2>
-                {/* <p className="text-xs text-white/50">
+                {/* <p className="text-xs text-foreground/50">
                   Student Year Liaisons &amp; Batch Ambassadors
                 </p> */}
               </div>
@@ -170,14 +170,14 @@ export function MembersDirectory({
         <section>
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/5 text-foreground/80">
                 <Users className="size-4" />
               </div>
               <div>
-                <h2 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Committee Members
                 </h2>
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-foreground/50">
                   Student Leadership &amp; Operations
                 </p>
               </div>
@@ -226,11 +226,11 @@ function MemberCard({
     <article
       className={`
         group relative flex flex-col items-center
-        rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl
+        rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] backdrop-blur-xl
         p-4 sm:p-5 pb-5 min-h-[270px]
         w-full sm:w-[calc(50%-14px)] lg:w-[calc(25%-18px)]
         transition-all duration-300 cursor-pointer
-        hover:-translate-y-1.5 hover:border-white/[0.18] hover:bg-white/[0.07]
+        hover:-translate-y-1.5 hover:border-foreground/[0.18] hover:bg-foreground/[0.07]
         hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.7)]
       `}
     >
@@ -243,10 +243,10 @@ function MemberCard({
       {/* ─── Centered Avatar (104px) ─── */}
       <div className="mt-1 flex flex-col items-center gap-3 flex-1 w-full">
         <div
-          className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-white/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/25 shadow-md"
+          className="relative shrink-0 overflow-hidden rounded-full p-[2px] bg-foreground/10 transition-transform duration-300 group-hover:scale-105 group-hover:bg-foreground/25 shadow-md"
           style={{ width: "104px", height: "104px" }}
         >
-          <div className="size-full overflow-hidden rounded-full bg-[#111318]">
+          <div className="size-full overflow-hidden rounded-full bg-card">
             {member.avatarUrl ? (
               <Image
                 src={member.avatarUrl}
@@ -257,7 +257,7 @@ function MemberCard({
               />
             ) : (
               <div
-                className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-white`}
+                className={`flex size-full items-center justify-center bg-gradient-to-br ${avatarGradient} font-mono font-bold text-xl text-foreground`}
               >
                 {initialsOf(member.name)}
               </div>
@@ -267,7 +267,7 @@ function MemberCard({
 
         {/* Name */}
         <div className="text-center px-1">
-          <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white/90 transition-colors group-hover:text-white leading-tight line-clamp-2">
+          <h3 className="font-heading text-base sm:text-lg font-bold tracking-tight text-foreground/90 transition-colors group-hover:text-foreground leading-tight line-clamp-2">
             <Link href={`/profile/${member.id}`} className="after:absolute after:inset-0">
               {member.name}
             </Link>
@@ -281,7 +281,7 @@ function MemberCard({
       </div>
 
       {/* ─── Bottom: Platform Links ─── */}
-      <div className="relative z-10 mt-auto pt-3 w-full border-t border-white/[0.08]">
+      <div className="relative z-10 mt-auto pt-3 w-full border-t border-foreground/[0.08]">
         <div className="flex items-center justify-center gap-2">
           {links.length > 0 ? (
             links.slice(0, 4).map((link) => (
@@ -292,15 +292,15 @@ function MemberCard({
                 rel="noopener noreferrer"
                 aria-label={`${member.name} on ${link.label}`}
                 title={link.label}
-                className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 bg-white/5
-                  text-white/50 transition-all duration-200 hover:scale-110 hover:border-white/25 hover:text-white hover:bg-white/10"
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-foreground/10 bg-foreground/5
+                  text-foreground/50 transition-all duration-200 hover:scale-110 hover:border-foreground/25 hover:text-foreground hover:bg-foreground/10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <PlatformGlyph platform={link.platform} className="size-3.5" />
               </a>
             ))
           ) : (
-            <span className="font-mono text-[9px] text-white/25 uppercase tracking-wider">
+            <span className="font-mono text-[9px] text-foreground/25 uppercase tracking-wider">
               No profiles linked
             </span>
           )}

@@ -59,7 +59,7 @@ function UnsubscribeContent() {
   };
 
   return (
-    <div className="relative mx-auto max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-surface/80 p-8 shadow-2xl backdrop-blur-xl">
+    <div className="relative mx-auto max-w-lg overflow-hidden rounded-2xl border border-foreground/10 bg-surface/80 p-8 shadow-2xl backdrop-blur-xl">
       <div className="absolute -right-20 -top-20 size-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
       {loading ? (
@@ -87,7 +87,7 @@ function UnsubscribeContent() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2 px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-3 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-foreground/10 bg-surface-2 px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-3 transition-colors"
             >
               <ArrowLeft className="size-3.5" /> Back to Home
             </Link>
@@ -108,7 +108,7 @@ function UnsubscribeContent() {
             Unsubscribed Successfully
           </h1>
 
-          <div className="mt-3 rounded-xl border border-white/10 bg-surface-2/60 p-4 w-full text-left">
+          <div className="mt-3 rounded-xl border border-foreground/10 bg-surface-2/60 p-4 w-full text-left">
             <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold">
               <BellOff className="size-3.5" />
               <span>Turned Off</span>
@@ -128,7 +128,7 @@ function UnsubscribeContent() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2 px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-3 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-foreground/10 bg-surface-2 px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-3 transition-colors"
             >
               <ArrowLeft className="size-3.5" /> Back to Home
             </Link>
@@ -150,7 +150,7 @@ export default function UnsubscribePage() {
     <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center px-4 py-16">
       <Suspense
         fallback={
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-surface p-8 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-foreground/10 bg-surface p-8 text-center">
             <Loader2 className="size-6 animate-spin text-primary" />
             <span className="mt-3 font-mono text-xs text-fg-muted">Loading preferences...</span>
           </div>

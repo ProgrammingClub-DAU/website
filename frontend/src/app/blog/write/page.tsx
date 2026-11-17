@@ -42,7 +42,7 @@ export default function BlogWritePage() {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-20 text-center space-y-4">
         <PenSquare className="size-12 text-primary mx-auto" />
-        <h1 className="text-2xl font-bold text-white">Sign In to Write</h1>
+        <h1 className="text-2xl font-bold text-foreground">Sign In to Write</h1>
         <p className="text-xs text-fg-muted font-mono">
           Only signed-in DAU club members can draft and submit articles for review.
         </p>
@@ -129,10 +129,10 @@ export default function BlogWritePage() {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8 space-y-8">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="flex items-center justify-between border-b border-foreground/10 pb-4">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-fg-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Cancel & Exit
@@ -143,7 +143,7 @@ export default function BlogWritePage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={isSaving || isSubmitting}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-2 px-3.5 py-2 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-surface-2 px-3.5 py-2 text-xs font-mono text-foreground hover:bg-surface-3 transition-colors shadow-xs disabled:opacity-50"
           >
             {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
             Save Draft
@@ -176,7 +176,7 @@ export default function BlogWritePage() {
             maxLength={TITLE_MAX}
             aria-label="Article title"
             placeholder="Article Title..."
-            className="w-full bg-transparent text-2xl sm:text-3xl font-black text-white placeholder:text-white/20 focus:outline-none tracking-tight border-b border-white/10 pb-3"
+            className="w-full bg-transparent text-2xl sm:text-3xl font-black text-foreground placeholder:text-foreground/20 focus:outline-none tracking-tight border-b border-foreground/10 pb-3"
           />
         </div>
 
@@ -188,20 +188,20 @@ export default function BlogWritePage() {
             maxLength={TAGS_MAX}
             aria-label="Tags"
             placeholder="Tags (comma-separated, e.g. dp, graph, editorial, tutorial)"
-            className="w-full rounded-xl border border-white/10 bg-surface-2 px-4 py-2 text-xs font-mono text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
+            className="w-full rounded-xl border border-foreground/10 bg-surface-2 px-4 py-2 text-xs font-mono text-foreground placeholder:text-fg-subtle focus:border-primary/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Editor & Preview Tabs */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+        <div className="flex items-center justify-between border-b border-foreground/10 pb-2">
           <div className="flex gap-4">
             <button
               type="button"
               onClick={() => setActiveTab("write")}
               className={`pb-2 text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 ${
-                activeTab === "write" ? "text-primary border-b-2 border-primary" : "text-fg-muted hover:text-white"
+                activeTab === "write" ? "text-primary border-b-2 border-primary" : "text-fg-muted hover:text-foreground"
               }`}
             >
               <Edit3 className="size-3.5" />
@@ -211,7 +211,7 @@ export default function BlogWritePage() {
               type="button"
               onClick={() => setActiveTab("preview")}
               className={`pb-2 text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 ${
-                activeTab === "preview" ? "text-primary border-b-2 border-primary" : "text-fg-muted hover:text-white"
+                activeTab === "preview" ? "text-primary border-b-2 border-primary" : "text-fg-muted hover:text-foreground"
               }`}
             >
               <Eye className="size-3.5" />
@@ -225,7 +225,7 @@ export default function BlogWritePage() {
         </div>
 
         {activeTab === "write" ? (
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-4 backdrop-blur-md">
+          <div className="rounded-2xl border border-foreground/10 bg-card/80 p-4 backdrop-blur-md">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -235,7 +235,7 @@ export default function BlogWritePage() {
             />
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 bg-[#0d0d16]/80 p-6 sm:p-8 backdrop-blur-md min-h-[400px]">
+          <div className="rounded-2xl border border-foreground/10 bg-card/80 p-6 sm:p-8 backdrop-blur-md min-h-[400px]">
             {content.trim() ? (
               <MarkdownRenderer content={content} />
             ) : (
