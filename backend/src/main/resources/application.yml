@@ -58,7 +58,11 @@ app:
     # Minimum 256-bit (64 hex chars) random string. Generate with: openssl rand -hex 32
     # If not set, the application will fail to start intentionally.
     secret: ${JWT_SECRET}
-    expiration-ms: 86400000
+    # 30 days. The site renews the token on each visit (POST /api/auth/refresh),
+    # so this is how long a member can stay away before signing in again. It was
+    # 24 hours, which signed everyone out once a day. Override with
+    # APP_JWT_EXPIRATION_MS.
+    expiration-ms: 2592000000
   google:
     # The OAuth 2.0 Web client ID from Google Cloud Console. Every ID token is
     # checked to have been issued for this client, which is what stops a token

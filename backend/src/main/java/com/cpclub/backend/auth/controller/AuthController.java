@@ -77,6 +77,25 @@ public class AuthController {
     }
 
     /**
+     * Swaps a valid session token for a fresh one, so an active member is never
+     * signed out. The browser calls it on each visit; see
+     * {@link AuthService#renewSession(String)}.
+     *
+     * @param principal the caller, from their current token
+     * @return the same payload as sign-in, with a new token
+     */
+    @PostMapping("/refresh")
+    @Operation(summary = "Renew the current session token")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshSession(java.security.Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        AuthResponse response = authService.renewSession(principal.getName());
+        return ResponseEntity.ok(ApiResponse.success(response, "Session renewed"));
+    }
+
+    /**
      * Verifies an email address using a single-use token from the emailed link.
      *
      * @param request body containing token (or query parameter fallback)

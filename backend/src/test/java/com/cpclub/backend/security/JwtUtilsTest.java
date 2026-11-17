@@ -41,6 +41,16 @@ class JwtUtilsTest {
         assertEquals("alice@dau.ac.in", jwtUtils.getUserNameFromJwtToken(token));
     }
     @Test
+    @DisplayName("A 30-day lifetime fits: it is past the range of an int")
+    void generateTokenFromEmail_ThirtyDayLifetime() {
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 30L * 24 * 60 * 60 * 1000);
+
+        String token = jwtUtils.generateTokenFromEmail("alice@dau.ac.in", 1L, Role.ROLE_USER.name());
+
+        assertTrue(jwtUtils.validateJwtToken(token), "an overflowed lifetime would issue an already-expired token");
+    }
+
+    @Test
     @DisplayName("Should reject invalid or malformed JWT token")
     void validateJwtToken_Malformed() {
         String invalidToken = "not.a.valid.jwt.token";

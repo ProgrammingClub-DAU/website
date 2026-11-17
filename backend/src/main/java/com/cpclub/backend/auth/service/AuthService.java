@@ -88,6 +88,29 @@ public class AuthService {
                 .map(existing -> refresh(existing, token))
                 .orElseGet(() -> create(email, token));
 
+        return sessionFor(user);
+    }
+
+    /**
+     * A fresh token for a member who is already signed in.
+     *
+     * <p>The browser calls this on each visit, so a member who keeps using the site
+     * is never signed out, and one who stays away longer than a token lasts signs in
+     * again. Only a valid token reaches this, so it cannot start a session; the
+     * account is looked up again in case it has been deleted since.</p>
+     *
+     * @param email the address of the authenticated caller
+     * @return a new token and the member's current details
+     * @throws BadCredentialsException if the account no longer exists
+     */
+    @Transactional(readOnly = true)
+    public AuthResponse renewSession(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Your session has ended. Please sign in again."));
+        return sessionFor(user);
+    }
+
+    private AuthResponse sessionFor(User user) {
         String jwt = jwtUtils.generateTokenFromEmail(user.getEmail(), user.getId(), user.getRole().name());
 
         return new AuthResponse(

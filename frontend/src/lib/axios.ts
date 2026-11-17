@@ -56,7 +56,9 @@ apiClient.interceptors.response.use(
     const url = error.config?.url || "";
     // A 401 from sign-in itself means the sign-in was refused, not that a
     // session expired, so it must not trigger the logout-and-redirect below.
-    const isAuthEndpoint = url.includes("/api/auth/google");
+    // Nor does a failed renewal: SessionKeeper runs it in the background on every
+    // page, public ones included, and signs out quietly itself.
+    const isAuthEndpoint = url.includes("/api/auth/google") || url.includes("/api/auth/refresh");
     // Browser-only: the store is a shared singleton on the server, so clearing
     // it there would sign out whoever the process serves next.
     if (
