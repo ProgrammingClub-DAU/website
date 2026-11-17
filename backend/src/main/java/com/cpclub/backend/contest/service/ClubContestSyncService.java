@@ -8,10 +8,12 @@ import com.cpclub.backend.contest.entity.ClubContestProblem;
 import com.cpclub.backend.contest.entity.ClubContestProblemResult;
 import com.cpclub.backend.contest.entity.ClubContestProblemResultId;
 import com.cpclub.backend.contest.entity.ClubContestResult;
+import com.cpclub.backend.contest.entity.ClubContestUpsolve;
 import com.cpclub.backend.contest.repository.ClubContestProblemRepository;
 import com.cpclub.backend.contest.repository.ClubContestProblemResultRepository;
 import com.cpclub.backend.contest.repository.ClubContestRepository;
 import com.cpclub.backend.contest.repository.ClubContestResultRepository;
+import com.cpclub.backend.contest.repository.ClubContestUpsolveRepository;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +62,16 @@ public class ClubContestSyncService {
      */
     static final Set<String> COUNTED_PARTICIPANT_TYPES = Set.of("CONTESTANT", "OUT_OF_COMPETITION");
 
+    /**
+     * Rows that are upsolving. Codeforces only offers practice and virtual
+     * participation once a contest has ended, so a problem solved in such a row was
+     * solved after the end -- which is what D12 calls an upsolve.
+     */
+    static final Set<String> UPSOLVE_PARTICIPANT_TYPES = Set.of("PRACTICE", "VIRTUAL");
+
+    /** Ended contests keep syncing once a day for this long, to pick up upsolves. */
+    static final int UPSOLVE_TRACKING_DAYS = 30;
+
     /** Higher points first, then lower penalty. */
     static final Comparator<CfStandings.Row> BETTER_FIRST = Comparator
             .comparingDouble(ClubContestSyncService::points).reversed()
@@ -68,6 +81,7 @@ public class ClubContestSyncService {
     private final ClubContestProblemRepository problemRepository;
     private final ClubContestResultRepository resultRepository;
     private final ClubContestProblemResultRepository problemResultRepository;
+    private final ClubContestUpsolveRepository upsolveRepository;
     private final UserRepository userRepository;
     private final CodeforcesAuthorizedClient codeforces;
     private final Clock clock;
@@ -88,27 +102,37 @@ public class ClubContestSyncService {
         // Network first, outside any transaction.
         List<Placed> placed = List.of();
         List<CfStandings.Problem> cfProblems = List.of();
+        Map<Long, Set<String>> upsolves = Map.of();
         if (!byHandle.isEmpty()) {
             CfStandings standings = codeforces.contestStandings(contest.getCfContestId(),
                     byHandle.values().stream().map(User::getCodeforcesHandle).toList());
             cfProblems = standings.getProblems();
             placed = rankAmongClub(bestRowPerMember(standings.getRows(), byHandle));
+            upsolves = upsolvesByMember(standings.getRows(), cfProblems, byHandle);
         }
 
         List<Placed> toStore = placed;
         List<CfStandings.Problem> problemOrder = cfProblems;
-        transaction.executeWithoutResult(status -> replace(clubContestId, toStore, problemOrder));
+        Map<Long, Set<String>> upsolvesToStore = upsolves;
+        transaction.executeWithoutResult(status -> replace(clubContestId, toStore, problemOrder, upsolvesToStore));
         log.info("Club contest {} (CF {}) synced: {} club member(s)", clubContestId, contest.getCfContestId(), placed.size());
         return placed.size();
     }
 
-    private void replace(Long clubContestId, List<Placed> placed, List<CfStandings.Problem> cfProblems) {
+    private void replace(Long clubContestId, List<Placed> placed, List<CfStandings.Problem> cfProblems,
+                         Map<Long, Set<String>> upsolves) {
         ClubContest contest = contestRepository.findById(clubContestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Club contest not found with id: " + clubContestId));
 
         // Per-problem rows first: the H2 test schema has no ON DELETE CASCADE.
         problemResultRepository.deleteByContestId(clubContestId);
         resultRepository.deleteByContestId(clubContestId);
+        upsolveRepository.deleteByContestId(clubContestId);
+
+        List<ClubContestUpsolve> upsolveRows = new ArrayList<>();
+        upsolves.forEach((userId, indexes) -> indexes.forEach(
+                index -> upsolveRows.add(new ClubContestUpsolve(clubContestId, userId, index))));
+        upsolveRepository.saveAll(upsolveRows);
 
         Map<String, ClubContestProblem> problemsByIndex = problemRepository
                 .findByClubContestIdOrderByProblemIndexAsc(clubContestId).stream()
@@ -144,6 +168,36 @@ public class ClubContestSyncService {
 
         contest.setLastSyncedAt(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
         contestRepository.save(contest);
+    }
+
+    /**
+     * Problems each club member solved in a practice or virtual row: their upsolves.
+     *
+     * <p>Only gym, mashup and group standings carry these rows -- they are read with
+     * {@code showUnofficial}, which Codeforces refuses for official rounds. For those,
+     * upsolves still come from the members' submission history (UpsolveService).
+     * Before this, a private gym's upsolves were never recorded anywhere, because
+     * Codeforces leaves private-gym submissions out of that public history.</p>
+     */
+    static Map<Long, Set<String>> upsolvesByMember(List<CfStandings.Row> rows, List<CfStandings.Problem> problems,
+                                                   Map<String, User> byHandle) {
+        Map<Long, Set<String>> upsolves = new HashMap<>();
+        for (CfStandings.Row row : rows) {
+            if (row.getParty() == null || !UPSOLVE_PARTICIPANT_TYPES.contains(row.getParty().getParticipantType())) {
+                continue;
+            }
+            for (CfStandings.Member m : row.getParty().getMembers()) {
+                User user = m.getHandle() == null ? null : byHandle.get(m.getHandle().toLowerCase(Locale.ROOT));
+                if (user == null) continue;
+                // problemResults line up with the standings' problem list, entry for entry.
+                for (int i = 0; i < row.getProblemResults().size() && i < problems.size(); i++) {
+                    if (row.getProblemResults().get(i).isSolved()) {
+                        upsolves.computeIfAbsent(user.getId(), k -> new HashSet<>()).add(problems.get(i).getIndex());
+                    }
+                }
+            }
+        }
+        return upsolves;
     }
 
     /**
@@ -201,7 +255,9 @@ public class ClubContestSyncService {
      * <ul>
      *   <li>every run while it is live, and for 30 minutes after it ends;</li>
      *   <li>once at end + 2 hours, when final standings have settled;</li>
-     *   <li>then once a day for three days, to catch rejudges.</li>
+     *   <li>then once a day for {@value #UPSOLVE_TRACKING_DAYS} days, to catch rejudges
+     *       and record upsolves. This used to stop after three days, so anything
+     *       upsolved later never reached the upsolve matrix.</li>
      * </ul>
      * Expressed as checkpoints rather than clock windows, so a missed run -- the
      * service was restarting at end + 2 hours, say -- is caught up on the next tick
@@ -215,7 +271,12 @@ public class ClubContestSyncService {
         if (!now.isAfter(end.plusMinutes(30))) {
             return true;
         }
-        for (LocalDateTime checkpoint : List.of(end.plusHours(2), end.plusDays(1), end.plusDays(2), end.plusDays(3))) {
+        List<LocalDateTime> checkpoints = new ArrayList<>();
+        checkpoints.add(end.plusHours(2));
+        for (int day = 1; day <= UPSOLVE_TRACKING_DAYS; day++) {
+            checkpoints.add(end.plusDays(day));
+        }
+        for (LocalDateTime checkpoint : checkpoints) {
             if (!now.isBefore(checkpoint) && (lastSyncedAt == null || lastSyncedAt.isBefore(checkpoint))) {
                 return true;
             }

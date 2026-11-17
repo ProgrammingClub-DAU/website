@@ -110,16 +110,51 @@ class ClubContestRankingTest {
     }
 
     @Test
-    @DisplayName("Once at end + 2 hours, then once a day for three days")
+    @DisplayName("Once at end + 2 hours, then once a day for 30 days, to pick up upsolves")
     void checkpointsAfterTheContest() {
         LocalDateTime lastLive = END.plusMinutes(30);
         assertTrue(due(lastLive, END.plusHours(2)));
         assertFalse(due(END.plusHours(2), END.plusHours(2).plusMinutes(15)), "only once");
 
         assertTrue(due(END.plusHours(2), END.plusDays(1)));
-        assertTrue(due(END.plusDays(1), END.plusDays(2)));
-        assertTrue(due(END.plusDays(2), END.plusDays(3)));
-        assertFalse(due(END.plusDays(3), END.plusDays(4)), "finished after three days");
+        assertTrue(due(END.plusDays(3), END.plusDays(4)), "still tracking upsolves after three days");
+        assertFalse(due(END.plusDays(4), END.plusDays(4).plusHours(6)), "once a day, not every tick");
+        assertTrue(due(END.plusDays(29), END.plusDays(30)));
+        assertFalse(due(END.plusDays(30), END.plusDays(31)), "finished after 30 days");
+    }
+
+    @Test
+    @DisplayName("Problems solved in practice or virtual rows are upsolves; contestant rows are not")
+    void upsolvesComeFromPracticeAndVirtualRows() {
+        User alice = user(1L, "Alice", "alice");
+        User bob = user(2L, "Bob", "bob");
+        Map<String, User> byHandle = Map.of("alice", alice, "bob", bob);
+        List<CfStandings.Problem> problems = List.of(problem("A"), problem("B"), problem("C"));
+
+        CfStandings.Row aliceLive = row("alice", "CONTESTANT", 1, 10);
+        aliceLive.setProblemResults(List.of(solved(true), solved(false), solved(false)));
+        CfStandings.Row alicePractice = row("Alice", "PRACTICE", 2, 0); // handle case differs on purpose
+        alicePractice.setProblemResults(List.of(solved(false), solved(true), solved(true)));
+        CfStandings.Row bobVirtual = row("bob", "VIRTUAL", 1, 0);
+        bobVirtual.setProblemResults(List.of(solved(true), solved(false), solved(false)));
+
+        Map<Long, java.util.Set<String>> upsolves = ClubContestSyncService.upsolvesByMember(
+                List.of(aliceLive, alicePractice, bobVirtual), problems, byHandle);
+
+        assertEquals(java.util.Set.of("B", "C"), upsolves.get(1L));
+        assertEquals(java.util.Set.of("A"), upsolves.get(2L));
+    }
+
+    private static CfStandings.Problem problem(String index) {
+        CfStandings.Problem p = new CfStandings.Problem();
+        p.setIndex(index);
+        return p;
+    }
+
+    private static CfStandings.ProblemResult solved(boolean solved) {
+        CfStandings.ProblemResult r = new CfStandings.ProblemResult();
+        r.setPoints(solved ? 1.0 : 0.0);
+        return r;
     }
 
     @Test

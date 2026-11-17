@@ -13,6 +13,7 @@ import com.cpclub.backend.contest.repository.ClubContestProblemRepository;
 import com.cpclub.backend.contest.repository.ClubContestProblemResultRepository;
 import com.cpclub.backend.contest.repository.ClubContestRepository;
 import com.cpclub.backend.contest.repository.ClubContestResultRepository;
+import com.cpclub.backend.contest.repository.ClubContestUpsolveRepository;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +41,9 @@ import java.util.stream.Collectors;
  * or on the problemset, does not count -- a mashup problem cannot be mapped back to
  * its original reliably, and "upsolve from the contest page" is a one-sentence rule.</p>
  *
- * <p>Status follows the 6-hourly submission sync, so it can trail Codeforces by up to
- * six hours; {@link MyUpsolvesDto#getCfSyncedAt()} lets the page say so.</p>
+ * <p>Status follows the 6-hourly submission sync and the contest's daily standings
+ * sync, so it can trail Codeforces by up to a day; {@link MyUpsolvesDto#getCfSyncedAt()}
+ * lets the page say so.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -52,6 +54,7 @@ public class UpsolveService {
     private final ClubContestResultRepository resultRepository;
     private final ClubContestProblemResultRepository problemResultRepository;
     private final CfSolveRepository cfSolveRepository;
+    private final ClubContestUpsolveRepository upsolveRepository;
     private final UserRepository userRepository;
     private final Clock clock;
 
@@ -170,7 +173,15 @@ public class UpsolveService {
         return keys;
     }
 
-    /** "userId:problemIndex" for each first accepted solve inside the contest after it ended (D12). */
+    /**
+     * "userId:problemIndex" for each problem solved inside the contest after it ended (D12),
+     * from either source:
+     * <ul>
+     *   <li>the members' submission history -- the only source for official rounds;</li>
+     *   <li>the contest's own standings, practice and virtual rows -- the only source
+     *       for a private gym, whose submissions that history leaves out.</li>
+     * </ul>
+     */
     private Set<String> upsolved(ClubContest contest, Collection<Long> userIds) {
         if (userIds.isEmpty()) {
             return Set.of();
@@ -178,6 +189,9 @@ public class UpsolveService {
         Set<String> keys = new HashSet<>();
         for (Object[] row : cfSolveRepository.findSolvesInContestSince(
                 contest.getCfContestId(), ContestViews.endsAt(contest), userIds)) {
+            keys.add(row[0] + ":" + row[1]);
+        }
+        for (Object[] row : upsolveRepository.findForMembers(contest.getId(), userIds)) {
             keys.add(row[0] + ":" + row[1]);
         }
         return keys;

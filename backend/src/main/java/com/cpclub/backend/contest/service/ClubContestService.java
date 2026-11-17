@@ -21,6 +21,7 @@ import com.cpclub.backend.contest.repository.ClubContestProblemRepository;
 import com.cpclub.backend.contest.repository.ClubContestProblemResultRepository;
 import com.cpclub.backend.contest.repository.ClubContestRepository;
 import com.cpclub.backend.contest.repository.ClubContestResultRepository;
+import com.cpclub.backend.contest.repository.ClubContestUpsolveRepository;
 import com.cpclub.backend.contest.repository.ClubSeasonRepository;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
@@ -48,6 +49,7 @@ public class ClubContestService {
     private final ClubContestProblemRepository problemRepository;
     private final ClubContestResultRepository resultRepository;
     private final ClubContestProblemResultRepository problemResultRepository;
+    private final ClubContestUpsolveRepository upsolveRepository;
     private final ClubSeasonRepository seasonRepository;
     private final UserRepository userRepository;
     private final CodeforcesAuthorizedClient codeforces;
@@ -136,6 +138,7 @@ public class ClubContestService {
         // Explicit, because the H2 test schema has no ON DELETE CASCADE.
         problemResultRepository.deleteByContestId(id);
         resultRepository.deleteByContestId(id);
+        upsolveRepository.deleteByContestId(id);
         problemRepository.deleteAll(problemRepository.findByClubContestIdOrderByProblemIndexAsc(id));
         contestRepository.delete(contest);
     }

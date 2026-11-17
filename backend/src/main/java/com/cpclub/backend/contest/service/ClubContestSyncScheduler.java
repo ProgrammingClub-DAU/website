@@ -36,7 +36,7 @@ public class ClubContestSyncScheduler {
      * Candidates are contests that started within this window. Generous, because a
      * gym contest can run for weeks; the exact rule is {@code needsSync}.
      */
-    private static final int CANDIDATE_WINDOW_DAYS = 60;
+    private static final int CANDIDATE_WINDOW_DAYS = 120;
 
     private final ClubContestRepository contestRepository;
     private final ClubContestSyncService syncService;
