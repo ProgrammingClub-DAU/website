@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { HallOfFameTimeline } from "@/components/site/hall-of-fame-timeline";
-import { hallOfFameService } from "@/lib/services/hall-of-fame";
+import { getPublicHallOfFame } from "@/lib/public-data";
 import type { HallOfFameEntry } from "@/types/api";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default async function HallOfFamePage() {
   let unreachable = false;
 
   try {
-    entries = await hallOfFameService.list({ serverRender: true });
+    entries = await getPublicHallOfFame();
   } catch (error) {
     // Logged server-side, and said on the page: an unreachable backend must not
     // read as a club with no achievements.

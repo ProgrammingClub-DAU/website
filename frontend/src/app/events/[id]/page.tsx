@@ -18,7 +18,7 @@ import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { PhotoGrid } from "@/components/site/photo-grid";
 import { RegistrationButton } from "@/components/site/registration-button";
 import { AddToCalendar } from "@/components/site/add-to-calendar";
-import { eventsService } from "@/lib/services/events";
+import { getPublicEventDetail } from "@/lib/public-data";
 import { WINNER_CATEGORY_LABELS } from "@/types/api";
 import type { EventDetail, EventWinner, WinnerCategory } from "@/types/api";
 import { istDate } from "@/lib/utils";
@@ -29,11 +29,10 @@ async function loadEvent(id: string): Promise<EventDetail | null> {
   const numeric = Number(id);
   if (!Number.isInteger(numeric) || numeric <= 0) return null;
 
-  try {
-    return await eventsService.getEventDetail(numeric);
-  } catch {
-    return null;
-  }
+  // Null only when the backend says there is no such event. Any other failure
+  // throws to the error page (with a retry) rather than claiming the event does
+  // not exist; with a cached copy it never gets that far.
+  return getPublicEventDetail(numeric);
 }
 
 export async function generateMetadata({

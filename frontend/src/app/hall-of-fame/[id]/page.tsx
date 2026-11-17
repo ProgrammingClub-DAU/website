@@ -12,7 +12,7 @@ import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
 
 import { Eyebrow, PageTitle, Section } from "@/components/site/primitives";
 import { PhotoGrid } from "@/components/site/photo-grid";
-import { hallOfFameService } from "@/lib/services/hall-of-fame";
+import { getPublicHallOfFameEntry } from "@/lib/public-data";
 import type { HallOfFameEntry } from "@/types/api";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +20,9 @@ export const dynamic = "force-dynamic";
 async function loadEntry(id: string): Promise<HallOfFameEntry | null> {
   const numeric = Number(id);
   if (!Number.isInteger(numeric) || numeric <= 0) return null;
-  try {
-    return await hallOfFameService.get(numeric, { serverRender: true });
-  } catch {
-    return null;
-  }
+  // Null only when the backend says there is no such entry; other failures go
+  // to the error page instead of a false "not found".
+  return getPublicHallOfFameEntry(numeric);
 }
 
 /** "2026-01-10" -> "10 January 2026", read from the string so no timezone moves it. */

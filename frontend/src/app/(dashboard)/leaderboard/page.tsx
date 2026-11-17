@@ -1,12 +1,14 @@
 // Route Group: (dashboard) — groups data-driven user pages without affecting the URL.
 // Public route remains /leaderboard.
 
-// Never statically pre-render — this page fetches live leaderboard data from the backend.
+// Rendered per request, never at build time (the backend may be asleep during a
+// deploy). The data itself comes from a 60-second cache, so a visit is instant;
+// see lib/public-data.ts.
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import { Section } from "@/components/site/primitives";
-import { leaderboardService } from "@/lib/services/leaderboard";
+import { getPublicLeaderboard } from "@/lib/public-data";
 import LeaderboardDashboard from "@/components/site/leaderboard-dashboard";
 import type { LeaderboardEntry } from "@/types/api";
 
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 export default async function LeaderboardPage() {
   let leaderboard: LeaderboardEntry[] = [];
   try {
-    leaderboard = await leaderboardService.getLeaderboard("CODEFORCES", "ALL");
+    leaderboard = await getPublicLeaderboard();
   } catch {
     // API unreachable — render with empty list, page stays functional
   }
