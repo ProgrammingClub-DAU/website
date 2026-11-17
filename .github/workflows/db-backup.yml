@@ -41,7 +41,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.cfg.outputs.configured == 'true'
 
       # The production server is PostgreSQL 17, and an older pg_dump refuses to dump
