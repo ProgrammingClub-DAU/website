@@ -30,6 +30,7 @@ import { dashboardService } from "@/lib/services/dashboard";
 import { eventsService } from "@/lib/services/events";
 import { galleryService } from "@/lib/services/gallery";
 import { hallOfFameService } from "@/lib/services/hall-of-fame";
+import { awardsService } from "@/lib/services/awards";
 
 /**
  * How stale a public page may be. An admin's change shows up within this long,
@@ -109,6 +110,13 @@ export const getPublicBatchPhotos = unstable_cache(
 export const getPublicHallOfFame = unstable_cache(
   () => hallOfFameService.list({ serverRender: true }),
   ["public", "hall-of-fame", "list"],
+  options
+);
+
+/** The latest weekly awards, for the home page's Weekly Highlights. */
+export const getPublicLatestAwards = unstable_cache(
+  () => awardsService.getLatest(),
+  ["public", "awards", "weekly-latest"],
   options
 );
 

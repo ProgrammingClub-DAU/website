@@ -27,13 +27,18 @@ import { dashboardService } from "@/lib/services/dashboard";
 import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { WeeklyHighlights } from "@/components/site/weekly-highlights";
+import { JoinCta } from "@/components/site/join-cta";
+import { getPublicLatestAwards } from "@/lib/public-data";
 import { cn } from "@/lib/utils";
-import type { PublicMember } from "@/types/api";
+import type { LatestWeeklyAwardsResponseDto, PublicMember } from "@/types/api";
 
 type Feature = {
   icon: LucideIcon;
   title: string;
   body: string;
+  /** Each card is a link to the part of the site it describes. */
+  href: string;
+  cta: string;
   span?: boolean;
   badge?: string;
   footer?: "ranks" | "avatars";
@@ -44,6 +49,8 @@ const features: Feature[] = [
     icon: BarChart3,
     title: "Live leaderboard, synced from Codeforces and LeetCode",
     body: "Ratings and rank colours update from members' handles, so standings stay current without anyone editing a spreadsheet.",
+    href: "/leaderboard",
+    cta: "View the leaderboard",
     span: true,
     footer: "ranks",
   },
@@ -51,21 +58,29 @@ const features: Feature[] = [
     icon: FileText,
     title: "Editorials & blog",
     body: "Write-ups from club contests and problem breakdowns, written by members.",
+    href: "/blog",
+    cta: "Read the blog",
   },
   {
     icon: CalendarDays,
-    title: "Contests & events",
+    title: "Events & results",
     body: "Every club event on one timeline, with results, winners and photos once it is over.",
+    href: "/events",
+    cta: "See the events",
   },
   {
     icon: Swords,
     title: "1v1 battles",
     body: "Head-to-head timed problems against another member, with a shared verdict feed.",
+    href: "/compete",
+    cta: "Start a battle",
   },
   {
     icon: Users,
     title: "The committee",
     body: "Who runs the club this term, with their Codeforces, LeetCode, CodeChef and AtCoder profiles.",
+    href: "/members",
+    cta: "Meet the committee",
     footer: "avatars",
   },
 ];
@@ -99,11 +114,15 @@ export default async function HomePage() {
   // Real committee members for the avatar row. When the backend cannot be
   // reached the row is simply left out -- never filled with placeholders.
   let team: PublicMember[] = [];
-  try {
-    team = await dashboardService.getTeam(TEAM_TIMEOUT_MS);
-  } catch {
-    team = [];
-  }
+  let awards: LatestWeeklyAwardsResponseDto | null = null;
+  const [teamResult, awardsResult] = await Promise.allSettled([
+    dashboardService.getTeam(TEAM_TIMEOUT_MS),
+    // Read here so Weekly Highlights renders with the page. It used to fetch
+    // from the browser and sat as an empty grey skeleton until that came back.
+    getPublicLatestAwards(),
+  ]);
+  if (teamResult.status === "fulfilled") team = teamResult.value;
+  if (awardsResult.status === "fulfilled") awards = awardsResult.value;
 
   return (
     <>
@@ -133,9 +152,7 @@ export default async function HomePage() {
               everyone from first-time solvers to ICPC regionalists.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild className="h-10 rounded-full px-5.5">
-                <Link href="/login">Join the Club</Link>
-              </Button>
+              <JoinCta className="h-10 rounded-full px-5.5" />
               <Button asChild variant="outline" className="h-10 rounded-full px-5.5">
                 <Link href="/events">See our events</Link>
               </Button>
@@ -167,14 +184,24 @@ export default async function HomePage() {
                 </div>
 
                 <div className="mt-5">
-                  <h3 className="text-lg font-semibold tracking-tight">{feature.title}</h3>
+                  {/* The title's link covers the whole card (after:inset-0), so the
+                      card goes where it says. These cards lifted on hover like links
+                      and went nowhere. */}
+                  <h3 className="text-lg font-semibold tracking-tight">
+                    <Link
+                      href={feature.href}
+                      className="after:absolute after:inset-0 after:rounded-panel focus-visible:outline-none"
+                    >
+                      {feature.title}
+                    </Link>
+                  </h3>
                   <p className="mt-2.5 max-w-[56ch] text-base leading-6 text-fg-muted text-pretty">
                     {feature.body}
                   </p>
                 </div>
 
                 {feature.footer === "ranks" && (
-                  <div className="mt-auto flex flex-wrap gap-2 pt-5" aria-hidden>
+                  <div className="flex flex-wrap gap-2 pt-5" aria-hidden>
                     {CF_RANKS.map((r) => (
                       <span
                         key={r.key}
@@ -186,11 +213,7 @@ export default async function HomePage() {
                 )}
 
                 {feature.footer === "avatars" && team.length > 0 && (
-                  <Link
-                    href="/members"
-                    className="mt-auto flex items-center pt-5 pl-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                  >
-                    <span className="sr-only">Meet the committee</span>
+                  <div className="flex items-center pt-5 pl-2" aria-hidden>
                     {team.slice(0, AVATAR_COUNT).map((member) => (
                       <span
                         key={member.id}
@@ -218,8 +241,15 @@ export default async function HomePage() {
                         +{team.length - AVATAR_COUNT}
                       </span>
                     )}
-                  </Link>
+                  </div>
                 )}
+
+                <span
+                  aria-hidden
+                  className="mt-auto pt-5 font-mono text-micro tracking-caps text-primary uppercase"
+                >
+                  {feature.cta} &rarr;
+                </span>
               </div>
             );
           })}
@@ -299,12 +329,17 @@ export default async function HomePage() {
           {howItWorks.map((step) => (
             <li
               key={step.n}
-              className="border-t border-border pt-5 transition-all hover:-translate-y-0.5 hover:border-primary"
+              className="group relative border-t border-border pt-5 transition-all hover:-translate-y-0.5 hover:border-primary focus-within:border-primary"
             >
               <span className="font-mono text-xs tracking-[0.1em] text-primary">
                 Step {step.n}
               </span>
-              <p className="mt-3 text-lead font-semibold tracking-tight">{step.title}</p>
+              {/* Each step links to where it is done; the link covers the step. */}
+              <p className="mt-3 text-lead font-semibold tracking-tight">
+                <Link href={step.href} className="after:absolute after:inset-0 focus-visible:outline-none">
+                  {step.title}
+                </Link>
+              </p>
               <p className="mt-2 text-body leading-[1.45] text-fg-muted text-pretty">
                 {step.body}
               </p>
@@ -325,6 +360,9 @@ export default async function HomePage() {
                   ))}
                 </span>
               ) : null}
+              <span aria-hidden className="mt-3.5 block font-mono text-micro tracking-caps text-primary uppercase">
+                {step.cta} &rarr;
+              </span>
             </li>
           ))}
         </ol>
@@ -373,16 +411,23 @@ export default async function HomePage() {
                     Gamification Live
                   </span>
                 </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">1v1 Battles & CP Bingo</h3>
+                <h3 className="mt-6 text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                  {/* The whole card is the link, like the calendar card beside it. */}
+                  <Link href="/compete" className="after:absolute after:inset-0 after:z-0 focus-visible:outline-none">
+                    1v1 Battles &amp; CP Bingo
+                  </Link>
+                </h3>
                 <p className="mt-3 max-w-[40ch] text-base leading-relaxed text-fg-muted">
                   Challenge your friends to a head-to-head Bingo duel. Solve Codeforces problems faster than your opponent to claim the grid and win the match!
                 </p>
               </div>
               
-              <div className="mt-8 pt-4 border-t border-primary/10">
+              <div className="relative z-10 mt-8 flex flex-col gap-2 border-t border-primary/10 pt-4 sm:flex-row sm:items-center sm:gap-4">
                 <Button asChild className="w-full sm:w-auto font-bold tracking-wide rounded-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.6)] transition-all">
                   <Link href="/compete">Enter the Arena</Link>
                 </Button>
+                {/* /compete asks for a sign-in; say so before the click, not after. */}
+                <span className="text-xs text-fg-muted">Sign in with your DAU account to play.</span>
               </div>
             </div>
           </div>
@@ -390,7 +435,7 @@ export default async function HomePage() {
       </Section>
 
       <Section className="py-8">
-        <WeeklyHighlights />
+        <WeeklyHighlights initialData={awards} />
       </Section>
 
       <HallOfFameTeaser title="The people who set the bar." />
@@ -415,9 +460,7 @@ export default async function HomePage() {
               Bring your handle. We&apos;ll bring the problems, the rounds, and people to
               solve them with.
             </p>
-            <Button asChild className="mt-8 h-10 rounded-full px-6">
-              <Link href="/login">Join the Club</Link>
-            </Button>
+            <JoinCta className="mt-8 h-10 rounded-full px-6" />
           </BorderGlow>
         </div>
       </section>
@@ -427,8 +470,10 @@ export default async function HomePage() {
 
 function cnFeature(span?: boolean) {
   return cn(
-    "flex flex-col rounded-panel border border-hairline bg-surface p-7 transition-all",
+    "group relative flex flex-col rounded-panel border border-hairline bg-surface p-7 transition-all",
     "hover:-translate-y-0.5 hover:border-border hover:bg-surface-3 hover:shadow-panel",
+    // The link inside covers the card; show its focus on the card itself.
+    "focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/40",
     span && "sm:col-span-2"
   );
 }
