@@ -16,19 +16,20 @@ export function AwardBadge({ awardType, metricValue, platform, size = "md" }: Aw
     CODER_OF_THE_WEEK: {
       label: "Coder of the Week",
       icon: <Crown className={size === "sm" ? "size-3" : size === "lg" ? "size-5" : "size-4"} />,
-      bg: "bg-amber-500/15 border-amber-500/30 text-amber-300",
+      // Darker text in the light theme: the pale tints are unreadable on white.
+      bg: "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300",
       valueSuffix: "pts",
     },
     MOST_SOLVED: {
       label: "Most Solved",
       icon: <Flame className={size === "sm" ? "size-3" : size === "lg" ? "size-5" : "size-4"} />,
-      bg: "bg-orange-500/15 border-orange-500/30 text-orange-400",
+      bg: "bg-orange-500/15 border-orange-500/30 text-orange-700 dark:text-orange-400",
       valueSuffix: "solves",
     },
     BIGGEST_RATING_JUMP: {
       label: "Biggest Rating Jump",
       icon: <Rocket className={size === "sm" ? "size-3" : size === "lg" ? "size-5" : "size-4"} />,
-      bg: "bg-cyan-500/15 border-cyan-500/30 text-cyan-300",
+      bg: "bg-cyan-500/15 border-cyan-500/30 text-cyan-700 dark:text-cyan-300",
       valueSuffix: platform ? `on ${platform === "CODEFORCES" ? "CF" : "LC"}` : "pts",
     },
   }[awardType] || {
