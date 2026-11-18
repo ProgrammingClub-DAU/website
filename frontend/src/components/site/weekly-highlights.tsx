@@ -8,11 +8,21 @@ import { awardsService } from "@/lib/services/awards";
 import { AwardBadge } from "@/components/site/award-badge";
 import type { LatestWeeklyAwardsResponseDto, WeeklyAwardDto } from "@/types/api";
 
-export function WeeklyHighlights() {
-  const [data, setData] = useState<LatestWeeklyAwardsResponseDto | null>(null);
-  const [loading, setLoading] = useState(true);
+/**
+ * @param initialData the awards, read on the server. When given, the section
+ *   renders with the page instead of as a loading skeleton that fills in later.
+ *   Null when the server could not reach the backend; the browser then tries.
+ */
+export function WeeklyHighlights({
+  initialData = null,
+}: {
+  initialData?: LatestWeeklyAwardsResponseDto | null;
+}) {
+  const [data, setData] = useState<LatestWeeklyAwardsResponseDto | null>(initialData);
+  const [loading, setLoading] = useState(initialData === null);
 
   useEffect(() => {
+    if (initialData !== null) return;
     let ignore = false;
     awardsService
       .getLatest()
@@ -29,7 +39,7 @@ export function WeeklyHighlights() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [initialData]);
 
   if (loading) {
     return (
@@ -58,7 +68,7 @@ export function WeeklyHighlights() {
             href="/hall-of-fame"
             className="inline-flex items-center gap-1 text-xs font-mono text-primary hover:text-primary-hover transition-colors"
           >
-            Past Winners
+            Hall of Fame
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
