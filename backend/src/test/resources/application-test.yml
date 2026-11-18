@@ -43,3 +43,7 @@ cpclub:
     enabled: false
     from: no-reply@localhost
   public-site-url: http://localhost:3000
+  sync:
+    # Off for tests: at startup it would queue real Codeforces and LeetCode
+    # calls for any member an earlier test class left in the database.
+    resume-on-startup: false

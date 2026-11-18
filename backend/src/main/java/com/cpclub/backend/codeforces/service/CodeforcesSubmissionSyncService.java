@@ -2,11 +2,6 @@ package com.cpclub.backend.codeforces.service;
 
 import com.cpclub.backend.codeforces.client.CodeforcesApiClient;
 import com.cpclub.backend.codeforces.dto.CfSubmission;
-import com.cpclub.backend.codeforces.entity.CfProblem;
-import com.cpclub.backend.codeforces.entity.CfProblemTag;
-import com.cpclub.backend.codeforces.entity.CfSolve;
-import com.cpclub.backend.codeforces.repository.CfProblemRepository;
-import com.cpclub.backend.codeforces.repository.CfSolveRepository;
 import com.cpclub.backend.stats.service.ContestHistorySyncService;
 import com.cpclub.backend.sync.entity.SyncJob;
 import com.cpclub.backend.sync.event.SyncTriggerEvent;
@@ -16,13 +11,20 @@ import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -31,8 +33,8 @@ import java.util.Set;
 public class CodeforcesSubmissionSyncService {
 
     private final CodeforcesApiClient codeforcesApiClient;
-    private final CfProblemRepository cfProblemRepository;
-    private final CfSolveRepository cfSolveRepository;
+    private final NamedParameterJdbcTemplate jdbc;
+    private final TransactionTemplate transaction;
     private final ContestHistorySyncService contestHistorySyncService;
     private final UserRepository userRepository;
     private final SyncRunRecorder syncRunRecorder;
@@ -62,6 +64,7 @@ public class CodeforcesSubmissionSyncService {
                 break;
             }
             
+            List<CfSubmission> accepted = new ArrayList<>();
             for (CfSubmission sub : submissions) {
                 if (sub.getId() <= cursor) {
                     continuePaging = false;
@@ -82,9 +85,10 @@ public class CodeforcesSubmissionSyncService {
                 }
                 
                 if ("OK".equals(verdict)) {
-                    saveProblemAndSolve(user, sub, pt);
+                    accepted.add(sub);
                 }
             }
+            saveSolves(user, accepted);
             
             if (!continuePaging) break;
             from += count;
@@ -134,50 +138,83 @@ public class CodeforcesSubmissionSyncService {
         syncAll();
     }
     
-    private void saveProblemAndSolve(User user, CfSubmission sub, String participantType) {
-        if (sub.getProblem() == null || sub.getProblem().getIndex() == null) return;
-        
-        String key = sub.getProblem().getContestId() != null ? 
-            sub.getProblem().getContestId() + "/" + sub.getProblem().getIndex() : 
-            sub.getProblem().getProblemsetName() + "/" + sub.getProblem().getIndex();
-            
-        CfProblem prob = cfProblemRepository.findByProblemKey(key).orElseGet(() -> {
-            CfProblem p = new CfProblem();
-            p.setProblemKey(key);
-            p.setContestId(sub.getProblem().getContestId());
-            p.setProblemsetName(sub.getProblem().getProblemsetName());
-            p.setProblemIndex(sub.getProblem().getIndex());
-            p.setName(sub.getProblem().getName() != null ? sub.getProblem().getName() : key);
-            p.setRating(sub.getProblem().getRating());
-            p.setSolvedCount(0); // Optional
-            return cfProblemRepository.save(p);
-        });
+    /** New problems are added; a stored problem only gains a rating it lacked. */
+    private static final String UPSERT_PROBLEM = """
+            INSERT INTO cf_problems (problem_key, contest_id, problemset_name, problem_index, name, rating, solved_count)
+            VALUES (:key, :contestId, :problemsetName, :problemIndex, :name, :rating, 0)
+            ON CONFLICT (problem_key) DO UPDATE SET rating = EXCLUDED.rating
+            WHERE cf_problems.rating IS NULL AND EXCLUDED.rating IS NOT NULL
+            """;
 
-        // Ensure problem rating is populated if it was previously null
-        if (prob.getRating() == null && sub.getProblem().getRating() != null) {
-            prob.setRating(sub.getProblem().getRating());
-            cfProblemRepository.save(prob);
-        }
-        
-        LocalDateTime time = LocalDateTime.ofInstant(Instant.ofEpochSecond(sub.getCreationTimeSeconds()), ZoneOffset.UTC);
-        
-        CfSolve solve = cfSolveRepository.findByUserAndProblemId(user, prob.getId()).orElse(null);
-        if (solve == null) {
-            solve = CfSolve.builder()
-                .user(user)
-                .problem(prob)
-                .firstAcAt(time)
-                .firstAcSubmissionId(sub.getId())
-                .participantType(participantType)
-                .build();
-            cfSolveRepository.save(solve);
-        } else {
-            if (time.isBefore(solve.getFirstAcAt())) {
-                solve.setFirstAcAt(time);
-                solve.setFirstAcSubmissionId(sub.getId());
-                solve.setParticipantType(participantType);
-                cfSolveRepository.save(solve);
+    /** A new solve is added; a stored one is replaced only by an earlier accepted submission. */
+    private static final String UPSERT_SOLVE = """
+            INSERT INTO cf_solves (user_id, problem_id, first_ac_at, first_ac_submission_id, participant_type)
+            VALUES (:userId, :problemId, :firstAcAt, :submissionId, :participantType)
+            ON CONFLICT (user_id, problem_id) DO UPDATE SET
+                first_ac_at = EXCLUDED.first_ac_at,
+                first_ac_submission_id = EXCLUDED.first_ac_submission_id,
+                participant_type = EXCLUDED.participant_type
+            WHERE EXCLUDED.first_ac_at < cf_solves.first_ac_at
+            """;
+
+    /**
+     * Records one page of accepted submissions in three statements, two of them
+     * batched, in one transaction. This used to take two to four round trips to
+     * the database per accepted submission, each committed on its own, so a new
+     * member's first sync -- often a thousand or more solves -- took minutes,
+     * and longer still with the database in another data centre.
+     */
+    private void saveSolves(User user, List<CfSubmission> accepted) {
+        // Each problem's earliest accepted submission on this page. Codeforces
+        // lists newest first; on a tie the first seen is kept, as before.
+        Map<String, CfSubmission> earliest = new LinkedHashMap<>();
+        for (CfSubmission sub : accepted) {
+            String key = problemKey(sub);
+            if (key != null) {
+                earliest.merge(key, sub, (kept, other) ->
+                        other.getCreationTimeSeconds() < kept.getCreationTimeSeconds() ? other : kept);
             }
         }
+        if (earliest.isEmpty()) return;
+
+        transaction.executeWithoutResult(status -> {
+            List<MapSqlParameterSource> problems = new ArrayList<>();
+            earliest.forEach((key, sub) -> problems.add(new MapSqlParameterSource()
+                    .addValue("key", key)
+                    .addValue("contestId", sub.getProblem().getContestId())
+                    .addValue("problemsetName", truncate(sub.getProblem().getProblemsetName(), 50))
+                    .addValue("problemIndex", truncate(sub.getProblem().getIndex(), 10))
+                    .addValue("name", truncate(sub.getProblem().getName() != null ? sub.getProblem().getName() : key, 255))
+                    .addValue("rating", sub.getProblem().getRating())));
+            jdbc.batchUpdate(UPSERT_PROBLEM, problems.toArray(new MapSqlParameterSource[0]));
+
+            Map<String, Long> problemIds = new HashMap<>();
+            jdbc.query("SELECT id, problem_key FROM cf_problems WHERE problem_key IN (:keys)",
+                    new MapSqlParameterSource("keys", earliest.keySet()),
+                    rs -> { problemIds.put(rs.getString("problem_key"), rs.getLong("id")); });
+
+            List<MapSqlParameterSource> solves = new ArrayList<>();
+            earliest.forEach((key, sub) -> solves.add(new MapSqlParameterSource()
+                    .addValue("userId", user.getId())
+                    .addValue("problemId", problemIds.get(key))
+                    .addValue("firstAcAt", LocalDateTime.ofInstant(
+                            Instant.ofEpochSecond(sub.getCreationTimeSeconds()), ZoneOffset.UTC))
+                    .addValue("submissionId", sub.getId())
+                    .addValue("participantType",
+                            sub.getAuthor() != null ? sub.getAuthor().getParticipantType() : "")));
+            jdbc.batchUpdate(UPSERT_SOLVE, solves.toArray(new MapSqlParameterSource[0]));
+        });
+    }
+
+    /** "contestId/index", or "problemsetName/index" for problems outside a contest. Null when unusable. */
+    private static String problemKey(CfSubmission sub) {
+        if (sub.getProblem() == null || sub.getProblem().getIndex() == null) return null;
+        return sub.getProblem().getContestId() != null
+                ? sub.getProblem().getContestId() + "/" + sub.getProblem().getIndex()
+                : sub.getProblem().getProblemsetName() + "/" + sub.getProblem().getIndex();
+    }
+
+    private static String truncate(String value, int max) {
+        return value == null || value.length() <= max ? value : value.substring(0, max);
     }
 }

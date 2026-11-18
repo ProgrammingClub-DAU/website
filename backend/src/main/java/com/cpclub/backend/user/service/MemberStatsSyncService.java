@@ -11,11 +11,15 @@ import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,6 +55,10 @@ public class MemberStatsSyncService {
     private final LeetCodeTotalsSnapshotService leetCodeTotalsSnapshotService;
     private final MemberScoreService memberScoreService;
     private final Clock clock;
+
+    /** Off in the test profile, where it would start real API calls for leftover test members. */
+    @Value("${cpclub.sync.resume-on-startup:true}")
+    private boolean resumeOnStartup = true;
 
     private final Set<Long> queued = ConcurrentHashMap.newKeySet();
     private final Map<Long, Instant> lastRequested = new ConcurrentHashMap<>();
@@ -103,6 +111,29 @@ public class MemberStatsSyncService {
     /** Queues a refresh after a handle change. No cooldown. */
     public boolean requestAfterHandleChange(Long userId) {
         return enqueue(userId);
+    }
+
+    /**
+     * On startup, queues every member whose handle has never synced. The queue is
+     * in memory, so a restart (a deploy, or Render recycling the instance) dropped
+     * everyone still waiting in it, and they then waited up to six hours for the
+     * scheduled sync to reach them.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void queueMembersAwaitingFirstSync() {
+        if (!resumeOnStartup) return;
+        try {
+            List<Long> ids = userRepository.findIdsAwaitingFirstSync();
+            int added = 0;
+            for (Long id : ids) {
+                if (enqueue(id)) added++;
+            }
+            if (added > 0) {
+                log.info("Queued a first sync for {} member(s) whose handles have not synced yet", added);
+            }
+        } catch (Exception e) {
+            log.warn("Could not queue members awaiting their first sync: {}", e.getMessage());
+        }
     }
 
     private boolean enqueue(Long userId) {

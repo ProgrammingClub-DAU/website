@@ -83,6 +83,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     List<User> findByCodeforcesHandleIsNotNull();
 
+    /**
+     * Members with a linked handle that has never synced: the handle was just
+     * linked or changed (both clear the synced-at time) and its refresh has not
+     * finished. Handles the platform said do not exist are left out.
+     */
+    @Query("SELECT u.id FROM User u WHERE "
+            + "(u.codeforcesHandle IS NOT NULL AND u.codeforcesHandle <> '' "
+            + "AND u.cfSyncedAt IS NULL AND u.cfHandleInvalidAt IS NULL) "
+            + "OR (u.leetcodeHandle IS NOT NULL AND u.leetcodeHandle <> '' "
+            + "AND u.leetcodeSyncedAt IS NULL AND u.leetcodeHandleInvalidAt IS NULL) "
+            + "ORDER BY u.id")
+    List<Long> findIdsAwaitingFirstSync();
+
     /** Returns the registered builders of this website for the public credits section. */
     List<User> findByIsPlatformCreatorTrueOrderByNameAsc();
 
