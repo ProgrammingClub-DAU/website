@@ -145,7 +145,7 @@ on every request, so a role change applies at once.
 
 | Change | Before → after | Conditions | Rerun |
 | --- | --- | --- | --- |
-| First Codeforces sync of a new member ([1ab364c](https://github.com/ProgrammingClub-DAU/website/commit/1ab364c)) | 21.8 s → 0.55 s | 1,500 solves, local PostgreSQL | Not scripted yet |
+| First Codeforces sync of a new member ([1ab364c](https://github.com/ProgrammingClub-DAU/website/commit/1ab364c)) | 21.8 s → 0.55 s | 1,500 solves, local PostgreSQL; one run, from the commit | `backend/scripts/run-first-sync-benchmark.sh` |
 | Retries for one unknown handle in a 100-handle batch ([ab22f4d](https://github.com/ProgrammingClub-DAU/website/commit/ab22f4d), [1c57e58](https://github.com/ProgrammingClub-DAU/website/commit/1c57e58)) | 100 requests → ~14 (bisection) → 1 retry | Counted; 2 s per request at the rate limit | `CodeforcesSyncServiceTest` asserts exactly 2 calls |
 | Admin page initial JavaScript ([0919687](https://github.com/ProgrammingClub-DAU/website/commit/0919687)) | 737 KB → 232 KB (−69%) | Production build | `npm run build` at `0919687^` and `0919687` |
 | Public page load ([d302493](https://github.com/ProgrammingClub-DAU/website/commit/d302493)) | 1.4–2.1 s first visit → 15–60 ms after | Local Next.js against the production API | Manual |
@@ -162,6 +162,11 @@ on every request, so a role change applies at once.
 - **Frontend:** ESLint and a production build on every push. Playwright smoke
   checks for layout and console errors live in `frontend/tests/` and are run by
   hand.
+- **Benchmark:** `FirstSyncBenchmarkTest` times a new member's first Codeforces
+  sync on PostgreSQL with the API stubbed. It is skipped unless
+  `-Dbenchmark=true` is set. `backend/scripts/run-first-sync-benchmark.sh` runs it
+  on two commits (by default the one before batching and `HEAD`) and checks that
+  both store identical rows.
 - **CI:** both workflows run on every push and pull request to `main`.
 
 ```bash
