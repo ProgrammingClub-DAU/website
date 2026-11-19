@@ -737,3 +737,54 @@ programming-club-intro[mark-only] {
   --intro-mark: min(300px, 38vw);
   backdrop-filter: blur(7px) saturate(1.1);
 }
+
+/* Smart Practice spotlight (home page): a light running round a panel's border.
+   The panel sits on a turning conic gradient laid over the usual hairline colour,
+   so between passes of the light it reads as an ordinary border. The reduced-motion
+   rule above stops the turn at its first frame. */
+@property --spotlight-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.spotlight-border {
+  background:
+    conic-gradient(
+      from var(--spotlight-angle),
+      transparent 0deg 210deg,
+      color-mix(in srgb, var(--primary) 85%, transparent) 285deg,
+      #f59e0b 325deg,
+      transparent 360deg
+    ),
+    var(--hairline-strong);
+  animation: spotlight-spin 6s linear infinite;
+}
+
+@keyframes spotlight-spin {
+  to {
+    --spotlight-angle: 360deg;
+  }
+}
+
+/* A highlight sweeping across a pill: the Smart Practice "New" tag. */
+.shine {
+  background-image: linear-gradient(
+    110deg,
+    transparent 30%,
+    color-mix(in srgb, var(--primary) 28%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: shine-sweep 3.2s ease-in-out infinite;
+}
+
+@keyframes shine-sweep {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}

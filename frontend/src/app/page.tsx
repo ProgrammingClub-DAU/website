@@ -162,6 +162,9 @@ export default async function HomePage() {
         </Section>
       </div>
 
+      {/* Right under the hero: the newest thing members can do. */}
+      <SmartPracticeTeaser />
+
       <Section className="py-16">
         <SectionHeader eyebrow="What the club runs" title="Everything in one place." />
 
@@ -368,9 +371,6 @@ export default async function HomePage() {
           ))}
         </ol>
       </Section>
-
-      {/* Joined, on the board: next, getting better. */}
-      <SmartPracticeTeaser />
 
       <Section className="pb-16">
         <div className="grid gap-4 md:grid-cols-2">
