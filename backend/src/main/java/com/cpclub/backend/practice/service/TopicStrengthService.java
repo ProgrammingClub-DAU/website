@@ -45,6 +45,7 @@ public class TopicStrengthService {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final UserRepository userRepository;
+    private final SkillProfileService skillProfileService;
 
     public TopicStrengthResponseDto getUserTopicStrength(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
@@ -174,10 +175,23 @@ public class TopicStrengthService {
                 .gap(otherGap)
                 .build());
 
+        // Each topic's estimated level, and which are the member's focus topics.
+        SkillProfile profile = skillProfileService.profileOf(user);
+        for (TopicStrengthDto topic : topicList) {
+            Integer level = profile.topicLevels().get(topic.getTag());
+            if (level != null) {
+                topic.setLevel(level);
+                topic.setWeak(profile.weakTags().contains(topic.getTag()));
+            }
+        }
+
         return TopicStrengthResponseDto.builder()
                 .userId(userId)
                 .codeforcesHandle(user.getCodeforcesHandle())
                 .reason(null)
+                .overallLevel(profile.overallLevel())
+                .ratedSolves(profile.ratedSolves())
+                .weakTags(profile.weakTags())
                 .totalCountedSolves(totalMemberSolves)
                 .note("A problem with multiple tags counts toward each tag")
                 .topics(topicList)

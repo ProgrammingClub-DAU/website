@@ -16,7 +16,8 @@ export const site = {
 
 export const primaryNavItems = [
   { href: "/contests", label: "Contests" },
-  { href: "/practice", label: "Practice" },
+  // "New" for the launch of skill-based practice; drop the badge after a few weeks.
+  { href: "/practice", label: "Practice", badge: "New" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/events", label: "Events" },
   { href: "/blog", label: "Blog" },

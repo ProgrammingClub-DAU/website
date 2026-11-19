@@ -17,4 +17,8 @@ public class PracticeSuggestionsResponseDto {
     private List<String> weakTags;
     private String reason;
     private List<PracticeSuggestionDto> suggestions;
+    /** The member's estimated overall level; null without a Codeforces handle. */
+    private Integer overallLevel;
+    /** Problems tried and not solved yet, most recent first. */
+    private List<TryAgainDto> tryAgain;
 }

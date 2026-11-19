@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BinaryOperator;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,7 @@ public class CodeforcesSubmissionSyncService {
             }
             
             List<CfSubmission> accepted = new ArrayList<>();
+            List<CfSubmission> failed = new ArrayList<>();
             for (CfSubmission sub : submissions) {
                 if (sub.getId() <= cursor) {
                     continuePaging = false;
@@ -86,9 +88,11 @@ public class CodeforcesSubmissionSyncService {
                 
                 if ("OK".equals(verdict)) {
                     accepted.add(sub);
+                } else if (isFailedAttempt(verdict)) {
+                    failed.add(sub);
                 }
             }
-            saveSolves(user, accepted);
+            savePage(user, accepted, failed);
             
             if (!continuePaging) break;
             from += count;
@@ -157,29 +161,46 @@ public class CodeforcesSubmissionSyncService {
             WHERE EXCLUDED.first_ac_at < cf_solves.first_ac_at
             """;
 
+    /** The latest failed submission per problem; an older one never replaces it. */
+    private static final String UPSERT_ATTEMPT = """
+            INSERT INTO cf_attempts (user_id, problem_id, last_attempt_at, last_submission_id, last_verdict)
+            VALUES (:userId, :problemId, :attemptAt, :submissionId, :verdict)
+            ON CONFLICT (user_id, problem_id) DO UPDATE SET
+                last_attempt_at = EXCLUDED.last_attempt_at,
+                last_submission_id = EXCLUDED.last_submission_id,
+                last_verdict = EXCLUDED.last_verdict
+            WHERE EXCLUDED.last_attempt_at > cf_attempts.last_attempt_at
+            """;
+
     /**
-     * Records one page of accepted submissions in three statements, two of them
-     * batched, in one transaction. This used to take two to four round trips to
-     * the database per accepted submission, each committed on its own, so a new
-     * member's first sync -- often a thousand or more solves -- took minutes,
-     * and longer still with the database in another data centre.
+     * Verdicts that are not a real try at the problem: it did not compile, was
+     * never judged, or the judge itself failed.
      */
-    private void saveSolves(User user, List<CfSubmission> accepted) {
-        // Each problem's earliest accepted submission on this page. Codeforces
-        // lists newest first; on a tie the first seen is kept, as before.
-        Map<String, CfSubmission> earliest = new LinkedHashMap<>();
-        for (CfSubmission sub : accepted) {
-            String key = problemKey(sub);
-            if (key != null) {
-                earliest.merge(key, sub, (kept, other) ->
-                        other.getCreationTimeSeconds() < kept.getCreationTimeSeconds() ? other : kept);
-            }
-        }
-        if (earliest.isEmpty()) return;
+    private static final Set<String> NOT_AN_ATTEMPT = Set.of(
+            "COMPILATION_ERROR", "SKIPPED", "TESTING", "REJECTED", "FAILED");
+
+    /**
+     * Records one page of submissions in one transaction: the problems on it, the
+     * member's solves (each problem's earliest accepted submission) and failed
+     * attempts (each problem's latest failed submission), with batched upserts.
+     * This used to take two to four round trips to the database per accepted
+     * submission, each committed on its own, so a new member's first sync --
+     * often a thousand or more solves -- took minutes.
+     */
+    private void savePage(User user, List<CfSubmission> accepted, List<CfSubmission> failed) {
+        // Codeforces lists newest first; on a tie the first seen is kept.
+        Map<String, CfSubmission> earliestAccepted = byProblem(accepted,
+                (kept, other) -> other.getCreationTimeSeconds() < kept.getCreationTimeSeconds() ? other : kept);
+        Map<String, CfSubmission> latestFailed = byProblem(failed,
+                (kept, other) -> other.getCreationTimeSeconds() > kept.getCreationTimeSeconds() ? other : kept);
+        if (earliestAccepted.isEmpty() && latestFailed.isEmpty()) return;
+
+        Map<String, CfSubmission> problemsOnPage = new LinkedHashMap<>(earliestAccepted);
+        latestFailed.forEach(problemsOnPage::putIfAbsent);
 
         transaction.executeWithoutResult(status -> {
             List<MapSqlParameterSource> problems = new ArrayList<>();
-            earliest.forEach((key, sub) -> problems.add(new MapSqlParameterSource()
+            problemsOnPage.forEach((key, sub) -> problems.add(new MapSqlParameterSource()
                     .addValue("key", key)
                     .addValue("contestId", sub.getProblem().getContestId())
                     .addValue("problemsetName", truncate(sub.getProblem().getProblemsetName(), 50))
@@ -190,20 +211,50 @@ public class CodeforcesSubmissionSyncService {
 
             Map<String, Long> problemIds = new HashMap<>();
             jdbc.query("SELECT id, problem_key FROM cf_problems WHERE problem_key IN (:keys)",
-                    new MapSqlParameterSource("keys", earliest.keySet()),
+                    new MapSqlParameterSource("keys", problemsOnPage.keySet()),
                     rs -> { problemIds.put(rs.getString("problem_key"), rs.getLong("id")); });
 
-            List<MapSqlParameterSource> solves = new ArrayList<>();
-            earliest.forEach((key, sub) -> solves.add(new MapSqlParameterSource()
-                    .addValue("userId", user.getId())
-                    .addValue("problemId", problemIds.get(key))
-                    .addValue("firstAcAt", LocalDateTime.ofInstant(
-                            Instant.ofEpochSecond(sub.getCreationTimeSeconds()), ZoneOffset.UTC))
-                    .addValue("submissionId", sub.getId())
-                    .addValue("participantType",
-                            sub.getAuthor() != null ? sub.getAuthor().getParticipantType() : "")));
-            jdbc.batchUpdate(UPSERT_SOLVE, solves.toArray(new MapSqlParameterSource[0]));
+            if (!earliestAccepted.isEmpty()) {
+                List<MapSqlParameterSource> solves = new ArrayList<>();
+                earliestAccepted.forEach((key, sub) -> solves.add(new MapSqlParameterSource()
+                        .addValue("userId", user.getId())
+                        .addValue("problemId", problemIds.get(key))
+                        .addValue("firstAcAt", utc(sub))
+                        .addValue("submissionId", sub.getId())
+                        .addValue("participantType",
+                                sub.getAuthor() != null ? sub.getAuthor().getParticipantType() : "")));
+                jdbc.batchUpdate(UPSERT_SOLVE, solves.toArray(new MapSqlParameterSource[0]));
+            }
+
+            if (!latestFailed.isEmpty()) {
+                List<MapSqlParameterSource> attempts = new ArrayList<>();
+                latestFailed.forEach((key, sub) -> attempts.add(new MapSqlParameterSource()
+                        .addValue("userId", user.getId())
+                        .addValue("problemId", problemIds.get(key))
+                        .addValue("attemptAt", utc(sub))
+                        .addValue("submissionId", sub.getId())
+                        .addValue("verdict", truncate(sub.getVerdict(), 40))));
+                jdbc.batchUpdate(UPSERT_ATTEMPT, attempts.toArray(new MapSqlParameterSource[0]));
+            }
         });
+    }
+
+    /** One submission per problem key, chosen by {@code keep}; submissions with no usable key are dropped. */
+    private static Map<String, CfSubmission> byProblem(List<CfSubmission> subs, BinaryOperator<CfSubmission> keep) {
+        Map<String, CfSubmission> byKey = new LinkedHashMap<>();
+        for (CfSubmission sub : subs) {
+            String key = problemKey(sub);
+            if (key != null) byKey.merge(key, sub, keep);
+        }
+        return byKey;
+    }
+
+    static boolean isFailedAttempt(String verdict) {
+        return verdict != null && !"OK".equals(verdict) && !NOT_AN_ATTEMPT.contains(verdict);
+    }
+
+    private static LocalDateTime utc(CfSubmission sub) {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(sub.getCreationTimeSeconds()), ZoneOffset.UTC);
     }
 
     /** "contestId/index", or "problemsetName/index" for problems outside a contest. Null when unusable. */

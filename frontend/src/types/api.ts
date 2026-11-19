@@ -512,13 +512,25 @@ export interface TopicItem {
   memberShare: number; // e.g. 0.15
   clubShare: number;   // e.g. 0.20
   gap: number;         // memberShare - clubShare
+  /** Estimated level in this topic, on the Codeforces rating scale; null for "other". */
+  level?: number | null;
+  /** One of the member's focus topics. */
+  weak?: boolean;
 }
 
 export interface TopicStrengthResponse {
   userId: number;
+  /** NO_CODEFORCES_HANDLE when there is nothing to analyse. */
+  reason?: string | null;
   totalCountedSolves: number;
   topics: TopicItem[];
   note?: string;
+  /** Estimated overall level; null without a Codeforces handle. */
+  overallLevel?: number | null;
+  /** Distinct rated problems solved. Focus topics are picked from 30. */
+  ratedSolves?: number | null;
+  /** Focus topics, weakest first. */
+  weakTags?: string[] | null;
 }
 
 export interface PracticeSuggestion {
@@ -532,6 +544,29 @@ export interface PracticeSuggestion {
   solvedCount: number | null;
   tags: string[];
   url: string;
+  /** The focus topic it was picked to build; null when picked for the overall level. */
+  focusTag?: string | null;
+  /** The member's level in that topic, or overall. */
+  focusLevel?: number | null;
+  /** Estimated chance of solving it, in percent. */
+  chance?: number | null;
+}
+
+/** A problem the member tried on Codeforces and has not solved yet. */
+export interface TryAgainProblem {
+  problemId: number;
+  problemKey: string;
+  contestId: number | null;
+  problemIndex: string;
+  name: string;
+  rating: number | null;
+  tags: string[];
+  url: string;
+  /** Latest failed verdict, e.g. WRONG_ANSWER. */
+  lastVerdict: string;
+  /** UTC, without an offset (parse with serverDate). */
+  lastAttemptAt: string;
+  chance?: number | null;
 }
 
 export interface PracticeSuggestionsResponseDto {
@@ -540,6 +575,8 @@ export interface PracticeSuggestionsResponseDto {
   weakTags: string[];
   reason?: string | null;
   suggestions: PracticeSuggestion[];
+  overallLevel?: number | null;
+  tryAgain?: TryAgainProblem[];
 }
 
 export interface PracticeSuggestionsResponse {

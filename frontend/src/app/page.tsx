@@ -28,6 +28,7 @@ import { site } from "@/lib/site";
 import { HallOfFameTeaser } from "@/components/site/hall-of-fame-teaser";
 import { WeeklyHighlights } from "@/components/site/weekly-highlights";
 import { JoinCta } from "@/components/site/join-cta";
+import { SmartPracticeTeaser } from "@/components/site/smart-practice-teaser";
 import { getPublicLatestAwards } from "@/lib/public-data";
 import { cn } from "@/lib/utils";
 import type { LatestWeeklyAwardsResponseDto, PublicMember } from "@/types/api";
@@ -367,6 +368,9 @@ export default async function HomePage() {
           ))}
         </ol>
       </Section>
+
+      {/* Joined, on the board: next, getting better. */}
+      <SmartPracticeTeaser />
 
       <Section className="pb-16">
         <div className="grid gap-4 md:grid-cols-2">

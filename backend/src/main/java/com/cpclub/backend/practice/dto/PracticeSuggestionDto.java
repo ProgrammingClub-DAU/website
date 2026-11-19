@@ -21,4 +21,10 @@ public class PracticeSuggestionDto {
     private Integer solvedCount;
     private List<String> tags;
     private String url;
+    /** The focus topic this problem was picked to build; null when picked for the overall level. */
+    private String focusTag;
+    /** The member's level in that topic, or their overall level. */
+    private Integer focusLevel;
+    /** The estimated chance of solving it, in percent. */
+    private Integer chance;
 }

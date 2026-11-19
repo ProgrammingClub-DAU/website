@@ -262,6 +262,11 @@ export function Navbar() {
               )}
             >
               {item.label}
+              {"badge" in item && (
+                <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-px align-[1px] font-mono text-[9px] font-semibold tracking-caps text-primary uppercase">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           ))}
 
@@ -483,6 +488,11 @@ export function Navbar() {
                         )}
                       >
                         {item.label}
+                        {"badge" in item && (
+                          <span className="ml-2 rounded-full bg-primary/15 px-1.5 py-px font-mono text-[10px] font-semibold tracking-caps text-primary uppercase">
+                            {item.badge}
+                          </span>
+                        )}
                       </Link>
                     </SheetClose>
                   ))}
