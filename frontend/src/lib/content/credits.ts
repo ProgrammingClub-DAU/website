@@ -17,10 +17,10 @@ export interface ContributorProfile {
 export const CONTRIBUTOR_PROFILES: ContributorProfile[] = [
   {
     name: "Madhav Thesiya",
-    role: "Core Developer",
-    headline: "LeetCode GraphQL synchronization, profile APIs & batch workers",
-    tags: ["GraphQL", "Data Sync", "Spring Services", "REST APIs"],
-    badge: "Core Contributor",
+    role: "Tech Lead",
+    headline: "Leads the team and merges every PR; built the Codeforces & LeetCode sync, sign-in, calendar, 1v1 battles and deployment",
+    tags: ["Spring Boot", "PostgreSQL", "Next.js", "Data Sync"],
+    badge: "Tech Lead",
   },
   {
     name: "Raj Patel",
