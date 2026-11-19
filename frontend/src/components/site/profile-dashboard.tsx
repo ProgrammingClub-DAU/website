@@ -66,6 +66,7 @@ import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 import { serverDate } from "@/lib/utils";
 import { ProfileSetupNotice } from "@/components/site/profile-setup-notice";
 import { CpGroupBadge } from "@/components/site/cp-group-badge";
+import { ProfileActivity } from "@/components/site/profile-activity";
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
@@ -1088,6 +1089,9 @@ function ProfileDashboardContent({
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Last 30 days, level by topic, recent solves ── */}
+      <ProfileActivity userId={userId} isOwner={isOwner} />
 
       {/* ── Account Details ── */}
       <Card>

@@ -21,25 +21,20 @@ import {
   Trophy,
   TrendingUp,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuthStore } from "@/store/auth";
 import { cpGroupService } from "@/lib/services/cp-group";
 import { statsService } from "@/lib/services/stats";
 import { apiErrorMessage } from "@/lib/api-error";
 import { TopicStrengthChart } from "@/components/site/topic-strength-chart";
+import { CF_COLOR, ChartLegend, ChartTip, DailySolvesChart, LC_COLOR } from "@/components/site/daily-solves-chart";
+import { RecentSolvesList } from "@/components/site/recent-solves-list";
 import { daysSinceIst, initials, lastActiveText, needsNudge, signed } from "@/lib/cp-group";
 import { timeAgo } from "@/lib/practice";
 import { cn, serverDate } from "@/lib/utils";
 import type { CpGroupMemberDetail, TopicStrengthResponse } from "@/types/api";
 
-const CF_COLOR = "var(--primary)";
-const LC_COLOR = "#f59e0b";
 const BACK_HREF = "/admin?tab=cpGroup";
-
-/** "2026-11-12" -> "12 Nov". */
-function shortDate(isoDate: string): string {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
 
 export default function CpPracticeStudentPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -290,31 +285,10 @@ function StudentView({
             <CalendarDays className="size-4 text-primary" aria-hidden />
             Problems solved, last 30 days
           </h2>
-          <Legend />
+          <ChartLegend />
         </div>
-        <div className="mt-4 h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={detail.daily.map((d) => ({ ...d, label: shortDate(d.date) }))} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="var(--hairline)" />
-              <XAxis dataKey="label" tick={{ fill: "var(--fg-subtle)", fontSize: 10 }} tickLine={false} axisLine={false} interval={4} />
-              <YAxis allowDecimals={false} tick={{ fill: "var(--fg-subtle)", fontSize: 10 }} tickLine={false} axisLine={false} />
-              <Tooltip
-                cursor={{ fill: "var(--hairline)" }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const d = payload[0].payload as CpGroupMemberDetail["daily"][number];
-                  return (
-                    <ChartTip title={new Date(`${d.date}T00:00:00`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}>
-                      <p>Codeforces: <strong>{d.codeforces}</strong></p>
-                      <p>LeetCode: <strong>{d.leetcode ?? "—"}</strong></p>
-                    </ChartTip>
-                  );
-                }}
-              />
-              <Bar dataKey="codeforces" stackId="solved" fill={CF_COLOR} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="leetcode" stackId="solved" fill={LC_COLOR} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="mt-4">
+          <DailySolvesChart daily={detail.daily} />
         </div>
       </section>
 
@@ -326,7 +300,7 @@ function StudentView({
               <TrendingUp className="size-4 text-primary" aria-hidden />
               Rating history
             </h2>
-            <Legend />
+            <ChartLegend />
           </div>
           {ratingPoints.length === 0 ? (
             <p className="mt-6 text-center text-sm text-fg-muted">No rated contests yet.</p>
@@ -379,32 +353,9 @@ function StudentView({
             <Code2 className="size-4 text-primary" aria-hidden />
             Recent Codeforces solves
           </h2>
-          {detail.recentSolves.length === 0 ? (
-            <p className="mt-4 text-sm text-fg-muted">No Codeforces solves synced yet.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-hairline">
-              {detail.recentSolves.map((p) => (
-                <li key={`${p.problemKey}-${p.solvedAt}`} className="flex items-center justify-between gap-3 py-2.5">
-                  <div className="min-w-0">
-                    {p.url ? (
-                      <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-sm font-medium text-foreground hover:text-primary">
-                        <span className="mr-2 font-mono text-xs text-fg-muted">{p.problemKey}</span>
-                        {p.name}
-                      </a>
-                    ) : (
-                      <span className="block truncate text-sm font-medium text-foreground">{p.name}</span>
-                    )}
-                    <span className="font-mono text-[11px] text-fg-subtle">{timeAgo(serverDate(p.solvedAt))}</span>
-                  </div>
-                  {p.rating && (
-                    <span className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                      ★ {p.rating}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="mt-3">
+            <RecentSolvesList solves={detail.recentSolves} />
+          </div>
         </section>
 
         <section className="rounded-2xl border border-border bg-card/80 p-5">
@@ -585,29 +536,5 @@ function ExternalChip({ href, label }: { href: string; label: string }) {
       {label}
       <ExternalLink className="size-3" aria-hidden />
     </a>
-  );
-}
-
-function Legend() {
-  return (
-    <div className="flex items-center gap-3 font-mono text-[11px] text-fg-muted">
-      <span className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full" style={{ background: CF_COLOR }} />
-        Codeforces
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full" style={{ background: LC_COLOR }} />
-        LeetCode
-      </span>
-    </div>
-  );
-}
-
-function ChartTip({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-xl">
-      <p className="mb-1 font-semibold">{title}</p>
-      <div className="space-y-0.5 font-mono text-fg-muted">{children}</div>
-    </div>
   );
 }

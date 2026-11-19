@@ -12,6 +12,7 @@ import type {
   RatingPointDto,
   CompareResult,
   TopicStrengthResponse,
+  MemberActivity,
 } from "@/types/api";
 
 export interface GetStatsLeaderboardParams {
@@ -212,6 +213,15 @@ export const statsService = {
     const res = await apiClient.get<ApiResponse<TopicStrengthResponse>>(
       `/api/stats/users/${userId}/topics`
     );
+    return res.data.data;
+  },
+
+  /**
+   * Problems solved per day over the last 30 days, and the latest Codeforces solves.
+   * Endpoint: /api/stats/users/{id}/activity
+   */
+  getActivity: async (userId: number): Promise<MemberActivity> => {
+    const res = await apiClient.get<ApiResponse<MemberActivity>>(`/api/stats/users/${userId}/activity`);
     return res.data.data;
   },
 };

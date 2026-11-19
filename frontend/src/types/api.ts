@@ -1037,12 +1037,15 @@ export interface CpGroupMemberRow {
   hasNotes: boolean;
 }
 
-export interface CpGroupDailySolves {
+/** Problems solved on one IST date; LeetCode is null where a daily snapshot is missing. */
+export interface DailySolves {
   /** IST date, yyyy-mm-dd. */
   date: string;
   codeforces: number;
   leetcode: number | null;
 }
+
+export type CpGroupDailySolves = DailySolves;
 
 export interface CpGroupContestEntry {
   platform: string;
@@ -1055,13 +1058,23 @@ export interface CpGroupContestEntry {
   newRating: number | null;
 }
 
-export interface CpGroupRecentSolve {
+export interface RecentSolve {
   problemKey: string;
   name: string;
   rating: number | null;
   /** UTC, without an offset. */
   solvedAt: string;
   url: string | null;
+}
+
+export type CpGroupRecentSolve = RecentSolve;
+
+/** GET /api/stats/users/{id}/activity: public, like the rest of a member's stats. */
+export interface MemberActivity {
+  /** The last 30 IST days, oldest first. */
+  daily: DailySolves[];
+  /** The latest Codeforces solves, newest first. */
+  recentSolves: RecentSolve[];
 }
 
 export interface CpGroupMemberDetail {

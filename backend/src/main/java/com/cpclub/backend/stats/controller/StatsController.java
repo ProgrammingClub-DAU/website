@@ -32,6 +32,7 @@ public class StatsController {
 
     private final StatsService statsService;
     private final com.cpclub.backend.practice.service.TopicStrengthService topicStrengthService;
+    private final com.cpclub.backend.stats.service.MemberActivityService memberActivityService;
 
     @GetMapping("/users/{id}")
     @Operation(summary = "Get aggregated statistics for a member over a given period")
@@ -60,6 +61,14 @@ public class StatsController {
     ) {
         com.cpclub.backend.practice.dto.TopicStrengthResponseDto topics = topicStrengthService.getUserTopicStrength(id);
         return ResponseEntity.ok(ApiResponse.success(topics, "Fetched user topic strength successfully"));
+    }
+
+    @GetMapping("/users/{id}/activity")
+    @Operation(summary = "Problems solved per day over the last 30 days, and the latest Codeforces solves")
+    public ResponseEntity<ApiResponse<com.cpclub.backend.stats.dto.MemberActivityDto>> getUserActivity(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(memberActivityService.activityOf(id), "Fetched member activity"));
     }
 
     @GetMapping("/compare")

@@ -3,12 +3,11 @@ package com.cpclub.backend.cpgroup.service;
 import com.cpclub.backend.common.exception.ResourceNotFoundException;
 import com.cpclub.backend.cpgroup.dto.CpGroupMemberDetailDto;
 import com.cpclub.backend.cpgroup.dto.CpGroupMemberDetailDto.ContestEntry;
-import com.cpclub.backend.cpgroup.dto.CpGroupMemberDetailDto.DailySolves;
-import com.cpclub.backend.cpgroup.dto.CpGroupMemberDetailDto.RecentSolve;
 import com.cpclub.backend.cpgroup.dto.CpGroupMemberRowDto;
 import com.cpclub.backend.cpgroup.dto.CpGroupRequests;
 import com.cpclub.backend.cpgroup.entity.CpGroupMember;
 import com.cpclub.backend.cpgroup.repository.CpGroupMemberRepository;
+import com.cpclub.backend.stats.service.MemberActivityService;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,13 +49,13 @@ import java.util.TreeMap;
 public class CpGroupService {
 
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
-    private static final int RECENT_SOLVES = 15;
     private static final int CONTEST_HISTORY = 300;
     /** LeetCode snapshots read back this far, so a 30-day baseline is found despite a missed day. */
     private static final int SNAPSHOT_LOOKBACK_DAYS = 45;
 
     private final CpGroupMemberRepository members;
     private final UserRepository userRepository;
+    private final MemberActivityService memberActivity;
     private final NamedParameterJdbcTemplate jdbc;
     private final Clock clock;
 
@@ -80,42 +79,13 @@ public class CpGroupService {
             throw new ResourceNotFoundException("Not in the CP Practice Group: " + userId);
         }
         Base member = base.get(0);
-        Instant now = clock.instant();
-        LocalDate todayIst = LocalDate.ofInstant(now, IST);
-        MapSqlParameterSource byUser = new MapSqlParameterSource("userId", userId);
-
-        // Codeforces solves per IST day over the last 30 days.
-        LocalDate firstDay = todayIst.minusDays(29);
-        Map<LocalDate, Integer> cfByDay = new HashMap<>();
-        jdbc.query("""
-                SELECT s.first_ac_at
-                FROM cf_solves s JOIN cf_problems p ON p.id = s.problem_id
-                WHERE s.user_id = :userId AND s.first_ac_at >= :from
-                  AND (p.contest_id IS NULL OR p.contest_id < 100000)
-                """,
-                new MapSqlParameterSource("userId", userId)
-                        .addValue("from", LocalDateTime.ofInstant(now, ZoneOffset.UTC).minusDays(31)),
-                rs -> {
-                    LocalDate day = istDate(rs.getObject("first_ac_at", LocalDateTime.class));
-                    cfByDay.merge(day, 1, Integer::sum);
-                });
-        NavigableMap<LocalDate, Integer> snapshots =
-                leetcodeSnapshots(List.of(userId), todayIst.minusDays(SNAPSHOT_LOOKBACK_DAYS))
-                        .getOrDefault(userId, new TreeMap<>());
-        List<DailySolves> daily = new ArrayList<>();
-        for (LocalDate day = firstDay; !day.isAfter(todayIst); day = day.plusDays(1)) {
-            Integer today = snapshots.get(day);
-            Integer before = snapshots.get(day.minusDays(1));
-            Integer leetcode = today != null && before != null ? Math.max(0, today - before) : null;
-            daily.add(new DailySolves(day, cfByDay.getOrDefault(day, 0), leetcode));
-        }
 
         List<ContestEntry> contests = jdbc.query("""
                 SELECT platform, contest_name, started_at, rated, contest_rank, old_rating, new_rating
                 FROM contest_participations
                 WHERE user_id = :userId
                 ORDER BY started_at DESC
-                """ + " LIMIT " + CONTEST_HISTORY, byUser,
+                """ + " LIMIT " + CONTEST_HISTORY, new MapSqlParameterSource("userId", userId),
                 (rs, i) -> new ContestEntry(
                         rs.getString("platform"),
                         rs.getString("contest_name"),
@@ -125,28 +95,15 @@ public class CpGroupService {
                         rs.getObject("old_rating", Integer.class),
                         rs.getObject("new_rating", Integer.class)));
 
-        List<RecentSolve> recentSolves = jdbc.query("""
-                SELECT p.problem_key, p.name, p.rating, p.contest_id, p.problem_index, s.first_ac_at
-                FROM cf_solves s JOIN cf_problems p ON p.id = s.problem_id
-                WHERE s.user_id = :userId
-                ORDER BY s.first_ac_at DESC
-                """ + " LIMIT " + RECENT_SOLVES, byUser,
-                (rs, i) -> new RecentSolve(
-                        rs.getString("problem_key"),
-                        rs.getString("name"),
-                        rs.getObject("rating", Integer.class),
-                        rs.getObject("first_ac_at", LocalDateTime.class),
-                        problemUrl(rs.getObject("contest_id", Integer.class), rs.getString("problem_index"))));
-
         return new CpGroupMemberDetailDto(
                 rows(base).get(0),
                 member.notes(),
                 member.notesUpdatedAt(),
                 nameOf(member.notesUpdatedBy()),
                 nameOf(member.addedBy()),
-                daily,
+                memberActivity.dailySolves(userId),
                 contests,
-                recentSolves);
+                memberActivity.recentSolves(userId));
     }
 
     /** Adds students to a batch; one already in the group moves to that batch. Unknown ids are ignored. */
@@ -354,12 +311,5 @@ public class CpGroupService {
 
     private static LocalDate later(LocalDate a, LocalDate b) {
         return a.isAfter(b) ? a : b;
-    }
-
-    private static String problemUrl(Integer contestId, String index) {
-        if (contestId == null) return null;
-        return contestId < 100000
-                ? "https://codeforces.com/problemset/problem/" + contestId + "/" + index
-                : "https://codeforces.com/gym/" + contestId + "/problem/" + index;
     }
 }
