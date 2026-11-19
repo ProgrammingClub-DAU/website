@@ -45,6 +45,7 @@ class UserServiceTest {
         userService = new UserService(
                 userRepository,
                 cfSolveRepository,
+                mock(com.cpclub.backend.codeforces.repository.CfAttemptRepository.class),
                 contestParticipationRepository,
                 platformDailyTotalRepository,
                 memberStatsSyncService

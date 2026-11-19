@@ -1,11 +1,14 @@
 package com.cpclub.backend.practice;
 
+import com.cpclub.backend.codeforces.entity.CfAttempt;
+import com.cpclub.backend.codeforces.entity.CfAttemptId;
 import com.cpclub.backend.codeforces.entity.CfProblem;
 import com.cpclub.backend.codeforces.entity.CfProblemTag;
 import com.cpclub.backend.codeforces.entity.CfProblemTagId;
 import com.cpclub.backend.codeforces.entity.CfSolve;
 import com.cpclub.backend.practice.dto.PracticeSuggestionDto;
 import com.cpclub.backend.practice.dto.PracticeSuggestionsResponseDto;
+import com.cpclub.backend.practice.dto.TryAgainDto;
 import com.cpclub.backend.practice.service.PracticeSuggestionService;
 import com.cpclub.backend.user.entity.ClubRole;
 import com.cpclub.backend.user.entity.Role;
@@ -22,9 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Practice suggestions picked by skill: levels per topic, the 40-70% chance
+ * window, the daily mix per member, and "try again" problems.
+ */
 @SpringBootTest
 @Transactional
 @ActiveProfiles("test")
@@ -35,6 +43,8 @@ public class PracticeSuggestionServiceTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    private final AtomicInteger nextContest = new AtomicInteger(5000);
 
     @BeforeEach
     void setUp() {
@@ -55,17 +65,17 @@ public class PracticeSuggestionServiceTest {
         return u;
     }
 
-    private CfProblem createProblem(int contestId, String index, int rating, int solvedCount, String... tags) {
+    private CfProblem createProblem(int rating, int solvedCount, String... tags) {
+        int contestId = nextContest.incrementAndGet();
         CfProblem p = CfProblem.builder()
-                .problemKey(contestId + "/" + index)
+                .problemKey(contestId + "/A")
                 .contestId(contestId)
-                .problemIndex(index)
-                .name("Problem " + contestId + index)
+                .problemIndex("A")
+                .name("Problem " + contestId + "A")
                 .rating(rating)
                 .solvedCount(solvedCount)
                 .build();
         entityManager.persist(p);
-
         for (String tag : tags) {
             CfProblemTag pt = new CfProblemTag(new CfProblemTagId(p.getId(), tag), p, tag);
             entityManager.persist(pt);
@@ -74,100 +84,178 @@ public class PracticeSuggestionServiceTest {
         return p;
     }
 
-    private CfSolve createSolve(User user, CfProblem problem) {
-        CfSolve s = CfSolve.builder()
+    private void createSolve(User user, CfProblem problem) {
+        entityManager.persist(CfSolve.builder()
                 .user(user)
                 .problem(problem)
                 .firstAcAt(LocalDateTime.now(ZoneId.of("UTC")))
                 .firstAcSubmissionId(System.nanoTime())
                 .participantType("PRACTICE")
-                .build();
-        entityManager.persist(s);
-        return s;
+                .build());
+    }
+
+    private void createAttempt(User user, CfProblem problem, String verdict, int daysAgo) {
+        entityManager.persist(new CfAttempt(new CfAttemptId(user.getId(), problem.getId()), user, problem,
+                LocalDateTime.now(ZoneId.of("UTC")).minusDays(daysAgo), System.nanoTime(), verdict));
+    }
+
+    /**
+     * A member rated 1500 with 30 greedy solves at 1600 and no dp: overall level
+     * 1550, dp level 1150 (an untouched topic, 400 below). Five dp problems at
+     * 1500 make dp common near their level, so it is a focus topic.
+     */
+    private User greedyMember(String name) {
+        User user = createUser(name, name.toLowerCase() + "@dau.ac.in", name.toLowerCase() + "_cf", 1500);
+        for (int i = 0; i < 30; i++) createSolve(user, createProblem(1600, 100, "greedy"));
+        return user;
     }
 
     @Test
-    @DisplayName("Unrated member gets target band 800 to 1000")
-    void unratedMember_targetBand800To1000() {
-        User user = createUser("Unrated User", "unrated@dau.ac.in", "unrated_cf", null);
-        createProblem(1001, "A", 900, 50, "implementation");
+    @DisplayName("A beginner with no solves gets 800-rated problems only")
+    void beginner_getsEightHundredOnly() {
+        User user = createUser("Beginner", "beginner@dau.ac.in", "beginner_cf", null);
+        CfProblem easy = createProblem(800, 50, "implementation");
+        CfProblem harder = createProblem(900, 60, "implementation");
         entityManager.flush();
 
         PracticeSuggestionsResponseDto response = practiceSuggestionService.getSuggestions(user.getId());
 
         assertThat(response.getReason()).isNull();
-        assertThat(response.getRatingBandMin()).isEqualTo(800);
-        assertThat(response.getRatingBandMax()).isEqualTo(1000);
-        assertThat(response.getSuggestions()).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("Member with 12 counted solves uses all tags without weak-tag filter")
-    void memberWith12Solves_everyTagUsedNoWeakTagFilter() {
-        User user = createUser("Twelve Solves", "twelve@dau.ac.in", "twelve_cf", 1500);
-
-        // Solve 12 problems (< 30 threshold)
-        for (int i = 1; i <= 12; i++) {
-            CfProblem p = createProblem(2000 + i, "A", 1200, 100, "implementation");
-            createSolve(user, p);
-        }
-
-        // Target band for 1500 is 1600 - 1800
-        CfProblem inBandProblem = createProblem(1500, "C", 1600, 200, "graphs");
-        entityManager.flush();
-
-        PracticeSuggestionsResponseDto response = practiceSuggestionService.getSuggestions(user.getId());
-
-        assertThat(response.getReason()).isNull();
-        assertThat(response.getRatingBandMin()).isEqualTo(1600);
-        assertThat(response.getRatingBandMax()).isEqualTo(1800);
+        assertThat(response.getOverallLevel()).isEqualTo(800);
         assertThat(response.getWeakTags()).isEmpty();
-        assertThat(response.getSuggestions()).extracting(PracticeSuggestionDto::getProblemKey)
-                .contains(inBandProblem.getProblemKey());
+        // 900 at level 800 is a 36% chance: below the 40-70% window.
+        assertThat(response.getSuggestions()).extracting(PracticeSuggestionDto::getProblemId)
+                .contains(easy.getId())
+                .doesNotContain(harder.getId());
+        assertThat(response.getSuggestions()).allSatisfy(s -> {
+            assertThat(s.getChance()).isBetween(40, 70);
+            assertThat(s.getFocusTag()).isNull();
+        });
     }
 
     @Test
-    @DisplayName("Solved and skipped problems in the band are neither suggested")
-    void solvedAndSkippedProblemsInBand_neitherSuggested() {
-        User user = createUser("Candidate User", "candidate@dau.ac.in", "candidate_cf", 1200);
-
-        // Target band for 1200 is 1300 - 1500
-        CfProblem solved = createProblem(1101, "B", 1400, 300, "math");
-        createSolve(user, solved);
-
-        CfProblem skipped = createProblem(1102, "B", 1400, 250, "dp");
-
-        CfProblem eligible = createProblem(1103, "B", 1400, 200, "greedy");
-
+    @DisplayName("Focus-topic problems are judged by the member's level in that topic")
+    void weakTopic_pickedAtTopicLevel() {
+        User user = greedyMember("Greedy");
+        for (int i = 0; i < 5; i++) createProblem(1500, 400, "dp");
+        CfProblem dpEasy = createProblem(1100, 300, "dp");
+        CfProblem dpMid = createProblem(1200, 200, "dp");
+        CfProblem dpTooHard = createProblem(1400, 500, "dp");
         entityManager.flush();
 
-        // Skip the second problem
+        PracticeSuggestionsResponseDto response = practiceSuggestionService.getSuggestions(user.getId());
+
+        assertThat(response.getOverallLevel()).isEqualTo(1550);
+        assertThat(response.getWeakTags()).first().isEqualTo("dp");
+        List<PracticeSuggestionDto> dpPicks = response.getSuggestions().stream()
+                .filter(s -> "dp".equals(s.getFocusTag())).toList();
+        assertThat(dpPicks).extracting(PracticeSuggestionDto::getProblemId)
+                .containsExactlyInAnyOrder(dpEasy.getId(), dpMid.getId())
+                .doesNotContain(dpTooHard.getId());
+        assertThat(dpPicks).allSatisfy(s -> assertThat(s.getFocusLevel()).isEqualTo(1150));
+        assertThat(response.getSuggestions()).allSatisfy(s -> assertThat(s.getChance()).isBetween(40, 70));
+    }
+
+    @Test
+    @DisplayName("Below 30 rated solves there are no focus topics")
+    void fewSolves_noFocusTopics() {
+        User user = createUser("Twelve", "twelve@dau.ac.in", "twelve_cf", 1500);
+        for (int i = 0; i < 12; i++) createSolve(user, createProblem(1200, 100, "implementation"));
+        CfProblem atLevel = createProblem(1500, 200, "graphs");
+        entityManager.flush();
+
+        PracticeSuggestionsResponseDto response = practiceSuggestionService.getSuggestions(user.getId());
+
+        assertThat(response.getWeakTags()).isEmpty();
+        assertThat(response.getSuggestions()).extracting(PracticeSuggestionDto::getProblemId).contains(atLevel.getId());
+    }
+
+    @Test
+    @DisplayName("Two members with the same profile get different daily mixes")
+    void sameProfile_differentMix() {
+        User first = greedyMember("First");
+        User second = greedyMember("Second");
+        for (int i = 0; i < 5; i++) createProblem(1500, 400, "dp");
+        for (int i = 0; i < 15; i++) createProblem(1100 + 100 * (i % 2), 300 - i, "dp");
+        entityManager.flush();
+
+        List<Long> firstIds = practiceSuggestionService.getSuggestions(first.getId()).getSuggestions().stream()
+                .map(PracticeSuggestionDto::getProblemId).toList();
+        List<Long> secondIds = practiceSuggestionService.getSuggestions(second.getId()).getSuggestions().stream()
+                .map(PracticeSuggestionDto::getProblemId).toList();
+
+        assertThat(firstIds).hasSize(10);
+        assertThat(secondIds).hasSize(10);
+        assertThat(firstIds).isNotEqualTo(secondIds);
+    }
+
+    @Test
+    @DisplayName("Solved and skipped problems are not suggested")
+    void solvedAndSkipped_notSuggested() {
+        User user = createUser("Candidate", "candidate@dau.ac.in", "candidate_cf", null);
+        CfProblem solved = createProblem(800, 300, "math");
+        createSolve(user, solved);
+        CfProblem skipped = createProblem(800, 250, "dp");
+        CfProblem eligible = createProblem(800, 200, "greedy");
+        entityManager.flush();
+
+        practiceSuggestionService.skip(user.getId(), skipped.getId());
+        entityManager.flush();
+
+        assertThat(practiceSuggestionService.getSuggestions(user.getId()).getSuggestions())
+                .extracting(PracticeSuggestionDto::getProblemId)
+                .contains(eligible.getId())
+                .doesNotContain(solved.getId(), skipped.getId());
+    }
+
+    @Test
+    @DisplayName("The same day returns the cached list, less problems solved since")
+    void cachedList_dropsProblemsSolvedSince() {
+        User user = createUser("Cache", "cache@dau.ac.in", "cache_cf", null);
+        CfProblem a = createProblem(800, 150, "strings");
+        CfProblem b = createProblem(800, 140, "strings");
+        entityManager.flush();
+
+        PracticeSuggestionsResponseDto first = practiceSuggestionService.getSuggestions(user.getId());
+        assertThat(practiceSuggestionService.getSuggestions(user.getId())).isSameAs(first);
+
+        createSolve(user, a);
+        entityManager.flush();
+
+        assertThat(practiceSuggestionService.getSuggestions(user.getId()).getSuggestions())
+                .extracting(PracticeSuggestionDto::getProblemId)
+                .containsExactly(b.getId());
+    }
+
+    @Test
+    @DisplayName("Try again lists failed problems not solved or skipped since, newest first")
+    void tryAgain_listsUnsolvedFailures() {
+        User user = createUser("Retry", "retry@dau.ac.in", "retry_cf", null);
+        CfProblem older = createProblem(900, 100, "math");
+        CfProblem newer = createProblem(800, 100, "greedy");
+        CfProblem solvedLater = createProblem(800, 100, "dp");
+        CfProblem skipped = createProblem(800, 100, "dp");
+        createAttempt(user, older, "TIME_LIMIT_EXCEEDED", 9);
+        createAttempt(user, newer, "WRONG_ANSWER", 2);
+        createAttempt(user, solvedLater, "WRONG_ANSWER", 1);
+        createSolve(user, solvedLater);
+        createAttempt(user, skipped, "WRONG_ANSWER", 1);
+        entityManager.flush();
         practiceSuggestionService.skip(user.getId(), skipped.getId());
         entityManager.flush();
 
         PracticeSuggestionsResponseDto response = practiceSuggestionService.getSuggestions(user.getId());
 
-        List<Long> suggestedIds = response.getSuggestions().stream()
-                .map(PracticeSuggestionDto::getProblemId)
-                .toList();
-
-        assertThat(suggestedIds).contains(eligible.getId());
-        assertThat(suggestedIds).doesNotContain(solved.getId());
-        assertThat(suggestedIds).doesNotContain(skipped.getId());
-    }
-
-    @Test
-    @DisplayName("Called twice on the same IST date returns identical cached list")
-    void calledTwiceOnSameIstDate_identicalListCached() {
-        User user = createUser("Cache User", "cache@dau.ac.in", "cache_cf", 1300);
-        createProblem(1201, "A", 1400, 150, "strings");
-        entityManager.flush();
-
-        PracticeSuggestionsResponseDto first = practiceSuggestionService.getSuggestions(user.getId());
-        PracticeSuggestionsResponseDto second = practiceSuggestionService.getSuggestions(user.getId());
-
-        assertThat(second).isSameAs(first);
-        assertThat(second.getSuggestions()).isEqualTo(first.getSuggestions());
+        assertThat(response.getTryAgain()).extracting(TryAgainDto::getProblemId)
+                .containsExactly(newer.getId(), older.getId());
+        TryAgainDto first = response.getTryAgain().get(0);
+        assertThat(first.getLastVerdict()).isEqualTo("WRONG_ANSWER");
+        assertThat(first.getTags()).containsExactly("greedy");
+        assertThat(first.getChance()).isEqualTo(50);
+        assertThat(first.getUrl()).isEqualTo("https://codeforces.com/problemset/problem/" + newer.getContestId() + "/A");
+        // Shown under "try again", so not suggested a second time.
+        assertThat(response.getSuggestions()).extracting(PracticeSuggestionDto::getProblemId)
+                .doesNotContain(newer.getId());
     }
 
     @Test
@@ -181,7 +269,9 @@ public class PracticeSuggestionServiceTest {
         assertThat(response.getReason()).isEqualTo("NO_CODEFORCES_HANDLE");
         assertThat(response.getRatingBandMin()).isNull();
         assertThat(response.getRatingBandMax()).isNull();
+        assertThat(response.getOverallLevel()).isNull();
         assertThat(response.getWeakTags()).isEmpty();
         assertThat(response.getSuggestions()).isEmpty();
+        assertThat(response.getTryAgain()).isEmpty();
     }
 }

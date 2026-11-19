@@ -19,4 +19,10 @@ public class TopicStrengthResponseDto {
     @Builder.Default
     private String note = "A problem with multiple tags counts toward each tag";
     private List<TopicStrengthDto> topics;
+    /** The member's estimated overall level; null without a Codeforces handle. */
+    private Integer overallLevel;
+    /** Distinct rated problems solved: focus topics are picked from 30. */
+    private Integer ratedSolves;
+    /** The focus topics, weakest first. */
+    private List<String> weakTags;
 }

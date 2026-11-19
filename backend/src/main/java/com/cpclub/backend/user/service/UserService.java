@@ -16,6 +16,7 @@ import com.cpclub.backend.user.dto.UserResponseDto;
 import com.cpclub.backend.user.entity.Role;
 import com.cpclub.backend.user.entity.User;
 import com.cpclub.backend.user.repository.UserRepository;
+import com.cpclub.backend.codeforces.repository.CfAttemptRepository;
 import com.cpclub.backend.codeforces.repository.CfSolveRepository;
 import com.cpclub.backend.stats.repository.ContestParticipationRepository;
 import com.cpclub.backend.stats.repository.PlatformDailyTotalRepository;
@@ -43,6 +44,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CfSolveRepository cfSolveRepository;
+    private final CfAttemptRepository cfAttemptRepository;
     private final ContestParticipationRepository contestParticipationRepository;
     private final PlatformDailyTotalRepository platformDailyTotalRepository;
     private final MemberStatsSyncService memberStatsSyncService;
@@ -390,6 +392,7 @@ public class UserService {
         user.setRating(null);
         user.setMaxRating(null);
         cfSolveRepository.deleteByUser(user);
+        cfAttemptRepository.deleteByUser(user);
         contestParticipationRepository.deleteByUserAndPlatform(user, Platform.CODEFORCES);
     }
 

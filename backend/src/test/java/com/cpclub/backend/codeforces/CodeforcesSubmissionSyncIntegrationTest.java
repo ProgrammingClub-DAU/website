@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -130,6 +131,43 @@ class CodeforcesSubmissionSyncIntegrationTest extends PostgresIntegrationTest {
         assertEquals(new Solve(at(8000), 108, "VIRTUAL"), solves.get("990001/D"));
         assertEquals(1200, problemRepository.findByProblemKey("990001/A").orElseThrow().getRating());
         assertEquals(108L, userRepository.findById(member.getId()).orElseThrow().getCfLastSubmissionId());
+    }
+
+    @Test
+    @DisplayName("Failed submissions keep each problem's latest failure; compile errors are not attempts")
+    void failedAttempts() {
+        when(codeforces.userStatus(HANDLE, 1, 500)).thenReturn(List.of(
+                sub(206, "C", "TIME_LIMIT_EXCEEDED", 6000, "PRACTICE", null),
+                sub(205, "C", "WRONG_ANSWER", 5000, "PRACTICE", null),
+                sub(204, "D", "COMPILATION_ERROR", 4000, "PRACTICE", null),
+                sub(203, "A", "OK", 3000, "PRACTICE", null),
+                sub(202, "A", "WRONG_ANSWER", 2000, "PRACTICE", null)));
+        syncService.syncMember(member);
+
+        assertEquals(Map.of("990001/C", "TIME_LIMIT_EXCEEDED@206", "990001/A", "WRONG_ANSWER@202"), attempts());
+        // Only a compile error: neither an attempt nor a problem worth storing.
+        assertTrue(problemRepository.findByProblemKey("990001/D").isEmpty());
+
+        // A later failure replaces the earlier one.
+        when(codeforces.userStatus(HANDLE, 1, 100)).thenReturn(List.of(
+                sub(207, "C", "WRONG_ANSWER", 7000, "PRACTICE", null),
+                sub(206, "C", "TIME_LIMIT_EXCEEDED", 6000, "PRACTICE", null)));
+        syncService.syncMember(userRepository.findById(member.getId()).orElseThrow());
+
+        assertEquals("WRONG_ANSWER@207", attempts().get("990001/C"));
+    }
+
+    /** Problem key to "verdict@submission id" of the member's stored failed attempts. */
+    private Map<String, String> attempts() {
+        Map<String, String> byKey = new HashMap<>();
+        jdbc.query("""
+                SELECT p.problem_key, a.last_verdict, a.last_submission_id
+                FROM cf_attempts a JOIN cf_problems p ON p.id = a.problem_id
+                WHERE a.user_id = :id
+                """, new MapSqlParameterSource("id", member.getId()),
+                rs -> { byKey.put(rs.getString("problem_key"),
+                        rs.getString("last_verdict") + "@" + rs.getLong("last_submission_id")); });
+        return byKey;
     }
 
     private record Solve(LocalDateTime firstAcAt, long submissionId, String participantType) {}
