@@ -1003,3 +1003,83 @@ export interface EventRegistrationRow {
   alreadyAttending: boolean;
 }
 
+
+// ── CP Practice Group (admin only) ───────────────────────────────────────────
+
+/** One student in the group with their activity. Mirrors CpGroupMemberRowDto. */
+export interface CpGroupMemberRow {
+  userId: number;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  codeforcesHandle: string | null;
+  leetcodeHandle: string | null;
+  /** The group's batch, set by an admin. */
+  batchYear: number;
+  /** The batch on the student's own profile. */
+  profileBatchYear: number | null;
+  /** UTC, without an offset (parse with serverDate). */
+  addedAt: string;
+  cfSolved7d: number;
+  cfSolved30d: number;
+  cfSolvedAll: number;
+  /** Null where LeetCode tracking does not reach back that far, or there is no handle. */
+  lcSolved7d: number | null;
+  lcSolved30d: number | null;
+  lcSolvedAll: number | null;
+  cfRating: number | null;
+  cfRatingChange30d: number | null;
+  lcRating: number | null;
+  lcRatingChange30d: number | null;
+  contests30d: number;
+  /** IST date (yyyy-mm-dd) of the latest solve, LeetCode rise or contest. */
+  lastActiveOn: string | null;
+  hasNotes: boolean;
+}
+
+export interface CpGroupDailySolves {
+  /** IST date, yyyy-mm-dd. */
+  date: string;
+  codeforces: number;
+  leetcode: number | null;
+}
+
+export interface CpGroupContestEntry {
+  platform: string;
+  contestName: string;
+  /** UTC, without an offset. */
+  startedAt: string;
+  rated: boolean;
+  rank: number | null;
+  oldRating: number | null;
+  newRating: number | null;
+}
+
+export interface CpGroupRecentSolve {
+  problemKey: string;
+  name: string;
+  rating: number | null;
+  /** UTC, without an offset. */
+  solvedAt: string;
+  url: string | null;
+}
+
+export interface CpGroupMemberDetail {
+  summary: CpGroupMemberRow;
+  notes: string | null;
+  notesUpdatedAt: string | null;
+  notesUpdatedBy: string | null;
+  addedBy: string | null;
+  /** The last 30 IST days, oldest first. */
+  daily: CpGroupDailySolves[];
+  /** Newest first. */
+  contests: CpGroupContestEntry[];
+  recentSolves: CpGroupRecentSolve[];
+}
+
+/** All a student sees of the group: whether they are in it. */
+export interface CpGroupMyMembership {
+  member: boolean;
+  batchYear: number | null;
+  since: string | null;
+}

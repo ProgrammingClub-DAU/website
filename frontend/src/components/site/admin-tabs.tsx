@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, Calendar, Image as ImageIcon, Trophy, Award, RefreshCw, FileText } from "lucide-react";
+import { Users, Calendar, Image as ImageIcon, Trophy, Award, RefreshCw, FileText, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AdminTab =
@@ -12,7 +12,17 @@ export type AdminTab =
   | "contests"
   | "awards"
   | "sync"
-  | "blogs";
+  | "blogs"
+  | "cpGroup";
+
+const TAB_IDS: readonly AdminTab[] = [
+  "members", "events", "hallOfFame", "galleries", "contests", "awards", "sync", "blogs", "cpGroup",
+];
+
+/** For opening a tab from ?tab= in the URL. */
+export function isAdminTab(value: string): value is AdminTab {
+  return (TAB_IDS as readonly string[]).includes(value);
+}
 
 interface AdminTabsProps {
   activeTab: AdminTab;
@@ -30,6 +40,7 @@ export function AdminTabs({ activeTab, onChange, className }: AdminTabsProps) {
     { id: "awards", label: "Awards", icon: Award },
     { id: "sync", label: "Sync Health", icon: RefreshCw },
     { id: "blogs", label: "Blog Reviews", icon: FileText },
+    { id: "cpGroup", label: "CP Practice", icon: Target },
   ];
 
   // One scrolling row on phones -- eight wrapped tabs filled the first screen

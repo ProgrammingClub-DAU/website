@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { useAuthStore } from "@/store/auth";
-import { AdminTabs, type AdminTab } from "@/components/site/admin-tabs";
+import { AdminTabs, isAdminTab, type AdminTab } from "@/components/site/admin-tabs";
 import { Shield, ShieldAlert, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { MembersTab } from "@/components/admin/members-tab";
@@ -28,10 +28,22 @@ const ContestsManager = dynamic(() => import("@/components/admin/contests-manage
 const AwardsManager = dynamic(() => import("@/components/admin/awards-manager").then((m) => m.AwardsManager), { loading: TabLoading });
 const SyncManager = dynamic(() => import("@/components/admin/sync-manager").then((m) => m.SyncManager), { loading: TabLoading });
 const BlogReviewManager = dynamic(() => import("@/components/admin/blog-review-manager").then((m) => m.BlogReviewManager), { loading: TabLoading });
+const CpGroupTab = dynamic(() => import("@/components/admin/cp-group-tab").then((m) => m.CpGroupTab), { loading: TabLoading });
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<AdminTab>("members");
+
+  // ?tab=... opens that tab, so a link (or "back" from a CP Practice student's
+  // page) lands on the right one. Switching tabs keeps the URL in step.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab && isAdminTab(tab)) setActiveTab(tab);
+  }, []);
+  const changeTab = (tab: AdminTab) => {
+    setActiveTab(tab);
+    window.history.replaceState(null, "", tab === "members" ? "/admin" : `/admin?tab=${tab}`);
+  };
 
   // Authentication & authorization guard
   if (!isAuthenticated) {
@@ -93,7 +105,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <AdminTabs activeTab={activeTab} onChange={setActiveTab} />
+        <AdminTabs activeTab={activeTab} onChange={changeTab} />
 
         {activeTab === "members" && <MembersTab />}
         {activeTab === "events" && <EventsTab />}
@@ -103,6 +115,7 @@ export default function AdminDashboardPage() {
         {activeTab === "awards" && <AwardsManager />}
         {activeTab === "sync" && <SyncManager />}
         {activeTab === "blogs" && <BlogReviewManager />}
+        {activeTab === "cpGroup" && <CpGroupTab />}
       </div>
     </>
   );
