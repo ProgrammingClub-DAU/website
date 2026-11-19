@@ -270,8 +270,8 @@ self-merging and no force-pushing shared branches.
 
 ## Team
 
-Built by the Programming Club @ DAU development team:
-[Madhav Thesiya](https://github.com/madhavthesiya),
+Built by the Programming Club @ DAU development team, led by
+[Madhav Thesiya](https://github.com/madhavthesiya) (tech lead), with
 [Shane Christian](https://github.com/Shane07p),
 [Raj Patel](https://github.com/Raj-Patel7807),
 [Tanishq Shah](https://github.com/Tanishq7361),
