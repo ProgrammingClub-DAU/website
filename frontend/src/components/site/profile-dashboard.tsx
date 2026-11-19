@@ -65,6 +65,7 @@ import { codeforcesService, type CfUserInfo } from "@/lib/services/codeforces";
 import type { RatingHistoryEntry as CfRatingHistoryEntry } from "@/types/api";
 import { serverDate } from "@/lib/utils";
 import { ProfileSetupNotice } from "@/components/site/profile-setup-notice";
+import { CpGroupBadge } from "@/components/site/cp-group-badge";
 
 // window.cloudinary is declared once, in lib/cloudinary.ts.
 
@@ -558,6 +559,8 @@ function ProfileDashboardContent({
 
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* Private: shown to the member themselves only. */}
+              {isOwner && <CpGroupBadge />}
               <span
                 className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium capitalize"
                 style={{ color: nameColor, borderColor: nameColor }}

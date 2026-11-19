@@ -6,13 +6,16 @@ import { cn } from "@/lib/utils";
 
 interface TopicStrengthChartProps {
   data: TopicStrengthResponse;
+  /** "admin" words it about the student ("they") rather than to them ("you"). */
+  viewer?: "member" | "admin";
 }
 
 /**
  * The member's estimated level in each core topic, on the Codeforces rating
  * scale, with their focus topics marked and their overall level as a guide line.
  */
-export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
+export function TopicStrengthChart({ data, viewer = "member" }: TopicStrengthChartProps) {
+  const admin = viewer === "admin";
   const topics = (data.topics ?? [])
     .filter((t) => t.level != null)
     .sort((a, b) => (b.level ?? 0) - (a.level ?? 0) || a.tag.localeCompare(b.tag));
@@ -40,11 +43,12 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
         <div>
           <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-foreground">
             <Target className="size-4 text-primary" aria-hidden />
-            Your level by topic
+            {admin ? "Level by topic" : "Your level by topic"}
           </h3>
           <p className="mt-1 max-w-[60ch] text-xs text-fg-muted">
-            Estimated from the hardest problems you&apos;ve solved in each topic, on the Codeforces
-            rating scale. A level of 1400 means you solve 1400-rated problems about half the time.
+            Estimated from the hardest problems {admin ? "they've" : "you've"} solved in each topic, on the
+            Codeforces rating scale. A level of 1400 means {admin ? "they solve" : "you solve"} 1400-rated problems
+            about half the time.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-4 font-mono text-nano">
@@ -63,8 +67,8 @@ export function TopicStrengthChart({ data }: TopicStrengthChartProps) {
 
       {ratedSolves < MIN_SOLVES_FOR_FOCUS && (
         <p className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs text-fg-muted">
-          Focus topics unlock at {MIN_SOLVES_FOR_FOCUS} solved rated problems. You have {ratedSolves}, so
-          these levels are a first estimate.
+          Focus topics unlock at {MIN_SOLVES_FOR_FOCUS} solved rated problems. {admin ? "They have" : "You have"}{" "}
+          {ratedSolves}, so these levels are a first estimate.
         </p>
       )}
 
