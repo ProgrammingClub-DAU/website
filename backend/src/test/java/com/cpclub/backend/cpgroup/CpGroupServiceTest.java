@@ -191,7 +191,7 @@ class CpGroupServiceTest {
 
         assertThat(d.daily()).hasSize(30);
         assertThat(d.daily().get(0).date()).isEqualTo(todayIst.minusDays(29));
-        assertThat(d.daily().stream().mapToInt(CpGroupMemberDetailDto.DailySolves::codeforces).sum()).isEqualTo(2);
+        assertThat(d.daily().stream().mapToInt(com.cpclub.backend.stats.dto.MemberActivityDto.DailySolves::codeforces).sum()).isEqualTo(2);
         assertThat(d.daily().get(29).leetcode()).isEqualTo(5);
         assertThat(d.daily().get(28).leetcode()).isNull();
         assertThat(d.contests()).hasSize(1);

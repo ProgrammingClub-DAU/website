@@ -1,6 +1,8 @@
 package com.cpclub.backend.cpgroup.dto;
 
-import java.time.LocalDate;
+import com.cpclub.backend.stats.dto.MemberActivityDto.DailySolves;
+import com.cpclub.backend.stats.dto.MemberActivityDto.RecentSolve;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,13 +26,7 @@ public record CpGroupMemberDetailDto(
         List<ContestEntry> contests,
         List<RecentSolve> recentSolves) {
 
-    /** Problems solved on one IST date; LeetCode is null where a snapshot is missing. */
-    public record DailySolves(LocalDate date, int codeforces, Integer leetcode) {}
-
     /** @param startedAt UTC */
     public record ContestEntry(String platform, String contestName, LocalDateTime startedAt, boolean rated,
                                Integer rank, Integer oldRating, Integer newRating) {}
-
-    /** @param solvedAt UTC, the first accepted submission */
-    public record RecentSolve(String problemKey, String name, Integer rating, LocalDateTime solvedAt, String url) {}
 }
