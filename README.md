@@ -145,11 +145,32 @@ on every request, so a role change applies at once.
 
 | Change | Before → after | Conditions | Rerun |
 | --- | --- | --- | --- |
-| First Codeforces sync of a new member ([1ab364c](https://github.com/ProgrammingClub-DAU/website/commit/1ab364c)) | 21.8 s → 0.55 s | 1,500 solves, local PostgreSQL; one run, from the commit | `backend/scripts/run-first-sync-benchmark.sh` |
+| First Codeforces sync of a new member ([1ab364c](https://github.com/ProgrammingClub-DAU/website/commit/1ab364c)) | 5.3 s → 0.39 s (~14×) | 1,500 solves, problems already stored; see [the benchmark](#first-sync-benchmark) | `backend/scripts/run-first-sync-benchmark.sh` |
 | Retries for one unknown handle in a 100-handle batch ([ab22f4d](https://github.com/ProgrammingClub-DAU/website/commit/ab22f4d), [1c57e58](https://github.com/ProgrammingClub-DAU/website/commit/1c57e58)) | 100 requests → ~14 (bisection) → 1 retry | Counted; 2 s per request at the rate limit | `CodeforcesSyncServiceTest` asserts exactly 2 calls |
 | Admin page initial JavaScript ([0919687](https://github.com/ProgrammingClub-DAU/website/commit/0919687)) | 737 KB → 232 KB (−69%) | Production build | `npm run build` at `0919687^` and `0919687` |
 | Public page load ([d302493](https://github.com/ProgrammingClub-DAU/website/commit/d302493)) | 1.4–2.1 s first visit → 15–60 ms after | Local Next.js against the production API | Manual |
 | Production 500s on public endpoints ([027d632](https://github.com/ProgrammingClub-DAU/website/commit/027d632)) | 5 regression tests fail before the fix, pass after | Testcontainers PostgreSQL | `PublicEndpointsPostgresTest` at `027d632^` and `027d632` |
+
+### First-sync benchmark
+
+Time for `syncMember` to store a new member's 1,500 accepted submissions, before
+batching (`1ab364c^`, three or four statements per solve, each in its own
+transaction) and after (batched `ON CONFLICT` upserts, one transaction per page). Median of 5 runs after one
+warm-up.
+
+| Scenario | Before | After | Speedup |
+| --- | --- | --- | --- |
+| Problems already stored by the problemset sync (the usual case) | 5.3 s (4.2–6.7) | 0.39 s (0.28–0.44) | ~14× |
+| Problems not stored yet | 6.5 s (5.6–7.5) | 0.20 s (0.20–0.25) | ~32× |
+
+Both versions stored identical rows. The Codeforces API is stubbed, so this is
+application and database time only; in production each page of 500 also waits
+for one rate-limited API call. Measured on 20 Nov 2026 on an Intel Core Ultra 5
+125H laptop (18 threads, plugged in) running Windows 11, with PostgreSQL 15 in
+Docker 29.2.1 through Testcontainers.
+
+The commit message for 1ab364c quoted 21.8 s → 0.55 s from a single earlier run
+on a different setup; the table above replaces it.
 
 ---
 
